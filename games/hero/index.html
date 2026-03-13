@@ -1,0 +1,3293 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>勇者傳說</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Noto+Serif+TC:wght@400;700&display=swap');
+:root{--gold:#f0c040;--gold2:#ffd97d;--dark:#0a0608;--panel:#12080f;--panel2:#1c0f18;--panel3:#251528;--border:#4a2040;--red2:#e74c3c;--green2:#2ecc71;--purple2:#9b59b6;--blue2:#3498db;--orange:#e67e22;--text:#e8d5b0;--text2:#b8a080;--shadow:rgba(240,192,64,0.3);}
+html{font-size:17px;}*{margin:0;padding:0;box-sizing:border-box;}
+html{font-size:17px;}
+body{background:var(--dark);color:var(--text);font-family:'Noto Serif TC',serif;min-height:100vh;overflow-x:hidden;background-image:radial-gradient(ellipse at 20% 50%,rgba(80,20,60,.3) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(40,10,80,.3) 0%,transparent 60%);}
+.hdr{text-align:center;padding:18px;border-bottom:2px solid var(--border);background:linear-gradient(180deg,rgba(30,10,24,.95),transparent);}
+.hdr h1{font-family:'Noto Sans TC',sans-serif;font-size:2.73rem;color:var(--gold);text-shadow:0 0 20px var(--shadow);letter-spacing:4px;}
+.hdr .sub{font-size:.110.5rem;color:var(--text2);letter-spacing:5px;text-transform:uppercase;margin-top:3px;}
+.rbar{display:flex;gap:10px;padding:10px 16px;background:rgba(18,8,15,.9);border-bottom:1px solid var(--border);flex-wrap:wrap;justify-content:center;}
+.res{display:flex;align-items:center;gap:6px;font-size:.9rem;background:rgba(255,255,255,.04);padding:5px 13px;border-radius:20px;border:1px solid rgba(74,32,64,.5);}
+.res .val{color:var(--gold);font-weight:700;min-width:44px;}
+.res .lbl{color:var(--text2);}
+.body{display:grid;grid-template-columns:250px 1fr 250px;min-height:calc(100vh - 130px);}
+.panel{background:var(--panel);padding:16px;overflow-y:auto;max-height:calc(100vh - 130px);}
+.panel.left{border-right:1px solid var(--border);}
+.panel.right{border-left:1px solid var(--border);}
+.ptitle{font-size:.93.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:11px;font-family:'Noto Sans TC',sans-serif;font-weight:700;}
+.av-box{text-align:center;margin-bottom:14px;}
+.av-sp{font-size:4.94rem;display:block;filter:drop-shadow(0 0 10px var(--shadow));animation:flt 3s ease-in-out infinite;}
+@keyframes flt{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.av-name{font-family:'Noto Sans TC',sans-serif;font-size:1rem;color:var(--gold);margin-top:5px;}
+.av-cls{font-size:.101.4rem;color:var(--purple2);letter-spacing:2px;}
+.av-lv{font-size:.97.5rem;color:var(--text2);margin-top:3px;}
+.bw{margin:5px 0;}.bl{font-size:.97.5rem;color:var(--text2);display:flex;justify-content:space-between;margin-bottom:3px;}
+.bb{height:11px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;border:1px solid rgba(74,32,64,.4);}
+.bf{height:100%;border-radius:4px;transition:width .4s;position:relative;}
+.bf::after{content:'';position:absolute;top:0;left:0;right:0;height:40%;background:rgba(255,255,255,.2);border-radius:4px;}
+.bhp .bf{background:linear-gradient(90deg,#c0392b,#e74c3c);}
+.bmp .bf{background:linear-gradient(90deg,#2980b9,#3498db);}
+.bexp .bf{background:linear-gradient(90deg,#8e44ad,#9b59b6);}
+.sr{display:flex;justify-content:space-between;font-size:.106.6rem;padding:4px 0;border-bottom:1px solid rgba(74,32,64,.2);}
+.sr:last-child{border-bottom:none;}
+.sn{color:var(--text2);}.sv{color:var(--gold);font-weight:700;}
+.btn{width:100%;padding:8px 12px;border:1px solid var(--border);background:rgba(74,32,64,.3);color:var(--text);font-family:'Noto Serif TC',serif;font-size:.110.5rem;cursor:pointer;border-radius:4px;transition:all .2s;margin:3px 0;text-align:left;display:flex;align-items:center;justify-content:space-between;}
+.btn:hover{background:rgba(74,32,64,.6);border-color:var(--gold);color:var(--gold);}
+.btn.gld{border-color:var(--gold);background:rgba(240,192,64,.15);color:var(--gold);}
+.btn.gld:hover{background:rgba(240,192,64,.3);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.skgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:9px 0;}
+.skbtn{padding:9px 6px;border:1px solid var(--border);background:rgba(74,32,64,.2);color:var(--text);font-size:.101.4rem;cursor:pointer;border-radius:6px;text-align:center;transition:all .2s;position:relative;}
+.skbtn:hover{border-color:var(--gold);background:rgba(240,192,64,.1);}
+.skic{font-size:1.95rem;display:block;}
+.sknm{color:var(--gold);font-size:.7rem;margin-top:3px;}
+.skcd{position:absolute;top:3px;right:5px;font-size:.84.5rem;color:var(--red2);}
+.skbtn.ocd{opacity:.5;cursor:not-allowed;}
+.field{padding:14px;display:flex;flex-direction:column;gap:10px;}
+.di{display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:9px 14px;}
+.dnm{font-family:'Cinzel Decorative',cursive;font-size:.8rem;color:var(--gold);}
+.dsub{font-size:.81.9rem;color:var(--text2);}
+.dang{font-size:.81.9rem;padding:2px 8px;border-radius:10px;}
+.d1{background:rgba(39,174,96,.2);color:var(--green2);border:1px solid #27ae60;}
+.d2{background:rgba(230,126,34,.2);color:#f39c12;border:1px solid var(--orange);}
+.d3{background:rgba(192,57,43,.2);color:var(--red2);border:1px solid #c0392b;}
+.fp{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:9px 13px;display:flex;align-items:center;gap:10px;}
+.fpi{flex:0 0 auto;}.fplb{font-size:.6rem;color:var(--text2);}.fpn{font-size:1rem;color:var(--gold);font-family:'Cinzel Decorative',cursive;}
+.fpbb{flex:1;height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;border:1px solid rgba(74,32,64,.4);}
+.fpbf{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:4px;transition:width .5s;}
+.fptx{font-size:.6rem;color:var(--text2);white-space:nowrap;}
+.ba{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:14px;min-height:240px;position:relative;overflow:hidden;}
+.babg{position:absolute;inset:0;opacity:.07;font-size:8rem;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+.cmbs{display:flex;align-items:center;justify-content:space-around;position:relative;z-index:1;margin-bottom:10px;}
+.cmb{text-align:center;width:110px;}
+.csp{font-size:3rem;display:block;margin:0 auto;filter:drop-shadow(0 4px 8px rgba(0,0,0,.5));}
+.csp.ha{animation:ha 1.5s ease-in-out infinite;}
+.csp.ea{animation:ea 2s ease-in-out infinite;}
+@keyframes ha{0%,100%{transform:translateX(0)}50%{transform:translateX(3px)}}
+@keyframes ea{0%,100%{transform:scaleX(-1) translateX(0)}50%{transform:scaleX(-1) translateX(-3px)}}
+.cnm{font-size:.84.5rem;color:var(--gold);margin-top:3px;}
+.chpb{height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;margin-top:3px;border:1px solid rgba(74,32,64,.4);}
+.chpf{height:100%;background:linear-gradient(90deg,#c0392b,#e74c3c);transition:width .3s;}
+.ehpf{background:linear-gradient(90deg,#8e44ad,#9b59b6);}
+.cht{font-size:.74.1rem;color:var(--text2);margin-top:2px;}
+.vs{font-family:'Cinzel Decorative',cursive;font-size:1.43rem;color:var(--border);}
+.blog{background:rgba(10,6,8,.7);border:1px solid rgba(74,32,64,.4);border-radius:6px;padding:7px 10px;height:140px;overflow-y:auto;font-size:.81.9rem;line-height:1.6;}
+.blog::-webkit-scrollbar{width:4px;}.blog::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+.ll{padding:1px 0;}.lh{color:var(--gold2);}.le{color:var(--red2);}.ls{color:var(--text2);font-style:italic;}.lc{color:#ff6b35;font-weight:700;}.lsk{color:var(--purple2);}.lr{color:var(--green2);font-weight:700;}
+.dnum{position:absolute;font-weight:900;font-size:1.56rem;pointer-events:none;z-index:10;animation:df 1.2s ease-out forwards;text-shadow:2px 2px 4px rgba(0,0,0,.8);}
+.dnum.hd{color:var(--gold);left:18%;}.dnum.ed{color:var(--red2);right:18%;}.dnum.cr{color:#ff6b35;font-size:2.08rem;}.dnum.hl{color:var(--green2);}
+@keyframes df{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-45px)}}
+.slash{position:absolute;font-size:2.99rem;pointer-events:none;z-index:9;animation:sl .4s ease-out forwards;}
+@keyframes sl{0%{opacity:1;transform:scale(.5) rotate(-20deg)}50%{opacity:1;transform:scale(1.2) rotate(20deg)}100%{opacity:0;transform:scale(.8) rotate(45deg)}}
+.bctrl{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;}
+.cbtn{padding:7px 15px;border:1px solid var(--border);background:rgba(74,32,64,.3);color:var(--text);font-family:'Noto Serif TC',serif;font-size:.94.9rem;cursor:pointer;border-radius:20px;transition:all .2s;}
+.cbtn:hover{background:rgba(74,32,64,.6);border-color:var(--gold);}
+.cbtn.act{background:rgba(240,192,64,.2);border-color:var(--gold);color:var(--gold);}
+.spds{display:flex;gap:4px;}
+.spd{padding:5px 11px;border:1px solid var(--border);background:rgba(74,32,64,.2);color:var(--text2);font-size:.88.4rem;cursor:pointer;border-radius:14px;transition:all .2s;}
+.spd.act{background:rgba(240,192,64,.2);border-color:var(--gold);color:var(--gold);}
+.tabs{display:flex;margin-bottom:10px;border-bottom:1px solid var(--border);}
+.tab{flex:1;padding:5px 3px;font-size:.75.4rem;letter-spacing:1px;cursor:pointer;text-align:center;color:var(--text2);transition:all .2s;border-bottom:2px solid transparent;}
+.tab.act{color:var(--gold);border-bottom-color:var(--gold);}
+.ui{background:var(--panel3);border:1px solid rgba(74,32,64,.4);border-radius:6px;padding:8px;margin:4px 0;}
+.ui:hover{border-color:var(--gold);}
+.uh{display:flex;align-items:center;gap:5px;margin-bottom:3px;}
+.uic{font-size:1rem;}.unm{font-size:.88.4rem;color:var(--gold);flex:1;}.ulv{font-size:.74.1rem;color:var(--purple2);}
+.uds{font-size:.74.1rem;color:var(--text2);margin-bottom:3px;line-height:1.4;}
+.uef{font-size:.74.1rem;color:var(--green2);margin-bottom:3px;}
+.eqgr{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin:6px 0;}
+.eqs{background:var(--panel3);border:1px solid rgba(74,32,64,.4);border-radius:6px;padding:7px;cursor:pointer;transition:all .2s;text-align:center;min-height:66px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;}
+.eqs:hover{border-color:var(--gold);}
+.eqs .eqic{font-size:1.69rem;}.eqs .eqnm{font-size:.72.8rem;color:var(--gold);}.eqs .eqst{font-size:.67.6rem;color:var(--green2);}.eqs .eqlb{font-size:.67.6rem;color:var(--text2);}
+.eqs.emp{opacity:.4;}.rc{border-color:rgba(100,100,100,.5)!important;}.rr{border-color:rgba(41,128,185,.6)!important;}.re{border-color:rgba(142,68,173,.7)!important;}.rl{border-color:rgba(240,192,64,.8)!important;box-shadow:0 0 8px rgba(240,192,64,.2);}
+.stb{padding:2px 6px;border-radius:10px;font-size:.74.1rem;border:1px solid;display:inline-block;margin:2px 2px 0 0;}
+.stbu{background:rgba(39,174,96,.15);color:var(--green2);border-color:#27ae60;}
+.notif{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--gold);color:var(--gold);padding:9px 18px;border-radius:20px;font-size:.98.8rem;z-index:1000;animation:nf 2.5s ease forwards;pointer-events:none;white-space:nowrap;}
+@keyframes nf{0%{opacity:0;transform:translateX(-50%) translateY(-10px)}15%{opacity:1;transform:translateX(-50%) translateY(0)}75%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-10px)}}
+.lvfl{position:fixed;inset:0;background:radial-gradient(ellipse at center,rgba(240,192,64,.3) 0%,transparent 70%);pointer-events:none;z-index:999;animation:lf 1s ease forwards;}
+@keyframes lf{0%{opacity:1}100%{opacity:0}}
+.deado{position:absolute;inset:0;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;border-radius:8px;gap:10px;}
+.deadt{font-family:'Cinzel Decorative',cursive;font-size:1.69rem;color:var(--red2);text-shadow:0 0 20px rgba(231,76,60,.5);}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:var(--panel);}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+#bosswarn{text-align:center;display:none;animation:flt 1s ease-in-out infinite;}
+.bosstxt{color:var(--red2);font-family:'Cinzel Decorative',cursive;font-size:.107.9rem;}
+
+/* COMBO 閃爍動畫 */
+#comboNum { animation: none; }
+#comboNum.pulse { animation: comboPulse 0.15s ease-out; }
+@keyframes comboPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+kbd {
+  font-family: 'Noto Serif TC', serif;
+  background: rgba(42,21,40,.8);
+  border: 1px solid var(--border);
+  border-bottom: 3px solid var(--border);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: .9rem;
+  color: var(--gold);
+}
+#comboBox {
+  transition: opacity .2s;
+}
+
+@keyframes keyPulse {
+  from { box-shadow: 0 0 10px rgba(240,192,64,.2), inset 0 1px 0 rgba(255,255,255,.1); }
+  to   { box-shadow: 0 0 30px rgba(240,192,64,.5), inset 0 1px 0 rgba(255,255,255,.1); }
+}
+@keyframes keyAppear {
+  0%   { transform: scale(0.5) rotateY(90deg); opacity: 0; }
+  60%  { transform: scale(1.15) rotateY(-5deg); }
+  100% { transform: scale(1) rotateY(0deg); opacity: 1; }
+}
+#activeKey {
+  animation: keyPulse 0.6s ease-in-out infinite alternate, keyAppear 0.25s ease-out;
+}
+
+
+/* 技能特效 */
+.skbtn { position: relative; overflow: hidden; }
+.skbtn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,.06) 100%);
+  pointer-events: none;
+}
+.skbtn:not(.ocd):hover {
+  transform: scale(1.04);
+  border-color: var(--gold);
+}
+/* 稀有度發光 */
+.eqs.rcommon  { border-color: rgba(170,170,170,.5) !important; }
+.eqs.rrare    { border-color: rgba(74,158,255,.6) !important; box-shadow: 0 0 8px rgba(74,158,255,.2); }
+.eqs.repic    { border-color: rgba(180,79,255,.7) !important; box-shadow: 0 0 10px rgba(180,79,255,.25); }
+.eqs.rlegend  { border-color: rgba(240,192,64,.8) !important; box-shadow: 0 0 14px rgba(240,192,64,.3); }
+.eqs.rmythic  { border-color: rgba(255,68,68,.9)  !important; box-shadow: 0 0 18px rgba(255,68,68,.4);
+  animation: mythicGlow .8s ease-in-out infinite alternate; }
+@keyframes mythicGlow {
+  from { box-shadow: 0 0 10px rgba(255,68,68,.3); }
+  to   { box-shadow: 0 0 24px rgba(255,68,68,.7); }
+}
+
+
+/* 拖拉技能 */
+.skbtn[draggable=true] { cursor: grab; }
+.skbtn[draggable=true]:active { cursor: grabbing; }
+.skill-drag-ghost {
+  position: fixed; pointer-events: none; z-index: 9999;
+  font-size: 2.5rem; transform: translate(-50%,-50%);
+  filter: drop-shadow(0 0 12px rgba(240,192,64,.9));
+  transition: none;
+}
+#dropZone {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  z-index: 13; pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .25s;
+  border: 3px solid transparent;
+}
+#dropZone.active {
+  opacity: 1;
+  border: 3px dashed var(--gold);
+  background: rgba(240,192,64,.12);
+  box-shadow: 0 0 30px rgba(240,192,64,.3), inset 0 0 20px rgba(240,192,64,.1);
+  animation: dropPulse .5s ease-in-out infinite alternate;
+  pointer-events: all;
+}
+#dropZone .dz-hint {
+  font-size: .72rem; color: var(--gold);
+  text-shadow: 0 0 10px rgba(240,192,64,.9);
+  font-weight: 700; text-align: center; line-height: 1.4;
+}
+@keyframes dropPulse {
+  from { box-shadow: 0 0 20px rgba(240,192,64,.2), inset 0 0 10px rgba(240,192,64,.05); transform: translate(-50%,-50%) scale(1); }
+  to   { box-shadow: 0 0 40px rgba(240,192,64,.5), inset 0 0 30px rgba(240,192,64,.15); transform: translate(-50%,-50%) scale(1.08); }
+}
+
+
+/* ── COMBO 擴充系統 ── */
+.rune-node {
+  position: absolute;
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+  cursor: pointer;
+  border: 2px solid var(--gold);
+  background: rgba(10,6,8,.85);
+  box-shadow: 0 0 16px rgba(240,192,64,.5);
+  animation: runeFloat 0.3s ease-out, runePulse 1.2s ease-in-out infinite alternate;
+  z-index: 20;
+  user-select: none;
+  transition: transform .1s;
+}
+.rune-node:hover { transform: scale(1.12); }
+.rune-node.hit-flash {
+  animation: runeHit .25s ease-out forwards;
+}
+.rune-node.type-rune  { border-color: #f0c040; box-shadow: 0 0 18px rgba(240,192,64,.6); }
+.rune-node.type-soul  { border-color: #b44fff; box-shadow: 0 0 18px rgba(180,79,255,.6); }
+.rune-node.type-enemy { border-color: #ff4040; box-shadow: 0 0 18px rgba(255,64,64,.6); }
+.rune-node.type-reset { border-color: #40dcff; box-shadow: 0 0 18px rgba(64,220,255,.6); }
+
+@keyframes runeFloat {
+  from { transform: scale(0) translateY(10px); opacity:0; }
+  to   { transform: scale(1) translateY(0);    opacity:1; }
+}
+@keyframes runePulse {
+  from { box-shadow: 0 0 10px rgba(240,192,64,.3); }
+  to   { box-shadow: 0 0 28px rgba(240,192,64,.8); }
+}
+@keyframes runeHit {
+  0%   { transform: scale(1.3); opacity:1; }
+  100% { transform: scale(2.5); opacity:0; }
+}
+
+/* 點擊波紋 */
+.click-ripple {
+  position: absolute; pointer-events: none;
+  width: 60px; height: 60px; border-radius: 50%;
+  border: 3px solid var(--gold);
+  transform: translate(-50%,-50%) scale(0);
+  animation: rippleOut .5s ease-out forwards;
+  z-index: 25;
+}
+@keyframes rippleOut {
+  to { transform: translate(-50%,-50%) scale(3); opacity:0; }
+}
+
+/* COMBO 爆發特效覆蓋 */
+.combo-burst {
+  position: fixed; inset: 0; pointer-events: none;
+  z-index: 9000;
+  display: flex; align-items: center; justify-content: center;
+  animation: burstFade .6s ease-out forwards;
+}
+.combo-burst-text {
+  font-size: 3.5rem; font-weight: 900; letter-spacing: 4px;
+  text-shadow: 0 0 40px currentColor;
+  animation: burstScale .6s ease-out forwards;
+}
+@keyframes burstFade { to { opacity: 0; } }
+@keyframes burstScale {
+  0%   { transform: scale(0.3); opacity: 0; }
+  40%  { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1.0); opacity: 0; }
+}
+
+/* 靈魂石爆閃 */
+.soul-drop-fx {
+  position: absolute; pointer-events: none;
+  font-size: 1.4rem;
+  animation: soulPop .8s ease-out forwards;
+  z-index: 30;
+}
+@keyframes soulPop {
+  0%   { transform: translateY(0) scale(1); opacity:1; }
+  100% { transform: translateY(-55px) scale(1.5); opacity:0; }
+}
+
+/* COMBO 狀態列改良 */
+#comboBar {
+  height: 6px; border-radius: 3px;
+  background: linear-gradient(90deg, #f0c040, #ff4040);
+  transition: width .2s ease-out;
+  box-shadow: 0 0 8px rgba(240,64,64,.5);
+}
+
+
+@keyframes ultFlash {
+  0%   { opacity:0; }
+  30%  { opacity:1; }
+  100% { opacity:0; }
+}
+
+/* ── 機會窗口 ── */
+#chanceWindow {
+  position: fixed;
+  z-index: 8000;
+  pointer-events: all;
+  animation: chancePopIn .35s cubic-bezier(.175,.885,.32,1.275) forwards;
+  cursor: pointer;
+  user-select: none;
+}
+@keyframes chancePopIn {
+  from { transform: scale(0) rotate(-8deg); opacity:0; }
+  to   { transform: scale(1) rotate(0deg);  opacity:1; }
+}
+@keyframes chanceShake {
+  0%,100% { transform: rotate(0deg) scale(1); }
+  15%  { transform: rotate(-4deg) scale(1.04); }
+  30%  { transform: rotate(4deg) scale(1.04); }
+  45%  { transform: rotate(-3deg) scale(1.02); }
+  60%  { transform: rotate(3deg) scale(1.02); }
+}
+.chance-inner {
+  background: linear-gradient(135deg, #1a0030, #3d006e, #1a0030);
+  border: 3px solid #f0c040;
+  border-radius: 18px;
+  padding: 18px 22px;
+  text-align: center;
+  box-shadow: 0 0 40px rgba(240,192,64,.7), 0 0 80px rgba(180,79,255,.4), inset 0 1px 0 rgba(255,255,255,.15);
+  animation: chanceShake 1.2s ease-in-out infinite;
+  min-width: 180px; max-width: 260px;
+  position: relative;
+}
+.chance-tag {
+  font-size: .58rem;
+  letter-spacing: 3px;
+  color: #f0c040;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+.chance-msg {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.3;
+  text-shadow: 0 0 20px rgba(240,192,64,.8);
+  margin-bottom: 10px;
+}
+.chance-cta {
+  font-size: .72rem;
+  background: linear-gradient(90deg, #f0c040, #ff9020);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+  letter-spacing: 1px;
+  animation: ctaPulse .7s ease-in-out infinite alternate;
+}
+@keyframes ctaPulse {
+  from { opacity: .7; }
+  to   { opacity: 1; filter: drop-shadow(0 0 6px #f0c040); }
+}
+.chance-timer-ring {
+  position: absolute;
+  bottom: -8px; left: 50%;
+  transform: translateX(-50%);
+  width: 80%; height: 4px;
+  background: rgba(255,255,255,.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.chance-timer-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f0c040, #ff4040);
+  border-radius: 2px;
+  transition: width linear;
+}
+/* 星星裝飾 */
+.chance-star {
+  position: absolute;
+  font-size: 1.2rem;
+  animation: starSpin 2s linear infinite;
+  pointer-events: none;
+}
+@keyframes starSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── 連段模式覆蓋層 ── */
+#comboOverlay {
+  position: fixed; inset: 0; z-index: 7500;
+  background: rgba(0,0,0,.82);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+  gap: 18px;
+  backdrop-filter: blur(3px);
+}
+#comboOverlay .co-title {
+  font-size: 1.6rem; font-weight: 900; color: var(--gold);
+  text-shadow: 0 0 30px rgba(240,192,64,.9);
+  letter-spacing: 3px;
+  animation: comboPulse .4s ease-in-out infinite alternate;
+}
+#comboOverlay .co-enemy {
+  font-size: 4.5rem;
+  animation: enemyBob .5s ease-in-out infinite alternate;
+}
+@keyframes enemyBob {
+  from { transform: translateY(0) scale(1); }
+  to   { transform: translateY(-8px) scale(1.05); }
+}
+#comboOverlay .co-hp {
+  font-size: .8rem; color: var(--text2);
+  background: rgba(255,255,255,.05);
+  padding: 4px 16px; border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.1);
+}
+#comboOverlay .co-key-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+#comboOverlay .co-hint {
+  font-size: .65rem; color: rgba(255,255,255,.5); letter-spacing: 2px;
+}
+#comboOverlay #co-activeKey {
+  font-size: 5rem; font-weight: 900;
+  width: 110px; height: 110px;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, rgba(74,32,64,.9), rgba(20,5,18,.98));
+  border: 4px solid var(--gold);
+  border-bottom: 8px solid #806820;
+  border-radius: 18px;
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(240,192,64,.9);
+  box-shadow: 0 0 40px rgba(240,192,64,.3), inset 0 2px 0 rgba(255,255,255,.15);
+  animation: keyPulse .6s ease-in-out infinite alternate;
+  transition: all .1s;
+}
+#comboOverlay .co-timer {
+  height: 6px; width: 160px;
+  background: rgba(255,255,255,.08); border-radius: 3px; overflow: hidden;
+}
+#comboOverlay .co-timer-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #40ff80, #f0c040, #ff4040);
+  border-radius: 3px; transition: width linear;
+}
+#comboOverlay .co-combo {
+  font-size: 2.5rem; font-weight: 900;
+  text-shadow: 0 0 20px currentColor;
+}
+#comboOverlay .co-exit {
+  font-size: .6rem; color: rgba(255,255,255,.25);
+  cursor: pointer; letter-spacing: 2px;
+  border: 1px solid rgba(255,255,255,.1);
+  padding: 4px 12px; border-radius: 20px;
+  transition: all .2s;
+}
+#comboOverlay .co-exit:hover { color: rgba(255,255,255,.6); border-color: rgba(255,255,255,.3); }
+
+
+/* ── 連段結算畫面 ── */
+#comboResult {
+  position: fixed; inset: 0; z-index: 8500;
+  background: rgba(0,0,0,.88);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 0;
+  backdrop-filter: blur(6px);
+  animation: fadeIn .35s ease;
+}
+@keyframes fadeIn { from{opacity:0;transform:scale(.95)} to{opacity:1;transform:scale(1)} }
+#comboResult .cr-card {
+  background: linear-gradient(160deg, #1a0a30, #0d0518);
+  border: 2px solid rgba(240,192,64,.5);
+  border-radius: 20px;
+  padding: 28px 32px;
+  min-width: 280px; max-width: 340px;
+  text-align: center;
+  box-shadow: 0 0 60px rgba(240,192,64,.2), 0 0 120px rgba(180,40,255,.15);
+  position: relative; overflow: hidden;
+}
+#comboResult .cr-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(240,192,64,.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+#comboResult .cr-grade {
+  font-size: 4.5rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 20px currentColor);
+  animation: gradePopIn .5s cubic-bezier(.175,.885,.32,1.5) .2s both;
+}
+@keyframes gradePopIn {
+  from { transform: scale(0) rotate(-20deg); opacity:0; }
+  to   { transform: scale(1) rotate(0deg); opacity:1; }
+}
+#comboResult .cr-verdict {
+  font-size: 1.1rem; font-weight: 900;
+  margin: 8px 0 4px;
+  animation: slideUp .4s ease .35s both;
+}
+#comboResult .cr-comment {
+  font-size: .72rem; color: rgba(255,255,255,.6);
+  line-height: 1.5; margin-bottom: 16px;
+  animation: slideUp .4s ease .45s both;
+}
+@keyframes slideUp {
+  from { transform: translateY(12px); opacity:0; }
+  to   { transform: translateY(0); opacity:1; }
+}
+#comboResult .cr-stats {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  animation: slideUp .4s ease .5s both;
+}
+#comboResult .cr-row {
+  display: flex; justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: .72rem;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+}
+#comboResult .cr-row:last-child { border-bottom: none; }
+#comboResult .cr-row .label { color: rgba(255,255,255,.45); }
+#comboResult .cr-row .val { color: var(--gold); font-weight: 700; }
+#comboResult .cr-row .val.good { color: #40ff80; }
+#comboResult .cr-row .val.bad  { color: var(--red2); }
+#comboResult .cr-close {
+  background: linear-gradient(90deg, rgba(240,192,64,.2), rgba(180,40,255,.2));
+  border: 1px solid rgba(240,192,64,.4);
+  color: var(--gold); font-weight: 700;
+  padding: 10px 32px; border-radius: 30px;
+  cursor: pointer; font-size: .8rem;
+  letter-spacing: 2px;
+  transition: all .2s;
+  animation: slideUp .4s ease .65s both;
+}
+#comboResult .cr-close:hover { background: linear-gradient(90deg, rgba(240,192,64,.35), rgba(180,40,255,.35)); transform: scale(1.04); }
+/* 下一鍵預覽 */
+#co-nextKeyWrap {
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  margin-top: 8px;
+}
+.co-next-label { font-size:.55rem; color:rgba(255,255,255,.3); letter-spacing:2px; }
+#co-nextKey {
+  width: 52px; height: 52px;
+  display:flex; align-items:center; justify-content:center;
+  font-size: 1.8rem; font-weight:900;
+  background: rgba(255,255,255,.04);
+  border: 2px solid rgba(255,255,255,.15);
+  border-bottom: 4px solid rgba(255,255,255,.08);
+  border-radius: 10px;
+  color: rgba(255,255,255,.35);
+  letter-spacing: 0;
+}
+
+</style>
+</head>
+<body>
+<div class="hdr"><h1>⚔ 勇者傳說 ⚔</h1><div class="sub">Hero Legend — Idle RPG</div></div>
+<div class="rbar">
+  <div class="res"><span>💰</span><span class="lbl">金幣</span><span class="val" id="rg">0</span></div>
+  <div class="res"><span>💎</span><span class="lbl">寶石</span><span class="val" id="rge">0</span></div>
+  <div class="res"><span>⚗️</span><span class="lbl">材料</span><span class="val" id="rm">0</span></div>
+  <div class="res"><span>✨</span><span class="lbl">靈魂石</span><span class="val" id="rs">0</span></div>
+  <div class="res"><span>🏆</span><span class="lbl">最高層</span><span class="val" id="rb">F1</span></div>
+</div>
+<div class="body">
+<div class="panel left">
+  <div class="ptitle">英雄狀態</div>
+  <div class="av-box">
+    <span class="av-sp" id="hsp">🧙</span>
+    <div class="av-name">阿爾卡迪斯</div>
+    <div class="av-cls" id="hcls">▸ 見習法師 ◂</div>
+    <div class="av-lv">Lv.<span id="hlv">1</span> | <span id="htit">流浪者</span></div>
+  </div>
+  <div class="bw bhp"><div class="bl"><span>❤️ HP</span><span><span id="hpc">100</span>/<span id="hpm">100</span></span></div><div class="bb"><div class="bf" id="hpb" style="width:100%"></div></div></div>
+  <div class="bw bmp"><div class="bl"><span>💧 MP</span><span><span id="mpc">50</span>/<span id="mpm">50</span></span></div><div class="bb"><div class="bf" id="mpb" style="width:100%"></div></div></div>
+  <div class="bw bexp"><div class="bl"><span>⭐ EXP</span><span><span id="exc">0</span>/<span id="exn">100</span></span></div><div class="bb"><div class="bf" id="exb" style="width:0%"></div></div></div>
+  <div class="ptitle" style="margin-top:10px">屬性</div>
+  <div class="sr"><span class="sn">⚔ 攻擊</span><span class="sv" id="satk">15</span></div>
+  <div class="sr"><span class="sn">🛡 防禦</span><span class="sv" id="sdef">5</span></div>
+  <div class="sr"><span class="sn">✨ 魔法</span><span class="sv" id="smag">20</span></div>
+  <div class="sr"><span class="sn">💨 速度</span><span class="sv" id="sspd">10</span></div>
+  <div class="sr"><span class="sn">🍀 暴擊率</span><span class="sv" id="scr">8%</span></div>
+  <div class="sr"><span class="sn">💢 暴擊傷害</span><span class="sv" id="scd">150%</span></div>
+  <div class="ptitle" style="margin-top:10px">狀態效果</div>
+  <div id="stfx"><span style="font-size:.80.6rem;color:var(--text2)">無效果</span></div>
+  <div class="ptitle" style="margin-top:10px">技能</div>
+  <div class="skgrid" id="skgrid"></div>
+  <div class="ptitle" style="margin-top:8px">統計</div>
+  <div class="sr"><span class="sn">擊殺</span><span class="sv" id="stkl">0</span></div>
+  <div class="sr"><span class="sn">死亡</span><span class="sv" id="stdt">0</span></div>
+  <div class="sr"><span class="sn">最高傷害</span><span class="sv" id="stmx">0</span></div>
+  <div class="sr"><span class="sn">遊戲時間</span><span class="sv" id="sttm">0:00</span></div>
+</div>
+<div class="field">
+  <div class="di"><div><div class="dnm" id="dnnm">🏚 廢棄礦坑</div><div class="dsub">地城探索中</div></div><div id="dndg" class="dang d1">★ 普通</div></div>
+  <div class="fp"><div class="fpi"><div class="fplb">層數</div><div class="fpn" id="flnum">F1</div></div><div class="fpbb"><div class="fpbf" id="flbar" style="width:0%"></div></div><div class="fptx" id="flkl">0/5 擊殺</div></div>
+  <div class="ba" id="baarea"><div id="dropZone"><div class="dz-hint">🔥<br>放開</div></div><div id="runeLayer" style="position:absolute;inset:0;pointer-events:none;z-index:19"></div>
+    <div class="babg" id="babg">⛏</div>
+    <div class="cmbs">
+      <div class="cmb"><span class="csp ha" id="hspbig">🧙</span><div class="cnm">阿爾卡迪斯</div><div class="chpb"><div class="chpf" id="hhpb" style="width:100%"></div></div><div class="cht" id="hhpt">100/100</div></div>
+      <div class="vs">VS</div>
+      <div class="cmb"><span class="csp ea" id="esp">🐀</span><div class="cnm" id="enm">地窖老鼠</div><div class="chpb"><div class="chpf ehpf" id="ehpb" style="width:100%"></div></div><div class="cht" id="ehpt">30/30</div></div>
+    </div>
+    <div class="blog" id="blog">
+      <div class="ll ls">⚔ 冒險開始！踏入黑暗地城...</div>
+      <div class="ll ls">📜 技能可大幅提升傷害！每10層有BOSS！</div>
+    </div>
+  <div id="typingPanel" style="
+      display:none;
+      position:absolute;
+      inset:0;
+      z-index:15;
+      background:rgba(6,2,10,.88);
+      backdrop-filter:blur(2px);
+      border-radius:8px;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding:14px;
+    ">
+    <!-- 頂部標題 -->
+    <div style="text-align:center">
+      <div style="font-size:.7rem;letter-spacing:3px;color:var(--text2);text-transform:uppercase">🎮 打字攻擊模式</div>
+      <div style="font-size:.62rem;color:rgba(240,192,64,.5);margin-top:2px">[空白鍵] 關閉 &nbsp;|&nbsp; 按下提示按鍵發動攻擊</div>
+    </div>
+    <!-- 核心區：COMBO + 按鍵 + NEXT -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:20px">
+      <!-- COMBO 計數 -->
+      <div style="text-align:center;min-width:55px">
+        <div id="comboNum" style="font-family:'Noto Sans TC',sans-serif;font-size:2.4rem;font-weight:900;color:var(--gold);text-shadow:0 0 20px rgba(240,192,64,.6);line-height:1">x0</div>
+        <div id="comboLabel" style="font-size:.6rem;letter-spacing:2px;color:var(--gold);margin-top:3px;font-weight:700"></div>
+        <div id="comboMult" style="font-size:.62rem;color:var(--text2);margin-top:1px"></div>
+      </div>
+      <!-- 當前要按的鍵 -->
+      <div style="text-align:center">
+        <div style="font-size:.65rem;color:var(--text2);margin-bottom:6px;letter-spacing:3px">▼ 按下此鍵 ▼</div>
+        <div id="activeKey" style="
+          font-family:'Noto Sans TC',sans-serif;
+          font-size:3rem;
+          font-weight:900;
+          width:88px;height:88px;
+          display:flex;align-items:center;justify-content:center;
+          margin:0 auto;
+          background:linear-gradient(135deg,rgba(74,32,64,.7),rgba(30,10,25,.95));
+          border:3px solid var(--gold);
+          border-bottom:7px solid #806820;
+          border-radius:12px;
+          color:var(--gold);
+          text-shadow:0 0 24px rgba(240,192,64,.9);
+          box-shadow:0 0 28px rgba(240,192,64,.25),inset 0 1px 0 rgba(255,255,255,.12);
+          animation:keyPulse 0.6s ease-in-out infinite alternate;
+          transition:all .15s;
+          user-select:none;
+        ">?</div>
+        <!-- 計時條 -->
+        <div style="margin-top:8px;height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;width:88px;margin-left:auto;margin-right:auto">
+          <div id="keyTimer" style="height:100%;background:var(--gold);border-radius:3px;width:100%;transition:width linear"></div>
+        </div>
+      </div>
+      <!-- 下一個鍵預覽 -->
+      <div style="text-align:center;opacity:.45">
+        <div style="font-size:.58rem;color:var(--text2);margin-bottom:6px;letter-spacing:2px">NEXT</div>
+        <div id="nextKey" style="
+          font-family:'Noto Sans TC',sans-serif;
+          font-size:1.8rem;font-weight:900;
+          width:54px;height:54px;
+          display:flex;align-items:center;justify-content:center;
+          margin:0 auto;
+          background:rgba(42,15,36,.5);
+          border:2px solid rgba(74,32,64,.5);
+          border-radius:8px;
+          color:rgba(240,192,64,.5);
+        ">?</div>
+      </div>
+    </div>
+    <!-- MISS 提示 -->
+    <div id="missHint" style="text-align:center;font-size:.78rem;color:var(--red2);min-height:20px;opacity:0;transition:opacity .2s;font-weight:700"></div>
+
+    <!-- COMBO 獎勵清單（可折疊）-->
+    <div style="width:100%;max-width:320px">
+      <button id="comboListToggle" onclick="toggleComboList()" style="width:100%;background:rgba(240,192,64,.08);border:1px solid rgba(240,192,64,.3);color:rgba(240,192,64,.7);border-radius:6px;padding:4px 8px;cursor:pointer;font-size:.62rem;letter-spacing:1px">
+        ▶ COMBO 里程碑獎勵
+      </button>
+      <div id="comboListPanel" style="display:none;margin-top:4px;background:rgba(0,0,0,.5);border:1px solid rgba(240,192,64,.2);border-radius:6px;padding:6px;max-height:160px;overflow-y:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:.6rem">
+          <tr style="color:rgba(255,255,255,.4)">
+            <th style="text-align:left;padding:2px 4px">COMBO</th>
+            <th style="text-align:left;padding:2px 4px">稱號</th>
+            <th style="text-align:left;padding:2px 4px">獎勵</th>
+          </tr>
+          <tr style="border-top:1px solid rgba(255,255,255,.06)"><td style="padding:2px 4px;color:#f0c040">x5</td><td style="padding:2px 4px;color:#f0c040">🔥 ON FIRE</td><td style="padding:2px 4px;color:var(--text2)">+3🪨材料</td></tr>
+          <tr style="border-top:1px solid rgba(255,255,255,.06)"><td style="padding:2px 4px;color:#ff9020">x10</td><td style="padding:2px 4px;color:#ff9020">⚡ COMBO x10</td><td style="padding:2px 4px;color:var(--text2)">+8🪨 + 火焰FX</td></tr>
+          <tr style="border-top:1px solid rgba(255,255,255,.06)"><td style="padding:2px 4px;color:#ff4040">x20</td><td style="padding:2px 4px;color:#ff4040">💥 RAMPAGE</td><td style="padding:2px 4px;color:var(--text2)">+15🪨 +1💜</td></tr>
+          <tr style="border-top:1px solid rgba(255,255,255,.06)"><td style="padding:2px 4px;color:#a040ff">x30</td><td style="padding:2px 4px;color:#a040ff">🌟 GODSLAYER</td><td style="padding:2px 4px;color:var(--text2)">+2💜 技能❄️重置</td></tr>
+          <tr style="border-top:1px solid rgba(255,255,255,.06)"><td style="padding:2px 4px;color:#ff40ff">x50</td><td style="padding:2px 4px;color:#ff40ff">👑 LEGENDARY</td><td style="padding:2px 4px;color:var(--text2)">+5💜 +30🪨</td></tr>
+          <tr style="border-top:1px solid rgba(255,255,255,.06)"><td style="padding:2px 4px;color:#40ffff">x75</td><td style="padding:2px 4px;color:#40ffff">💎 MYTHIC</td><td style="padding:2px 4px;color:var(--text2)">+8💜 +50🪨</td></tr>
+          <tr style="border-top:1px solid rgba(255,255,255,.06)"><td style="padding:2px 4px;color:#fff">x100</td><td style="padding:2px 4px;color:#fff">✨ TRANSCENDENT</td><td style="padding:2px 4px;color:var(--text2)">+15💜 +100🪨 +3💎</td></tr>
+          <tr style="border-top:2px solid rgba(255,255,255,.12)">
+            <td colspan="3" style="padding:4px 4px 2px;color:rgba(255,255,255,.4);font-size:.55rem">🎲 持續獎勵 (每次按鍵)</td>
+          </tr>
+          <tr><td colspan="3" style="padding:2px 4px;color:var(--text2)">COMBO≥10：8%機率 +1~材料</td></tr>
+          <tr><td colspan="3" style="padding:2px 4px;color:var(--text2)">COMBO≥15：隨機掉落💜靈魂石（最高25%）</td></tr>
+          <tr style="border-top:2px solid rgba(255,255,255,.12)">
+            <td colspan="3" style="padding:4px 4px 2px;color:rgba(255,255,255,.4);font-size:.55rem">🎹 按鍵方式</td>
+          </tr>
+          <tr><td colspan="3" style="padding:2px 4px;color:var(--text2)">鍵盤 A～Z 隨機，越連越快，最快0.7秒</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  </div>
+  <div id="bosswarn"><div class="bosstxt">⚠ BOSS 關卡！⚠</div></div>
+  <div class="bctrl">
+    <div class="spds"><button class="spd act" id="sp1" onclick="setSpd(1)">1×</button><button class="spd" id="sp2" onclick="setSpd(2)">2×</button><button class="spd" id="sp4" onclick="setSpd(4)">4×</button></div>
+    <button class="cbtn act" id="autobtn" onclick="toggleAuto()">⚡ 自動戰鬥</button>
+    <button class="cbtn" onclick="retreat()">🏠 撤退</button>
+  </div>
+  <div class="bctrl">
+    <button class="cbtn" onclick="usePot()">🧪 藥水 (<span id="potn">3</span>)</button>
+    <button class="cbtn" id="bonbtn" onclick="useBonus()">⭐ 戰鬥加持</button>
+    <button class="cbtn" id="savebtn" onclick="manualSave()" style="background:rgba(39,174,96,.2);border-color:#27ae60;color:#2ecc71">💾 手動存檔</button>
+    <button class="cbtn" onclick="deleteSave()" style="background:rgba(192,57,43,.15);border-color:#c0392b;color:#e74c3c" title="重置存檔">🗑 重置</button>
+  </div>
+  <div class="bctrl" style="margin-top:4px">
+    <button class="cbtn act" id="musicBtn" onclick="toggleMusic()">🎵 音樂 ON</button>
+    <button class="cbtn act" id="sfxBtn" onclick="toggleSFX()">🔊 音效 ON</button>
+    <button class="cbtn" id="manualBtn" onclick="enterComboMode()" title="或按空白鍵切換">⚡ 連段模式 <span style="font-size:.65rem;opacity:.6">[空白]</span></button>
+  </div>
+  <!-- COMBO UI -->
+
+  <!-- 音樂版權署名 + 贊助/聯絡 -->
+  <div style="margin-top:6px;padding:6px 10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+    <div style="font-size:.58rem;color:rgba(255,255,255,.35);line-height:1.5">
+      🎵 Music by <b style="color:rgba(255,255,255,.55)">Eric Matyas</b> &middot; soundimage.org
+    </div>
+    <div style="display:flex;gap:5px">
+      <a href="https://soundimage.org/donate/" target="_blank" rel="noopener" title="贊助作者" style="display:flex;align-items:center;gap:3px;padding:3px 8px;border-radius:12px;background:rgba(255,180,0,.12);border:1px solid rgba(255,180,0,.35);color:rgba(255,180,0,.85);font-size:.62rem;text-decoration:none;transition:all .2s" onmouseover="this.style.background='rgba(255,180,0,.25)'" onmouseout="this.style.background='rgba(255,180,0,.12)'">&#9749; 贊助</a>
+      <a href="/cdn-cgi/l/email-protection#781d15190c01190b38191714561b1715" title="聯絡作者" style="display:flex;align-items:center;gap:3px;padding:3px 8px;border-radius:12px;background:rgba(100,180,255,.1);border:1px solid rgba(100,180,255,.3);color:rgba(100,180,255,.8);font-size:.62rem;text-decoration:none;transition:all .2s" onmouseover="this.style.background='rgba(100,180,255,.22)'" onmouseout="this.style.background='rgba(100,180,255,.1)'">&#9993; 聯絡</a>
+      <a href="https://soundimage.org" target="_blank" rel="noopener" title="官方網站" style="display:flex;align-items:center;gap:3px;padding:3px 8px;border-radius:12px;background:rgba(150,255,150,.08);border:1px solid rgba(150,255,150,.25);color:rgba(150,255,150,.7);font-size:.62rem;text-decoration:none;transition:all .2s" onmouseover="this.style.background='rgba(150,255,150,.18)'" onmouseout="this.style.background='rgba(150,255,150,.08)'">&#127760; 官網</a>
+    </div>
+  </div>
+
+</div>
+<div class="panel right">
+  <div class="tabs" style="flex-wrap:wrap">
+    <div class="tab act" id="tup" onclick="sw('up')">升級</div>
+    <div class="tab" id="teq" onclick="sw('eq')">裝備</div>
+    <div class="tab" id="tta" onclick="sw('ta')">天賦</div>
+    <div class="tab" id="tdn" onclick="sw('dn')">地城</div>
+    <div class="tab" id="tcl" onclick="sw('cl')" style="color:#f0c040">職業</div>
+    <div class="tab" id="tmt" onclick="sw('mt')" style="color:#40ffaa">材料</div>
+  </div>
+  <div id="pup"></div>
+  <div id="peq" style="display:none"></div>
+  <div id="pta" style="display:none"></div>
+  <div id="pdn" style="display:none"></div>
+  <div id="pcl" style="display:none"></div>
+  <div id="pmt" style="display:none"></div>
+</div>
+</div>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+const G={gold:0,gem:0,mat:0,soul:0,pots:3,bonCD:0,hero:{lv:1,exp:0,hp:100,maxHp:100,mp:50,maxMp:50,atk:15,def:5,mag:20,spd:10,crit:8,cdmg:150},skillCDs:{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0},enemy:null,auto:true,speed:1,atkTimer:0,enmTimer:0,floor:1,dungId:0,flKills:0,flNeed:5,isBoss:false,upgrades:[0,0,0,0,0,0,0,0],talents:[0,0,0,0,0,0],talentPts:0,equips:[null,null,null,null,null,null],inventory:[],kills:0,deaths:0,maxDmg:0,startTime:Date.now(),bestFloor:1,statusFx:[],heroClass:'mage',dropLv:0,eqFilter:{rar:'all',slot:'all',upgrade:false,hideEquipped:false},jobLv:1,jobExp:0,learnedSkills:[],enhanceLimit:5,lastLogin:0,loginStreak:0};
+
+// ==================== 存檔系統 ====================
+const SAVE_KEY = 'heroLegend_save_v1';
+
+function saveGame() {
+  try {
+    const saveData = {
+      hero: {
+        lv:    G.hero.lv,
+        hp:    G.hero.hp,
+        mp:    G.hero.mp,
+        exp:   G.hero.exp,
+        atk:   G.hero.atk,
+        def:   G.hero.def,
+        mag:   G.hero.mag,
+        spd:   G.hero.spd,
+        crit:  G.hero.crit,
+        cdmg:  G.hero.cdmg,
+        maxHp: G.hero.maxHp,
+        maxMp: G.hero.maxMp,
+        shield: G.hero.shield || 0,
+      },
+      gold: G.gold, gem: G.gem, mat: G.mat, soul: G.soul,
+      pots: G.pots, kills: G.kills, deaths: G.deaths,
+      maxDmg: G.maxDmg, bestFloor: G.bestFloor,
+      floor: G.floor, flKills: G.flKills, flNeed: G.flNeed,
+      dungId: G.dungId, isBoss: G.isBoss,
+      upgrades:  G.upgrades,
+      talents:   G.talents,
+      talentPts: G.talentPts,
+      heroClass: G.heroClass || 'mage',
+      dropLv: G.dropLv || 0,
+      eqFilter: G.eqFilter,
+      jobLv: G.jobLv||1,
+      jobExp: G.jobExp||0,
+      learnedSkills: G.learnedSkills||[],
+      enhanceLimit: G.enhanceLimit||5,
+      lastLogin: G.lastLogin||0,
+      loginStreak: G.loginStreak||0,
+      skillCDs:  G.skillCDs,
+      equips:    G.equips,
+      inventory: G.inventory,
+      savedAt: Date.now(),
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+    return true;
+  } catch(e) { console.error('存檔失敗', e); return false; }
+}
+
+function loadGame() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+
+    // 英雄基本資料
+    const heroFields = ['lv','hp','mp','exp','atk','def','mag','spd','crit','cdmg','maxHp','maxMp','shield'];
+    heroFields.forEach(k => { if (d.hero?.[k] !== undefined) G.hero[k] = d.hero[k]; });
+
+    // 資源
+    G.gold  = d.gold  ?? 0;
+    G.gem   = d.gem   ?? 0;
+    G.mat   = d.mat   ?? 0;
+    G.soul  = d.soul  ?? 0;
+    G.pots  = d.pots  ?? 3;
+
+    // 統計
+    G.kills     = d.kills     ?? 0;
+    G.deaths    = d.deaths    ?? 0;
+    G.maxDmg    = d.maxDmg    ?? 0;
+    G.bestFloor = d.bestFloor ?? 1;
+
+    // 地城進度
+    G.floor   = d.floor   ?? 1;
+    G.flKills = d.flKills ?? 0;
+    G.flNeed  = d.flNeed  ?? 5;
+    G.dungId  = d.dungId  ?? 0;
+    G.isBoss  = d.isBoss  ?? false;
+
+    // 升級（確保8格）
+    const savedUps = d.upgrades || [];
+    G.upgrades = Array.from({length: 8}, (_, i) => savedUps[i] ?? 0);
+
+    // 天賦（確保6格）
+    const savedTa = d.talents || [];
+    G.talents = Array.from({length: 6}, (_, i) => savedTa[i] ?? 0);
+    G.talentPts = d.talentPts ?? 0;
+    G.heroClass = d.heroClass || 'mage';
+    G.dropLv = d.dropLv || 0;
+    G.eqFilter = d.eqFilter || {rar:'all',slot:'all',upgrade:false,hideEquipped:false};
+    G.jobLv = d.jobLv || 1;
+    G.jobExp = d.jobExp || 0;
+    G.learnedSkills = d.learnedSkills || [];
+    G.enhanceLimit = d.enhanceLimit || 5;
+    G.lastLogin = d.lastLogin || 0;
+    G.loginStreak = d.loginStreak || 0;
+
+    // 技能冷卻（確保8格）
+    const savedCDs = d.skillCDs || {};
+    G.skillCDs = {0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0};
+
+    // 裝備（確保6格）
+    const savedEq = d.equips || [];
+    G.equips = Array.from({length: 6}, (_, i) => savedEq[i] ?? null);
+
+    // 背包
+    G.inventory = d.inventory || [];
+
+    // 離線收益
+    if (d.savedAt) {
+      const offSec = Math.min((Date.now() - d.savedAt) / 1000, 7200);
+      if (offSec > 30) {
+        const offGold = Math.floor(offSec * (2 + G.floor * 0.8));
+        G.gold += offGold;
+        setTimeout(() => {
+          notify(`🌙 離線 ${Math.floor(offSec/60)} 分鐘，獲得 ${fmt(offGold)} 💰`);
+          addLog(`🌙 離線收益：+${fmt(offGold)} 金幣`, 'lr');
+        }, 800);
+      }
+    }
+    return true;
+  } catch(e) { console.error('讀檔失敗', e); return false; }
+}
+
+function deleteSave() {
+  if (!confirm('確定要刪除存檔並重新開始嗎？此操作無法復原！')) return;
+  localStorage.removeItem(SAVE_KEY);
+  location.reload();
+}
+
+function manualSave() {
+  if (saveGame()) {
+    notify('💾 存檔成功！');
+    const btn = document.getElementById('savebtn');
+    if (btn) { btn.textContent = '✅ 已儲存'; setTimeout(() => btn.textContent = '💾 手動存檔', 1500); }
+  }
+}
+
+function exportSave() {
+  saveGame(); // 先存一次確保最新
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) { notify('❌ 沒有存檔可以匯出！'); return; }
+    const data = JSON.parse(raw);
+    // 加入版本和匯出時間
+    data.exportedAt = new Date().toLocaleString('zh-TW');
+    data.version = '1.0';
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const lv = G.hero.lv;
+    const floor = G.bestFloor;
+    a.href = url;
+    a.download = `勇者傳說_Lv${lv}_F${floor}_${new Date().toLocaleDateString('zh-TW').replace(/\//g,'-')}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    notify('📤 存檔已下載！帶著這個檔案就能在任何地方繼續！');
+    addLog('📤 存檔匯出成功！', 'lr');
+  } catch(e) { notify('❌ 匯出失敗：' + e.message); }
+}
+
+function importSave(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (!file.name.endsWith('.json')) { notify('❌ 請選擇 .json 存檔檔案！'); return; }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      // 基本驗證
+      if (!data.hero || data.gold === undefined) {
+        notify('❌ 這不是有效的存檔檔案！');
+        return;
+      }
+      if (!confirm(`確定要載入存檔？
+英雄 Lv.${data.hero?.lv || '?'} | 最高層 F${data.bestFloor || '?'} | 匯出時間：${data.exportedAt || '未知'}
+
+目前的遊戲進度將被覆蓋！`)) return;
+      // 寫入 localStorage 再重載
+      localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+      notify('📥 存檔載入成功！正在重新載入...');
+      setTimeout(() => location.reload(), 800);
+    } catch(err) {
+      notify('❌ 存檔檔案損壞或格式錯誤！');
+    }
+  };
+  reader.readAsText(file);
+  // 重置 input 讓同一個檔案可以重複選
+  event.target.value = '';
+}
+
+// 自動存檔每30秒
+setInterval(() => { saveGame(); }, 10000); // 每10秒自動存檔
+// 關閉前存檔
+window.addEventListener('beforeunload', saveGame);
+
+const UPS=[{n:'鍛鍊體魄',ic:'💪',ds:'增加最大HP',ef:'+30 HP',st:'maxHp',v:30,b:50,sc:1.6,mx:20},{n:'劍術精通',ic:'⚔️',ds:'增加攻擊力',ef:'+5 ATK',st:'atk',v:5,b:60,sc:1.7,mx:20},{n:'魔法研究',ic:'📚',ds:'增加魔法傷害',ef:'+6 MAG',st:'mag',v:6,b:70,sc:1.7,mx:20},{n:'鐵甲訓練',ic:'🛡️',ds:'增加防禦力',ef:'+3 DEF',st:'def',v:3,b:55,sc:1.6,mx:20},{n:'疾風步法',ic:'💨',ds:'提升速度',ef:'+2 SPD',st:'spd',v:2,b:80,sc:1.8,mx:15},{n:'暴擊修煉',ic:'💥',ds:'提高暴擊率',ef:'+2% CRIT',st:'crit',v:2,b:100,sc:1.9,mx:10},{n:'魔力容量',ic:'🔮',ds:'增加最大MP',ef:'+10 MP',st:'maxMp',v:10,b:65,sc:1.6,mx:15},{n:'靈魂結晶',ic:'✨',ds:'增加暴擊傷害',ef:'+20% CDMG',st:'cdmg',v:20,b:120,sc:2.0,mx:10}];
+// 三系技能組
+const CLASS_SKL = {
+  mage: [
+    {n:'火球術',ic:'🔥',mp:12,cd:3000,type:'mag',mult:2.0,fx:'fire',desc:'灼燒敵人，魔法傷害×2'},
+    {n:'冰霜箭',ic:'❄️',mp:8,cd:4000,type:'slow',mult:1.4,fx:'ice',desc:'凍結敵人，降低攻速60%'},
+    {n:'雷擊',ic:'⚡',mp:15,cd:5500,type:'mag',mult:3.0,fx:'thunder',desc:'閃電重擊，魔法傷害×3'},
+    {n:'治癒術',ic:'💚',mp:18,cd:7000,type:'heal',heal:.3,fx:'heal',desc:'恢復30%HP+再生'},
+    {n:'毒霧',ic:'☠️',mp:14,cd:6000,type:'dot',mult:0.8,dotTick:5,dotDur:4000,fx:'poison',desc:'持續毒傷4秒'},
+    {n:'烈焰衝擊',ic:'💥',mp:25,cd:9000,type:'mag',mult:4.5,fx:'blast',desc:'爆炸，魔法傷害×4.5'},
+    {n:'魔法護盾',ic:'🔮',mp:20,cd:12000,type:'shield',shieldPct:.4,fx:'shield',desc:'護盾吸收40%HP傷害'},
+    {n:'時間減速',ic:'⏳',mp:22,cd:14000,type:'slow',mult:0,slowAll:true,fx:'time',desc:'敵人攻速-70%，4秒'},
+  ],
+  warrior: [
+    {n:'猛力斬',ic:'⚔️',mp:10,cd:2500,type:'phys',mult:2.2,fx:'fire',desc:'猛力一斬，物理傷害×2.2'},
+    {n:'盾牆',ic:'🛡️',mp:12,cd:5000,type:'shield',shieldPct:.6,fx:'shield',desc:'護盾吸收60%HP傷害'},
+    {n:'戰吼',ic:'📣',mp:15,cd:6000,type:'buff',buffStat:'atk',buffPct:.5,buffDur:5000,fx:'blast',desc:'戰吼，攻擊力+50%，5秒'},
+    {n:'旋風斬',ic:'🌪️',mp:18,cd:7000,type:'phys',mult:3.5,fx:'thunder',desc:'旋轉斬擊，物理傷害×3.5'},
+    {n:'挑釁',ic:'👊',mp:8,cd:4000,type:'taunt',mult:0,fx:'fire',desc:'挑釁敵人，降低其攻擊力30%'},
+    {n:'聖光斬',ic:'✨',mp:22,cd:9000,type:'phys',mult:5.0,fx:'heal',desc:'神聖力量，物理傷害×5'},
+    {n:'不屈意志',ic:'💪',mp:20,cd:12000,type:'heal',heal:.5,fx:'heal',desc:'回復50%HP，無敵0.5秒'},
+    {n:'末日衝鋒',ic:'🔥',mp:25,cd:14000,type:'phys',mult:7.0,fx:'blast',desc:'全力衝鋒，物理傷害×7'},
+  ],
+  rogue: [
+    {n:'背刺',ic:'🗡️',mp:10,cd:2500,type:'phys',mult:2.5,fx:'poison',desc:'背刺，物理傷害×2.5'},
+    {n:'毒刃',ic:'☠️',mp:12,cd:4000,type:'dot',mult:0.6,dotTick:8,dotDur:5000,fx:'poison',desc:'毒刃持續5秒毒傷'},
+    {n:'疾步',ic:'💨',mp:8,cd:3500,type:'buff',buffStat:'spd',buffPct:.8,buffDur:4000,fx:'ice',desc:'速度+80%，4秒'},
+    {n:'連擊',ic:'⚡',mp:15,cd:5500,type:'phys',mult:1.2,hits:4,fx:'thunder',desc:'連續4次攻擊，各×1.2'},
+    {n:'暗影步',ic:'🌑',mp:18,cd:7000,type:'slow',mult:1.8,fx:'time',desc:'瞬移背後，傷害×1.8+減速'},
+    {n:'致命一擊',ic:'💥',mp:22,cd:9000,type:'phys',mult:6.0,fx:'blast',desc:'暴擊率+100%，物理×6'},
+    {n:'煙霧彈',ic:'💣',mp:14,cd:8000,type:'taunt',mult:0,fx:'poison',desc:'煙霧遮蔽，敵人攻擊-50%，4秒'},
+    {n:'死神鐮刀',ic:'💀',mp:30,cd:15000,type:'phys',mult:9.0,fx:'thunder',desc:'終極一擊，物理傷害×9'},
+  ],
+};
+// 當前技能組（依職業動態切換）
+let SKL = CLASS_SKL[G.heroClass || 'mage'];
+// 確保 G 初始化後同步
+G.heroClass = G.heroClass || 'mage';
+// ── 職業系統 ──
+const CLASSES = {
+  mage: {
+    n:'法師系', ic:'🔮', color:'#b44fff',
+    base:{atk:8,def:3,mag:22,spd:8,crit:6,maxHp:80,maxMp:60},
+    lvScale:{atk:1,mag:4,hp:8,mp:4},
+    jobs:[
+      {lv:1,  n:'見習法師', ic:'🧙',  req:0},
+      {lv:10, n:'法師',     ic:'🔮',  req:0},
+      {lv:25, n:'大法師',   ic:'✨',  req:500},  // 消耗材料
+      {lv:50, n:'神聖法師', ic:'🌟',  req:1500},
+    ],
+    ta:[
+      {n:'魔力強化',ic:'🔮',ds:'魔攻+8%/級',mx:5,tp:'mag_pct'},
+      {n:'冷卻縮減',ic:'⏰',ds:'冷卻-10%/級',mx:3,tp:'cd'},
+      {n:'戰鬥直覺',ic:'👁️',ds:'+3%暴擊/級',mx:4,tp:'cr'},
+      {n:'鬼神附體',ic:'👹',ds:'+15%暴傷/級',mx:3,tp:'cm'},
+      {n:'再生之力',ic:'🌱',ds:'戰鬥中回血',mx:3,tp:'rg'},
+      {n:'金幣增益',ic:'💰',ds:'+20%金幣/級',mx:5,tp:'go'},
+    ],
+  },
+  warrior: {
+    n:'戰士系', ic:'⚔️', color:'#ff8040',
+    base:{atk:22,def:12,mag:5,spd:7,crit:5,maxHp:130,maxMp:30},
+    lvScale:{atk:4,def:2,hp:18,mp:1},
+    jobs:[
+      {lv:1,  n:'新兵',   ic:'🗡️',  req:0},
+      {lv:10, n:'戰士',   ic:'⚔️',  req:0},
+      {lv:25, n:'聖騎士', ic:'🛡️',  req:500},
+      {lv:50, n:'神戰士', ic:'⚡',  req:1500},
+    ],
+    ta:[
+      {n:'血肉之軀',ic:'❤️',ds:'每級+8%HP',mx:5,tp:'hp'},
+      {n:'鐵壁防禦',ic:'🛡️',ds:'防禦+10%/級',mx:4,tp:'def_pct'},
+      {n:'戰鬥直覺',ic:'👁️',ds:'+3%暴擊/級',mx:4,tp:'cr'},
+      {n:'鬼神附體',ic:'👹',ds:'+15%暴傷/級',mx:3,tp:'cm'},
+      {n:'再生之力',ic:'🌱',ds:'戰鬥中回血',mx:3,tp:'rg'},
+      {n:'金幣增益',ic:'💰',ds:'+20%金幣/級',mx:5,tp:'go'},
+    ],
+  },
+  rogue: {
+    n:'敏捷系', ic:'🗡️', color:'#40ffaa',
+    base:{atk:18,def:4,mag:8,spd:18,crit:15,maxHp:90,maxMp:40},
+    lvScale:{atk:3,spd:1,crit:0.5,hp:10,mp:2},
+    jobs:[
+      {lv:1,  n:'獵手',   ic:'🏹',  req:0},
+      {lv:10, n:'刺客',   ic:'🗡️',  req:0},
+      {lv:25, n:'影舞者', ic:'🌑',  req:500},
+      {lv:50, n:'死神',   ic:'💀',  req:1500},
+    ],
+    ta:[
+      {n:'血肉之軀',ic:'❤️',ds:'每級+5%HP',mx:5,tp:'hp'},
+      {n:'疾風身法',ic:'💨',ds:'速度+15%/級',mx:4,tp:'spd_pct'},
+      {n:'暗殺訓練',ic:'🗡️',ds:'+5%暴擊/級',mx:5,tp:'cr'},
+      {n:'致命傷害',ic:'💀',ds:'+20%暴傷/級',mx:3,tp:'cm'},
+      {n:'再生之力',ic:'🌱',ds:'戰鬥中回血',mx:3,tp:'rg'},
+      {n:'金幣增益',ic:'💰',ds:'+20%金幣/級',mx:5,tp:'go'},
+    ],
+  },
+};
+
+function getCls(){ return CLASSES[G.heroClass] || CLASSES.mage; }
+function getJob(){
+  const jobs = getCls().jobs;
+  let job = jobs[0];
+  for(const j of jobs){ if(G.hero.lv >= j.lv) job = j; }
+  return job;
+}
+
+function getTA(){ return getCls().ta; }
+const TA_BASE=[{n:'血肉之軀',ic:'❤️',ds:'每級+5%HP',mx:5,tp:'hp'},{n:'魔法天賦',ic:'🔮',ds:'冷卻-10%/級',mx:3,tp:'cd'},{n:'戰鬥直覺',ic:'👁️',ds:'+3%暴擊/級',mx:4,tp:'cr'},{n:'鬼神附體',ic:'👹',ds:'+15%暴傷/級',mx:3,tp:'cm'},{n:'再生之力',ic:'🌱',ds:'戰鬥中回血',mx:3,tp:'rg'},{n:'金幣增益',ic:'💰',ds:'+20%金幣/級',mx:5,tp:'go'}];
+const DNG=[{id:0,n:'廢棄礦坑',ic:'🏚',bg:'⛏',dc:'d1',dt:'普通',un:1,ep:['🐀','🦟','🕷️','🦇'],en:['地窖老鼠','地穴蝙蝠','毒蜘蛛','礦坑骷髏'],bn:['礦坑之王','暗影王者']},{id:1,n:'毒沼森林',ic:'🌿',bg:'🌲',dc:'d2',dt:'危險',un:10,ep:['🐍','🐸','🦎','🌵'],en:['沼澤毒蛙','食人花','森林蟒蛇'],bn:['毒沼主宰','腐敗樹靈']},{id:2,n:'地獄火山',ic:'🌋',bg:'🔥',dc:'d2',dt:'危險',un:25,ep:['🦁','🐺','🐗','🦅'],en:['熔岩精靈','火焰史萊姆','岩石巨人'],bn:['火山龍王','熔岩巨人']},{id:3,n:'冰霜神殿',ic:'❄️',bg:'❄',dc:'d3',dt:'極危',un:50,ep:['👻','💀','🧟','👺'],en:['霜凍幽靈','冰封惡魔','骨兵'],bn:['冰霜古神','永凍亡靈王']},{id:4,n:'虛空裂縫',ic:'🌀',bg:'⭐',dc:'d3',dt:'極危',un:100,ep:['👾','🤖','🎭','🌑'],en:['虛空碎片','混沌觸手','次元蟲'],bn:['虛空主宰','宇宙毀滅者']}];
+const RAR_COL={common:'#aaaaaa',rare:'#4a9eff',epic:'#b44fff',legend:'#f0c040',mythic:'#ff4444'};
+const RAR_LBL={common:'普通',rare:'稀有',epic:'史詩',legend:'傳說',mythic:'神話'};
+const ITM=[
+  // 武器 slot:0
+  {n:'舊鐵劍',ic:'🗡️',slot:0,rar:'common',st:{atk:8},desc:'生鏽的鐵劍，勉強能用'},
+  {n:'學徒法杖',ic:'🪄',slot:0,rar:'common',st:{mag:10,mp:15},desc:'魔法師見習生的魔杖'},
+  {n:'精鋼長劍',ic:'⚔️',slot:0,rar:'rare',st:{atk:22,crit:4},desc:'以精鋼打造，鋒利無比'},
+  {n:'元素法杖',ic:'🔱',slot:0,rar:'rare',st:{mag:28,mp:30},desc:'蘊含元素力量的法杖'},
+  {n:'雷霆劍',ic:'⚡',slot:0,rar:'epic',st:{atk:45,crit:10,cdmg:30},desc:'雷霆附身，每擊必帶電弧'},
+  {n:'暗影匕首',ic:'🌑',slot:0,rar:'epic',st:{atk:35,spd:8,crit:15},desc:'影子鍛造，攻速超快'},
+  {n:'神話法杖',ic:'✨',slot:0,rar:'legend',st:{mag:70,mp:60,crit:12},desc:'傳說中的魔法師之杖'},
+  {n:'混沌之刃',ic:'🔥',slot:0,rar:'mythic',st:{atk:80,mag:60,crit:20,cdmg:60},desc:'混沌之力具現化的絕世武器'},
+  // 鎧甲 slot:1
+  {n:'布甲',ic:'👕',slot:1,rar:'common',st:{def:5,hp:20},desc:'普通的布製護甲'},
+  {n:'皮甲',ic:'🦺',slot:1,rar:'rare',st:{def:15,hp:50},desc:'鞣製皮革製成的護甲'},
+  {n:'鎖鏈甲',ic:'⛓️',slot:1,rar:'rare',st:{def:22,hp:70},desc:'精密鎖環編織的鎧甲'},
+  {n:'龍鱗盔甲',ic:'🦎',slot:1,rar:'epic',st:{def:40,hp:120},desc:'用龍鱗製成，極度堅硬'},
+  {n:'聖騎士甲',ic:'🛡️',slot:1,rar:'legend',st:{def:65,hp:200,cdmg:20},desc:'神聖力量加持的護甲'},
+  // 頭盔 slot:2
+  {n:'皮帽',ic:'🪖',slot:2,rar:'common',st:{def:3,hp:10},desc:'簡單的皮製頭盔'},
+  {n:'鐵頭盔',ic:'⛑️',slot:2,rar:'common',st:{def:7,hp:25},desc:'堅固的鐵製頭盔'},
+  {n:'魔法冠冕',ic:'👑',slot:2,rar:'rare',st:{mag:18,mp:25},desc:'魔法師偏愛的神秘冠冕'},
+  {n:'龍角頭盔',ic:'🐉',slot:2,rar:'epic',st:{def:28,hp:80,crit:6},desc:'龍角製成，散發威壓'},
+  // 靴子 slot:3
+  {n:'舊布鞋',ic:'👞',slot:3,rar:'common',st:{spd:2},desc:'走路有點慢的布鞋'},
+  {n:'奔跑者靴',ic:'👟',slot:3,rar:'common',st:{spd:5},desc:'輕便的皮革靴子'},
+  {n:'疾風靴',ic:'💨',slot:3,rar:'rare',st:{spd:12,crit:4},desc:'附有疾風魔法，腳步如風'},
+  {n:'幻影步靴',ic:'🌀',slot:3,rar:'epic',st:{spd:20,crit:10,cdmg:20},desc:'踏步間產生幻影迷惑敵人'},
+  // 戒指 slot:4
+  {n:'銅戒指',ic:'⭕',slot:4,rar:'common',st:{atk:4},desc:'普通的銅製戒指'},
+  {n:'力量戒指',ic:'💍',slot:4,rar:'rare',st:{atk:14,crit:4},desc:'蘊含力量的魔法戒指'},
+  {n:'暴君戒指',ic:'🔴',slot:4,rar:'epic',st:{atk:25,crit:12,cdmg:40},desc:'暴虐力量的化身'},
+  {n:'命運之環',ic:'🌟',slot:4,rar:'legend',st:{atk:40,crit:20,cdmg:60},desc:'掌控命運的傳說戒指'},
+  // 護符 slot:5
+  {n:'木製護符',ic:'🪵',slot:5,rar:'common',st:{hp:30},desc:'普通的木頭護符'},
+  {n:'魔法護符',ic:'🔮',slot:5,rar:'rare',st:{mag:18,mp:25},desc:'蘊含魔力的護符'},
+  {n:'龍晶護符',ic:'💎',slot:5,rar:'epic',st:{mag:35,mp:50,crit:8},desc:'龍晶石製成，魔力充沛'},
+  {n:'神聖護符',ic:'✝️',slot:5,rar:'legend',st:{mag:55,mp:80,def:20,hp:100},desc:'神明賜予的神聖護符'},
+];
+// ── 套裝定義 ──
+const SETS = {
+  dragon: {
+    n:'龍裔套裝', ic:'🐉', color:'#ff6040',
+    // 6件：武器/盔甲/頭盔/靴子/戒指/護符各一
+    items:['雷霆劍','龍鱗盔甲','龍角頭盔','幻影步靴','暴君戒指','龍晶護符'],
+    bonus:{
+      2:{desc:'ATK+20% MAG+20%',          apply:(s)=>{s.atk=Math.floor(s.atk*1.2);s.mag=Math.floor(s.mag*1.2);}},
+      4:{desc:'CRIT+25% 暴傷+50%',         apply:(s)=>{s.crit=Math.min(s.crit+25,75);s.cdmg+=50;}},
+      full:{desc:'全屬性×1.4 冷卻-25%',    apply:(s)=>{s.atk=Math.floor(s.atk*1.4);s.mag=Math.floor(s.mag*1.4);s.def=Math.floor(s.def*1.4);s.mxhp=Math.floor(s.mxhp*1.3);}},
+    }
+  },
+  shadow: {
+    n:'暗影套裝', ic:'🌑', color:'#9b59b6',
+    items:['暗影匕首','皮甲','魔法冠冕','疾風靴','力量戒指','魔法護符'],
+    bonus:{
+      2:{desc:'SPD+30% CRIT+15%',          apply:(s)=>{s.spd=Math.floor(s.spd*1.3);s.crit=Math.min(s.crit+15,75);}},
+      4:{desc:'ATK+40% 暴傷+60%',           apply:(s)=>{s.atk=Math.floor(s.atk*1.4);s.cdmg+=60;}},
+      full:{desc:'速度×1.6 暴擊上限解除到90%', apply:(s)=>{s.spd=Math.floor(s.spd*1.6);s.crit=Math.min(s.crit+30,90);s.atk=Math.floor(s.atk*1.3);}},
+    }
+  },
+  holy: {
+    n:'聖光套裝', ic:'✨', color:'#f0c040',
+    items:['神話法杖','聖騎士甲','魔法冠冕','幻影步靴','命運之環','神聖護符'],
+    bonus:{
+      2:{desc:'HP+30% DEF+20%',            apply:(s)=>{s.mxhp=Math.floor(s.mxhp*1.3);s.def=Math.floor(s.def*1.2);}},
+      4:{desc:'MAG+40% MP+60%',            apply:(s)=>{s.mag=Math.floor(s.mag*1.4);s.mxmp=Math.floor(s.mxmp*1.6);}},
+      full:{desc:'法術×1.5 全屬性×1.35',   apply:(s)=>{s.mag=Math.floor(s.mag*1.5);s.atk=Math.floor(s.atk*1.35);s.mxhp=Math.floor(s.mxhp*1.35);s.def=Math.floor(s.def*1.35);}},
+    }
+  },
+};
+
+function getSetBonuses(){
+  const equipped=G.equips.filter(e=>e).map(e=>e.n);
+  const bonuses=[];
+  Object.entries(SETS).forEach(([key,set])=>{
+    const count=set.items.filter(n=>equipped.includes(n)).length;
+    if(count>=2){
+      // 3層：full=全套(6), 4=4件, 2=2件，疊加全部已觸發層
+      const tiers=[];
+      if(count>=2)tiers.push(2);
+      if(count>=4)tiers.push(4);
+      if(count>=set.items.length)tiers.push('full');
+      bonuses.push({set,key,count,tiers});
+    }
+  });
+  return bonuses;
+}
+
+const SLT=['武器','盔甲','頭盔','靴子','戒指','護符'];
+const SLIC=['⚔️','🛡️','⛑️','👟','💍','📿'];
+function $(i){return document.getElementById(i);}
+function fmt(n){return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1000?(n/1000).toFixed(1)+'K':Math.floor(n)+'';}
+function expN(lv){return Math.floor(100*Math.pow(1.25,lv-1));}
+function ucost(i){return Math.floor(UPS[i].b*Math.pow(UPS[i].sc,G.upgrades[i]));}
+function d(){return DNG[G.dungId];}
+function st(){
+  const h=G.hero;const cls=getCls();const sc=cls.lvScale;
+  let atk=h.atk+(sc.atk||2)*h.lv,def=h.def+(sc.def||1)*h.lv,mag=h.mag+(sc.mag||1)*h.lv,spd=h.spd+(sc.spd||0),crit=h.crit+(sc.crit||0)*h.lv,cdmg=h.cdmg,mxhp=h.maxHp+(sc.hp||8)*h.lv,mxmp=h.maxMp+(sc.mp||2)*h.lv;
+  G.upgrades.forEach((lv,i)=>{const u=UPS[i];if(u.st==='atk')atk+=u.v*lv;else if(u.st==='def')def+=u.v*lv;else if(u.st==='mag')mag+=u.v*lv;else if(u.st==='spd')spd+=u.v*lv;else if(u.st==='crit')crit+=u.v*lv;else if(u.st==='cdmg')cdmg+=u.v*lv;else if(u.st==='maxHp')mxhp+=u.v*lv;else if(u.st==='maxMp')mxmp+=u.v*lv;});
+  const TA=getTA();
+  G.talents.forEach((lv,i)=>{if(!lv||!TA[i])return;const t=TA[i];if(t.tp==='hp')mxhp=Math.floor(mxhp*(1+.05*lv));else if(t.tp==='cr')crit+=3*lv;else if(t.tp==='cm')cdmg+=15*lv;else if(t.tp==='mag_pct')mag=Math.floor(mag*(1+.08*lv));else if(t.tp==='def_pct')def=Math.floor(def*(1+.1*lv));else if(t.tp==='spd_pct')spd=Math.floor(spd*(1+.15*lv));});
+  G.equips.forEach(eq=>{if(!eq)return;const s=eq.st;if(s.atk)atk+=s.atk;if(s.def)def+=s.def;if(s.mag)mag+=s.mag;if(s.spd)spd+=s.spd;if(s.crit)crit+=s.crit;if(s.cdmg)cdmg+=s.cdmg;if(s.hp)mxhp+=s.hp;if(s.mp)mxmp+=s.mp;});
+  G.statusFx.forEach(ef=>{if(ef.stat==='atk')atk=Math.floor(atk*(1+ef.v));if(ef.stat==='mag')mag=Math.floor(mag*(1+ef.v));});
+  // 套裝加成（疊加所有觸發層）
+  const s0={atk,def,mag,spd,crit,cdmg,mxhp,mxmp};
+  getSetBonuses().forEach(({set,tiers})=>{
+    tiers.forEach(tier=>{const b=set.bonus[tier];if(b)b.apply(s0);});
+  });
+  return{atk:s0.atk,def:s0.def,mag:s0.mag,spd:s0.spd,crit:Math.min(s0.crit,90),cdmg:s0.cdmg,mxhp:s0.mxhp,mxmp:s0.mxmp};
+}
+function addLog(m,c=''){const l=$('blog');const e=document.createElement('div');e.className='ll '+c;e.textContent=m;l.appendChild(e);if(l.children.length>60)l.removeChild(l.firstChild);l.scrollTop=l.scrollHeight;}
+function notify(m){const e=document.createElement('div');e.className='notif';e.textContent=m;document.body.appendChild(e);setTimeout(()=>e.remove(),2600);}
+function spawnD(t,c){const b=$('baarea');const e=document.createElement('div');e.className='dnum '+c;e.textContent=t;e.style.top=(35+Math.random()*40)+'px';b.appendChild(e);setTimeout(()=>e.remove(),1200);}
+function spawnS(s){const b=$('baarea');const e=document.createElement('div');e.className='slash';e.textContent=s==='h'?'💥':'🗡️';e.style.top=(55+Math.random()*20)+'px';e.style.left=s==='h'?'55%':'22%';b.appendChild(e);setTimeout(()=>e.remove(),400);}
+function mkEnemy(){
+  const dn=d();const fl=G.floor;const boss=fl%10===0;G.isBoss=boss;
+  $('bosswarn').style.display=boss?'block':'none';
+  const s=st();const mult=1+(fl-1)*.18+G.dungId*.5;
+  if(boss){const nm=dn.bn[Math.floor(Math.random()*dn.bn.length)];const sp=dn.ep[Math.floor(Math.random()*dn.ep.length)];const hp=Math.floor((s.mxhp*4+40)*mult*2);return{n:nm,sp,hp,mxhp:hp,atk:Math.floor((s.atk*.8+8)*mult*1.5),def:Math.floor(s.def*.4*mult),boss:true,expV:Math.floor(50*mult*2),goldV:Math.floor(30*mult*2)};}
+  const nm=dn.en[Math.floor(Math.random()*dn.en.length)];const sp=dn.ep[Math.floor(Math.random()*dn.ep.length)];const hp=Math.floor((s.mxhp*.6+20)*mult);return{n:nm,sp,hp,mxhp:hp,atk:Math.floor((s.atk*.5+5)*mult),def:Math.floor(s.def*.2*mult),boss:false,expV:Math.floor(15*mult),goldV:Math.floor(8*mult)};
+}
+function render(){
+  const h=G.hero;const s=st();const cls=getCls();const job=getJob();
+  $('hsp').textContent=$('hspbig').textContent=job.ic;
+  $('hlv').textContent=h.lv;$('htit').textContent=job.n;
+  const jlvEl=$('hjoblv');if(jlvEl)jlvEl.textContent=`${cls.ic}職業Lv${G.jobLv||1}`;
+  const hpP=Math.max(0,h.hp/s.mxhp*100);const mpP=Math.max(0,h.mp/s.mxmp*100);const exP=h.exp/expN(h.lv)*100;
+  $('hpc').textContent=Math.floor(h.hp);$('hpm').textContent=s.mxhp;$('mpc').textContent=Math.floor(h.mp);$('mpm').textContent=s.mxmp;
+  $('exc').textContent=h.exp;$('exn').textContent=expN(h.lv);
+  $('hpb').style.width=hpP+'%';$('mpb').style.width=mpP+'%';$('exb').style.width=exP+'%';
+  $('hhpb').style.width=hpP+'%';$('hhpt').textContent=Math.floor(h.hp)+'/'+s.mxhp;
+  $('satk').textContent=s.atk;$('sdef').textContent=s.def;$('smag').textContent=s.mag;$('sspd').textContent=s.spd;$('scr').textContent=s.crit+'%';$('scd').textContent=s.cdmg+'%';
+  $('rg').textContent=fmt(G.gold);$('rge').textContent=G.gem;$('rm').textContent=G.mat;$('rs').textContent=G.soul;$('rb').textContent='F'+G.bestFloor;
+  $('flnum').textContent='F'+G.floor;$('flbar').style.width=(G.flKills/G.flNeed*100)+'%';$('flkl').textContent=G.flKills+'/'+G.flNeed+' 擊殺';
+  $('stkl').textContent=G.kills;$('stdt').textContent=G.deaths;$('stmx').textContent=G.maxDmg;
+  const el=Math.floor((Date.now()-G.startTime)/1000);$('sttm').textContent=Math.floor(el/60)+':'+(el%60+'').padStart(2,'0');
+  $('potn').textContent=G.pots;
+  if(G.enemy){const ep=Math.max(0,G.enemy.hp/G.enemy.mxhp*100);$('esp').textContent=G.enemy.sp;$('enm').textContent=G.enemy.n;$('ehpb').style.width=ep+'%';$('ehpt').textContent=Math.floor(G.enemy.hp)+'/'+G.enemy.mxhp;}
+  const dn=d();$('dnnm').textContent=dn.ic+' '+dn.n;$('dndg').className='dang '+dn.dc;$('dndg').textContent='★ '+dn.dt;$('babg').textContent=dn.bg;
+  const stfx=$('stfx');if(!G.statusFx.length)stfx.innerHTML='<span style="font-size:.80.6rem;color:var(--text2)">無效果</span>';else stfx.innerHTML=G.statusFx.map(ef=>`<span class="stb stbu">${ef.ic} ${ef.n}</span>`).join('');
+  rsk();
+}
+function rsk(){
+  SKL = CLASS_SKL[G.heroClass] || CLASS_SKL.mage;
+  // 合併跨系技能
+  const allSkills=[...SKL];
+  (G.learnedSkills||[]).forEach(l=>{
+    const sk=CLASS_SKL[l.clsKey]?.[l.idx];
+    if(sk)allSkills.push({...sk,_crossClass:l.clsKey});
+  });
+  const c=$('skgrid');c.innerHTML='';
+  allSkills.forEach((sk,i)=>{
+    const cd=Math.max(0,G.skillCDs[i]-Date.now());
+    const ocd=cd>0;
+    const nomp=G.hero.mp<sk.mp;
+    const pct=ocd?Math.max(0,1-cd/sk.cd)*100:100;
+    const e=document.createElement('div');
+    e.className='skbtn'+(ocd||nomp?' ocd':'');
+    if(!ocd&&!nomp){ e.setAttribute('draggable','true'); e.dataset.skillIdx=i; }
+    e.title=sk.desc||sk.n;
+
+    const ic=document.createElement('span');ic.className='skic';ic.textContent=sk.ic;
+    const nm=document.createElement('div');nm.className='sknm';nm.textContent=sk.n;
+    const mp=document.createElement('div');mp.style.cssText='font-size:.6rem;color:var(--text2)';mp.textContent=sk.mp+'MP';
+    const bar=document.createElement('div');bar.style.cssText=`position:absolute;bottom:0;left:0;height:3px;border-radius:0 0 6px 6px;background:var(--gold);width:${pct}%;transition:width .5s;opacity:.7`;
+    e.appendChild(ic);e.appendChild(nm);e.appendChild(mp);e.appendChild(bar);
+
+    if(ocd){
+      const cdEl=document.createElement('div');cdEl.className='skcd';cdEl.textContent=(cd/1000).toFixed(1)+'s';
+      e.appendChild(cdEl);
+    }
+    if(sk._crossClass){
+      const cc=document.createElement('div');
+      cc.style.cssText='font-size:.52rem;color:'+CLASSES[sk._crossClass].color+';margin-top:1px';
+      cc.textContent=CLASSES[sk._crossClass].ic+'跨系';
+      e.appendChild(cc);
+    }
+    if(!ocd&&!nomp){
+      e.style.cursor='pointer';
+      e.addEventListener('click',()=>useSkillEx(sk,i));
+    }
+    c.appendChild(e);
+  });
+}
+function rup(){const c=$('pup');c.innerHTML='<div style="font-size:.6rem;color:var(--text2);margin-bottom:8px">升級屬性 — 放置持續戰鬥！</div>';UPS.forEach((u,i)=>{const lv=G.upgrades[i];const cost=ucost(i);const can=!isNaN(cost)&&G.gold>=cost;const max=lv>=u.mx;c.innerHTML+=`<div class="ui"><div class="uh"><span class="uic">${u.ic}</span><span class="unm">${u.n}</span><span class="ulv">Lv${lv}/${u.mx}</span></div><div class="uds">${u.ds}</div><div class="uef">${u.ef}/級</div><button class="btn ${max?'':can?'gld':''}" ${max||!can?'disabled':''} onclick="buyUp(${i})">${max?'已達上限':'升級 💰'+fmt(cost)}</button></div>`;});}
+function rarBadge(rar){
+  const c=RAR_COL[rar]||'#aaa';const l=RAR_LBL[rar]||rar;
+  return `<span style="font-size:.6rem;padding:1px 6px;border-radius:10px;border:1px solid ${c};color:${c};background:${c}18">${l}</span>`;
+}
+function statDiff(newSt, oldSt){
+  const keys=new Set([...Object.keys(newSt||{}), ...Object.keys(oldSt||{})]);
+  let html='';
+  keys.forEach(k=>{
+    const nv=newSt?.[k]||0; const ov=oldSt?.[k]||0; const diff=nv-ov;
+    const color=diff>0?'#40ff80':diff<0?'#ff6060':'#aaa';
+    const arrow=diff>0?'▲':diff<0?'▼':'';
+    html+=`<span style="font-size:.62rem;color:${color};margin-right:4px">${arrow}${k}:${nv>0?'+'+nv:nv}${diff!==0?`(${diff>0?'+':''}${diff})`:''}  </span>`;
+  });
+  return html;
+}
+function req(){
+  const c=$('peq');
+  // 已裝備槽
+  let eqHtml='<div style="font-size:.72rem;color:var(--text2);margin-bottom:8px;font-weight:700">已裝備（點擊卸下）</div>';
+  eqHtml+='<div class="eqgr" id="eqg">';
+  SLT.forEach((sl,i)=>{
+    const eq=G.equips[i];
+    if(eq){
+      const rc=RAR_COL[eq.rar]||'#aaa';
+      eqHtml+=`<div class="eqs" style="border-color:${rc}55;cursor:pointer" data-unequip="${i}">
+        <span class="eqic">${eq.ic}</span>
+        <div class="eqnm" style="color:${rc}">${eq.n}</div>
+        ${rarBadge(eq.rar)}
+        <div class="eqst">${Object.entries(eq.st).map(([k,v])=>`+${v}${k}`).join(' ')}</div>
+        <div style="font-size:.58rem;color:var(--text2);margin-top:2px">點擊卸下</div>
+      </div>`;
+    } else {
+      eqHtml+=`<div class="eqs emp"><span class="eqic">${SLIC[i]}</span><div class="eqlb">${sl}</div><div style="font-size:.58rem;color:var(--text2)">空</div></div>`;
+    }
+  });
+  eqHtml+='</div>';
+  // 套裝加成顯示
+  const setBonuses=getSetBonuses();
+  if(setBonuses.length){
+    eqHtml+='<div style="margin:8px 0 4px;font-size:.62rem;color:var(--gold);font-weight:700">✨ 套裝加成啟動</div>';
+    setBonuses.forEach(({set,tier})=>{
+      const b=set.bonus[tier];
+      eqHtml+=`<div style="font-size:.62rem;padding:3px 8px;border:1px solid ${set.color}55;border-radius:6px;margin-bottom:3px;color:${set.color};background:${set.color}11">${set.ic}${set.n} (${tier==='full'?'全套':tier+'件'})：${b.desc}</div>`;
+    });
+  }
+  // 套裝說明
+  eqHtml+='<div style="margin:8px 0 4px;font-size:.62rem;color:var(--text2)">📦 套裝列表</div>';
+  Object.values(SETS).forEach(set=>{
+    const equipped=G.equips.filter(e=>e).map(e=>e.n);
+    const count=set.items.filter(n=>equipped.includes(n)).length;
+    eqHtml+=`<div style="font-size:.6rem;padding:3px 8px;border:1px solid rgba(255,255,255,.1);border-radius:6px;margin-bottom:3px;color:${count>=2?set.color:'var(--text2)'}">${set.ic}${set.n} (${count}/${set.items.length}件) — 2件:${set.bonus[2].desc}</div>`;
+  });
+
+  // 背包過濾器
+  const sellPrices={common:20,rare:80,epic:300,legend:1200,mythic:5000};
+  const fl=G.eqFilter||{rar:'all'};
+  const rarOpts=['all','common','rare','epic','legend','mythic'];
+  const rarColors={all:'var(--text2)',common:'#aaa',rare:'#4a9eff',epic:'#b44fff',legend:'#f0c040',mythic:'#ff4444'};
+  let invHtml=`<div style="margin:8px 0 6px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:.72rem;font-weight:700;color:var(--text2)">背包 (${G.inventory.length}件)</div>
+      <button class="btn gld" style="width:auto;padding:3px 10px;font-size:.7rem" data-action="sellall">💰 全部販賣</button>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px">
+      ${rarOpts.map(r=>`<button data-filter-rar="${r}" style="padding:3px 10px;border-radius:20px;font-size:.65rem;cursor:pointer;border:1px solid ${fl.rar===r?rarColors[r]:'rgba(255,255,255,.15)'};color:${fl.rar===r?rarColors[r]:'var(--text2)'};background:${fl.rar===r?rarColors[r]+'22':'transparent'};font-weight:${fl.rar===r?700:400}">${r==='all'?'全部':RAR_LBL[r]||r}</button>`).join('')}
+    </div>
+  </div>`;
+
+  // 套用過濾（只稀有度）
+  let filtered=G.inventory.map((it,idx)=>({it,idx}));
+  if(fl.rar!=='all') filtered=filtered.filter(({it})=>it.rar===fl.rar);
+
+  if(!G.inventory.length){
+    invHtml+='<div style="font-size:.75rem;color:var(--text2);text-align:center;padding:10px">背包是空的</div>';
+  } else if(!filtered.length){
+    invHtml+='<div style="font-size:.75rem;color:var(--text2);text-align:center;padding:10px">過濾後無符合裝備</div>';
+  } else {
+    filtered.forEach(({it,idx})=>{
+      const sp=sellPrices[it.rar]||20;
+      const rc=RAR_COL[it.rar]||'#aaa';
+      const cur=G.equips[it.slot];
+      const isUpgrade=cur?Object.entries(it.st).some(([k,v])=>(cur.st[k]||0)<v):true;
+      invHtml+=`<div style="border:1px solid ${rc}44;border-radius:6px;padding:7px;margin-bottom:6px;background:rgba(255,255,255,.02)">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <span style="font-size:1.3rem">${it.ic}</span>
+          <div style="flex:1">
+            <div style="font-size:.78rem;font-weight:700;color:${rc}">${it.n} ${isUpgrade?'<span style="font-size:.6rem;color:#40ff80;background:rgba(64,255,128,.15);padding:1px 5px;border-radius:8px">↑ 升級</span>':''}</div>
+            <div style="display:flex;gap:4px;margin-top:2px">${rarBadge(it.rar)}<span style="font-size:.6rem;color:var(--text2)">${SLT[it.slot]}</span></div>
+          </div>
+        </div>
+        <div style="margin-bottom:4px">${statDiff(it.st, cur?.st)}</div>
+        ${it.desc?`<div style="font-size:.62rem;color:var(--text2);margin-bottom:4px;font-style:italic">${it.desc}</div>`:''}
+        <div style="display:flex;gap:4px">
+          <button class="btn gld" style="flex:1;padding:3px 0;font-size:.72rem;text-align:center;justify-content:center" data-equip="${idx}">⚔ 裝備</button>
+          ${it.enhance?`<span style="font-size:.62rem;padding:1px 5px;border-radius:6px;background:rgba(255,140,0,.2);border:1px solid #ff8c00;color:#ff8c00;align-self:center">+${it.enhance}</span>`:''}
+          <button class="btn" style="width:auto;padding:3px 6px;font-size:.68rem;color:#aaffaa;border-color:#44aa44" data-enhance="${idx}" title="強化裝備（消耗材料）">🔨</button>
+          <button class="btn" style="width:auto;padding:3px 8px;font-size:.7rem;color:#f5c842;border-color:#806820" data-sell="${idx}">💰${sp}</button>
+        </div>
+      </div>`;
+    });
+  }
+  c.innerHTML = eqHtml + invHtml;
+
+  // 綁定所有按鈕事件
+  c.querySelectorAll('.eqs[data-unequip]').forEach(el => {
+    el.addEventListener('click', () => unequip(parseInt(el.dataset.unequip)));
+  });
+  const sellAllBtn = c.querySelector('[data-action="sellall"]');
+  if (sellAllBtn) sellAllBtn.addEventListener('click', sellAll);
+  c.querySelectorAll('[data-equip]').forEach(el => {
+    el.addEventListener('click', () => eqItem(parseInt(el.dataset.equip)));
+  });
+  c.querySelectorAll('[data-sell]').forEach(el => {
+    el.addEventListener('click', () => sellItem(parseInt(el.dataset.sell)));
+  });
+  c.querySelectorAll('[data-enhance]').forEach(el => {
+    el.addEventListener('click', () => enhanceItem(parseInt(el.dataset.enhance)));
+  });
+  // 稀有度過濾按鈕
+  c.querySelectorAll('[data-filter-rar]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      G.eqFilter.rar=btn.dataset.filterRar;
+      req();
+    });
+  });
+}
+function unequip(i){if(!G.equips[i])return;G.inventory.push(G.equips[i]);G.equips[i]=null;addLog(`卸下裝備`,'ls');render();req();}
+function rta(){
+  const c=$('pta');
+  let html=`<div style="margin-bottom:10px;background:rgba(240,192,64,.06);border:1px solid rgba(240,192,64,.2);border-radius:6px;padding:8px">
+    <div style="font-size:.78rem;color:var(--gold);font-weight:700;margin-bottom:4px">✨ 天賦點數：${G.talentPts}</div>
+    <div style="font-size:.65rem;color:var(--text2);line-height:1.8">
+      📌 獲得方式：<br>
+      ⭐ 每升 <b style="color:var(--gold)">3級</b> 獲得 1 點<br>
+      🏆 每通過 <b style="color:var(--gold)">BOSS關卡</b> 獲得 1 點
+    </div>
+  </div>`;
+  const TA=getTA();
+  TA.forEach((t,i)=>{
+    const lv=G.talents[i];
+    const can=G.talentPts>0&&lv<t.mx;
+    html+=`<div class="ui"><div class="uh"><span class="uic">${t.ic}</span><span class="unm">${t.n}</span><span class="ulv">Lv${lv}/${t.mx}</span></div><div class="uds">${t.ds}</div><button class="btn ${can?'gld':''}" ${can?'':'disabled'} onclick="lrnTa(${i})">${lv>=t.mx?'已滿':'學習(1點)'}</button></div>`;
+  });
+  c.innerHTML=html;
+}
+function rdn(){const c=$('pdn');c.innerHTML='<div style="font-size:.6rem;color:var(--text2);margin-bottom:8px">選擇探索地城</div>';DNG.forEach((dn,i)=>{const un=G.bestFloor>=dn.un;const act=G.dungId===i;c.innerHTML+=`<div class="ui" style="opacity:${un?1:.4}"><div class="uh"><span class="uic">${dn.ic}</span><span class="unm">${dn.n}</span><span class="dang ${dn.dc}" style="font-size:.67.6rem;padding:1px 5px">${dn.dt}</span></div><div class="uds">解鎖: F${dn.un}</div><button class="btn ${act?'gld':''}${!un?' ':'  '}" ${!un?'disabled':''} onclick="goDng(${i})">${act?'✓ 當前':un?'前往探索':'🔒 未解鎖'}</button></div>`;});}
+function sw(t){['up','eq','ta','dn','cl','mt'].forEach(x=>{if(!$('p'+x))return;$('p'+x).style.display=x===t?'block':'none';if($('t'+x))$('t'+x).classList.toggle('act',x===t);});if(t==='up')rup();else if(t==='eq')req();else if(t==='ta')rta();else if(t==='dn')rdn();else if(t==='cl')rcl();else if(t==='mt')rmt();}
+let lastT=Date.now();
+setInterval(()=>{
+  if(!G.auto || G.comboModePaused)return;
+  const now=Date.now();const dt=(now-lastT)*G.speed;lastT=now;
+  const h=G.hero;const s=st();
+  h.mp=Math.min(s.mxmp,h.mp+s.mxmp*.01*dt/1000);
+  if(G.talents[4]>0)h.hp=Math.min(s.mxhp,h.hp+s.mxhp*.004*G.talents[4]*dt/1000);
+  // DOT 傷害 & 再生處理
+  G.statusFx.forEach(ef=>{
+    if(ef.stat==='dot'&&G.enemy&&G.enemy.hp>0){
+      const dotDmg=Math.floor(ef.v*dt/1000);
+      if(dotDmg>0){G.enemy.hp=Math.max(0,G.enemy.hp-dotDmg);spawnD('☠️'+dotDmg,'hd');}
+    }
+    if(ef.stat==='regen'){const rg=Math.floor(ef.v*dt/1000);if(rg>0)h.hp=Math.min(s.mxhp,h.hp+rg);}
+    if(ef.stat==='shield'&&G.hero.shield>0){/* shield持續中 */}
+  });
+  // 護盾過期清除
+  if(G.hero.shield>0&&!G.statusFx.find(e=>e.stat==='shield'))G.hero.shield=0;
+  G.statusFx=G.statusFx.filter(ef=>{ef.dur-=dt;return ef.dur>0;});
+  if(G.bonCD>0)G.bonCD-=dt;
+  if(!G.enemy||G.enemy.hp<=0){G.enemy=mkEnemy();render();return;}
+  const atkSpd=Math.max(400,1200-s.spd*15);
+  G.atkTimer+=dt;if(G.atkTimer>=atkSpd){G.atkTimer=0;hAtk(s);}
+  G.enmTimer+=dt;if(G.enmTimer>=1500){G.enmTimer=0;eAtk(s);}
+  render();
+},100);
+function hAtk(s){if(!G.enemy||G.enemy.hp<=0)return;let dmg=s.atk+Math.floor(Math.random()*s.atk*.3);const cr=Math.random()*100<s.crit;if(cr)dmg=Math.floor(dmg*s.cdmg/100);const red=Math.max(1,dmg-Math.floor(G.enemy.def*.5));G.enemy.hp-=red;if(red>G.maxDmg)G.maxDmg=red;spawnS('h');playSound(cr?'crit':'hit');if(cr){spawnD('💥'+red,'hd cr');addLog(`⚔ 暴擊！造成 ${red} 傷害！`,'lc');}else spawnD(red+'','hd');if(G.enemy.hp<=0)eDie();else maybeSpawnRune();}
+function eAtk(s){
+  if(!G.enemy)return;
+  // 減速中的敵人有機率無法攻擊
+  if(G.enemy.slowed && G.enemy.slowUntil>Date.now() && Math.random()<0.6){
+    addLog(`🌀 ${G.enemy.n} 被減速，攻擊失敗！`,'ls');return;
+  }
+  // 清除過期 debuff
+  if(G.enemy.debuffUntil && G.enemy.debuffUntil<Date.now()){G.enemy.atkDebuff=1;G.enemy.debuffUntil=0;}
+  let baseAtk=G.enemy.atk*(G.enemy.atkDebuff||1);
+  let dmg=Math.floor(baseAtk)+Math.floor(Math.random()*baseAtk*.2);
+  let red=Math.max(1,dmg-Math.floor(s.def*.6));
+  // 護盾吸收
+  if(G.hero.shield>0){
+    const abs=Math.min(G.hero.shield,red);
+    G.hero.shield-=abs;red-=abs;
+    if(abs>0)addLog(`🛡️ 護盾吸收 ${abs} 傷害！`,'ls');
+    if(red<=0){spawnD('🛡️BLOCK','hl');return;}
+  }
+  G.hero.hp-=red;
+  spawnS('e');spawnD(red+'','ed');
+  addLog(`💀 ${G.enemy.n} 攻擊！造成 ${red} 傷害`,'le');
+  if(G.hero.hp<=0)hDie();
+}
+function jobExpN(lv){return Math.floor(80*Math.pow(1.3,lv-1));}
+function gJobExp(a){
+  if((G.jobLv||1)>=50)return;
+  G.jobExp=(G.jobExp||0)+a;
+  const need=jobExpN(G.jobLv||1);
+  if(G.jobExp>=need){
+    G.jobExp-=need;G.jobLv=(G.jobLv||1)+1;
+    G.talentPts++;
+    const cls=getCls();
+    addLog(`⚔️ 職業等級提升！${cls.ic}${cls.n} Lv${G.jobLv}！獲得天賦點！`,'lr');
+    notify(`⚔️ 職業 Lv${G.jobLv}！天賦點+1`);
+    playSound('levelup');
+    render();
+  }
+}
+function eDie(){const e=G.enemy;G.kills++;G.flKills++;let gold=e.goldV+Math.floor(Math.random()*e.goldV*.3);gold=Math.floor(gold*(1+.2*G.talents[5]));G.gold+=gold;if(Math.random()<.3)G.mat+=Math.floor(Math.random()*3)+1;if(e.boss){
+  G.gem+=2+G.dungId;
+  // BOSS分級：每10層普通BOSS，每50層精英BOSS，每100層深淵BOSS
+  const isElite  = G.floor % 50 === 0 && G.floor >= 50;
+  const isAbssal = G.floor % 100 === 0 && G.floor >= 100;
+  const soulBase = 1 + G.dungId;
+  const soulGain = isAbssal ? soulBase*5 : isElite ? soulBase*3 : soulBase;
+  const bossTag  = isAbssal ? '💀深淵BOSS' : isElite ? '⭐精英BOSS' : 'BOSS';
+  G.soul += soulGain;
+  addLog(`💜 ${bossTag}掉落 ${soulGain} 靈魂石！`,'lr');
+  if(isElite || isAbssal) triggerComboBurst(isAbssal?'#ff4040':'#f0c040', `${bossTag} 撃破！`);
+}
+gJobExp(Math.floor(e.expV*0.4));
+gExp(e.expV);addLog(`✨ 擊敗 ${e.n}！+${gold}💰 +${e.expV}EXP`,'lr');const dropChance=e.boss?0.8:0.12+G.floor*0.004;
+  if(Math.random()<dropChance){
+    // 依層數決定稀有度
+    const roll=Math.random()*100;
+    const dl=G.dropLv||0;
+    // 掉落品質加成（dropLv）
+    const mythBonus  = dl>=4?3:0;
+    const legBonus   = dl>=3?5:0;
+    const epicBonus  = dl>=2?10:0;
+    const rareBonus  = dl>=1?15:0;
+    let rarFilter;
+    if(G.floor>=80&&roll<2+mythBonus)          rarFilter=['mythic'];
+    else if(G.floor>=40&&roll<8+legBonus+mythBonus)  rarFilter=['legend'];
+    else if(G.floor>=20&&roll<25+epicBonus+legBonus) rarFilter=['epic'];
+    else if(G.floor>=5 &&roll<55+rareBonus+epicBonus)rarFilter=['rare'];
+    else                                              rarFilter=['common'];
+    if(e.boss) rarFilter=rarFilter.map(r=>r==='common'?'rare':r);
+    const pool=ITM.filter(it=>rarFilter.includes(it.rar));
+    const src=pool.length?pool:ITM.filter(it=>it.rar==='common');
+    const drop={...src[Math.floor(Math.random()*src.length)]};
+    G.inventory.push(drop);
+    const rc=RAR_COL[drop.rar]||'#aaa';const rl=RAR_LBL[drop.rar]||drop.rar;
+    addLog(`🎁 [${rl}] ${drop.ic} ${drop.n} 掉落！`,'lr');
+    notify(`🎁 [${rl}] ${drop.n}！`);
+  }if(G.flKills>=G.flNeed)advF();else G.enemy=mkEnemy();render();}
+function advF(){G.floor++;G.flKills=0;G.flNeed=G.isBoss?1:5+Math.floor(G.floor/5);if(G.floor>G.bestFloor)G.bestFloor=G.floor;if(G.isBoss){G.soul+=1+G.dungId;G.talentPts++;addLog(`🏆 BOSS通過！F${G.floor}！獲得天賦點！`,'lr');notify(`🏆 抵達 F${G.floor}！`);}else addLog(`🗺 進入 F${G.floor}`,'ls');G.enemy=mkEnemy();render();rdn();}
+function hDie(){playSound('die');G.hero.hp=0;G.deaths++;G.auto=false;addLog(`💀 陣亡了...`,'le');const ov=document.createElement('div');ov.className='deado';ov.id='deado';ov.innerHTML=`<div class="deadt">💀 英雄倒下 💀</div><div style="font-size:.7rem;color:var(--text2)">正在復活...</div><button class="cbtn" onclick="rspawn()" style="margin-top:6px">⚡ 立即復活</button>`;$('baarea').appendChild(ov);setTimeout(rspawn,3000);}
+function rspawn(){const s=st();G.hero.hp=s.mxhp;G.hero.mp=s.mxmp;G.floor=Math.max(1,G.floor-3);G.flKills=0;G.enemy=mkEnemy();const ov=$('deado');if(ov)ov.remove();G.auto=true;G.isBoss=false;$('bosswarn').style.display='none';addLog(`💫 復活！回到 F${G.floor}`,'ls');render();}
+function gExp(a){G.hero.exp+=a;const n=expN(G.hero.lv);if(G.hero.exp>=n){G.hero.exp-=n;G.hero.lv++;const s=st();G.hero.hp=s.mxhp;G.hero.mp=s.mxmp;addLog(`🌟 升級！Lv.${G.hero.lv}！`,'lr');notify(`⭐ 升至 Lv.${G.hero.lv}！`);playSound('levelup');const fl=document.createElement('div');fl.className='lvfl';document.body.appendChild(fl);setTimeout(()=>fl.remove(),1000);if(G.hero.lv%3===0){G.talentPts++;notify('✨ 獲得天賦點！');}
+    // 自動轉職檢查
+    const cls=getCls();const jobs=cls.jobs;
+    const newJob=jobs.reduce((a,j)=>G.hero.lv>=j.lv?j:a,jobs[0]);
+    if(newJob.lv===G.hero.lv&&newJob.lv>1){
+      notify(`🎉 ${cls.ic} 轉職！${newJob.ic} ${newJob.n}！`);
+      addLog(`🎉 轉職成功！成為【${newJob.n}】！`,'lr');
+      playSound('levelup');
+    }
+    // 解鎖其他系列提示
+    const unlockLv={warrior:5,rogue:5};
+    if(unlockLv[G.heroClass]===undefined){
+      Object.entries(unlockLv).forEach(([k,lv])=>{
+        if(G.hero.lv===lv) notify(`🔓 ${CLASSES[k].ic} ${CLASSES[k].n} 已解鎖！`);
+      });
+    }rta();}}
+function spawnSkillFx(fx, baarea) {
+  const fxMap = {
+    fire:    {emoji:'🔥🔥🔥', color:'#ff6020', size:'2rem'},
+    ice:     {emoji:'❄️💎❄️', color:'#80cfff', size:'1.8rem'},
+    thunder: {emoji:'⚡⚡',   color:'#ffe040', size:'2.2rem'},
+    heal:    {emoji:'💚✨💚', color:'#40ff80', size:'1.8rem'},
+    poison:  {emoji:'☠️💀☠️', color:'#80ff40', size:'1.8rem'},
+    blast:   {emoji:'💥🔥💥', color:'#ff4000', size:'2.5rem'},
+    shield:  {emoji:'🛡️✨🛡️', color:'#8080ff', size:'2rem'},
+    time:    {emoji:'⏳🌀⏳', color:'#ff80ff', size:'2rem'},
+  };
+  const f = fxMap[fx] || {emoji:'✨', color:'#fff', size:'2rem'};
+  const b = document.getElementById('baarea');
+  if (!b) return;
+  const el = document.createElement('div');
+  el.style.cssText = `position:absolute;top:${20+Math.random()*60}px;left:${20+Math.random()*60}%;
+    font-size:${f.size};pointer-events:none;z-index:12;animation:df 1s ease-out forwards;
+    text-shadow:0 0 12px ${f.color};filter:drop-shadow(0 0 8px ${f.color})`;
+  el.textContent = f.emoji;
+  b.appendChild(el);
+  setTimeout(()=>el.remove(), 1000);
+  // 螢幕閃光
+  const flash = document.createElement('div');
+  flash.style.cssText = `position:absolute;inset:0;border-radius:8px;pointer-events:none;z-index:11;
+    background:${f.color}22;animation:lf .4s ease forwards`;
+  b.appendChild(flash);
+  setTimeout(()=>flash.remove(), 400);
+}
+
+function useSkillEx(sk,cdKey){
+  if(!sk)return;
+  if((G.skillCDs[cdKey]||0)>Date.now())return;
+  if(G.hero.mp<sk.mp){notify('💙 MP不足！');return;}
+  const cdr=G.talents[1]?1-0.1*G.talents[1]:1;
+  G.skillCDs[cdKey]=Date.now()+sk.cd*cdr;
+  G.hero.mp-=sk.mp;
+  const ba=$('baarea');
+  spawnSkillFx(sk.fx,ba);
+  // 呼叫原技能邏輯
+  const s=st();
+  const _sk=sk;
+  if(_sk.type==='mag'||_sk.type==='phys'){
+    if(!G.enemy)return;
+    const isMag=_sk.type==='mag';
+    const hits=_sk.hits||1;let total=0;
+    for(let h=0;h<hits;h++){
+      let dmg=isMag?Math.floor(s.mag*_sk.mult):Math.floor(s.atk*_sk.mult);
+      const cr=Math.random()*100<(s.crit+(_sk.mult>=5?50:0));
+      if(cr)dmg=Math.floor(dmg*s.cdmg/100);
+      const red=isMag?Math.max(1,dmg):Math.max(1,dmg-Math.floor(G.enemy.def*.5));
+      G.enemy.hp-=red;total+=red;if(red>G.maxDmg)G.maxDmg=red;
+    }
+    addLog(`${_sk.ic}${_sk.n}！造成 ${total} 傷害${hits>1?` (×${hits}連)`:''}`,'lc');
+    if(G.enemy.hp<=0)eDie();else render();
+  }
+  if(_sk.type==='heal'){const s2=st();const hp=Math.floor(s2.mxhp*(_sk.heal||.3));G.hero.hp=Math.min(s2.mxhp,G.hero.hp+hp);G.statusFx.push({n:'再生',ic:'💚',stat:'regen',v:Math.floor(s2.mxhp*.02),dur:5000});addLog(`${_sk.ic}${_sk.n}！回復 ${hp} HP！`,'ls');render();}
+  if(_sk.type==='dot'){if(!G.enemy)return;const s2=st();G.enemy.poisoned=true;G.enemy.dotDmg=Math.floor(s2.mag*(_sk.mult||0.8));G.enemy.dotTick=_sk.dotTick||5;G.enemy.dotUntil=Date.now()+(_sk.dotDur||4000);addLog(`${_sk.ic}${_sk.n}！敵人中毒！`,'lsk');render();}
+  if(_sk.type==='shield'){const s2=st();const shieldHp=Math.floor(s2.mxhp*(_sk.shieldPct||.4));G.hero.shield=shieldHp;G.statusFx.push({n:'護盾',ic:'🛡️',stat:'shield',v:shieldHp,dur:5000});addLog(`${_sk.ic}${_sk.n}！護盾 ${shieldHp}！`,'ls');render();}
+  if(_sk.type==='slow'){if(G.enemy){G.enemy.slowed=true;G.enemy.slowUntil=Date.now()+4000;}G.statusFx.push({n:'減速',ic:'⏳',stat:'slow',v:.7,dur:4000});addLog(`${_sk.ic}${_sk.n}！敵人減速！`,'lsk');render();}
+  if(_sk.type==='buff'){G.statusFx.push({ic:_sk.ic,n:_sk.n,stat:_sk.buffStat,v:_sk.buffPct,until:Date.now()+(_sk.buffDur||5000)});addLog(`${_sk.ic}${_sk.n}！屬性提升！`,'lsk');render();}
+  if(_sk.type==='taunt'){if(G.enemy){G.enemy.atkDebuff=(G.enemy.atkDebuff||1)*0.5;G.enemy.debuffUntil=Date.now()+4000;}addLog(`${_sk.ic}${_sk.n}！敵人攻擊-50%！`,'lsk');render();}
+}
+
+function useSkill(i){
+  const sk=SKL[i];
+  if(G.hero.mp<sk.mp){addLog('💧 魔力不足！','ls');return;}
+  if(G.skillCDs[i]>Date.now())return;
+  if(!G.enemy||G.enemy.hp<=0)return;
+  G.hero.mp-=sk.mp;
+  const cdr=1-.1*G.talents[1];
+  G.skillCDs[i]=Date.now()+sk.cd*cdr;
+  const s=st();
+  spawnSkillFx(sk.fx, 'baarea');
+  playSound('crit');
+
+  if(sk.type==='mag'||sk.type==='dot'||sk.type==='slow'){
+    if(sk.mult>0){
+      let dmg=Math.floor(s.mag*sk.mult);
+      const cr=Math.random()*100<s.crit;
+      if(cr)dmg=Math.floor(dmg*s.cdmg/100);
+      G.enemy.hp=Math.max(0,G.enemy.hp-dmg);
+      if(dmg>G.maxDmg)G.maxDmg=dmg;
+      spawnD(sk.ic+dmg,'hd'+(cr?' cr':''));
+      addLog(`${sk.ic}【${sk.n}】造成 ${dmg} 傷害！`+(cr?' 暴擊！':''),'lsk');
+      if(G.enemy.hp<=0){eDie();return;}
+    }
+    // DOT 毒傷
+    if(sk.type==='dot'){
+      const dotDmg=Math.floor(s.mag*sk.dotTick);
+      G.statusFx.push({n:'中毒',ic:'☠️',stat:'dot',v:dotDmg,dur:sk.dotDur||3000});
+      addLog(`☠️ 敵人中毒！每秒受到 ${dotDmg} 傷害`,'lsk');
+    }
+    // 減速
+    if(sk.type==='slow'||sk.slowAll){
+      G.enemy.slowed=true;G.enemy.slowUntil=Date.now()+3000;
+      addLog(`${sk.ic} 敵人被減速！攻速大幅下降！`,'lsk');
+      G.statusFx.push({n:'減速中',ic:'🌀',stat:'none',v:0,dur:3000});
+    }
+    if(sk.slowAll){
+      G.enemy.slowed=true;G.enemy.slowUntil=Date.now()+4000;
+      G.statusFx.push({n:'時間減速',ic:'⏳',stat:'none',v:0,dur:4000});
+      addLog(`⏳ 時間停滯！敵人攻速降低70%！`,'lsk');
+    }
+  } else if(sk.type==='heal'){
+    const hl=Math.floor(s.mxhp*sk.heal);
+    G.hero.hp=Math.min(s.mxhp,G.hero.hp+hl);
+    spawnD('+'+hl,'hl');
+    addLog(`💚【治癒術】恢復 ${hl} HP！`,'lsk');
+    G.statusFx.push({n:'再生',ic:'💚',stat:'regen',v:Math.floor(s.mxhp*.02),dur:5000});
+  } else if(sk.type==='shield'){
+    const shieldHp=Math.floor(s.mxhp*sk.shieldPct);
+    G.hero.shield=(G.hero.shield||0)+shieldHp;
+    G.statusFx.push({n:'護盾',ic:'🛡️',stat:'shield',v:shieldHp,dur:5000});
+    addLog(`🛡️【鬥氣護盾】獲得 ${shieldHp} 護盾！`,'lsk');
+    spawnD('🛡️'+shieldHp,'hl');
+  }
+  render();
+}
+function setSpd(s){G.speed=s;['sp1','sp2','sp4'].forEach(id=>$(id).classList.remove('act'));$('sp'+s).classList.add('act');}
+function toggleAuto(){G.auto=!G.auto;const b=$('autobtn');b.classList.toggle('act',G.auto);b.textContent=G.auto?'⚡ 自動戰鬥':'⏸ 已暫停';addLog(G.auto?'▶ 自動戰鬥':'⏸ 暫停','ls');}
+function retreat(){G.auto=false;const s=st();G.hero.hp=s.mxhp;G.hero.mp=s.mxmp;G.statusFx=[];addLog('🏠 撤退！HP/MP恢復！','ls');notify('🏠 回城恢復！');render();}
+function usePot(){if(!G.pots){notify('沒有藥水！');return;}G.pots--;const s=st();const hl=Math.floor(s.mxhp*.4);G.hero.hp=Math.min(s.mxhp,G.hero.hp+hl);spawnD('+'+hl,'hl');addLog(`🧪 藥水恢復 ${hl} HP`,'ls');render();}
+function useBonus(){if(G.bonCD>0){notify('冷卻中！');return;}G.bonCD=30000;G.statusFx.push({n:'攻擊加持',ic:'⚔️',stat:'atk',v:.3,dur:10000});G.statusFx.push({n:'魔法加持',ic:'✨',stat:'mag',v:.3,dur:10000});addLog('⭐ 加持！攻擊&魔法+30%！','lsk');notify('⭐ 戰鬥加持！');render();}
+function buyUp(i){if(G.upgrades[i]===undefined)G.upgrades[i]=0;const cost=ucost(i);if(isNaN(cost)||G.gold<cost||G.upgrades[i]>=UPS[i].mx)return;G.gold-=cost;G.upgrades[i]++;if(UPS[i].st==='maxHp')G.hero.hp=Math.min(G.hero.hp+UPS[i].v,st().mxhp);addLog(`✅ ${UPS[i].n} Lv${G.upgrades[i]}！`,'lr');render();rup();}
+function rcl(){
+  const c=$('pcl'); if(!c)return;
+  // 各系列解鎖等級（法師預設解鎖，戰士Lv5，敏捷Lv5）
+  const unlockLv={mage:1,warrior:5,rogue:5};
+  let html=`<div style="font-size:.65rem;color:var(--text2);margin-bottom:10px;padding:6px 8px;background:rgba(240,192,64,.06);border-radius:6px;border:1px solid rgba(240,192,64,.2)">
+    ✨ 達到指定等級後可<b style="color:var(--gold)">免費切換</b>職業系列，天賦技能一同切換。
+  </div>`;
+  ['mage','warrior','rogue'].forEach(key=>{
+    const cls=CLASSES[key];
+    const isActive=G.heroClass===key;
+    const unlocked=G.hero.lv>=unlockLv[key];
+    const jobs=cls.jobs;
+    const curJob=jobs.reduce((a,j)=>G.hero.lv>=j.lv?j:a,jobs[0]);
+    const nextJob=jobs.find(j=>j.lv>G.hero.lv);
+    const borderCol=isActive?cls.color:unlocked?cls.color+'88':'rgba(74,32,64,.4)';
+    html+=`<div style="border:2px solid ${borderCol};border-radius:10px;padding:10px;margin-bottom:10px;background:${isActive?cls.color+'15':unlocked?'rgba(10,6,8,.5)':'rgba(10,6,8,.3)'};opacity:${unlocked?1:.6}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-size:1.6rem">${unlocked?curJob.ic:'🔒'}</span>
+        <div style="flex:1">
+          <div style="font-size:.88rem;font-weight:700;color:${cls.color}">${cls.n}
+            ${isActive?`<span style="font-size:.6rem;background:${cls.color}33;padding:1px 6px;border-radius:8px;border:1px solid ${cls.color}">✓ 目前</span>`:''}
+            ${!unlocked?`<span style="font-size:.6rem;color:var(--text2);padding:1px 6px;border-radius:8px;border:1px solid rgba(255,255,255,.2)">🔒 Lv${unlockLv[key]}解鎖</span>`:''}
+          </div>
+          <div style="font-size:.7rem;color:var(--text2)">
+            ${unlocked?`${curJob.n}${nextJob?` → 下個轉職 Lv.${nextJob.lv}`:' (最高轉職)'}`:(`需要 Lv.${unlockLv[key]} 解鎖`)}
+          </div>
+        </div>
+      </div>
+      <div style="font-size:.63rem;color:var(--text2);margin-bottom:6px;line-height:1.6">
+        ATK:${cls.base.atk} DEF:${cls.base.def} MAG:${cls.base.mag} SPD:${cls.base.spd} CRIT:${cls.base.crit}%
+      </div>
+      <div style="margin-bottom:8px">
+        ${jobs.map(j=>`<span style="font-size:.6rem;padding:2px 6px;border-radius:8px;margin-right:3px;margin-bottom:3px;display:inline-block;border:1px solid ${G.hero.lv>=j.lv?cls.color:'rgba(255,255,255,.2)'};color:${G.hero.lv>=j.lv?cls.color:'var(--text2)'};background:${G.hero.lv>=j.lv?cls.color+'20':'transparent'}">${j.ic}${j.n} Lv${j.lv}</span>`).join('')}
+      </div>
+      ${isActive
+        ? `<div style="font-size:.68rem;color:${cls.color};text-align:center;padding:5px;border:1px solid ${cls.color}44;border-radius:6px">✓ 目前職業</div>`
+        : unlocked
+          ? `<button data-switchclass="${key}" style="width:100%;padding:7px;background:${cls.color}22;border:1px solid ${cls.color};color:${cls.color};border-radius:6px;cursor:pointer;font-size:.74rem;font-weight:700">⚔️ 免費切換職業</button>`
+          : `<div style="font-size:.68rem;color:var(--text2);text-align:center;padding:5px">🔒 Lv${unlockLv[key]} 解鎖</div>`
+      }
+    </div>`;
+  });
+  // 強化掉落品質升級
+  const dlCost=[0,1000,3000,8000,20000];
+  const dlLv=G.dropLv||0;
+  const dlMax=4;
+  html+=`<div style="border:1px solid rgba(240,192,64,.3);border-radius:10px;padding:10px;background:rgba(240,192,64,.05)">
+    <div style="font-size:.78rem;color:var(--gold);font-weight:700;margin-bottom:4px">💎 掉落品質強化 Lv${dlLv}/${dlMax}</div>
+    <div style="font-size:.65rem;color:var(--text2);margin-bottom:8px;line-height:1.7">
+      提升稀有裝備掉落機率<br>
+      Lv1: 稀有+15% | Lv2: 史詩+10% | Lv3: 傳說+5% | Lv4: 神話+3%
+    </div>
+    ${dlLv>=dlMax
+      ? '<div style="font-size:.68rem;color:var(--gold);text-align:center">✨ 已達最高等級</div>'
+      : `<button data-action="droplv" style="width:100%;padding:6px;background:rgba(240,192,64,.15);border:1px solid var(--gold);color:var(--gold);border-radius:6px;cursor:pointer;font-size:.72rem">強化掉落品質 💰${fmt(dlCost[dlLv+1])}</button>`
+    }
+  </div>`;
+  c.innerHTML=html;
+  // 綁定切換職業
+  c.querySelectorAll('[data-switchclass]').forEach(btn=>{
+    btn.addEventListener('click',()=>switchClass(btn.dataset.switchclass));
+  });
+  const dlBtn=c.querySelector('[data-action="droplv"]');
+  if(dlBtn) dlBtn.addEventListener('click',upgradeDropLv);
+}
+
+function switchClass(key){
+  if(G.heroClass===key)return;
+  const unlockLv={mage:1,warrior:5,rogue:5};
+  if(G.hero.lv<(unlockLv[key]||1)){notify(`🔒 需要 Lv.${unlockLv[key]} 才能解鎖！`);return;}
+  G.heroClass=key;
+  G.talents=[0,0,0,0,0,0]; // 重置天賦
+  SKL=CLASS_SKL[key];
+  // 重置 skillCDs
+  G.skillCDs={0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0};
+  // 套用新職業基礎屬性
+  const base=CLASSES[key].base;
+  G.hero.atk=base.atk;G.hero.def=base.def;G.hero.mag=base.mag;
+  G.hero.spd=base.spd;G.hero.crit=base.crit;
+  G.hero.maxHp=base.maxHp;G.hero.maxMp=base.maxMp;
+  const s=st();G.hero.hp=s.mxhp;G.hero.mp=s.mxmp;
+  addLog(`✨ 轉職為【${CLASSES[key].n}·${getJob().n}】！天賦已重置。`,'lr');
+  notify(`⚔️ 轉職成功！${CLASSES[key].ic} ${CLASSES[key].n}`);
+  render();rsk();rcl();
+}
+
+function upgradeDropLv(){
+  const dlCost=[0,1000,3000,8000,20000];
+  const dlLv=G.dropLv||0;
+  if(dlLv>=4){notify('已達最高等級！');return;}
+  const cost=dlCost[dlLv+1];
+  if(G.gold<cost){notify(`💰 金幣不足！需要${fmt(cost)}`);return;}
+  G.gold-=cost;G.dropLv=(dlLv+1);
+  addLog(`💎 掉落品質強化至 Lv${G.dropLv}！`,'lr');
+  notify(`💎 掉落品質 Lv${G.dropLv}！`);
+  render();rcl();
+}
+
+
+// ==================== 材料系統 ====================
+function rmt(){
+  const c=$('pmt'); if(!c)return;
+  const mat=G.mat;
+  const jobLv=G.jobLv||1;
+  const jobNeed=jobExpN(jobLv<50?jobLv:50);
+  const jobPct=jobLv>=50?100:Math.floor((G.jobExp||0)/jobNeed*100);
+  const cls=getCls();
+
+  // ── 頭部：材料數量 + 職業等級 ──
+  let html=`<div style="background:rgba(64,255,170,.06);border:1px solid rgba(64,255,170,.25);border-radius:8px;padding:10px;margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div>
+        <div style="font-size:.75rem;color:#40ffaa;font-weight:700">🪨 材料庫存</div>
+        <div style="font-size:1.5rem;color:var(--gold);font-weight:700">${fmt(mat)}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:.65rem;color:var(--text2)">職業等級</div>
+        <div style="font-size:.9rem;color:${cls.color};font-weight:700">${cls.ic} Lv${jobLv}/50</div>
+        ${jobLv<50?`<div style="height:4px;width:90px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:3px;margin-left:auto">
+          <div style="height:100%;width:${jobPct}%;background:${cls.color};border-radius:2px;transition:width .3s"></div>
+        </div>`:'<div style="font-size:.6rem;color:var(--gold)">✨ MAX</div>'}
+      </div>
+    </div>
+    <div style="font-size:.62rem;color:var(--text2)">職業升級可獲得天賦點 · 每3英雄等級+1天賦點 · BOSS通關+1</div>
+  </div>`;
+
+  // ── 訂製裝備 ──
+  const craftSlots=['武器','盔甲','頭盔','靴子','戒指','護符'];
+  const craftRars=['rare','epic','legend','mythic'];
+  const craftCosts={rare:{mat:30,soul:1},epic:{mat:80,soul:3},legend:{mat:200,soul:8},mythic:{mat:500,soul:20}};
+  const selSlot=G._craftSlot||0;
+  const selRar=G._craftRar||'rare';
+  const cost=craftCosts[selRar];
+  const canCraft=G.mat>=cost.mat&&G.soul>=cost.soul;
+
+  html+=`<div style="border:1px solid rgba(155,89,182,.4);border-radius:8px;padding:12px;background:rgba(155,89,182,.06)">
+    <div style="font-size:.82rem;color:#b57eff;font-weight:700;margin-bottom:10px">⚗️ 訂製裝備</div>
+
+    <div style="font-size:.65rem;color:var(--text2);margin-bottom:5px">選擇部位</div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
+      ${craftSlots.map((s,i)=>`<button data-craft-slot="${i}" style="padding:4px 10px;border-radius:14px;font-size:.65rem;cursor:pointer;border:1px solid ${selSlot===i?'#b57eff':'rgba(255,255,255,.15)'};color:${selSlot===i?'#b57eff':'var(--text2)'};background:${selSlot===i?'rgba(181,126,255,.2)':'transparent'};font-weight:${selSlot===i?700:400}">${s}</button>`).join('')}
+    </div>
+
+    <div style="font-size:.65rem;color:var(--text2);margin-bottom:5px">選擇稀有度</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;margin-bottom:12px">
+      ${craftRars.map(r=>{
+        const cc=craftCosts[r];
+        const rc=RAR_COL[r];
+        const sel=selRar===r;
+        return `<button data-craft-rar="${r}" style="padding:6px 4px;border-radius:7px;font-size:.63rem;cursor:pointer;border:2px solid ${sel?rc:rc+'44'};color:${sel?rc:'var(--text2)'};background:${sel?rc+'22':'transparent'};text-align:center">
+          <div style="font-weight:700">${RAR_LBL[r]}</div>
+          <div style="font-size:.55rem;opacity:.8;margin-top:2px">🪨${cc.mat}<br>🔮${cc.soul}</div>
+        </button>`;
+      }).join('')}
+    </div>
+
+    <div style="font-size:.65rem;color:var(--text2);margin-bottom:8px;padding:6px 8px;background:rgba(255,255,255,.04);border-radius:6px">
+      消耗：<b style="color:${G.mat>=cost.mat?'#40ffaa':'#ff6666'}">🪨${cost.mat}材料</b> + <b style="color:${G.soul>=cost.soul?'#b57eff':'#ff6666'}">🔮${cost.soul}靈魂石</b>
+      &nbsp;→&nbsp; <b style="color:${RAR_COL[selRar]}">[${RAR_LBL[selRar]}] ${craftSlots[selSlot]}</b> (屬性+20%)
+    </div>
+    <button data-mt="craft" style="width:100%;padding:8px;background:${canCraft?'rgba(181,126,255,.2)':'rgba(255,255,255,.05)'};border:2px solid ${canCraft?'#b57eff':'rgba(255,255,255,.15)'};color:${canCraft?'#b57eff':'var(--text2)'};border-radius:7px;cursor:${canCraft?'pointer':'not-allowed'};font-size:.76rem;font-weight:700;transition:all .2s">
+      ${canCraft?'⚗️ 開始訂製！':'⚗️ 材料或靈魂石不足'}
+    </button>
+  </div>`;
+
+  c.innerHTML=html;
+
+  // 事件綁定（只有訂製）
+  c.querySelectorAll('[data-craft-slot]').forEach(btn=>{
+    btn.addEventListener('click',()=>{G._craftSlot=parseInt(btn.dataset.craftSlot);rmt();});
+  });
+  c.querySelectorAll('[data-craft-rar]').forEach(btn=>{
+    btn.addEventListener('click',()=>{G._craftRar=btn.dataset.craftRar;rmt();});
+  });
+  c.querySelector('[data-mt="craft"]')?.addEventListener('click',()=>{if(canCraft)craftItem();});
+}
+
+function craftItem(){
+  const slotIdx=G._craftSlot||0;
+  const rar=G._craftRar||'rare';
+  const costs={rare:{mat:30,soul:1},epic:{mat:80,soul:3},legend:{mat:200,soul:8},mythic:{mat:500,soul:20}};
+  const cost=costs[rar];
+  if(G.mat<cost.mat){notify(`🪨 材料不足！需要 ${cost.mat}`);return;}
+  if(G.soul<cost.soul){notify(`🔮 靈魂石不足！需要 ${cost.soul}`);return;}
+  const pool=ITM.filter(it=>it.slot===slotIdx&&it.rar===rar);
+  if(!pool.length){notify('⚠️ 此部位沒有該稀有度的裝備模板');return;}
+  G.mat-=cost.mat;G.soul-=cost.soul;
+  const base=pool[Math.floor(Math.random()*pool.length)];
+  const item={...base,st:{...base.st},crafted:true};
+  // 訂製加成：基礎屬性+20%
+  Object.keys(item.st).forEach(k=>{item.st[k]=Math.floor(item.st[k]*1.2);});
+  item.n='[訂]'+item.n;
+  G.inventory.push(item);
+  addLog(`⚗️ 訂製成功！[${RAR_LBL[rar]}] ${item.n} (屬性+20%)`,'lr');
+  notify(`⚗️ 訂製：${item.ic} ${item.n}！`);
+  playSound('levelup');render();rmt();
+}
+
+function learnCrossSkill(clsKey,idx){
+  const learned=G.learnedSkills||[];
+  if(learned.length>=2){notify('📖 最多學習2個跨系技能！');return;}
+  if(learned.some(l=>l.clsKey===clsKey&&l.idx===idx)){notify('已經學過這個技能了！');return;}
+  const soulCost=5+idx*2;
+  if(G.soul<soulCost){notify(`🔮 靈魂石不足！需要 ${soulCost}`);return;}
+  G.soul-=soulCost;
+  G.learnedSkills=[...learned,{clsKey,idx}];
+  const sk=CLASS_SKL[clsKey][idx];
+  addLog(`📖 學習跨系技能：${sk.ic}${sk.n}！`,'lr');
+  notify(`📖 習得 ${sk.ic}${sk.n}！`);
+  render();rsk();rmt();
+}
+
+function lrnTa(i){const TA=getTA();if(!G.talentPts||G.talents[i]>=TA[i].mx)return;G.talentPts--;G.talents[i]++;addLog(`🌟 天賦：${TA[i].n} Lv${G.talents[i]}！`,'lr');notify(`🌟 天賦提升！`);render();rta();}
+function goDng(i){if(G.bestFloor<DNG[i].un)return;G.dungId=i;G.floor=DNG[i].un;G.flKills=0;G.flNeed=5;G.enemy=mkEnemy();addLog(`🗺 進入 ${DNG[i].n}！`,'ls');notify(`🗺 進入 ${DNG[i].n}！`);render();rdn();}
+function eqItem(idx){const it=G.inventory[idx];if(!it)return;if(G.equips[it.slot])G.inventory.push(G.equips[it.slot]);G.equips[it.slot]=it;G.inventory.splice(idx,1);addLog(`🔧 裝備 ${it.ic} ${it.n}！`,'lr');render();req();}
+function sellItem(idx){const it=G.inventory[idx];if(!it)return;const sp={common:20,rare:80,epic:300,legend:1200}[it.rar]||20;G.gold+=sp;G.inventory.splice(idx,1);addLog(`💰 販賣 ${it.n}，獲得 ${sp} 金幣`,'lr');playSound('coin');render();req();}
+function enhanceItem(idx){
+  const it=G.inventory[idx];
+  if(!it)return;
+  const lv=it.enhance||0;
+  if(lv>=5){notify('💎 強化已達最高 +5！');return;}
+  const costs=[0,3,8,18,40,80]; // 材料消耗
+  const cost=costs[lv+1];
+  if(G.mat<cost){notify(`🪨 材料不足！需要 ${cost} 材料`);return;}
+  G.mat-=cost;
+  it.enhance=(lv+1);
+  // 強化加成：每+1，各屬性提升15%
+  const boost=0.15;
+  Object.keys(it.st).forEach(k=>{
+    it.st[k]=Math.floor((it.st[k]||0)*(1+boost));
+  });
+  addLog(`🔨 ${it.n} 強化至 +${it.enhance}！屬性+15%！`,'lr');
+  notify(`✨ 強化成功！${it.n} +${it.enhance}`);
+  playSound('levelup');
+  req();
+}
+
+function sellAll(){
+  const sp={common:20,rare:80,epic:300,legend:1200,mythic:5000};
+  let total=0;
+  G.inventory.forEach(it=>{total+=sp[it.rar]||20;});
+  if(!total||!G.inventory.length){notify('背包是空的！');return;}
+  // 用自訂 overlay 確認，避免瀏覽器 confirm 被擋
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center';
+  ov.innerHTML=`<div style="background:var(--panel2);border:2px solid var(--gold);border-radius:12px;padding:22px 28px;text-align:center;max-width:300px">
+    <div style="font-size:1.1rem;color:var(--gold);margin-bottom:8px">💰 全部販賣</div>
+    <div style="font-size:.82rem;color:var(--text);margin-bottom:16px">販賣全部 <b style="color:var(--gold)">${G.inventory.length}</b> 件物品<br>獲得 <b style="color:var(--gold)">${total}</b> 💰</div>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button id="sellConfirm" style="padding:7px 20px;background:rgba(240,192,64,.2);border:1px solid var(--gold);color:var(--gold);border-radius:6px;cursor:pointer;font-size:.88rem">確認販賣</button>
+      <button id="sellCancel" style="padding:7px 20px;background:rgba(74,32,64,.3);border:1px solid var(--border);color:var(--text2);border-radius:6px;cursor:pointer;font-size:.88rem">取消</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  ov.querySelector('#sellConfirm').addEventListener('click',()=>{
+    G.gold+=total;G.inventory=[];
+    addLog(`💰 販賣全部物品，獲得 ${total} 金幣`,'lr');
+    playSound('coin');render();req();
+    ov.remove();
+  });
+  ov.querySelector('#sellCancel').addEventListener('click',()=>ov.remove());
+}
+loadGame();
+G.enemy=mkEnemy();render();rup();
+
+// ==================== 音效系統 ====================
+const AC = new (window.AudioContext || window.webkitAudioContext)();
+let musicOn = true, sfxOn = true, musicGain, bgmOsc = [], bgmInterval;
+
+function playSound(type) {
+  if (!sfxOn) return;
+  try {
+    const g = AC.createGain();
+    g.connect(AC.destination);
+    if (type === 'hit') {
+      const o = AC.createOscillator(); o.connect(g);
+      o.frequency.setValueAtTime(300, AC.currentTime);
+      o.frequency.exponentialRampToValueAtTime(100, AC.currentTime + 0.12);
+      g.gain.setValueAtTime(0.18, AC.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + 0.12);
+      o.start(); o.stop(AC.currentTime + 0.12);
+    } else if (type === 'crit') {
+      [400, 600, 900].forEach((f, i) => {
+        const o = AC.createOscillator(); o.connect(g); o.type = 'square';
+        o.frequency.setValueAtTime(f, AC.currentTime + i * 0.04);
+        g.gain.setValueAtTime(0.15, AC.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + 0.25);
+        o.start(AC.currentTime + i * 0.04); o.stop(AC.currentTime + 0.25);
+      });
+    } else if (type === 'levelup') {
+      [523, 659, 784, 1046].forEach((f, i) => {
+        const o = AC.createOscillator(); o.connect(g); o.type = 'triangle';
+        o.frequency.value = f;
+        g.gain.setValueAtTime(0.2, AC.currentTime + i * 0.12);
+        g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + i * 0.12 + 0.18);
+        o.start(AC.currentTime + i * 0.12); o.stop(AC.currentTime + i * 0.12 + 0.18);
+      });
+    } else if (type === 'coin') {
+      [800, 1000].forEach((f, i) => {
+        const o = AC.createOscillator(); o.connect(g); o.type = 'sine';
+        o.frequency.value = f; g.gain.setValueAtTime(0.12, AC.currentTime + i * 0.06);
+        g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + i * 0.06 + 0.1);
+        o.start(AC.currentTime + i * 0.06); o.stop(AC.currentTime + i * 0.06 + 0.1);
+      });
+    } else if (type === 'combo') {
+      const f = 300 + G.combo * 40;
+      const o = AC.createOscillator(); o.connect(g); o.type = 'sawtooth';
+      o.frequency.setValueAtTime(Math.min(f, 1200), AC.currentTime);
+      g.gain.setValueAtTime(0.15, AC.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + 0.1);
+      o.start(); o.stop(AC.currentTime + 0.1);
+    } else if (type === 'die') {
+      const o = AC.createOscillator(); o.connect(g); o.type = 'sawtooth';
+      o.frequency.setValueAtTime(200, AC.currentTime);
+      o.frequency.exponentialRampToValueAtTime(50, AC.currentTime + 0.5);
+      g.gain.setValueAtTime(0.25, AC.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + 0.5);
+      o.start(); o.stop(AC.currentTime + 0.5);
+    }
+  } catch(e) {}
+}
+
+// ── 多首場景音樂定義 ──
+// ── 外部 MP3 音樂清單（soundimage.org，Royalty-Free，需署名）──
+// 作者：Eric Matyas  https://soundimage.org
+const MP3_TRACKS = {
+  explore: {
+    name:'🌿 探索',
+    url:'https://soundimage.org/wp-content/uploads/2014/08/RPG-Map-Music.mp3',
+  },
+  dungeon: {
+    name:'🏰 地城',
+    url:'https://soundimage.org/wp-content/uploads/2014/09/Foglands.mp3',
+  },
+  mystic: {
+    name:'✨ 神秘',
+    url:'https://soundimage.org/wp-content/uploads/2017/08/RPG-Battle-Climax-2.mp3',
+  },
+  epic: {
+    name:'⚔️ 戰鬥',
+    url:'https://soundimage.org/wp-content/uploads/2016/07/Fantasy-Forest-Battle.mp3',
+  },
+  boss: {
+    name:'💀 BOSS',
+    url:'https://soundimage.org/wp-content/uploads/2019/01/Boss-Battle.mp3',
+  },
+  victory: {
+    name:'🏆 勝利',
+    url:'https://soundimage.org/wp-content/uploads/2020/06/The-Key-to-the-Kingdom.mp3',
+  },
+};
+
+// 備用 Web Audio（網路載入失敗時的 fallback）
+const TRACKS = {
+  explore: { name:'探索', bpm:340, mel:[4,4,5,7,7,5,4,2,0,2,4,4,2,0,0,0,5,5,7,9,9,7,5,4,2,4,5,5,4,2,2,2], bass:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,3,3,3,3,3,3,3,0,0,0,0,0,0,0,0], notes:[261,294,329,349,392,440,494,523,587,659], melT:'triangle', bassT:'sine', vol:0.08 },
+  boss:    { name:'BOSS戰', bpm:200, mel:[0,0,3,0,0,3,5,3,0,0,3,0,5,4,3,0,7,7,10,7,7,10,12,10,7,5,3,0,3,0,0,0], bass:[0,0,0,3,0,0,3,0,0,0,0,3,5,3,0,0,0,0,0,3,0,0,3,0,0,0,0,3,0,0,0,0], notes:[110,123,147,165,196,220,247,262,294,330,370,392,440], melT:'sawtooth', bassT:'square', vol:0.07 },
+  victory: { name:'勝利', bpm:280, mel:[0,4,7,12,7,4,0,4,7,12,11,9,7,0,0,0,4,7,9,11,12,11,9,7,4,7,4,2,0,0,0,0], bass:[0,0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], notes:[261,294,329,349,392,440,494,523,587,659,698,784,880], melT:'triangle', bassT:'sine', vol:0.09 },
+  dungeon: { name:'地城', bpm:400, mel:[0,3,5,3,0,2,3,2,0,3,5,8,7,5,3,0,5,8,10,8,5,7,8,7,5,3,2,0,3,2,0,0], bass:[0,0,0,0,3,3,3,3,0,0,0,0,5,5,3,3,0,0,0,0,3,3,3,3,0,0,0,0,3,3,0,0], notes:[174,196,220,246,261,277,294,311,349,392,415,440,466,523], melT:'sine', bassT:'triangle', vol:0.065 },
+  mystic:  { name:'神秘', bpm:360, mel:[0,2,4,7,9,7,4,2,0,4,7,9,7,4,2,0,9,7,4,2,0,2,4,7,9,4,2,0,4,2,0,0], bass:[0,0,0,0,0,0,0,0,3,3,3,3,3,3,3,3,0,0,0,0,0,0,0,0,5,5,5,5,0,0,0,0], notes:[261,294,349,392,466,523,587,698,784,880], melT:'sine', bassT:'triangle', vol:0.07 },
+  epic:    { name:'史詩', bpm:240, mel:[0,0,4,0,7,0,4,0,5,5,9,5,12,9,7,5,4,4,7,4,9,7,5,4,2,2,5,2,7,5,4,2], bass:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0], notes:[130,146,174,196,220,261,294,349,392,440,523,587,659,784], melT:'square', bassT:'sawtooth', vol:0.065 },
+};
+
+const RANDOM_POOL = ['explore','dungeon','mystic','epic','victory'];
+let randomQueue = [];
+let currentTrack = 'explore';
+let bgmStep = 0;
+let bgmAudio = null;   // 目前播放的 Audio 元素
+let bgmUseMp3 = true;  // 優先 MP3，失敗降 WebAudio
+
+function nextRandomTrack() {
+  if (!randomQueue.length) {
+    // 洗牌
+    randomQueue = [...RANDOM_POOL].sort(() => Math.random() - 0.5);
+  }
+  return randomQueue.pop();
+}
+
+function getSceneTrack() {
+  if (G.isBoss) return 'boss';
+  if (G.floor % 10 === 9) return 'boss';
+  return null; // null = 繼續隨機
+}
+
+function startBGM(trackKey) {
+  if (!musicOn) return;
+  stopBGM();
+  const scene = getSceneTrack();
+  const tk = trackKey || scene || nextRandomTrack();
+  if (currentTrack !== tk) { currentTrack = tk; bgmStep = 0; }
+  const mb = document.getElementById('musicBtn');
+  if (mb) mb.textContent = '🎵 ' + (MP3_TRACKS[tk]?.name || TRACKS[tk]?.name || tk);
+
+  // 先嘗試 MP3
+  if (bgmUseMp3 && MP3_TRACKS[tk]) {
+    const au = new Audio(MP3_TRACKS[tk].url);
+    au.loop = true;
+    au.volume = 0.35;
+    au.crossOrigin = 'anonymous';
+    au.play().then(() => {
+      bgmAudio = au;
+    }).catch(() => {
+      bgmUseMp3 = false; // 失敗降級到 WebAudio
+      startBGMWebAudio(tk);
+    });
+    return;
+  }
+  startBGMWebAudio(tk);
+}
+
+function startBGMWebAudio(tk) {
+  const tr = TRACKS[tk];
+  try {
+    const master = AC.createGain(); master.gain.value = tr.vol; master.connect(AC.destination);
+    musicGain = master;
+    bgmInterval = setInterval(() => {
+      if (!musicOn) { stopBGM(); return; }
+      // 場景切換檢測
+      const scene = getSceneTrack();
+      // 曲目播完一輪後切換（每32步 = 一首曲子）
+      if (bgmStep > 0 && bgmStep % 64 === 0) {
+        const next = scene || nextRandomTrack();
+        if (next !== currentTrack) { startBGM(next); return; }
+      }
+      if (scene && scene !== currentTrack) { startBGM(scene); return; }
+      try {
+        const t = TRACKS[currentTrack];
+        const ni = t.notes[t.mel[bgmStep % t.mel.length]];
+        const bi = t.notes[t.bass[bgmStep % t.bass.length]];
+        // 主旋律
+        const o = AC.createOscillator(); const og = AC.createGain();
+        o.type = t.melT; o.frequency.value = ni;
+        o.connect(og); og.connect(master);
+        og.gain.setValueAtTime(0.55, AC.currentTime);
+        og.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + (60000/t.bpm/1000)*0.9);
+        o.start(); o.stop(AC.currentTime + 0.35);
+        // 和聲（主旋律上方大三度）
+        if (bgmStep % 4 === 0) {
+          const o2 = AC.createOscillator(); const og2 = AC.createGain();
+          o2.type = 'triangle'; o2.frequency.value = ni * 1.26;
+          o2.connect(og2); og2.connect(master);
+          og2.gain.setValueAtTime(0.2, AC.currentTime);
+          og2.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + 0.3);
+          o2.start(); o2.stop(AC.currentTime + 0.3);
+        }
+        // 低音
+        const b = AC.createOscillator(); const bg2 = AC.createGain();
+        b.type = t.bassT; b.frequency.value = bi / 2;
+        b.connect(bg2); bg2.connect(master);
+        bg2.gain.setValueAtTime(0.3, AC.currentTime);
+        bg2.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + 0.25);
+        b.start(); b.stop(AC.currentTime + 0.25);
+        // 打擊節拍（每4拍）
+        if (bgmStep % 4 === 0) {
+          const d = AC.createOscillator(); const dg = AC.createGain();
+          d.type = 'square'; d.frequency.value = 80;
+          d.connect(dg); dg.connect(master);
+          dg.gain.setValueAtTime(0.15, AC.currentTime);
+          dg.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + 0.08);
+          d.start(); d.stop(AC.currentTime + 0.08);
+        }
+        bgmStep++;
+      } catch(e) {}
+    }, 60000 / TRACKS[currentTrack].bpm);
+  } catch(e) {}
+}
+
+function stopBGM() {
+  if (bgmInterval) clearInterval(bgmInterval);
+  bgmInterval = null;
+}
+
+function toggleMusic() {
+  musicOn = !musicOn;
+  const btn = document.getElementById('musicBtn');
+  if (musicOn) {
+    startBGM();
+    btn.textContent = '🎵 音樂 ON';
+    btn.classList.add('act');
+  } else {
+    stopBGM();
+    btn.textContent = '🔇 音樂 OFF';
+    btn.classList.remove('act');
+  }
+}
+
+function toggleSFX() {
+  sfxOn = !sfxOn;
+  const btn = document.getElementById('sfxBtn');
+  btn.textContent = sfxOn ? '🔊 音效 ON' : '🔕 音效 OFF';
+  btn.classList.toggle('act', sfxOn);
+}
+
+// 解除 AudioContext 限制
+document.addEventListener('click', () => { if (AC.state === 'suspended') { AC.resume().then(() => { if (musicOn && !bgmInterval) startBGM(); }); } }, { once: false });
+
+// ==================== COMBO 手動系統 ====================
+
+
+// ==================== COMBO 擴充系統 ====================
+// 四種符文節點：
+//   type-rune  → 點擊觸發（浮現符文）
+//   type-soul  → 點擊獲得靈魂石
+//   type-enemy → 點擊敵人受傷瞬間
+//   type-reset → 點擊重置技能冷卻
+
+const RUNE_TYPES = [
+  { type:'rune',  icon:'🔮', color:'#f0c040', weight:40, label:'COMBO+',    desc:'點擊累積COMBO！' },
+  { type:'soul',  icon:'💜', color:'#b44fff', weight:20, label:'靈魂石！',   desc:'點擊獲得靈魂石！' },
+  { type:'enemy', icon:'⚔️', color:'#ff4040', weight:25, label:'致命一擊！', desc:'在受傷瞬間點擊！' },
+  { type:'reset', icon:'❄️', color:'#40dcff', weight:15, label:'冷卻重置！', desc:'點擊重置技能冷卻！' },
+];
+
+const COMBO_MILESTONES = [5,10,20,30,50,75,100];
+
+let _runeSpawnTimer = null;
+let _runeActive = false;  // 是否有符文正在等待點擊
+
+function weightedRune() {
+  const total = RUNE_TYPES.reduce((a,t)=>a+t.weight,0);
+  let r = Math.random()*total;
+  for(const t of RUNE_TYPES){ r-=t.weight; if(r<=0)return t; }
+  return RUNE_TYPES[0];
+}
+
+function spawnRune() {
+  if(!G.auto || !G.enemy || _runeActive) return;
+  const ba = document.getElementById('baarea');
+  if(!ba) return;
+
+  const rt = weightedRune();
+  // 對 enemy type：只在敵人HP<50%時出現
+  if(rt.type==='enemy' && G.enemy && G.enemy.hp/G.enemy.mxhp > 0.5) return;
+
+  _runeActive = true;
+  const node = document.createElement('div');
+  node.className = `rune-node type-${rt.type}`;
+  node.textContent = rt.icon;
+  node.title = rt.desc;
+
+  // 隨機位置（避免邊緣）
+  const bRect = ba.getBoundingClientRect();
+  const pad = 60;
+  node.style.left = (pad + Math.random()*(bRect.width - pad*2 - 52)) + 'px';
+  node.style.top  = (pad + Math.random()*(bRect.height - pad*2 - 52)) + 'px';
+  node.style.pointerEvents = 'all';
+
+  // 計時條
+  const timerRing = document.createElement('div');
+  timerRing.style.cssText = `position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);height:3px;width:44px;background:rgba(255,255,255,.15);border-radius:2px`;
+  const timerFill = document.createElement('div');
+  timerFill.style.cssText = `height:100%;width:100%;background:${rt.color};border-radius:2px;transition:width 2.5s linear`;
+  timerRing.appendChild(timerFill);
+  node.appendChild(timerRing);
+
+  ba.appendChild(node);
+
+  // 點擊事件
+  node.addEventListener('click', (e) => {
+    e.stopPropagation();
+    onRuneClick(rt, node, e);
+  });
+  // 觸控
+  node.addEventListener('touchstart', (e) => {
+    e.stopPropagation();
+    const t = e.touches[0];
+    onRuneClick(rt, node, {clientX:t.clientX, clientY:t.clientY});
+  }, {passive:true});
+
+  // 啟動計時條縮減
+  requestAnimationFrame(()=>{ timerFill.style.width='0%'; });
+
+  // 2.5秒後消失（未點擊）
+  const expTimer = setTimeout(()=>{
+    if(node.parentNode){ node.remove(); _runeActive=false; }
+  }, 2500);
+  node._expTimer = expTimer;
+}
+
+function onRuneClick(rt, node, evt) {
+  if(node._expTimer) clearTimeout(node._expTimer);
+  _runeActive = false;
+
+  // 爆炸動畫
+  node.classList.add('hit-flash');
+  setTimeout(()=>node.remove(), 250);
+
+  // 點擊波紋
+  const ba = document.getElementById('baarea');
+  if(ba && evt){
+    const bRect = ba.getBoundingClientRect();
+    const rip = document.createElement('div');
+    rip.className = 'click-ripple';
+    rip.style.left = (evt.clientX - bRect.left) + 'px';
+    rip.style.top  = (evt.clientY - bRect.top) + 'px';
+    rip.style.borderColor = rt.color;
+    ba.appendChild(rip);
+    setTimeout(()=>rip.remove(), 500);
+  }
+
+  // 執行效果
+  switch(rt.type){
+    case 'rune':
+      // 累積COMBO
+      G.combo = (G.combo||0) + 1;
+      updateComboUI();
+      checkComboMilestone();
+      const s1=st();
+      const dmg1=Math.floor((s1.atk+s1.mag*0.5)*getComboMult());
+      if(G.enemy){ G.enemy.hp=Math.max(0,G.enemy.hp-dmg1); spawnD('🔮'+dmg1,'hd cr'); if(G.enemy.hp<=0)eDie(); else render(); }
+      addLog(`🔮 符文觸發！COMBO x${G.combo}！+${dmg1}傷害`,'lc');
+      playSound('combo');
+      break;
+
+    case 'soul':
+      // 獲得靈魂石
+      const soulGain = 1 + Math.floor(G.combo/10);
+      G.soul += soulGain;
+      G.combo = (G.combo||0) + 1;
+      updateComboUI();
+      // 靈魂石飄出特效
+      if(ba){
+        const sf = document.createElement('div');
+        sf.className = 'soul-drop-fx';
+        sf.textContent = `+${soulGain}💜`;
+        sf.style.left = (30+Math.random()*60)+'%';
+        sf.style.top  = '40%';
+        ba.appendChild(sf);
+        setTimeout(()=>sf.remove(), 800);
+      }
+      addLog(`💜 靈魂石+${soulGain}！（COMBO x${G.combo}）`,'lsk');
+      playSound('coin');
+      render();
+      break;
+
+    case 'enemy':
+      // 致命一擊：高倍傷害
+      const s2=st();
+      const mult2 = 3.0 + getComboMult();
+      const dmg2 = Math.floor((s2.atk+s2.mag)*mult2);
+      G.combo = (G.combo||0) + 2;
+      updateComboUI();
+      checkComboMilestone();
+      if(G.enemy){ G.enemy.hp=Math.max(0,G.enemy.hp-dmg2); spawnD('⚔️'+dmg2,'hd cr'); playSound('crit'); if(G.enemy.hp<=0)eDie(); else render(); }
+      addLog(`⚔️ 致命一擊！${dmg2} 傷害！COMBO x${G.combo}！`,'lc');
+      triggerComboBurst(rt.color, '⚔️ CRITICAL!');
+      break;
+
+    case 'reset':
+      // 重置所有技能冷卻
+      Object.keys(G.skillCDs).forEach(k=>{ G.skillCDs[k]=0; });
+      G.combo = (G.combo||0) + 1;
+      updateComboUI();
+      rsk();
+      addLog(`❄️ 技能冷卻全部重置！COMBO x${G.combo}！`,'lsk');
+      playSound('levelup');
+      triggerComboBurst(rt.color, '❄️ RESET!');
+      break;
+  }
+}
+
+// COMBO 里程碑定義：[combo數, 顏色, 標題文字, 獎勵fn]
+const MILESTONE_DEF = [
+  { at:5,   color:'#f0c040', label:'🔥 ON FIRE!',      reward:(s)=>{ G.mat+=3;        spawnComboDrop('+3🪨',s); }},
+  { at:10,  color:'#ff9020', label:'⚡ COMBO x10!',    reward:(s)=>{ G.mat+=8;        spawnComboDrop('+8🪨',s);  triggerUltFx('fire'); }},
+  { at:20,  color:'#ff4040', label:'💥 RAMPAGE!',      reward:(s)=>{ G.mat+=15; G.soul+=1; spawnComboDrop('+1💜',s); triggerUltFx('thunder'); }},
+  { at:30,  color:'#a040ff', label:'🌟 GODSLAYER!',    reward:(s)=>{ Object.keys(G.skillCDs).forEach(k=>{G.skillCDs[k]=0;}); G.soul+=2; spawnComboDrop('+2💜❄️',s); triggerUltFx('blast'); rsk(); }},
+  { at:50,  color:'#ff40ff', label:'👑 LEGENDARY!',    reward:(s)=>{ G.soul+=5; G.mat+=30; spawnComboDrop('+5💜',s); triggerUltFx('thunder'); }},
+  { at:75,  color:'#40ffff', label:'💎 MYTHIC!',       reward:(s)=>{ G.soul+=8; G.mat+=50; spawnComboDrop('+8💜',s); triggerUltFx('fire'); }},
+  { at:100, color:'#ffffff', label:'✨ TRANSCENDENT!', reward:(s)=>{ G.soul+=15; G.mat+=100; G.gem+=3; spawnComboDrop('💎+15💜',s); triggerUltFx('blast'); }},
+];
+
+function spawnComboDrop(text, statStr) {
+  const ba = document.getElementById('baarea');
+  if(!ba) return;
+  const el = document.createElement('div');
+  el.style.cssText = `position:absolute;pointer-events:none;font-size:1.1rem;font-weight:700;color:#f0c040;text-shadow:0 0 12px #f0c040;left:${20+Math.random()*60}%;top:30%;z-index:30;animation:soulPop .9s ease-out forwards`;
+  el.textContent = text;
+  ba.appendChild(el);
+  setTimeout(()=>el.remove(), 900);
+}
+
+function triggerUltFx(fxType) {
+  // 絕招動畫：畫面震動 + 全螢幕閃光
+  const ba = document.getElementById('baarea');
+  if(ba){
+    ba.style.animation='none';
+    ba.style.transition='transform .06s';
+    const shakes = [[3,-2],[-3,2],[2,-3],[-2,3],[1,0],[0,0]];
+    shakes.forEach(([x,y],i)=>{
+      setTimeout(()=>{ ba.style.transform=`translate(${x}px,${y}px)`; },i*55);
+    });
+    setTimeout(()=>{ ba.style.transform=''; }, shakes.length*55+50);
+  }
+  // 全螢幕閃光
+  const flash = document.createElement('div');
+  flash.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:8999;animation:ultFlash .4s ease-out forwards';
+  flash.style.background = fxType==='fire'?'rgba(255,80,0,.18)':fxType==='thunder'?'rgba(180,79,255,.2)':'rgba(64,220,255,.18)';
+  document.body.appendChild(flash);
+  setTimeout(()=>flash.remove(), 400);
+  // spawnSkillFx
+  spawnSkillFx(fxType, 'baarea');
+}
+
+function checkComboMilestone() {
+  const m = MILESTONE_DEF.find(m=>m.at===G.combo);
+  if(!m) return;
+  // 全螢幕爆字
+  triggerComboBurst(m.color, m.label);
+  // 獎勵
+  const sStr = st();
+  m.reward(sStr);
+  addLog(`${m.label} 里程碑！獎勵發放！`, 'lc');
+  render();
+}
+
+function triggerComboBurst(color, text) {
+  const el = document.createElement('div');
+  el.className = 'combo-burst';
+  el.innerHTML = `<div class="combo-burst-text" style="color:${color}">${text}</div>`;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 600);
+}
+
+// 符文自動生成：敵人每受傷1次有機率生成
+function maybeSpawnRune() {
+  if(!G.auto || !G.enemy || _runeActive) return;
+  // 基礎機率 8%，BOSS 20%，高層加成
+  const chance = G.isBoss ? 0.22 : 0.08 + G.floor*0.001;
+  if(Math.random() < chance) spawnRune();
+}
+
+// 符文也可在手動模式keyHit後生成
+// 戰鬥區點擊（非符文）也能觸發基礎combo
+function initBattleAreaClick() {
+  const ba = document.getElementById('baarea');
+  if(!ba) return;
+  ba.addEventListener('click', (e) => {
+    // 只有點擊非符文、非按鈕區域才觸發
+    if(e.target.classList.contains('rune-node')) return;
+    if(!G.auto || !G.enemy || G.enemy.hp<=0) return;
+    // 敵人受傷瞬間（HP<30%）點擊敵人有額外效果
+    if(G.enemy.hp/G.enemy.mxhp < 0.3){
+      const s=st();
+      const bonus=Math.floor(s.atk*0.5);
+      G.enemy.hp=Math.max(0,G.enemy.hp-bonus);
+      spawnD('+'+bonus,'hd');
+      if(G.enemy.hp<=0){eDie();return;}
+    }
+    render();
+  });
+}
+
+setTimeout(()=>{ initBattleAreaClick(); }, 600);
+
+
+
+// ==================== 機會窗口 + 連段模式 ====================
+
+const CHANCE_MSGS = [
+  { msg:'勇者該起床了！', sub:'別再掛機了！', icon:'⏰' },
+  { msg:'該上廁所了吧！', sub:'憋著打不贏的！', icon:'🚽' },
+  { msg:'你媽叫你回家吃飯！', sub:'但先打一波！', icon:'🍚' },
+  { msg:'老闆盯你了！', sub:'快速連段混過去！', icon:'👀' },
+  { msg:'這波你不打？', sub:'機會只有一次！', icon:'⚡' },
+  { msg:'敵人在嘲笑你！', sub:'還不給他好看？！', icon:'😤' },
+  { msg:'腦子還在嗎？', sub:'手跟上！', icon:'🧠' },
+  { msg:'你的CP值超低！', sub:'現在補回來！', icon:'📉' },
+  { msg:'連貓都會按！', sub:'你說呢？', icon:'🐱' },
+  { msg:'下一層是BOSS！', sub:'先練手感！', icon:'💀' },
+  { msg:'打了個寂寞？', sub:'連段才是正道！', icon:'🤡' },
+  { msg:'裝備自己裝的！', sub:'傷害自己打的！', icon:'⚔️' },
+  { msg:'傳說勇者在此！', sub:'傳說連段開始！', icon:'👑' },
+  { msg:'怪物笑你太慢！', sub:'讓他笑不出來！', icon:'😂' },
+  { msg:'COMBO時間到！', sub:'打他個三十連！', icon:'🔥' },
+  { msg:'手不痠吧？', sub:'那就繼續按！', icon:'💪' },
+  { msg:'這隻怪打了一天了…', sub:'結束它的痛苦！', icon:'😭' },
+  { msg:'史詩時刻降臨！', sub:'別讓它溜走！', icon:'✨' },
+  { msg:'這波穩了！', sub:'真的穩了！', icon:'🏆' },
+  { msg:'放置黨也要動一下！', sub:'手指不要生鏽！', icon:'🦾' },
+];
+
+let _chanceTimer = null;
+let _chanceActive = false;
+let _comboModeActive = false;
+let _comboModeTimer = null;
+let _comboKillCount = 0;
+let _comboStartTime = 0;
+let _comboTotalHits = 0;
+let _comboTotalMiss = 0;
+let _comboPeakCombo = 0;
+let _comboTotalDmg  = 0;
+
+// 每3秒嘗試生成機會窗口
+function startChanceWindowLoop() {
+  if (_chanceTimer) clearInterval(_chanceTimer);
+  _chanceTimer = setInterval(() => {
+    if (!_chanceActive && !_comboModeActive && G.auto && G.enemy) {
+      showChanceWindow();
+    }
+  }, 3000);
+}
+
+function showChanceWindow() {
+  if (_chanceActive || _comboModeActive) return;
+  _chanceActive = true;
+
+  const pick = CHANCE_MSGS[Math.floor(Math.random() * CHANCE_MSGS.length)];
+  const LIFETIME = 4000; // 4秒消失
+
+  const el = document.createElement('div');
+  el.id = 'chanceWindow';
+
+  // 隨機位置（螢幕中間偏移）
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const px = 80 + Math.random() * (vw - 340);
+  const py = 80 + Math.random() * (vh - 300);
+  el.style.left = px + 'px';
+  el.style.top  = py + 'px';
+
+  el.innerHTML = `
+    <div class="chance-inner">
+      <span class="chance-star" style="top:-14px;left:10px">⭐</span>
+      <span class="chance-star" style="top:-10px;right:14px;animation-direction:reverse;font-size:.9rem">✨</span>
+      <div class="chance-tag">⚡ 連段機會 ⚡</div>
+      <div style="font-size:2.4rem;margin-bottom:4px">${pick.icon}</div>
+      <div class="chance-msg">${pick.msg}</div>
+      <div style="font-size:.7rem;color:rgba(255,255,255,.5);margin-bottom:8px">${pick.sub}</div>
+      <div class="chance-cta">▶ 點擊進入連段模式！</div>
+      <div class="chance-timer-ring">
+        <div class="chance-timer-fill" id="chanceTimerFill" style="width:100%"></div>
+      </div>
+    </div>`;
+
+  document.body.appendChild(el);
+
+  // 計時條縮減
+  requestAnimationFrame(() => {
+    const fill = document.getElementById('chanceTimerFill');
+    if (fill) {
+      fill.style.transition = `width ${LIFETIME}ms linear`;
+      fill.style.width = '0%';
+    }
+  });
+
+  // 點擊進入連段
+  el.addEventListener('click', () => {
+    closeChanceWindow();
+    enterComboMode();
+  });
+  el.addEventListener('touchstart', () => {
+    closeChanceWindow();
+    enterComboMode();
+  }, {passive:true});
+
+  // 超時消失
+  el._timeout = setTimeout(() => closeChanceWindow(), LIFETIME);
+}
+
+function closeChanceWindow() {
+  _chanceActive = false;
+  const el = document.getElementById('chanceWindow');
+  if (!el) return;
+  if (el._timeout) clearTimeout(el._timeout);
+  el.style.animation = 'burstFade .25s ease-out forwards';
+  setTimeout(() => el.remove(), 250);
+}
+
+// ── 連段模式 ──
+function enterComboMode() {
+  if (_comboModeActive) return;
+  _comboModeActive = true;
+  _comboKillCount = 0;
+  _comboStartTime = Date.now();
+  _comboTotalHits = 0;
+  _comboTotalMiss = 0;
+  _comboPeakCombo = 0;
+  _comboTotalDmg  = 0;
+  G.combo = 0;
+  G.typing.missCount = 0;
+
+  // 暫停一般戰鬥
+  G.comboModePaused = true;
+
+  // 建立全螢幕覆蓋層
+  const ov = document.createElement('div');
+  ov.id = 'comboOverlay';
+  ov.innerHTML = buildComboOverlayHTML();
+  document.body.appendChild(ov);
+
+  updateComboUI();
+  spawnComboKey();
+
+  // 鍵盤
+  document._comboKeyHandler = (e) => {
+    if (!_comboModeActive) return;
+    const key = e.key.toUpperCase();
+    if (key.length !== 1) return;
+    e.preventDefault();
+    AC.resume();
+    if (key === G.typing.activeKey) comboModeHit();
+    else comboModeMiss(key);
+  };
+  document.addEventListener('keydown', document._comboKeyHandler);
+
+  playSound('levelup');
+  addLog('⚡ 連段模式開始！每個COMBO消滅一隻怪！', 'lc');
+  triggerComboBurst('#f0c040', '⚡ COMBO MODE!');
+}
+
+function buildComboOverlayHTML() {
+  const e = G.enemy;
+  return `
+    <div class="co-title">⚡ 連段模式 ⚡</div>
+    <div class="co-enemy" id="co-enemy">${e ? e.ic || '👹' : '👹'}</div>
+    <div class="co-hp" id="co-hp">${e ? e.n + ' — 每COMBO一擊必殺！' : '準備中…'}</div>
+    <div style="font-size:.65rem;color:rgba(255,255,255,.4);letter-spacing:1px">殺敵數 <span id="co-kills" style="color:var(--gold);font-weight:700">0</span></div>
+
+    <div style="display:flex;align-items:flex-end;justify-content:center;gap:18px">
+      <div class="co-key-wrap">
+        <div class="co-hint">▼ 現在按 ▼</div>
+        <div id="co-activeKey">?</div>
+        <div class="co-timer"><div class="co-timer-fill" id="co-timerFill"></div></div>
+      </div>
+      <div id="co-nextKeyWrap">
+        <div class="co-next-label">NEXT</div>
+        <div id="co-nextKey">?</div>
+      </div>
+    </div>
+
+    <div class="co-combo" id="co-comboNum" style="color:#f0c040">x0</div>
+    <div style="font-size:.65rem;color:rgba(255,255,255,.4)">傷害倍率 <span id="co-mult" style="color:var(--gold)">x1.0</span></div>
+    <div id="co-miss" style="font-size:.75rem;color:var(--red2);min-height:20px;font-weight:700"></div>
+    <div class="co-exit" onclick="exitComboMode()">ESC / 點此離開</div>
+  `;
+}
+
+function spawnComboKey() {
+  if (!_comboModeActive) return;
+  const t = G.typing;
+  if (t.expireTimer) clearTimeout(t.expireTimer);
+
+  t.activeKey = t.nextKey || randKey();
+  t.nextKey   = randKey();
+  if (t.nextKey === t.activeKey) t.nextKey = randKey();
+  t.spawnAt   = Date.now();
+  t.active    = true;
+  t.timeLimit = getTimeLimit();
+
+  const ak = document.getElementById('co-activeKey');
+  if (ak) {
+    ak.textContent = t.activeKey;
+    ak.style.borderColor = 'var(--gold)';
+    ak.style.color = 'var(--gold)';
+    ak.style.transform = 'scale(1)';
+  }
+  // 顯示下一鍵預覽
+  const nk = document.getElementById('co-nextKey');
+  if (nk) nk.textContent = t.nextKey || '?';
+
+  // 計時條
+  const fill = document.getElementById('co-timerFill');
+  if (fill) {
+    fill.style.transition = 'none';
+    fill.style.width = '100%';
+    void fill.offsetWidth;
+    fill.style.transition = `width ${t.timeLimit}ms linear`;
+    fill.style.width = '0%';
+  }
+
+  t.expireTimer = setTimeout(() => {
+    if (_comboModeActive && t.active) comboModeMiss('(超時)');
+  }, t.timeLimit);
+}
+
+function comboModeHit() {
+  const t = G.typing;
+  t.active = false;
+  if (t.expireTimer) clearTimeout(t.expireTimer);
+
+  G.combo++;
+  t.missCount = 0;
+  _comboTotalHits++;
+  if (G.combo > _comboPeakCombo) _comboPeakCombo = G.combo;
+
+  // 按鍵動畫
+  const ak = document.getElementById('co-activeKey');
+  if (ak) {
+    const col = getComboColor();
+    ak.style.borderColor = col;
+    ak.style.color = col;
+    ak.style.transform = 'scale(0.85)';
+    setTimeout(() => { if(ak) ak.style.transform = 'scale(1)'; }, 100);
+  }
+
+  // 直接殺怪
+  if (G.enemy && G.enemy.hp > 0) {
+    G.enemy.hp = 0;
+    _comboKillCount++;
+    const mult = getComboMult();
+    const s = st();
+    const dmg = Math.floor((s.atk + s.mag) * mult * 2);
+    if (dmg > G.maxDmg) G.maxDmg = dmg;
+    _comboTotalDmg += dmg;
+    spawnD('💥' + dmg, 'hd cr');
+    playSound('crit');
+    addLog(`${getComboLabel()} x${G.combo}！一擊！+${dmg}`, 'lc');
+
+    // 殺數更新
+    const killEl = document.getElementById('co-kills');
+    if (killEl) killEl.textContent = _comboKillCount;
+
+    // COMBO 數更新
+    const cn = document.getElementById('co-comboNum');
+    if (cn) { cn.textContent = 'x' + G.combo; cn.style.color = getComboColor(); }
+    const multEl = document.getElementById('co-mult');
+    if (multEl) multEl.textContent = 'x' + getComboMult().toFixed(1);
+
+    checkComboMilestone();
+    eDie();
+  }
+  spawnComboKey();
+}
+
+function comboModeMiss(key) {
+  const t = G.typing;
+  t.active = false;
+  if (t.expireTimer) clearTimeout(t.expireTimer);
+  _comboTotalMiss++;
+
+  const miss = document.getElementById('co-miss');
+  if (miss) {
+    miss.textContent = key === '(超時)' ? `⏰ 超時！COMBO x${G.combo} 中斷！` : `❌ 按錯 ${key}！要按 ${G.typing.activeKey}`;
+    setTimeout(() => { if(miss) miss.textContent = ''; }, 700);
+  }
+
+  // MISS 連段中斷 → 退出
+  if (G.combo > 0) {
+    addLog(`❌ MISS！COMBO x${G.combo} 中斷！殺了 ${_comboKillCount} 隻！`, 'le');
+  }
+  playSound('hit');
+  G.combo = 0;
+  exitComboMode();
+}
+
+function exitComboMode() {
+  if (!_comboModeActive) return;
+  _comboModeActive = false;
+  G.comboModePaused = false;
+
+  if (G.typing.expireTimer) { clearTimeout(G.typing.expireTimer); G.typing.expireTimer = null; }
+  G.typing.active = false;
+  document.removeEventListener('keydown', document._comboKeyHandler);
+
+  // 先淡出覆蓋層
+  const ov = document.getElementById('comboOverlay');
+  if (ov) {
+    ov.style.animation = 'burstFade .25s ease-out forwards';
+    setTimeout(() => { ov.remove(); showComboResult(); }, 250);
+  } else {
+    showComboResult();
+  }
+  G.combo = 0;
+  render();
+}
+
+function showComboResult() {
+  const dur = ((Date.now() - _comboStartTime) / 1000).toFixed(1);
+  const acc  = _comboTotalHits + _comboTotalMiss > 0
+    ? Math.round(_comboTotalHits / (_comboTotalHits + _comboTotalMiss) * 100) : 0;
+  const peak = _comboPeakCombo;
+  const kills = _comboKillCount;
+
+  // ── 評語系統 ──
+  const VERDICTS = {
+    // 完美
+    S: [
+      { grade:'💎', title:'傳說級連段！', color:'#40ffff',
+        comments:['你確定你不是職業選手？','有沒有打算去電競？','鍵盤：「我的青春小鳥一去不回來」','怪物：「饒了我吧大哥」'] },
+    ],
+    A: [
+      { grade:'⭐', title:'太強了吧！', color:'#f0c040',
+        comments:['還差一點點就封神了！','連那隻最後的怪都沒跑掉！','你今天是吃了什麼？'] },
+    ],
+    B: [
+      { grade:'🔥', title:'不錯嘛你！', color:'#ff8040',
+        comments:['比昨天的你強多了。','再練練？手感有點到了。','怪物：「這次差點...」'] },
+    ],
+    C: [
+      { grade:'😐', title:'嗯...還好', color:'#aaaaaa',
+        comments:['說得客氣一點：有進步空間。','鍵盤沒壞吧？','就...還可以啦。','怪物表示沒什麼感覺。'] },
+    ],
+    D: [
+      { grade:'💀', title:'你在開玩笑？', color:'#ff4040',
+        comments:['你打字的速度比蝸牛還慢。','重練吧勇者，認真的。','怪物笑到肚子痛。','這手速怎麼得的？'] },
+    ],
+    F: [
+      { grade:'🗑️', title:'哥們，你沒事吧', color:'#ff2040',
+        comments:['是鍵盤壞了還是你壞了？','建議先去睡覺再來打。','就這？就這！！','怪物：「謝謝款待，再見」'] },
+    ],
+  };
+
+  // 根據表現選等級
+  let tier;
+  if (kills >= 20 && acc >= 90 && peak >= 15) tier = 'S';
+  else if (kills >= 12 && acc >= 80) tier = 'A';
+  else if (kills >= 7 && acc >= 65) tier = 'B';
+  else if (kills >= 3 && acc >= 50) tier = 'C';
+  else if (kills >= 1) tier = 'D';
+  else tier = 'F';
+
+  const pool = VERDICTS[tier][0];
+  const comment = pool.comments[Math.floor(Math.random() * pool.comments.length)];
+
+  // acc 顏色
+  const accClass = acc >= 80 ? 'good' : acc >= 50 ? '' : 'bad';
+  const killClass = kills >= 10 ? 'good' : kills >= 3 ? '' : 'bad';
+
+  const el = document.createElement('div');
+  el.id = 'comboResult';
+  el.innerHTML = `
+    <div class="cr-card">
+      <div style="font-size:.58rem;letter-spacing:3px;color:rgba(255,255,255,.3);margin-bottom:12px">⚡ 連段結算 ⚡</div>
+      <div class="cr-grade" style="color:${pool.color}">${pool.grade}</div>
+      <div class="cr-verdict" style="color:${pool.color}">${pool.title}</div>
+      <div class="cr-comment">"${comment}"</div>
+
+      <div class="cr-stats">
+        <div class="cr-row">
+          <span class="label">擊殺數</span>
+          <span class="val ${killClass}">${kills} 隻</span>
+        </div>
+        <div class="cr-row">
+          <span class="label">最高連段</span>
+          <span class="val" style="color:#a040ff">x${peak}</span>
+        </div>
+        <div class="cr-row">
+          <span class="label">準確率</span>
+          <span class="val ${accClass}">${acc}%</span>
+        </div>
+        <div class="cr-row">
+          <span class="label">命中 / 失誤</span>
+          <span class="val">${_comboTotalHits} <span style="color:rgba(255,255,255,.3)">/</span> <span style="color:var(--red2)">${_comboTotalMiss}</span></span>
+        </div>
+        <div class="cr-row">
+          <span class="label">總傷害</span>
+          <span class="val">${_comboTotalDmg.toLocaleString()}</span>
+        </div>
+        <div class="cr-row">
+          <span class="label">持續時間</span>
+          <span class="val" style="color:rgba(255,255,255,.5)">${dur} 秒</span>
+        </div>
+      </div>
+
+      <button class="cr-close" onclick="closeComboResult()">繼續冒險</button>
+    </div>
+  `;
+
+  // ESC 也能關
+  el._escHandler = (e) => { if (e.code === 'Escape' || e.code === 'Enter' || e.code === 'Space') closeComboResult(); };
+  document.addEventListener('keydown', el._escHandler);
+
+  document.body.appendChild(el);
+}
+
+function closeComboResult() {
+  const el = document.getElementById('comboResult');
+  if (!el) return;
+  document.removeEventListener('keydown', el._escHandler);
+  el.style.animation = 'burstFade .3s ease-out forwards';
+  setTimeout(() => { if(el) el.remove(); }, 300);
+}
+
+// ESC 鍵退出
+document.addEventListener('keydown', e => {
+  if (e.code === 'Escape' && _comboModeActive) exitComboMode();
+});
+
+// 遊戲迴圈中暫停戰鬥
+
+// ==================== 每日登入獎勵 ====================
+const LOGIN_REWARDS = [
+  { day:1, icon:'🪨', desc:'+30 材料',     apply:()=>{ G.mat+=30; }},
+  { day:2, icon:'💜', desc:'+2 靈魂石',    apply:()=>{ G.soul+=2; }},
+  { day:3, icon:'💰', desc:'+500 金幣',    apply:()=>{ G.gold+=500; }},
+  { day:4, icon:'💜', desc:'+3 靈魂石',    apply:()=>{ G.soul+=3; }},
+  { day:5, icon:'🪨', desc:'+80 材料',     apply:()=>{ G.mat+=80; }},
+  { day:6, icon:'💎', desc:'+3 寶石',      apply:()=>{ G.gem+=3; }},
+  { day:7, icon:'✨', desc:'+5 靈魂石 +100 材料 +1天賦點', apply:()=>{ G.soul+=5; G.mat+=100; G.talentPts++; }},
+];
+
+function checkLoginBonus() {
+  const now = Date.now();
+  const todayStr = new Date().toDateString();
+  const lastStr  = G.lastLogin ? new Date(G.lastLogin).toDateString() : '';
+  if(todayStr === lastStr) return; // 今天已領
+
+  const yesterday = new Date(now - 86400000).toDateString();
+  const isConsec  = (lastStr === yesterday);
+  if(!isConsec) G.loginStreak = 0;
+  G.loginStreak = ((G.loginStreak || 0) % 7) + 1;
+  G.lastLogin = now;
+
+  const reward = LOGIN_REWARDS[(G.loginStreak - 1) % 7];
+  reward.apply();
+  saveGame();
+  showLoginModal(reward, G.loginStreak);
+}
+
+function showLoginModal(reward, streak) {
+  const ov = document.createElement('div');
+  ov.id = 'loginModal';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.75);backdrop-filter:blur(4px)';
+
+  const weekDots = LOGIN_REWARDS.map((r, i) => {
+    const done = i < streak;
+    const cur  = i === streak - 1;
+    return `<div style="text-align:center;opacity:${done?1:.35}">
+      <div style="font-size:${cur?'1.8rem':'1.2rem'};filter:${cur?'drop-shadow(0 0 8px gold)':'none'}">${r.icon}</div>
+      <div style="font-size:.5rem;color:${cur?'var(--gold)':'var(--text2)'};margin-top:2px">Day${r.day}${done&&!cur?'✓':''}</div>
+    </div>`;
+  }).join('');
+
+  ov.innerHTML = `
+  <div style="background:linear-gradient(160deg,#1a0828,#0d0415);border:2px solid var(--gold);border-radius:16px;padding:28px 24px;max-width:320px;width:90%;text-align:center;box-shadow:0 0 60px rgba(240,192,64,.3)">
+    <div style="font-size:.65rem;letter-spacing:3px;color:var(--text2);margin-bottom:6px">DAILY LOGIN BONUS</div>
+    <div style="font-size:4rem;margin:8px 0;filter:drop-shadow(0 0 16px gold)">${reward.icon}</div>
+    <div style="font-size:1.1rem;color:var(--gold);font-weight:700;margin-bottom:4px">Day ${streak} 登入獎勵！</div>
+    <div style="font-size:.82rem;color:#fff;margin-bottom:16px">${reward.desc}</div>
+    <div style="display:flex;justify-content:space-around;margin-bottom:20px;padding:10px;background:rgba(255,255,255,.04);border-radius:10px">
+      ${weekDots}
+    </div>
+    ${streak===7?'<div style="font-size:.68rem;color:var(--gold);margin-bottom:12px">🎉 完成7日連續登入！明日重新開始</div>':''}
+    <button onclick="document.getElementById('loginModal').remove();render();" style="width:100%;padding:10px;background:rgba(240,192,64,.2);border:2px solid var(--gold);color:var(--gold);border-radius:8px;cursor:pointer;font-size:.84rem;font-weight:700">✨ 領取獎勵！</button>
+  </div>`;
+  document.body.appendChild(ov);
+}
+
+// ==================== 拖拉技能系統 ====================
+let dragSkillIdx = null;
+let dragGhost = null;
+
+function initSkillDrag() {
+  const skgrid = document.getElementById('skgrid');
+  const baarea = document.getElementById('baarea');
+  const dropZone = document.getElementById('dropZone');
+  if (!skgrid || !baarea || !dropZone) return;
+
+  // 監聽 skgrid 內的拖拉（用事件代理）
+  skgrid.addEventListener('dragstart', e => {
+    const btn = e.target.closest('[draggable=true]');
+    if (!btn) return;
+    dragSkillIdx = parseInt(btn.dataset.skillIdx);
+    // 建立自訂 ghost
+    dragGhost = document.createElement('div');
+    dragGhost.className = 'skill-drag-ghost';
+    dragGhost.textContent = SKL[dragSkillIdx].ic;
+    document.body.appendChild(dragGhost);
+    e.dataTransfer.setDragImage(new Image(), 0, 0); // 隱藏預設
+    e.dataTransfer.effectAllowed = 'copy';
+    // 顯示 dropZone
+    dropZone.classList.add('active');
+    dropZone.querySelector('.dz-hint').textContent = SKL[dragSkillIdx].ic + ' 放開釋放【' + SKL[dragSkillIdx].n + '】';
+  });
+
+  document.addEventListener('dragover', e => {
+    e.preventDefault();
+    if (dragGhost) {
+      dragGhost.style.left = e.clientX + 'px';
+      dragGhost.style.top  = e.clientY + 'px';
+    }
+  });
+
+  // 滑鼠放開在 baarea 上 → 釋放技能
+  baarea.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  });
+
+  baarea.addEventListener('drop', e => {
+    e.preventDefault();
+    if (dragSkillIdx !== null) {
+      useSkill(dragSkillIdx);
+      addLog(`✨ 拖拉釋放【${SKL[dragSkillIdx].n}】！`, 'lsk');
+    }
+    endDrag();
+  });
+
+  document.addEventListener('dragend', () => endDrag());
+}
+
+function endDrag() {
+  if (dragGhost) { dragGhost.remove(); dragGhost = null; }
+  const dz = document.getElementById('dropZone');
+  if (dz) dz.classList.remove('active');
+  dragSkillIdx = null;
+}
+
+// 觸控支援（手機拖拉）
+function initTouchDrag() {
+  const skgrid = document.getElementById('skgrid');
+  if (!skgrid) return;
+  let touchSkill = null;
+
+  skgrid.addEventListener('touchstart', e => {
+    const btn = e.target.closest('[draggable=true]');
+    if (!btn) return;
+    touchSkill = parseInt(btn.dataset.skillIdx);
+    dragGhost = document.createElement('div');
+    dragGhost.className = 'skill-drag-ghost';
+    dragGhost.textContent = SKL[touchSkill].ic;
+    document.body.appendChild(dragGhost);
+    const dz = document.getElementById('dropZone');
+    if (dz) {
+      dz.classList.add('active');
+      dz.querySelector('.dz-hint').innerHTML = SKL[touchSkill].ic + '<br>' + SKL[touchSkill].n;
+    }
+  }, {passive:true});
+
+  document.addEventListener('touchmove', e => {
+    if (!dragGhost || touchSkill === null) return;
+    const t = e.touches[0];
+    dragGhost.style.left = t.clientX + 'px';
+    dragGhost.style.top  = t.clientY + 'px';
+  }, {passive:true});
+
+  document.addEventListener('touchend', e => {
+    if (touchSkill === null) return;
+    const t = e.changedTouches[0];
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+    const ba = document.getElementById('baarea');
+    if (ba && ba.contains(el)) {
+      useSkill(touchSkill);
+      addLog(`✨ 拖拉釋放【${SKL[touchSkill].n}】！`, 'lsk');
+    }
+    endDrag();
+    touchSkill = null;
+  });
+}
+
+// 初始化拖拉（在 DOM ready 後）
+setTimeout(() => { initSkillDrag(); initTouchDrag(); }, 500);
+
+// ==================== 打字遊戲手動 COMBO 系統 ====================
+G.combo = 0;
+G.manualMode = false;
+setTimeout(checkLoginBonus, 800);
+setTimeout(startChanceWindowLoop, 2000);
+G.typing = {
+  activeKey: null,    // 當前要按的鍵
+  nextKey: null,      // 下一個鍵（預覽）
+  timeLimit: 2200,    // ms 限時
+  spawnAt: 0,         // 鍵何時出現
+  expireTimer: null,
+  missCount: 0,
+  active: false,
+};
+
+const TYPING_KEYS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+function randKey() {
+  return TYPING_KEYS[Math.floor(Math.random() * TYPING_KEYS.length)];
+}
+
+function getComboMult() {
+  if (G.combo <= 0) return 1;
+  if (G.combo < 5)  return 1 + G.combo * 0.12;
+  if (G.combo < 15) return 1.6 + (G.combo - 5) * 0.14;
+  if (G.combo < 30) return 3.0 + (G.combo - 15) * 0.1;
+  return Math.min(6.0, 4.5 + (G.combo - 30) * 0.05);
+}
+
+function getComboLabel() {
+  if (G.combo <= 0) return '';
+  if (G.combo < 5)  return '🔥 WARMING UP';
+  if (G.combo < 10) return '⚡ COMBO';
+  if (G.combo < 20) return '💥 GREAT COMBO';
+  if (G.combo < 30) return '🌟 AMAZING';
+  if (G.combo < 50) return '👑 LEGENDARY';
+  return '💎 GODLIKE';
+}
+
+function getComboColor() {
+  if (G.combo < 5)  return '#f0c040';
+  if (G.combo < 10) return '#ff9020';
+  if (G.combo < 20) return '#ff4040';
+  if (G.combo < 30) return '#a040ff';
+  if (G.combo < 50) return '#ff40ff';
+  return '#40ffff';
+}
+
+// 計算剩餘時間隨 combo 加快（越連越快）
+function getTimeLimit() {
+  const base = 2200;
+  const min  = 700;
+  return Math.max(min, base - G.combo * 40);
+}
+
+function spawnNextKey() {
+  if (!G.manualMode || !G.auto) return;
+  const t = G.typing;
+  // 清除任何殘留計時器
+  if (t.expireTimer) { clearTimeout(t.expireTimer); t.expireTimer = null; }
+  t.activeKey = t.nextKey || randKey();
+  t.nextKey   = randKey();
+  // 確保兩個鍵不同
+  if (t.nextKey === t.activeKey) t.nextKey = randKey();
+  t.spawnAt   = Date.now();
+  t.active    = true;
+  t.timeLimit = getTimeLimit();
+
+  // 更新 UI
+  const ak = document.getElementById('activeKey');
+  const nk = document.getElementById('nextKey');
+  if (ak) {
+    ak.textContent = t.activeKey;
+    ak.style.borderColor = 'var(--gold)';
+    ak.style.color = 'var(--gold)';
+    ak.style.boxShadow = '0 0 20px rgba(240,192,64,.4),inset 0 1px 0 rgba(255,255,255,.1)';
+    ak.style.transform = 'scale(1)';
+  }
+  if (nk) nk.textContent = t.nextKey;
+
+  // 計時條動畫
+  const timerBar = document.getElementById('keyTimer');
+  if (timerBar) {
+    timerBar.style.transition = 'none';
+    timerBar.style.width = '100%';
+    timerBar.style.background = 'var(--gold)';
+    void timerBar.offsetWidth;
+    timerBar.style.transition = `width ${t.timeLimit}ms linear`;
+    timerBar.style.width = '0%';
+  }
+
+  // 超時 → MISS
+  if (t.expireTimer) clearTimeout(t.expireTimer);
+  t.expireTimer = setTimeout(() => {
+    if (G.manualMode && t.active) keyMiss();
+  }, t.timeLimit);
+}
+
+function keyHit() {
+  const t = G.typing;
+  t.active = false;
+  if (t.expireTimer) clearTimeout(t.expireTimer);
+
+  G.combo++;
+  t.missCount = 0;
+  _comboTotalHits++;
+  if (G.combo > _comboPeakCombo) _comboPeakCombo = G.combo;
+
+  // 按鍵動畫
+  const ak = document.getElementById('activeKey');
+  if (ak) {
+    const color = getComboColor();
+    ak.style.borderColor = color;
+    ak.style.color = color;
+    ak.style.boxShadow = `0 0 30px ${color}88`;
+    ak.style.transform = 'scale(0.88)';
+    setTimeout(() => { if (ak) ak.style.transform = 'scale(1)'; }, 120);
+  }
+
+  // 執行攻擊
+  const s = st();
+  const mult = getComboMult();
+  let dmg = Math.floor((s.atk + s.mag * 0.5) * mult);
+  const cr = Math.random() * 100 < s.crit + Math.min(G.combo * 1.5, 40);
+  if (cr) dmg = Math.floor(dmg * s.cdmg / 100);
+  const red = Math.max(1, dmg - Math.floor(G.enemy.def * 0.5));
+  G.enemy.hp = Math.max(0, G.enemy.hp - red);
+  if (red > G.maxDmg) G.maxDmg = red;
+
+  playSound(cr ? 'crit' : 'combo');
+  spawnS('h');
+  if (cr) spawnD('💥' + red, 'hd cr');
+  else    spawnD('⚡' + red, 'hd');
+
+  if (G.combo % 5 === 0 || G.combo >= 10)
+    addLog(`${getComboLabel()} x${G.combo}！${red} 傷害 (x${mult.toFixed(1)})`, 'lc');
+
+  // 高COMBO隨機靈魂石掉落
+  if(G.combo >= 15){
+    const soulChance = Math.min(0.04 + (G.combo - 15) * 0.003, 0.25);
+    if(Math.random() < soulChance){
+      const gain = 1 + Math.floor(G.combo / 30);
+      G.soul += gain;
+      spawnComboDrop('+' + gain + '💜', null);
+      if(gain > 1) addLog(`💜 高COMBO掉落 ${gain} 靈魂石！`, 'lsk');
+    }
+  }
+  // 高COMBO額外材料掉落
+  if(G.combo >= 10 && Math.random() < 0.08){
+    const matGain = 1 + Math.floor(G.combo / 20);
+    G.mat += matGain;
+    spawnComboDrop('+' + matGain + '🪨', null);
+  }
+
+  updateComboUI();
+
+  checkComboMilestone();
+
+  if (G.enemy.hp <= 0) {
+    eDie();
+    if (G.manualMode) setTimeout(spawnNextKey, 600);
+    return;
+  }
+  render();
+  maybeSpawnRune();
+  spawnNextKey();
+}
+
+function keyMiss() {
+  const t = G.typing;
+  t.active = false;
+  t.missCount++;
+
+  if (G.combo > 0) {
+    addLog(`❌ MISS！COMBO x${G.combo} 中斷！`, 'le');
+    G.combo = 0;
+  }
+
+  playSound('hit');
+
+  const ak = document.getElementById('activeKey');
+  if (ak) {
+    ak.style.borderColor = 'var(--red2)';
+    ak.style.color = 'var(--red2)';
+    ak.style.boxShadow = '0 0 20px rgba(231,76,60,.5)';
+  }
+
+  const miss = document.getElementById('missHint');
+  if (miss) {
+    miss.textContent = '❌ MISS — COMBO 中斷！';
+    miss.style.opacity = '1';
+    setTimeout(() => { if(miss) miss.style.opacity = '0'; }, 800);
+  }
+
+  updateComboUI();
+  setTimeout(spawnNextKey, 600);
+}
+
+function updateComboUI() {
+  const panel = document.getElementById('typingPanel');
+  if (!panel) return;
+
+  const cn    = document.getElementById('comboNum');
+  const label = document.getElementById('comboLabel');
+  const mult  = document.getElementById('comboMult');
+
+  if (cn) {
+    cn.textContent = 'x' + G.combo;
+    cn.classList.remove('pulse'); void cn.offsetWidth; cn.classList.add('pulse');
+    cn.style.color = getComboColor();
+    cn.style.textShadow = `0 0 20px ${getComboColor()}88`;
+  }
+  if (label) { label.textContent = getComboLabel(); label.style.color = getComboColor(); }
+  if (mult)  { mult.textContent = G.combo > 0 ? `傷害 x${getComboMult().toFixed(1)}` : ''; }
+}
+
+
+function toggleComboList() {
+  const p = document.getElementById('comboListPanel');
+  const b = document.getElementById('comboListToggle');
+  if(!p||!b) return;
+  const open = p.style.display !== 'none';
+  p.style.display = open ? 'none' : 'block';
+  b.textContent = (open ? '▶' : '▼') + ' COMBO 里程碑獎勵';
+}
+
+function toggleManual() {
+  G.manualMode = !G.manualMode;
+  const btn   = document.getElementById('manualBtn');
+  const panel = document.getElementById('typingPanel');
+  if (G.manualMode) {
+    btn.textContent = '🎮 手動 ON';
+    btn.classList.add('act');
+    G.combo = 0;
+    G.typing.missCount = 0;
+    if (panel) panel.style.display = 'flex';
+    notify('🎮 打字攻擊模式！按畫面顯示的按鍵攻擊累積 COMBO！');
+    addLog('🎮 手動模式啟動！按照畫面提示的按鍵發動攻擊！', 'lsk');
+    updateComboUI();
+    setTimeout(spawnNextKey, 300);
+  } else {
+    btn.textContent = '🤖 自動 ON';
+    btn.classList.remove('act');
+    if (panel) panel.style.display = 'none';
+    G.combo = 0;
+    G.typing.active = false;
+    if (G.typing.expireTimer) { clearTimeout(G.typing.expireTimer); G.typing.expireTimer = null; }
+    notify('🤖 切換回自動放置模式');
+  }
+}
+
+// 鍵盤監聽 — 打字遊戲
+document.addEventListener('keydown', e => {
+  // 空白鍵切換手動模式（不在輸入框時）
+  if (e.code === 'Space' && !e.target.matches('input,textarea,button')) {
+    e.preventDefault();
+    if (_comboModeActive) exitComboMode();
+    else enterComboMode();
+    return;
+  }
+  if (!G.manualMode || !G.auto) return;
+  const key = e.key.toUpperCase();
+  if (key.length !== 1 && key !== 'ENTER') return;
+  e.preventDefault();
+  AC.resume();
+  if (!G.typing.active) return;
+  if (key === G.typing.activeKey) {
+    keyHit();
+  } else {
+    // 按錯鍵 — 不中斷但不得分，閃紅
+    const miss = document.getElementById('missHint');
+    if (miss) {
+      miss.textContent = `❌ 按錯了！要按 ${G.typing.activeKey}`;
+      miss.style.opacity = '1';
+      setTimeout(() => { if(miss) miss.style.opacity = '0'; }, 600);
+    }
+  }
+});
+</script>
+</body>
+</html>

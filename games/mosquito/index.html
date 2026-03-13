@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Nativefier / Electron 視窗大小提示 -->
+<meta name="nativefier-window-width" content="1000">
+<meta name="nativefier-window-height" content="820">
+<title>🦟 進化蚊子</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+  :root{--ink:#0d0b08;--amber:#e8a020;--border:#8a5c0a;--blood:#cc2244;--zap:#44ccff;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:100vh;font-family:'Share Tech Mono',monospace;overflow:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:repeating-linear-gradient(87deg,transparent,transparent 4px,rgba(255,200,80,0.012) 4px,rgba(255,200,80,0.012) 8px),repeating-linear-gradient(180deg,transparent,transparent 50px,rgba(0,0,0,0.05) 50px,rgba(0,0,0,0.05) 51px);pointer-events:none;z-index:0;}
+  html,body{overflow:hidden;width:100%;height:100%;scroll-behavior:auto;}
+  #gameWrapper{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;width:100%;min-height:100%;justify-content:flex-start;}
+  #titleBar{width:var(--gw,960px);background:var(--amber);border:3px solid var(--border);border-bottom:none;display:flex;align-items:center;justify-content:center;padding:7px 20px;position:relative;flex-shrink:0;}
+  #titleBar::before{content:'◆';position:absolute;left:14px;color:#8a5c0a;font-size:11px;}
+  #titleBar::after{content:'◆';position:absolute;right:14px;color:#8a5c0a;font-size:11px;}
+  #titleBar h1{font-family:'Noto Serif TC',serif;font-size:22px;font-weight:900;color:#1a0e00;letter-spacing:8px;text-shadow:1px 1px 0 rgba(255,255,255,0.25);}
+  #titleBar .ver{position:absolute;right:32px;bottom:4px;font-size:11px;color:#5a3a00;letter-spacing:1px;}
+  #canvas{display:block;border-left:3px solid var(--border);border-right:3px solid var(--border);cursor:crosshair;width:var(--gw,960px);height:var(--gh,660px);}
+  #statsBar{width:var(--gw,960px);background:#161008;border:3px solid var(--border);border-top:1px solid #3a2408;display:grid;grid-template-columns:repeat(5,1fr);flex-shrink:0;}
+  .stat{padding:7px 10px;border-right:1px solid #2a1a08;display:flex;flex-direction:column;gap:2px;}
+  .stat:last-child{border-right:none;}
+  .stat-label{font-size:12px;color:#5a4020;letter-spacing:1px;}
+  .stat-val{font-size:17px;font-weight:bold;color:var(--amber);}
+  .stat-val.blood{color:#cc4466;}
+  #legend{width:var(--gw,960px);background:#0e0a04;border:3px solid var(--border);border-top:none;display:flex;flex-shrink:0;}
+  .leg{display:flex;align-items:center;gap:5px;padding:6px 12px;font-size:13px;color:#6a5a38;letter-spacing:1px;flex:1;border-right:1px solid #1e1408;}
+  .leg:last-child{border-right:none;}
+  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  /* 商店面板 */
+  #shopPanel{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:200;background:rgba(12,8,2,0.97);border:2px solid var(--amber);width:580px;max-height:88vh;border-radius:4px;padding:20px 24px 16px;font-family:'Share Tech Mono',monospace;display:none;flex-direction:column;}
+  #shopPanel.open{display:flex;}
+  #shopPanel h2{font-family:'Noto Serif TC',serif;color:var(--amber);text-align:center;font-size:22px;margin-bottom:3px;letter-spacing:4px;flex-shrink:0;}
+  #shopPanel .shop-sub{color:#5a4020;font-size:12px;text-align:center;margin-bottom:8px;letter-spacing:2px;flex-shrink:0;}
+  #shopPanel .blood-display{text-align:center;font-size:17px;color:#cc4466;margin-bottom:10px;flex-shrink:0;}
+  .shop-scroll{overflow-y:auto;flex:1;min-height:0;padding-right:4px;}
+  .shop-scroll::-webkit-scrollbar{width:6px;}
+  .shop-scroll::-webkit-scrollbar-track{background:rgba(30,20,8,0.5);}
+  .shop-scroll::-webkit-scrollbar-thumb{background:#5a3a0a;border-radius:3px;}
+  .shop-section-title{font-family:'Noto Serif TC',serif;color:#8a6a30;font-size:13px;letter-spacing:3px;padding:6px 4px 4px;border-bottom:1px solid #2a1a08;margin-bottom:6px;margin-top:4px;}
+  .shop-section-title:first-child{margin-top:0;}
+  .shop-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid #2a1a08;border-radius:4px;margin-bottom:7px;cursor:pointer;transition:background 0.15s;}
+  .shop-item:hover{background:rgba(232,160,32,0.08);border-color:var(--amber);}
+  .shop-item .icon{font-size:28px;flex-shrink:0;}
+  .shop-item .info{flex:1;}
+  .shop-item .name{font-family:'Noto Serif TC',serif;color:#d4a84a;font-size:15px;font-weight:700;}
+  .shop-item .desc{color:#6a5a38;font-size:12px;margin-top:2px;line-height:1.5;}
+  .shop-item .desc b{color:#aaa088;}
+  .shop-item .cost{font-size:15px;color:#cc4466;white-space:nowrap;text-align:right;min-width:60px;}
+  .shop-item .level{font-size:12px;color:#5a8a5a;margin-top:3px;}
+  .shop-item.maxed{opacity:0.45;cursor:default;}
+  .shop-key-legend{text-align:center;font-size:11px;color:#4a3a18;margin:8px 0 6px;letter-spacing:1px;flex-shrink:0;border-top:1px solid #2a1a08;padding-top:8px;}
+  #shopClose{display:block;width:100%;margin-top:0;padding:10px;background:rgba(232,160,32,0.12);border:1px solid var(--amber);color:var(--amber);font-family:'Noto Serif TC',serif;font-size:16px;cursor:pointer;border-radius:3px;letter-spacing:4px;flex-shrink:0;}
+  #shopClose:hover{background:rgba(232,160,32,0.25);}
+  #shopBtn{position:fixed;bottom:12px;right:12px;z-index:150;background:rgba(20,14,6,0.92);border:1px solid var(--amber);color:var(--amber);font-family:'Noto Serif TC',serif;font-size:15px;padding:9px 16px;border-radius:4px;cursor:pointer;letter-spacing:2px;}
+</style>
+</head>
+<body>
+<div id="gameWrapper">
+  <div id="titleBar">
+    <h1>🦟 進 化 蚊 子</h1>
+    <span class="ver">G哥企劃 × C哥開發</span>
+  </div>
+  <canvas id="canvas" width="960" height="660"></canvas>
+  <div id="statsBar">
+    <div class="stat"><span class="stat-label">場上蚊子</span><span class="stat-val" id="statCount">0</span></div>
+    <div class="stat"><span class="stat-label">最高連擊</span><span class="stat-val" id="statCombo">0</span></div>
+    <div class="stat"><span class="stat-label">擊殺首領</span><span class="stat-val" id="statBoss">0</span></div>
+    <div class="stat"><span class="stat-label">首領倒數</span><span class="stat-val" id="statNextBoss">60秒</span></div>
+    <div class="stat"><span class="stat-label">🩸 蚊子血</span><span class="stat-val blood" id="statBlood">0</span></div>
+  </div>
+  <div id="legend">
+    <div class="leg"><div class="dot" style="background:#7ecf6e"></div>普通蚊 +10</div>
+    <div class="leg"><div class="dot" style="background:#f0d060"></div>快速蚊 +20</div>
+    <div class="leg"><div class="dot" style="background:#8090e8"></div>隱形蚊 +30</div>
+    <div class="leg"><div class="dot" style="background:#e07840"></div>變異蚊 +40</div>
+    <div class="leg"><div class="dot" style="background:#e03050"></div>首領蚊 +200</div>
+    <div class="leg" style="color:#44ccff">⚡[S]鍊化商店</div>
+  </div>
+</div>
+
+<!-- 鍊化商店面板 -->
+<div id="shopPanel">
+  <h2>🧪 鍊化升級</h2>
+  <div class="shop-sub">消耗蚊子血購買強化道具　·　跨局保留</div>
+  <div class="blood-display">🩸 當前蚊子血：<span id="shopBlood">0</span></div>
+  <div class="shop-scroll">
+
+  <div class="shop-section-title">⚔ 攻擊類</div>
+
+  <div class="shop-item" id="shopZap" onclick="buyUpgrade('zap')">
+    <div class="icon">⚡</div>
+    <div class="info">
+      <div class="name">電蚊拍</div>
+      <div class="desc">購買後移到目標位置按<b>[空白鍵]</b>或點 HUD ⚡ 鈕釋放大範圍閃電（充能 8 秒）</div>
+      <div class="level" id="zapLevel">未購買</div>
+    </div>
+    <div class="cost" id="zapCost">🩸 30</div>
+  </div>
+
+  <div class="shop-item" id="shopBomb" onclick="buyUpgrade('bomb')">
+    <div class="icon">💣</div>
+    <div class="info">
+      <div class="name">蚊子炸彈</div>
+      <div class="desc">瞬間清空全場所有蚊子（最多持有 2 顆）按 <b>[F]</b> 引爆</div>
+      <div class="level" id="bombLevel">持有：0 / 2</div>
+    </div>
+    <div class="cost" id="bombCost">🩸 45</div>
+  </div>
+
+  <div class="shop-item" id="shopBoots" onclick="buyUpgrade('boots')">
+    <div class="icon">👟</div>
+    <div class="info">
+      <div class="name">攻擊強化</div>
+      <div class="desc">擴大點擊攻擊範圍（每級 +18px，最多 3 級）</div>
+      <div class="level" id="bootsLevel">未購買</div>
+    </div>
+    <div class="cost" id="bootsCost">🩸 25</div>
+  </div>
+
+  <div class="shop-item" id="shopCrit" onclick="buyUpgrade('crit')">
+    <div class="icon">🎯</div>
+    <div class="info">
+      <div class="name">暴擊強化</div>
+      <div class="desc">每次攻擊有機率造成雙倍傷害（Lv1：20% / Lv2：40%）</div>
+      <div class="level" id="critLevel">未購買</div>
+    </div>
+    <div class="cost" id="critCost">🩸 35</div>
+  </div>
+
+  <div class="shop-section-title">🛡 防禦 / 輔助類</div>
+
+  <div class="shop-item" id="shopShield" onclick="buyUpgrade('shield')">
+    <div class="icon">🛡️</div>
+    <div class="info">
+      <div class="name">防蚊護盾</div>
+      <div class="desc">購買後按 <b>[E]</b> 或點 HUD 🛡 鈕啟動，10 秒內完全免疫叮咬（充能 20 秒）</div>
+      <div class="level" id="shieldLevel">未購買</div>
+    </div>
+    <div class="cost" id="shieldCost">🩸 50</div>
+  </div>
+
+  <div class="shop-item" id="shopFreeze" onclick="buyUpgrade('freeze')">
+    <div class="icon">❄️</div>
+    <div class="info">
+      <div class="name">冰凍噴霧</div>
+      <div class="desc">購買後按 <b>[R]</b> 或點 HUD ❄ 鈕，凍結全場蚊子 4 秒（充能 18 秒）</div>
+      <div class="level" id="freezeLevel">未購買</div>
+    </div>
+    <div class="cost" id="freezeCost">🩸 40</div>
+  </div>
+
+  <div class="shop-item" id="shopHeal" onclick="buyUpgrade('heal')">
+    <div class="icon">💉</div>
+    <div class="info">
+      <div class="name">驅蚊液</div>
+      <div class="desc">立即回復 1 滴血（最多持有 3 份），遊戲中按 <b>[Q]</b> 使用</div>
+      <div class="level" id="healLevel">持有：0 / 3</div>
+    </div>
+    <div class="cost" id="healCost">🩸 20</div>
+  </div>
+
+  <div class="shop-section-title">📈 永久強化類</div>
+
+  <div class="shop-item" id="shopMaxHp" onclick="buyUpgrade('maxhp')">
+    <div class="icon">❤️</div>
+    <div class="info">
+      <div class="name">強化體質</div>
+      <div class="desc">永久增加最大生命值（每局開始+1HP，最多 +3）</div>
+      <div class="level" id="maxhpLevel">+0 / +3</div>
+    </div>
+    <div class="cost" id="maxhpCost">🩸 60</div>
+  </div>
+
+  <div class="shop-item" id="shopBloodMag" onclick="buyUpgrade('bloodmag')">
+    <div class="icon">🔮</div>
+    <div class="info">
+      <div class="name">血珠感應</div>
+      <div class="desc">永久擴大滑鼠收集血珠的感應範圍（每級 +15px，最多 3 級）</div>
+      <div class="level" id="bloodmagLevel">Lv 0 / 3</div>
+    </div>
+    <div class="cost" id="bloodmagCost">🩸 25</div>
+  </div>
+
+  <div class="shop-item" id="shopMagnet" onclick="buyUpgrade('magnet')">
+    <div class="icon">🧲</div>
+    <div class="info">
+      <div class="name">吸血磁鐵</div>
+      <div class="desc">購買後按 <b>[T]</b> 啟動，5 秒自動吸收全場血珠（充能 15 秒）</div>
+      <div class="level" id="magnetLevel">未購買</div>
+    </div>
+    <div class="cost" id="magnetCost">🩸 40</div>
+  </div>
+
+  </div><!-- end shop-scroll -->
+  <button id="shopClose" onclick="closeShop()">關　閉　[S]</button>
+</div>
+
+<button id="shopBtn" onclick="openShop()">🧪 鍊化 [S]</button>
+
+<script>
+const canvas=document.getElementById('canvas');
+const ctx=canvas.getContext('2d');
+const W=960,H=660;
+const ATTACK_RADIUS=40;
+function bootsBonus(){ return upgrades.boots.owned ? upgrades.boots.level*18 : 0; }
+const BLEED_ATTACK_THRESHOLD=5; // 第6隻起開始攻擊玩家
+const BLEED_ATTACK_INTERVAL=3000; // 每3秒攻擊一次
+
+// ── 難度設定 ──────────────────────────────────
+const DIFFICULTY={
+  normal:{label:'普　通',color:'#7ecf6e',desc:'適合初次挑戰',spawnInterval:2000,maxMosq:12,evolveTime:10000,bossInterval:60,speedMult:1.0,mutantProb:0.05,invisProb:0.10,fastProb:0.15},
+  hard:  {label:'困　難',color:'#f0d060',desc:'蚊子更快、更多',spawnInterval:1400,maxMosq:15,evolveTime:7000,bossInterval:45,speedMult:1.35,mutantProb:0.08,invisProb:0.13,fastProb:0.18},
+  hell:  {label:'地　獄',color:'#e03050',desc:'警告：心臟不好勿選',spawnInterval:900,maxMosq:18,evolveTime:4000,bossInterval:30,speedMult:1.75,mutantProb:0.12,invisProb:0.16,fastProb:0.22},
+};
+let currentDiff=DIFFICULTY.normal;
+
+// ── 色彩 ──────────────────────────────────────
+const C={
+  amber:'#e8a020',dim:'#7a6e5a',blood:'#cc2244',zap:'#44ccff',
+  normal:{body:'#7ecf6e',glow:'#3aaa28'},
+  fast:{body:'#f0d060',glow:'#c8a000'},
+  invisible:{body:'#8090e8',glow:'#4455cc'},
+  mutant:{body:'#e07840',glow:'#b84800'},
+  boss:{body:'#e03050',glow:'#a00020'},
+};
+const TYPES={
+  normal:   {...C.normal,   speed:1.2,hp:1, score:10, size:10,bloodDrop:1},
+  fast:     {...C.fast,     speed:1.8,hp:1, score:20, size:9, bloodDrop:2},
+  invisible:{...C.invisible,speed:1.3,hp:1, score:30, size:10,bloodDrop:2},
+  mutant:   {...C.mutant,   speed:1.5,hp:2, score:40, size:12,bloodDrop:3},
+  boss:     {...C.boss,     speed:2.2,hp:10,score:200,size:22,bloodDrop:15},
+};
+
+// ── 升級系統持久狀態（跨局保留）─────────────
+const upgrades={
+  zap:     {owned:false,cooldown:0,maxCooldown:8000,radius:160},
+  heal:    {stock:0,maxStock:3},
+  shield:  {owned:false,cooldown:0,maxCooldown:20000,active:false,activeTimer:10000},
+  freeze:  {owned:false,cooldown:0,maxCooldown:25000,active:false,activeTimer:4000},
+  maxhp:   {level:0,maxLevel:3},
+  bloodmag:{level:0,maxLevel:3},
+  bomb:    {stock:0,maxStock:2},
+  boots:   {owned:false,level:0,maxLevel:3},
+  magnet:  {owned:false,cooldown:0,maxCooldown:15000,active:false,activeTimer:5000},
+  crit:    {owned:false,level:0,maxLevel:2},
+};
+
+// ── 全域血量（跨局保留）──────────────────────
+let totalBlood=0;
+
+// ── 遊戲狀態 ──────────────────────────────────
+let state={
+  phase:'title',score:0,hp:5,time:0,
+  combo:0,comboTimer:0,maxCombo:0,
+  bossKills:0,nextBoss:60,
+  mosquitoes:[],particles:[],floatingTexts:[],bloodDrops:[],
+  zapEffects:[],bleedAttackEffects:[],
+  swatEffect:null,spawnTimer:0,lastTime:0,bg:null,
+  diffLabel:'普通',
+  bleedAttackTimer:0, // 計時器
+};
+
+// ── 血珠類別 ──────────────────────────────────
+class BloodDrop{
+  constructor(x,y,amount){
+    this.x=x; this.y=y; this.amount=amount;
+    this.vx=(Math.random()-.5)*3; this.vy=-2-Math.random()*2;
+    this.life=5000; this.size=5+amount; this.collected=false;
+    this.pulse=Math.random()*Math.PI*2;
+  }
+  update(dt){
+    this.pulse+=0.06;
+    this.vy+=0.12*(dt/16);
+    this.x+=this.vx*(dt/16); this.y+=this.vy*(dt/16);
+    this.vx*=0.96;
+    if(this.y>H*0.88) this.y=H*0.88;
+    this.life-=dt;
+  }
+  draw(){
+    if(this.collected) return;
+    const a=Math.min(1,this.life/800);
+    const ps=1+Math.sin(this.pulse)*0.12;
+    ctx.save(); ctx.globalAlpha=a; ctx.translate(this.x,this.y); ctx.scale(ps,ps);
+    // 光暈
+    const g=ctx.createRadialGradient(0,0,0,0,0,this.size*2);
+    g.addColorStop(0,'rgba(200,30,60,0.35)'); g.addColorStop(1,'transparent');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,this.size*2,0,Math.PI*2); ctx.fill();
+    // 血珠主體
+    ctx.fillStyle='#cc2244';
+    ctx.beginPath(); ctx.arc(0,0,this.size,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(255,100,120,0.6)';
+    ctx.beginPath(); ctx.arc(-this.size*0.28,-this.size*0.28,this.size*0.38,0,Math.PI*2); ctx.fill();
+    // 數字
+    ctx.fillStyle='#ffaaaa'; ctx.font=`bold ${Math.max(11,this.size+2)}px monospace`;
+    ctx.textAlign='center'; ctx.fillText(this.amount,0,this.size+12);
+    ctx.restore();
+  }
+}
+
+// ── 閃電特效 ──────────────────────────────────
+class ZapEffect{
+  constructor(cx,cy,radius){
+    this.cx=cx; this.cy=cy; this.radius=radius;
+    this.life=600; this.maxLife=600;
+    this.bolts=[];
+    for(let i=0;i<12;i++){
+      const a=i/12*Math.PI*2; const r=radius*(0.6+Math.random()*0.4);
+      const pts=[{x:cx,y:cy}];
+      const steps=5; for(let j=1;j<=steps;j++){
+        const t=j/steps;
+        pts.push({x:cx+Math.cos(a)*r*t+(Math.random()-.5)*22,y:cy+Math.sin(a)*r*t+(Math.random()-.5)*22});
+      }
+      this.bolts.push(pts);
+    }
+  }
+  update(dt){this.life-=dt;}
+  draw(){
+    const a=this.life/this.maxLife;
+    ctx.save(); ctx.globalAlpha=a;
+    // 外圈
+    ctx.strokeStyle=`rgba(100,220,255,${a*0.4})`; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.arc(this.cx,this.cy,this.radius,0,Math.PI*2); ctx.stroke();
+    // 閃電
+    this.bolts.forEach(pts=>{
+      ctx.strokeStyle=`rgba(200,240,255,${a})`; ctx.lineWidth=1.5;
+      ctx.shadowColor='#44ccff'; ctx.shadowBlur=8;
+      ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
+      pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+      ctx.stroke();
+    });
+    // 核心閃光
+    ctx.shadowBlur=0;
+    const g=ctx.createRadialGradient(this.cx,this.cy,0,this.cx,this.cy,this.radius*0.4);
+    g.addColorStop(0,`rgba(200,240,255,${a*0.6})`); g.addColorStop(1,'transparent');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(this.cx,this.cy,this.radius*0.4,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ── 吸血攻擊特效 ──────────────────────────────
+class BleedAttackEffect{
+  constructor(fromX,fromY,toX,toY){
+    this.fx=fromX; this.fy=fromY; this.tx=toX; this.ty=toY;
+    this.life=500; this.maxLife=500;
+  }
+  update(dt){this.life-=dt;}
+  draw(){
+    const a=this.life/this.maxLife;
+    ctx.save(); ctx.globalAlpha=a;
+    // 攻擊線
+    ctx.strokeStyle=`rgba(200,30,60,${a})`; ctx.lineWidth=2;
+    ctx.shadowColor='#cc2244'; ctx.shadowBlur=10;
+    ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.moveTo(this.fx,this.fy); ctx.lineTo(this.tx,this.ty); ctx.stroke();
+    ctx.setLineDash([]);
+    // 蚊子端粒子
+    ctx.fillStyle=`rgba(200,30,60,${a*0.8})`;
+    ctx.beginPath(); ctx.arc(this.fx,this.fy,4,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ── 背景 ──────────────────────────────────────
+function createBG(){
+  const off=document.createElement('canvas'); off.width=W; off.height=H;
+  const c=off.getContext('2d');
+  const wg=c.createLinearGradient(0,0,0,H*0.66);
+  wg.addColorStop(0,'#18120a'); wg.addColorStop(0.6,'#2c2012'); wg.addColorStop(1,'#382818');
+  c.fillStyle=wg; c.fillRect(0,0,W,H*0.66);
+  const fg=c.createLinearGradient(0,H*0.66,0,H);
+  fg.addColorStop(0,'#1c1408'); fg.addColorStop(1,'#100c04');
+  c.fillStyle=fg; c.fillRect(0,H*0.66,W,H*0.34);
+  c.fillStyle='#4a3818'; c.fillRect(0,H*0.66-2,W,12);
+  c.fillStyle='#6a5228'; c.fillRect(0,H*0.66-2,W,2);
+  for(let y=18;y<H*0.66;y+=24){c.strokeStyle='rgba(255,200,80,0.022)';c.lineWidth=1;c.beginPath();c.moveTo(0,y);c.lineTo(W,y);c.stroke();}
+  const wx=70,wy=65,ww=155,wh=175;
+  c.fillStyle='#3e2e14'; c.fillRect(wx-8,wy-8,ww+16,wh+16);
+  const winG=c.createLinearGradient(wx,wy,wx+ww,wy+wh);
+  winG.addColorStop(0,'#050a16'); winG.addColorStop(1,'#08122a');
+  c.fillStyle=winG; c.fillRect(wx,wy,ww,wh);
+  c.fillStyle='rgba(160,200,255,0.055)';
+  c.beginPath(); c.moveTo(wx,wy+wh); c.lineTo(wx+ww,wy+wh); c.lineTo(wx+ww+70,H*0.66); c.lineTo(wx-30,H*0.66); c.closePath(); c.fill();
+  c.strokeStyle='#5a4228'; c.lineWidth=5;
+  c.beginPath(); c.moveTo(wx+ww/2,wy); c.lineTo(wx+ww/2,wy+wh); c.stroke();
+  c.beginPath(); c.moveTo(wx,wy+wh/2); c.lineTo(wx+ww,wy+wh/2); c.stroke();
+  c.fillStyle='rgba(255,255,255,0.03)'; c.fillRect(wx+4,wy+4,ww/2-8,wh/2-8);
+  const lx=682;
+  c.fillStyle='#3a2c14'; c.fillRect(lx,48,7,88);
+  c.fillStyle='#d4a840';
+  c.beginPath(); c.moveTo(lx-28,136); c.lineTo(lx+35,136); c.lineTo(lx+24,172); c.lineTo(lx-16,172); c.closePath(); c.fill();
+  c.fillStyle='rgba(0,0,0,0.35)'; c.fillRect(lx-16,172,40,4);
+  const lg=c.createRadialGradient(lx+3,190,6,lx+3,210,140);
+  lg.addColorStop(0,'rgba(255,200,80,0.2)'); lg.addColorStop(0.4,'rgba(255,180,40,0.07)'); lg.addColorStop(1,'transparent');
+  c.fillStyle=lg; c.beginPath(); c.ellipse(lx+3,210,140,100,0,0,Math.PI*2); c.fill();
+  for(let x=0;x<W;x+=55+Math.random()*25){c.strokeStyle='rgba(255,180,60,0.025)';c.lineWidth=1;c.beginPath();c.moveTo(x,H*0.66);c.lineTo(x+25,H);c.stroke();}
+  for(let i=0;i<4500;i++){const x=Math.random()*W,y=Math.random()*H,a=Math.random()*0.032;c.fillStyle=`rgba(255,220,140,${a})`;c.fillRect(x,y,1,1);}
+  const vig=c.createRadialGradient(W/2,H/2,H*0.28,W/2,H/2,H*0.95);
+  vig.addColorStop(0,'transparent'); vig.addColorStop(1,'rgba(0,0,0,0.6)');
+  c.fillStyle=vig; c.fillRect(0,0,W,H);
+  return off;
+}
+
+// ── 蚊子類別 ──────────────────────────────────
+class Mosquito{
+  constructor(type,x,y){
+    this.type=type; const t=TYPES[type];
+    this.x=x??Math.random()*(W-80)+40;
+    this.y=y??Math.random()*(H*0.5-50)+50;
+    this.hp=t.hp; this.maxHp=t.hp; this.score=t.score; this.size=t.size;
+    this.color=t.body; this.glow=t.glow; this.bloodDrop=t.bloodDrop;
+    this.speed=t.speed*currentDiff.speedMult*(0.8+Math.random()*0.4);
+    this.vx=(Math.random()-.5)*this.speed*2; this.vy=(Math.random()-.5)*this.speed*2;
+    this.alive=true; this.age=0; this.evolved=false; this.wingAngle=0;
+    this.invisible=false; this.invisTimer=0; this.invisCycle=2000;
+    this.hitFlash=0; this.sprintCooldown=0; this.spawnTimer=0;
+    this.wobble=Math.random()*Math.PI*2; this.wobbleSpeed=0.04+Math.random()*0.04;
+    this.attackTimer=Math.random()*BLEED_ATTACK_INTERVAL; // 錯開初始計時
+  }
+  update(dt){
+    this.age+=dt; this.wobble+=this.wobbleSpeed; this.wingAngle+=0.44;
+    if(this.hitFlash>0) this.hitFlash-=dt;
+    // 進化
+    if(this.type==='normal'&&!this.evolved&&this.age>currentDiff.evolveTime){
+      this.type='fast'; this.evolved=true;
+      this.speed=TYPES.fast.speed*currentDiff.speedMult;
+      this.color=TYPES.fast.body; this.glow=TYPES.fast.glow;
+      spawnEvolveParticles(this.x,this.y); Audio.SFX.evolve();
+    }
+    // 隱形
+    if(this.type==='invisible'){this.invisTimer+=dt; this.invisible=(this.invisTimer%this.invisCycle)>(this.invisCycle*0.5);}
+    // Boss
+    if(this.type==='boss'){
+      this.sprintCooldown-=dt; this.spawnTimer+=dt;
+      if(this.sprintCooldown<=0){
+        const a=Math.atan2(H/2-this.y,W/2-this.x)+(Math.random()-.5)*1.5;
+        this.vx=Math.cos(a)*this.speed*3; this.vy=Math.sin(a)*this.speed*3;
+        this.sprintCooldown=3000+Math.random()*2000;
+      }
+      if(this.spawnTimer>8000){this.spawnTimer=0; summonMinions(this.x,this.y);}
+    }
+    // 移動
+    this.vx+=Math.sin(this.wobble)*0.05; this.vy+=Math.cos(this.wobble*0.7)*0.05;
+    const spd=Math.hypot(this.vx,this.vy);
+    const ms=this.type==='boss'?this.speed*3:this.speed*1.5;
+    if(spd>ms){this.vx=this.vx/spd*ms; this.vy=this.vy/spd*ms;}
+    this.x+=this.vx; this.y+=this.vy;
+    const m=this.size;
+    if(this.x<m){this.x=m;this.vx=Math.abs(this.vx);}
+    if(this.x>W-m){this.x=W-m;this.vx=-Math.abs(this.vx);}
+    if(this.y<m){this.y=m;this.vy=Math.abs(this.vy);}
+    if(this.y>H*0.88-m){this.y=H*0.88-m;this.vy=-Math.abs(this.vy);}
+    // 邊緣扣血（舊邏輯保留）
+    if(this.x<5||this.x>W-5||this.y<5||this.y>H*0.88-5)
+      if(Math.random()<0.002*(dt/16)) stingPlayer(this);
+  }
+  draw(){
+    if(!this.alive) return;
+    let alpha=1;
+    if(this.type==='invisible'&&this.invisible) alpha=0.09;
+    ctx.save(); ctx.globalAlpha=alpha; ctx.translate(this.x,this.y);
+    const gs=this.size*(this.type==='boss'?3.5:2.3);
+    const gr=ctx.createRadialGradient(0,0,0,0,0,gs);
+    gr.addColorStop(0,this.glow+'aa'); gr.addColorStop(1,'transparent');
+    ctx.fillStyle=gr; ctx.beginPath(); ctx.arc(0,0,gs,0,Math.PI*2); ctx.fill();
+    if(this.hitFlash>0){ctx.save();ctx.globalAlpha=alpha*(this.hitFlash/150)*0.8;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(0,0,this.size+5,0,Math.PI*2);ctx.fill();ctx.restore();}
+    const wf=Math.sin(this.wingAngle)*0.25+0.75;
+    ctx.save(); ctx.scale(1,wf);
+    ctx.fillStyle=this.type==='boss'?'rgba(255,60,60,0.22)':'rgba(210,225,255,0.26)';
+    ctx.beginPath(); ctx.ellipse(-this.size*0.88,-this.size*0.5,this.size*1.02,this.size*0.44,-0.24,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(this.size*0.88,-this.size*0.5,this.size*1.02,this.size*0.44,0.24,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+    ctx.fillStyle=this.color;
+    ctx.beginPath(); ctx.ellipse(0,0,this.size*0.52,this.size,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0,-this.size*0.9,this.size*0.38,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle=this.color; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(0,-this.size*1.2); ctx.lineTo(0,-this.size*2.0); ctx.stroke();
+    ctx.fillStyle=this.type==='boss'?'#ffcc00':'#e03050';
+    ctx.beginPath(); ctx.arc(-this.size*0.14,-this.size*0.95,1.8,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(this.size*0.14,-this.size*0.95,1.8,0,Math.PI*2); ctx.fill();
+    if(this.maxHp>1){
+      const bw=this.size*3.2,bh=3,bx=-bw/2,by=this.size*1.5;
+      ctx.fillStyle='#1a0800'; ctx.fillRect(bx,by,bw,bh);
+      ctx.fillStyle=this.type==='boss'?C.boss.body:C.mutant.body;
+      ctx.fillRect(bx,by,bw*(this.hp/this.maxHp),bh);
+    }
+    ctx.restore();
+    if(this.evolved){ctx.save();ctx.translate(this.x+this.size+2,this.y-this.size-2);ctx.fillStyle=C.fast.body;ctx.font='bold 14px monospace';ctx.fillText('↑',0,0);ctx.restore();}
+  }
+  hit(dmg=1){this.hp-=dmg;this.hitFlash=150;if(this.hp<=0){this.alive=false;return true;}return false;}
+}
+
+// ── 粒子 & 浮動文字 ───────────────────────────
+class Particle{
+  constructor(x,y,color,vx,vy,life,size){Object.assign(this,{x,y,color,vx,vy,life,maxLife:life,size});}
+  update(dt){this.x+=this.vx*(dt/16);this.y+=this.vy*(dt/16);this.vy+=0.07*(dt/16);this.vx*=0.97;this.life-=dt;}
+  draw(){const a=Math.max(0,this.life/this.maxLife);ctx.save();ctx.globalAlpha=a;ctx.fillStyle=this.color;ctx.beginPath();ctx.arc(this.x,this.y,this.size*a,0,Math.PI*2);ctx.fill();ctx.restore();}
+}
+class FloatingText{
+  constructor(x,y,text,color,size){Object.assign(this,{x,y,text,color,size:size||20});this.life=1100;this.maxLife=1100;this.vy=-1.0;}
+  update(dt){this.y+=this.vy*(dt/16);this.life-=dt;}
+  draw(){const a=Math.max(0,this.life/this.maxLife);ctx.save();ctx.globalAlpha=a;ctx.fillStyle=this.color;ctx.font=`bold ${this.size}px 'Noto Serif TC',serif`;ctx.textAlign='center';ctx.shadowColor=this.color;ctx.shadowBlur=8;ctx.fillText(this.text,this.x,this.y);ctx.restore();}
+}
+
+// ── 工具函式 ──────────────────────────────────
+function spawnParticles(x,y,color,count){
+  for(let i=0;i<count;i++){const a=Math.random()*Math.PI*2,s=1+Math.random()*4;state.particles.push(new Particle(x,y,color,Math.cos(a)*s,Math.sin(a)*s-1,400+Math.random()*400,2+Math.random()*3));}
+}
+function spawnEvolveParticles(x,y){
+  for(let i=0;i<18;i++){const a=Math.random()*Math.PI*2,s=2+Math.random()*3;state.particles.push(new Particle(x,y,C.fast.body,Math.cos(a)*s,Math.sin(a)*s,600,3));}
+  state.floatingTexts.push(new FloatingText(x,y-20,'進化了！',C.fast.body,18));
+}
+function summonMinions(x,y){
+  for(let i=0;i<3;i++) if(state.mosquitoes.filter(m=>m.alive).length<currentDiff.maxMosq)
+    state.mosquitoes.push(new Mosquito('normal',x+(Math.random()-.5)*60,y+(Math.random()-.5)*60));
+  state.floatingTexts.push(new FloatingText(x,y-30,'⚠ 召喚！',C.boss.body,17));
+}
+
+function stingPlayer(mq,isBleedAttack){
+  if(state.hp<=0) return;
+  if(upgrades.shield.active) return; // 護盾保護
+  state.hp--;state.combo=0;
+  Audio.SFX.sting();
+  spawnParticles(mq.x,mq.y,C.blood,8);
+  const msg=isBleedAttack?'🩸 被吸血！':'被叮了！';
+  state.floatingTexts.push(new FloatingText(W/2,H/2,msg,C.blood,24));
+  if(state.hp<=0){Audio.SFX.gameOver();Audio.stopBGM();state.phase='gameover';requestAnimationFrame(gameoverLoop);}
+}
+
+// ── 扣血機制主邏輯 ────────────────────────────
+function updateBleedAttacks(dt){
+  const alive=state.mosquitoes.filter(m=>m.alive&&m.type!=='boss');
+  if(alive.length<=BLEED_ATTACK_THRESHOLD) return; // 5隻以內安全
+
+  // 第6隻起的蚊子計時攻擊
+  const attackers=alive.slice(BLEED_ATTACK_THRESHOLD); // index 5以後
+  state.bleedAttackTimer+=dt;
+
+  if(state.bleedAttackTimer>=BLEED_ATTACK_INTERVAL){
+    state.bleedAttackTimer=0;
+    // 每個攻擊者都打玩家一次，但只扣1滴血（合併傷害）
+    if(attackers.length>0&&state.hp>0){
+      const attacker=attackers[Math.floor(Math.random()*attackers.length)];
+      state.bleedAttackEffects.push(new BleedAttackEffect(attacker.x,attacker.y,W/2,H*0.4));
+      Audio.SFX.bleedAttack();
+      stingPlayer(attacker,true);
+      // 顯示吸血數量
+      if(attackers.length>1){
+        state.floatingTexts.push(new FloatingText(attacker.x,attacker.y-30,`${attackers.length}隻蚊子吸血！`,C.blood,16));
+      }
+    }
+  }
+}
+
+// ── 擊殺蚊子（加入血珠掉落）─────────────────
+function killMosquito(mq){
+  spawnParticles(mq.x,mq.y,mq.glow,mq.type==='boss'?40:12);
+  // 掉落血珠
+  const drops=mq.bloodDrop+(mq.type==='boss'?5:0);
+  for(let i=0;i<Math.min(drops,4);i++){
+    state.bloodDrops.push(new BloodDrop(
+      mq.x+(Math.random()-.5)*20,
+      mq.y+(Math.random()-.5)*20,
+      Math.ceil(drops/Math.min(drops,4))
+    ));
+  }
+  state.combo++; if(state.combo>state.maxCombo)state.maxCombo=state.combo;
+  state.comboTimer=2000;
+  const sfxMap={normal:'killNormal',fast:'killFast',invisible:'killInvisible',mutant:'killMutant',boss:'killBoss'};
+  Audio.SFX[sfxMap[mq.type]]?.();
+  if(state.combo>=3) Audio.SFX.combo(Math.min(state.combo,10));
+  let bonus=mq.score,label=`+${bonus}`;
+  if(state.combo>1){bonus=Math.floor(bonus*(1+state.combo*0.1));label=`${state.combo}連擊！+${bonus}`;}
+  if(mq.type==='boss'){state.bossKills++;label=`首領擊殺！+${bonus}`;}
+  state.score+=bonus;
+  state.floatingTexts.push(new FloatingText(mq.x,mq.y-20,label,mq.type==='boss'?C.boss.body:mq.color,mq.type==='boss'?24:19));
+}
+
+function spawnMosquito(){
+  if(state.mosquitoes.filter(m=>m.alive).length>=currentDiff.maxMosq) return;
+  const r=Math.random(),d=currentDiff;
+  const t=r<(1-d.fastProb-d.invisProb-d.mutantProb)?'normal':r<(1-d.invisProb-d.mutantProb)?'fast':r<(1-d.mutantProb)?'invisible':'mutant';
+  state.mosquitoes.push(new Mosquito(t));
+}
+
+// ── 電蚊拍使用 ────────────────────────────────
+function useZap(mx,my){
+  if(!upgrades.zap.owned||upgrades.zap.cooldown>0) return false;
+  const r=upgrades.zap.radius;
+  upgrades.zap.cooldown=upgrades.zap.maxCooldown;
+  state.zapEffects.push(new ZapEffect(mx,my,r));
+  Audio.SFX.zapFire();
+  let killed=0;
+  state.mosquitoes.forEach(mq=>{
+    if(!mq.alive) return;
+    if(Math.hypot(mx-mq.x,my-mq.y)<r){
+      mq.alive=false;
+      killMosquito(mq);
+      killed++;
+    }
+  });
+  if(killed>0) state.floatingTexts.push(new FloatingText(mx,my-30,`⚡ 電死 ${killed} 隻！`,C.zap,22));
+  return true;
+}
+
+// ── 升級購買 ──────────────────────────────────
+function buyUpgrade(type){
+  if(type==='zap'){
+    if(upgrades.zap.owned){
+      if(totalBlood>=0) return; // 已購買
+    }
+    if(totalBlood<30){showMsg('蚊子血不足！需要 30 滴');return;}
+    totalBlood-=30; upgrades.zap.owned=true;
+    Audio.SFX.upgradeBuy();
+    showMsg('⚡ 電蚊拍購買成功！點擊使用');
+  } else if(type==='heal'){
+    if(upgrades.heal.stock>=upgrades.heal.maxStock){showMsg('驅蚊液已達上限');return;}
+    if(totalBlood<20){showMsg('蚊子血不足！需要 20 滴');return;}
+    totalBlood-=20; upgrades.heal.stock++;
+    if(state.phase==='playing'&&state.hp<5){state.hp++;state.floatingTexts.push(new FloatingText(W/2,H/2-30,'💉 +1 血',C.zap,24));}
+    Audio.SFX.upgradeBuy();
+    showMsg('💉 驅蚊液補充成功！');
+  } else if(type==='shield'){
+    if(upgrades.shield.owned){
+      // 已購買：手動啟動（若就緒）
+      if(upgrades.shield.active){showMsg('護盾已在生效中！');return;}
+      if(upgrades.shield.cooldown>0){showMsg(`護盾充能中，還需 ${Math.ceil(upgrades.shield.cooldown/1000)} 秒`);return;}
+      activateShield(); return;
+    }
+    if(totalBlood<50){showMsg('蚊子血不足！需要 50 滴');return;}
+    totalBlood-=50; upgrades.shield.owned=true;
+    Audio.SFX.upgradeBuy();
+    showMsg('🛡 護盾購買成功！遊戲中按 [E] 啟動');
+  } else if(type==='bomb'){
+    if(upgrades.bomb.stock>=upgrades.bomb.maxStock){showMsg('炸彈已達上限');return;}
+    if(totalBlood<45){showMsg('蚊子血不足！需要 45 滴');return;}
+    totalBlood-=45; upgrades.bomb.stock++;
+    Audio.SFX.upgradeBuy();
+    showMsg('💣 蚊子炸彈 +1！遊戲中按 [F] 引爆');
+  } else if(type==='boots'){
+    if(upgrades.boots.level>=upgrades.boots.maxLevel){showMsg('攻擊範圍已滿級');return;}
+    const cost=[25,35,50][upgrades.boots.level];
+    if(totalBlood<cost){showMsg(`蚊子血不足！需要 ${cost} 滴`);return;}
+    totalBlood-=cost; upgrades.boots.level++;
+    if(!upgrades.boots.owned) upgrades.boots.owned=true;
+    Audio.SFX.upgradeBuy();
+    showMsg(`👟 攻擊範圍升到 ${upgrades.boots.level} 級！`);
+  } else if(type==='magnet'){
+    if(upgrades.magnet.owned){
+      if(upgrades.magnet.active){showMsg('磁鐵已在生效中！');return;}
+      if(upgrades.magnet.cooldown>0){showMsg(`磁鐵充能中，還需 ${Math.ceil(upgrades.magnet.cooldown/1000)} 秒`);return;}
+      activateMagnet(); return;
+    }
+    if(totalBlood<40){showMsg('蚊子血不足！需要 40 滴');return;}
+    totalBlood-=40; upgrades.magnet.owned=true;
+    Audio.SFX.upgradeBuy();
+    showMsg('🧲 吸血磁鐵購買成功！按 [T] 啟動，自動吸收血珠');
+  } else if(type==='crit'){
+    if(upgrades.crit.level>=upgrades.crit.maxLevel){showMsg('暴擊已滿級');return;}
+    const cost=[35,55][upgrades.crit.level];
+    if(totalBlood<cost){showMsg(`蚊子血不足！需要 ${cost} 滴`);return;}
+    totalBlood-=cost; upgrades.crit.level++;
+    if(!upgrades.crit.owned) upgrades.crit.owned=true;
+    Audio.SFX.upgradeBuy();
+    showMsg(`🎯 暴擊率提升！目前 ${upgrades.crit.level*20}% 機率雙倍傷害`);
+  }
+  updateShopUI();
+}
+
+function activateShield(){
+  if(!upgrades.shield.owned||upgrades.shield.active||upgrades.shield.cooldown>0) return;
+  upgrades.shield.active=true; upgrades.shield.activeTimer=10000;
+  Audio.SFX.upgradeBuy();
+  if(state.phase==='playing') state.floatingTexts.push(new FloatingText(W/2,H/2-40,'🛡 護盾啟動！',C.zap,22));
+  updateShopUI();
+}
+function activateFreeze(){
+  if(!upgrades.freeze.owned||upgrades.freeze.active||upgrades.freeze.cooldown>0) return;
+  upgrades.freeze.active=true; upgrades.freeze.activeTimer=4000;
+  upgrades.freeze.cooldown=upgrades.freeze.maxCooldown;
+  Audio.SFX.upgradeBuy();
+  if(state.phase==='playing'){
+    state.floatingTexts.push(new FloatingText(W/2,H/2-40,'❄ 蚊子凍結！',C.zap,22));
+    // 凍結所有蚊子速度
+    state.mosquitoes.forEach(m=>{m._frozenVx=m.vx;m._frozenVy=m.vy;m.vx=0;m.vy=0;m._frozen=true;});
+  }
+  updateShopUI();
+}
+function thawFreeze(){
+  if(!upgrades.freeze.active) return;
+  upgrades.freeze.active=false;
+  state.mosquitoes.forEach(m=>{if(m._frozen){m.vx=m._frozenVx||m.speed;m.vy=m._frozenVy||m.speed;m._frozen=false;}});
+  if(state.phase==='playing') state.floatingTexts.push(new FloatingText(W/2,H/2,'❄ 解凍！',C.zap,16));
+}
+function showMsg(txt){
+  const el=document.createElement('div');
+  el.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:500;background:rgba(20,14,6,0.95);border:1px solid #e8a020;color:#e8a020;font-family:Noto Serif TC,serif;font-size:16px;padding:12px 28px;border-radius:4px;pointer-events:none;letter-spacing:2px;';
+  el.textContent=txt; document.body.appendChild(el);
+  setTimeout(()=>el.remove(),1800);
+}
+
+function updateShopUI(){
+  document.getElementById('shopBlood').textContent=totalBlood;
+  document.getElementById('statBlood').textContent=totalBlood;
+  // 電蚊拍
+  const zapEl=document.getElementById('shopZap');
+  const zapLv=document.getElementById('zapLevel');
+  const zapCost=document.getElementById('zapCost');
+  if(upgrades.zap.owned){
+    zapEl.classList.add('maxed');
+    const cd=Math.ceil(upgrades.zap.cooldown/1000);
+    zapLv.textContent=cd>0?`充能中 ${cd}秒`:'✅ 就緒，遊戲中點擊使用';
+    zapCost.textContent='已購買';
+  } else {
+    zapEl.classList.remove('maxed');
+    zapLv.textContent='未購買'; zapCost.textContent='🩸 30';
+  }
+  // 驅蚊液
+  const healLv=document.getElementById('healLevel');
+  healLv.textContent=`持有：${upgrades.heal.stock} / ${upgrades.heal.maxStock}`;
+  if(upgrades.heal.stock>=upgrades.heal.maxStock) document.getElementById('shopHeal').classList.add('maxed');
+  else document.getElementById('shopHeal').classList.remove('maxed');
+  // 護盾
+  const shieldEl=document.getElementById('shopShield');
+  const shieldLv=document.getElementById('shieldLevel');
+  const shieldCost=document.getElementById('shieldCost');
+  if(upgrades.shield.owned){
+    const cd=Math.ceil(upgrades.shield.cooldown/1000);
+    if(upgrades.shield.active){shieldEl.classList.add('maxed');shieldLv.textContent='🟢 護盾啟動中！';shieldCost.textContent='生效中';}
+    else if(cd>0){shieldEl.classList.add('maxed');shieldLv.textContent=`充能中 ${cd}秒`;shieldCost.textContent='充能中';}
+    else{shieldEl.classList.remove('maxed');shieldLv.textContent='✅ 就緒，點此或按 [E] 啟動';shieldCost.textContent='啟動';}
+  } else {
+    shieldEl.classList.remove('maxed');
+    shieldLv.textContent='未購買'; shieldCost.textContent='🩸 50';
+  }
+  // 冰凍噴霧
+  const freezeEl=document.getElementById('shopFreeze');
+  const freezeLv=document.getElementById('freezeLevel');
+  const freezeCost=document.getElementById('freezeCost');
+  if(upgrades.freeze.owned){
+    const cd=Math.ceil(upgrades.freeze.cooldown/1000);
+    if(upgrades.freeze.active){freezeEl.classList.add('maxed');freezeLv.textContent='❄ 凍結中！';freezeCost.textContent='生效中';}
+    else if(cd>0){freezeEl.classList.add('maxed');freezeLv.textContent=`充能中 ${cd}秒`;freezeCost.textContent='充能中';}
+    else{freezeEl.classList.remove('maxed');freezeLv.textContent='✅ 就緒，點此或按 [R] 使用';freezeCost.textContent='使用';}
+  } else { freezeEl.classList.remove('maxed'); freezeLv.textContent='未購買'; freezeCost.textContent='🩸 40'; }
+  // 強化體質
+  const maxhpEl=document.getElementById('shopMaxHp');
+  const maxhpLv=document.getElementById('maxhpLevel');
+  const maxhpCost=document.getElementById('maxhpCost');
+  maxhpLv.textContent=`+${upgrades.maxhp.level} / +${upgrades.maxhp.maxLevel}`;
+  if(upgrades.maxhp.level>=upgrades.maxhp.maxLevel){maxhpEl.classList.add('maxed');maxhpCost.textContent='已滿級';}
+  else{maxhpEl.classList.remove('maxed');maxhpCost.textContent=`🩸 ${60+upgrades.maxhp.level*20}`;}
+  // 血珠感應
+  const magEl=document.getElementById('shopBloodMag');
+  const magLv=document.getElementById('bloodmagLevel');
+  const magCost=document.getElementById('bloodmagCost');
+  magLv.textContent=`Lv ${upgrades.bloodmag.level} / ${upgrades.bloodmag.maxLevel}`;
+  if(upgrades.bloodmag.level>=upgrades.bloodmag.maxLevel){magEl.classList.add('maxed');magCost.textContent='已滿級';}
+  else{magEl.classList.remove('maxed');magCost.textContent=`🩸 ${25+upgrades.bloodmag.level*15}`;}
+  // 吸血磁鐵（主動技能）
+  const mgnEl=document.getElementById('shopMagnet');
+  const mgnLv=document.getElementById('magnetLevel');
+  const mgnCost=document.getElementById('magnetCost');
+  if(upgrades.magnet.owned){
+    const cd=Math.ceil(upgrades.magnet.cooldown/1000);
+    if(upgrades.magnet.active){mgnEl.classList.add('maxed');mgnLv.textContent='🧲 磁鐵啟動中！';mgnCost.textContent='生效中';}
+    else if(cd>0){mgnEl.classList.add('maxed');mgnLv.textContent=`充能中 ${cd}秒`;mgnCost.textContent='充能中';}
+    else{mgnEl.classList.remove('maxed');mgnLv.textContent='✅ 就緒，點此或按 [T] 啟動';mgnCost.textContent='啟動';}
+  } else {mgnEl.classList.remove('maxed');mgnLv.textContent='未購買';mgnCost.textContent='🩸 40';}
+}
+
+function useBomb(){
+  if(upgrades.bomb.stock<=0){showMsg('沒有炸彈！');return;}
+  upgrades.bomb.stock--;
+  Audio.SFX.zapFire();
+  let killed=0;
+  state.mosquitoes.forEach(mq=>{
+    if(!mq.alive) return;
+    mq.alive=false; killMosquito(mq); killed++;
+  });
+  // 全畫面閃光
+  state.zapEffects.push(new ZapEffect(W/2,H/2,320));
+  state.floatingTexts.push(new FloatingText(W/2,H/2-60,`💣 炸彈！殲滅 ${killed} 隻`,C.amber,24));
+  updateShopUI();
+}
+
+// ── 商店開關 ──────────────────────────────────
+function openShop(){
+  if(state.phase==='playing') state.phase='paused';
+  updateShopUI();
+  document.getElementById('shopPanel').classList.add('open');
+}
+function closeShop(){
+  document.getElementById('shopPanel').classList.remove('open');
+  if(state.phase==='paused'){
+    state.phase='playing';
+    state.lastTime=performance.now();
+    requestAnimationFrame(loop);
+  }
+}
+
+// ── 輸入 ──────────────────────────────────────
+let titleHover=-1;
+canvas.addEventListener('mousemove',e=>{
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=W/rect.width,scaleY=H/rect.height;
+  const mx=(e.clientX-rect.left)*scaleX,my=(e.clientY-rect.top)*scaleY;
+
+  if(state.phase==='title'){
+    titleHover=-1;
+    getDiffButtons().forEach((b,i)=>{if(mx>b.x&&mx<b.x+b.w&&my>b.y&&my<b.y+b.h)titleHover=i;});
+    // 離開按鈕 hover（titleHover===99）
+    const py=H/2-255,ph=480,qx=W/2,qy=py+ph-22;
+    if(mx>qx-70&&mx<qx+70&&my>qy-14&&my<qy+12) titleHover=99;
+  }
+
+  if(state.phase==='playing'){
+    // 追蹤滑鼠座標（電蚊拍預覽用）
+    state.mouseX=mx; state.mouseY=my;
+
+    state.bloodDrops.forEach(bd=>{
+      if(bd.collected) return;
+      if(Math.hypot(mx-bd.x,my-bd.y)<bd.size+14+upgrades.bloodmag.level*15){
+        bd.collected=true; totalBlood+=bd.amount;
+        Audio.SFX.bloodCollect();
+        state.floatingTexts.push(new FloatingText(bd.x,bd.y-10,`🩸+${bd.amount}`,C.blood,13));
+        document.getElementById('statBlood').textContent=totalBlood;
+      }
+    });
+  }
+});
+function getDiffButtons(){
+  const bw=138,bh=56,gap=22,totalW=3*bw+2*gap;
+  const bx=W/2-totalW/2,by=H/2+60;
+  return [0,1,2].map(i=>({x:bx+i*(bw+gap),y:by,w:bw,h:bh}));
+}
+
+canvas.addEventListener('click',e=>{
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=W/rect.width,scaleY=H/rect.height;
+  const mx=(e.clientX-rect.left)*scaleX,my=(e.clientY-rect.top)*scaleY;
+  if(state.phase==='title'){
+    Audio.init();Audio.resume();
+    const btns=getDiffButtons(),dkeys=['normal','hard','hell'];
+    for(let i=0;i<btns.length;i++){
+      const b=btns[i];
+      if(mx>b.x&&mx<b.x+b.w&&my>b.y&&my<b.y+b.h){
+        currentDiff=DIFFICULTY[dkeys[i]];Audio.SFX.gameStart();Audio.startBGM();startGame();return;
+      }
+    }
+    // 離開遊戲按鈕
+    const tpy=H/2-255,tph=480,qx=W/2,qy=tpy+tph-22;
+    if(mx>qx-70&&mx<qx+70&&my>qy-14&&my<qy+12){ quitGame(); return; }
+    return;
+  }
+  if(state.phase==='gameover'){
+    const gby=H/2-275+510-46;
+    // 重新開始（左側按鈕）
+    if(mx>W/2-248&&mx<W/2-18&&Math.abs(my-gby)<22){
+      Audio.resume();Audio.SFX.gameStart();Audio.startBGM();startGame();return;
+    }
+    // 離開遊戲（右側按鈕）
+    if(mx>W/2+18&&mx<W/2+248&&Math.abs(my-gby)<22){
+      quitGame();return;
+    }
+    return;
+  }
+  // HUD 右上按鈕點擊偵測（playing 時）
+  if(state.phase==='playing'&&my<46){
+    // 依序偵測：暫停、護盾、冰凍、電蚊拍、驅蚊液（從右到左，每個 52px）
+    let bx2=W-14;
+    if(mx>bx2-52&&mx<bx2){ state.phase='paused'; requestAnimationFrame(loop); return; } bx2-=60;
+    if(upgrades.shield.owned){ if(mx>bx2-52&&mx<bx2){ activateShield(); return; } bx2-=60; }
+    if(upgrades.freeze.owned){ if(mx>bx2-52&&mx<bx2){ activateFreeze(); return; } bx2-=60; }
+    if(upgrades.zap.owned){ if(mx>bx2-52&&mx<bx2){ const cx=state.mouseX??W/2,cy=state.mouseY??H/2; useZap(cx,cy); return; } bx2-=60; }
+  }
+  // 暫停時點擊離開按鈕
+  if(state.phase==='paused'){
+    if(mx>W/2-80&&mx<W/2+80&&my>H/2+40&&my<H/2+74){ quitGame(); return; }
+    return;
+  }
+  state.swatEffect={x:mx,y:my,life:280};
+  let hit=false;
+  const sorted=[...state.mosquitoes].filter(m=>m.alive)
+    .sort((a,b)=>({boss:0,mutant:1,invisible:2,fast:3,normal:4}[a.type]-{boss:0,mutant:1,invisible:2,fast:3,normal:4}[b.type]));
+  for(const mq of sorted){
+    if(!mq.alive||(mq.type==='invisible'&&mq.invisible)) continue;
+    if(Math.hypot(mx-mq.x,my-mq.y)<ATTACK_RADIUS+mq.size){
+      Audio.SFX.swat();
+      if(mq.hit(1)) killMosquito(mq);
+      hit=true;break;
+    }
+  }
+  if(!hit&&state.combo>0){
+    Audio.SFX.miss();
+    state.floatingTexts.push(new FloatingText(mx,my-10,'打空了',C.dim,16));
+    state.combo=Math.max(0,state.combo-1);
+  }
+});
+
+document.addEventListener('keydown',e=>{
+  // S：鍊化商店
+  if(e.key==='s'||e.key==='S'){
+    const sp=document.getElementById('shopPanel');
+    if(sp.classList.contains('open')) closeShop(); else openShop();
+    e.preventDefault(); return;
+  }
+  // P / Escape：暫停 / 繼續
+  if((e.key==='p'||e.key==='P'||e.key==='Escape')){
+    if(state.phase==='playing'){ pauseGame(); e.preventDefault(); return; }
+    if(state.phase==='paused'&&!document.getElementById('shopPanel').classList.contains('open')){ resumeGame(); e.preventDefault(); return; }
+  }
+  if(state.phase!=='playing') return;
+  // Q：驅蚊液
+  if(e.key==='q'||e.key==='Q'){
+    const maxHp=state.maxHp||5;
+    if(upgrades.heal.stock>0&&state.hp<maxHp){
+      upgrades.heal.stock--; state.hp++;
+      Audio.SFX.upgradeBuy();
+      state.floatingTexts.push(new FloatingText(W/2,H*0.5,'💉 回復 1 血！',C.zap,24));
+      updateShopUI();
+    } else if(state.hp>=maxHp){ showMsg('血量已滿！'); }
+    else{ showMsg('沒有驅蚊液！'); }
+    return;
+  }
+  // E：護盾
+  if(e.key==='e'||e.key==='E'){ activateShield(); return; }
+  // R：冰凍
+  if(e.key==='r'||e.key==='R'){ activateFreeze(); return; }
+  // T：磁鐵
+  if(e.key==='t'||e.key==='T'){ activateMagnet(); return; }
+  // 空白鍵：電蚊拍（在滑鼠位置釋放）
+  if(e.key===' '){
+    e.preventDefault();
+    if(upgrades.zap.owned&&upgrades.zap.cooldown<=0&&state.mouseX!==undefined){
+      useZap(state.mouseX,state.mouseY);
+    } else if(!upgrades.zap.owned){ showMsg('尚未購買電蚊拍！'); }
+    else{ showMsg(`電蚊拍充能中… ${Math.ceil(upgrades.zap.cooldown/1000)}s`); }
+    return;
+  }
+
+});
+
+function pauseGame(){
+  if(state.phase!=='playing') return;
+  state.phase='paused';
+}
+function resumeGame(){
+  if(state.phase!=='paused') return;
+  state.phase='playing';
+  state.lastTime=performance.now();
+  requestAnimationFrame(loop);
+}
+
+// ── 遊戲生命週期 ──────────────────────────────
+function startGame(){
+  Audio.stopBGM();
+  // 護盾重置
+  upgrades.shield.active=false;
+  upgrades.zap.cooldown=0;
+  state={
+    phase:'playing',score:0,hp:5+upgrades.maxhp.level,maxHp:5+upgrades.maxhp.level,time:0,combo:0,comboTimer:0,maxCombo:0,
+    bossKills:0,nextBoss:currentDiff.bossInterval,
+    mosquitoes:[],particles:[],floatingTexts:[],bloodDrops:[],
+    zapEffects:[],bleedAttackEffects:[],
+    swatEffect:null,spawnTimer:0,lastTime:performance.now(),bg:state.bg,
+    diffLabel:currentDiff.label.replace(/\u3000/g,''),
+    bleedAttackTimer:0,
+  };
+  Audio.startBGM();
+  requestAnimationFrame(loop);
+}
+
+// ── HUD ───────────────────────────────────────
+function drawHUD(){
+  ctx.fillStyle='rgba(10,8,4,0.85)';ctx.fillRect(0,0,W,46);
+  ctx.strokeStyle=C.amber+'44';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(0,46);ctx.lineTo(W,46);ctx.stroke();
+
+  ctx.fillStyle=C.amber;ctx.font=`bold 21px 'Share Tech Mono'`;
+  ctx.textAlign='left';ctx.shadowColor=C.amber;ctx.shadowBlur=10;
+  ctx.fillText(`分數 ${String(state.score).padStart(6,'0')}`,16,30);ctx.shadowBlur=0;
+
+  ctx.fillStyle=currentDiff.color+'cc';ctx.font=`14px 'Share Tech Mono'`;
+  ctx.fillText(`[${state.diffLabel}]`,142,30);
+
+  // 生命
+  ctx.textAlign='center';ctx.font='23px serif';
+  const maxHp=state.maxHp||5;
+  const hpStart=W/2-((maxHp-1)*11);
+  for(let i=0;i<maxHp;i++){
+    ctx.globalAlpha=i<state.hp?0.95:0.18;
+    ctx.fillStyle=i<state.hp?'#e03050':'#5a4a2a';
+    ctx.fillText('♥',hpStart+i*22,31);
+  }
+  ctx.globalAlpha=1;
+
+
+
+  ctx.fillStyle='#9a8a6a';ctx.font=`bold 18px 'Share Tech Mono'`;
+  ctx.textAlign='right';
+  ctx.fillText(`${Math.floor(state.time)}秒`,W-108,30);
+  const nb=Math.max(0,Math.ceil(state.nextBoss));
+  ctx.fillStyle=nb<10?C.boss.body:'#4a3a1a';ctx.font=`14px 'Share Tech Mono'`;
+  ctx.fillText(`首領 ${nb}s`,W-10,30);
+
+  // 右上快捷道具按鈕
+  let btnX=W-14;
+  // 暫停按鈕
+  ctx.fillStyle='rgba(30,20,8,0.75)';ctx.beginPath();ctx.roundRect(btnX-52,4,50,38,4);ctx.fill();
+  ctx.strokeStyle=C.amber+'44';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(btnX-52,4,50,38,4);ctx.stroke();
+  ctx.fillStyle=C.amber;ctx.font=`bold 13px 'Share Tech Mono'`;ctx.textAlign='center';
+  ctx.fillText('⏸',btnX-27,18);ctx.fillStyle='#6a5a38';ctx.font=`10px 'Share Tech Mono'`;ctx.fillText('[P]',btnX-27,32);
+  btnX-=60;
+  // 護盾按鈕
+  if(upgrades.shield.owned){
+    const sReady=!upgrades.shield.active&&upgrades.shield.cooldown<=0;
+    ctx.fillStyle=upgrades.shield.active?'rgba(68,200,255,0.3)':sReady?'rgba(30,80,120,0.8)':'rgba(20,20,40,0.6)';
+    ctx.beginPath();ctx.roundRect(btnX-52,4,50,38,4);ctx.fill();
+    ctx.strokeStyle=upgrades.shield.active?C.zap:sReady?C.zap+'88':'#2a2a4a';ctx.lineWidth=1;
+    ctx.beginPath();ctx.roundRect(btnX-52,4,50,38,4);ctx.stroke();
+    ctx.fillStyle=upgrades.shield.active?C.zap:sReady?C.zap:'#4a4a6a';ctx.font=`bold 13px 'Share Tech Mono'`;ctx.textAlign='center';
+    ctx.fillText('🛡',btnX-27,18);
+    ctx.fillStyle=upgrades.shield.active?C.zap:sReady?C.zap:'#4a4a6a';ctx.font=`10px 'Share Tech Mono'`;
+    ctx.fillText(upgrades.shield.active?`${Math.ceil(upgrades.shield.activeTimer/1000)}s`:sReady?'[F]':`${Math.ceil(upgrades.shield.cooldown/1000)}s`,btnX-27,32);
+    btnX-=60;
+  }
+  // 冰凍按鈕
+  if(upgrades.freeze.owned){
+    const fReady=!upgrades.freeze.active&&upgrades.freeze.cooldown<=0;
+    ctx.fillStyle=upgrades.freeze.active?'rgba(100,180,255,0.3)':fReady?'rgba(30,60,120,0.8)':'rgba(20,20,40,0.6)';
+    ctx.beginPath();ctx.roundRect(btnX-52,4,50,38,4);ctx.fill();
+    ctx.strokeStyle=upgrades.freeze.active?'#88ccff':fReady?'#88ccff88':'#2a2a4a';ctx.lineWidth=1;
+    ctx.beginPath();ctx.roundRect(btnX-52,4,50,38,4);ctx.stroke();
+    ctx.fillStyle=fReady||upgrades.freeze.active?'#88ccff':'#4a4a6a';ctx.font=`bold 13px 'Share Tech Mono'`;ctx.textAlign='center';
+    ctx.fillText('❄',btnX-27,18);ctx.font=`10px 'Share Tech Mono'`;
+    ctx.fillText(upgrades.freeze.active?`${Math.ceil(upgrades.freeze.activeTimer/1000)}s`:fReady?'[R]':`${Math.ceil(upgrades.freeze.cooldown/1000)}s`,btnX-27,32);
+    btnX-=60;
+  }
+  // 電蚊拍按鈕
+  if(upgrades.zap.owned){
+    const zReady=upgrades.zap.cooldown<=0;
+    ctx.fillStyle=zReady?'rgba(20,80,100,0.85)':'rgba(10,30,50,0.6)';
+    ctx.beginPath();ctx.roundRect(btnX-52,4,50,38,4);ctx.fill();
+    ctx.strokeStyle=zReady?C.zap:C.zap+'33';ctx.lineWidth=zReady?2:1;
+    ctx.beginPath();ctx.roundRect(btnX-52,4,50,38,4);ctx.stroke();
+    if(zReady){ctx.shadowColor=C.zap;ctx.shadowBlur=8;}
+    ctx.fillStyle=zReady?C.zap:'#2a5a6a';ctx.font=`bold 15px 'Share Tech Mono'`;ctx.textAlign='center';
+    ctx.fillText('⚡',btnX-27,20);ctx.shadowBlur=0;ctx.font=`10px 'Share Tech Mono'`;
+    ctx.fillText(zReady?'[E]':`${Math.ceil(upgrades.zap.cooldown/1000)}s`,btnX-27,34);
+    btnX-=60;
+  }
+  // 驅蚊液按鈕
+  if(upgrades.heal.stock>0){
+    ctx.fillStyle='rgba(20,60,80,0.8)';ctx.beginPath();ctx.roundRect(btnX-52,4,50,38,4);ctx.fill();
+    ctx.strokeStyle='#4488aa88';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(btnX-52,4,50,38,4);ctx.stroke();
+    ctx.fillStyle='#88bbcc';ctx.font=`bold 13px 'Share Tech Mono'`;ctx.textAlign='center';
+    ctx.fillText('💉',btnX-27,18);ctx.font=`10px 'Share Tech Mono'`;
+    ctx.fillText(`×${upgrades.heal.stock}[Q]`,btnX-27,32);
+  }
+  // 連擊
+  if(state.combo>=2){
+    const p=1+Math.sin(Date.now()*0.012)*0.04;
+    ctx.save();ctx.translate(W/2,64);ctx.scale(p,p);
+    ctx.fillStyle=C.amber;ctx.font=`bold ${Math.min(28,16+state.combo)}px 'Noto Serif TC',serif`;
+    ctx.textAlign='center';ctx.shadowColor=C.amber;ctx.shadowBlur=14;
+    ctx.fillText(`${state.combo} 連擊`,0,0);ctx.shadowBlur=0;ctx.restore();
+  }
+
+
+
+  // 吸血警告（5隻以上顯示）
+  const aliveCount=state.mosquitoes.filter(m=>m.alive&&m.type!=='boss').length;
+  if(aliveCount>BLEED_ATTACK_THRESHOLD){
+    const excess=aliveCount-BLEED_ATTACK_THRESHOLD;
+    const flash=Math.sin(Date.now()*0.008)>0;
+    if(flash){
+      ctx.fillStyle=C.blood+'cc';ctx.font=`bold 15px 'Share Tech Mono'`;ctx.textAlign='center';
+      ctx.fillText(`⚠ ${excess}隻蚊子正在吸血！每 3 秒 -1 HP`,W/2,H-12);
+    }
+  }
+
+  // 底部快捷鍵提示列
+  ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(0,H-26,W,26);
+  ctx.font=`11px 'Share Tech Mono'`;ctx.textAlign='left';
+  const hints=[];
+  if(upgrades.heal.stock>0) hints.push(`[Q]💉×${upgrades.heal.stock}`);
+  if(upgrades.zap.owned) hints.push(upgrades.zap.cooldown>0?`[空白]⚡${Math.ceil(upgrades.zap.cooldown/1000)}s`:'[空白]⚡就緒');
+  if(upgrades.shield.owned) hints.push(upgrades.shield.active?'[E]🛡生效中':upgrades.shield.cooldown>0?`[E]🛡${Math.ceil(upgrades.shield.cooldown/1000)}s`:'[E]🛡就緒');
+  if(upgrades.freeze&&upgrades.freeze.owned) hints.push(upgrades.freeze.active?'[R]❄生效中':upgrades.freeze.cooldown>0?`[R]❄${Math.ceil(upgrades.freeze.cooldown/1000)}s`:'[R]❄就緒');
+  if(upgrades.bomb.stock>0) hints.push(`[F]💣×${upgrades.bomb.stock}`);
+  if(upgrades.magnet.owned) hints.push(upgrades.magnet.active?'[T]🧲生效中':upgrades.magnet.cooldown>0?`[T]🧲${Math.ceil(upgrades.magnet.cooldown/1000)}s`:'[T]🧲就緒');
+  hints.push('[S]商店  [P]暫停');
+  ctx.fillStyle='#5a4a2a';
+  ctx.fillText(hints.join('  '),12,H-8);
+
+  // 蚊子血提示
+  const hasDrops=state.bloodDrops.filter(b=>!b.collected&&b.life>0).length;
+  if(hasDrops>0){
+    ctx.fillStyle=C.blood+'aa';ctx.font=`13px 'Share Tech Mono'`;ctx.textAlign='right';
+    ctx.fillText(`滑過收集 ${hasDrops} 個血珠`,W-14,H-28);
+  }
+}
+
+// ── 電蚊拍範圍預覽 ────────────────────────────
+function drawZapPreview(){
+  if(!upgrades.zap.owned||upgrades.zap.cooldown>0) return;
+  if(state.mouseX===undefined) return;
+  const r=upgrades.zap.radius;
+  const t=Date.now()/1000;
+  const pulse=0.55+Math.sin(t*4)*0.25; // 0.3~0.8 脈衝透明度
+  ctx.save();
+  // 外圈虛線
+  ctx.setLineDash([10,6]);
+  ctx.lineDashOffset=-t*30;
+  ctx.strokeStyle=`rgba(68,204,255,${pulse})`;
+  ctx.lineWidth=2;
+  ctx.shadowColor='#44ccff';ctx.shadowBlur=14;
+  ctx.beginPath();ctx.arc(state.mouseX,state.mouseY,r,0,Math.PI*2);ctx.stroke();
+  ctx.setLineDash([]);ctx.shadowBlur=0;
+  // 內部淡填充
+  const g=ctx.createRadialGradient(state.mouseX,state.mouseY,0,state.mouseX,state.mouseY,r);
+  g.addColorStop(0,`rgba(68,204,255,${pulse*0.12})`);
+  g.addColorStop(0.7,`rgba(68,204,255,${pulse*0.06})`);
+  g.addColorStop(1,'transparent');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(state.mouseX,state.mouseY,r,0,Math.PI*2);ctx.fill();
+  // 中心準心
+  ctx.strokeStyle=`rgba(68,204,255,${pulse})`;ctx.lineWidth=1.5;
+  const cs=12;
+  ctx.beginPath();ctx.moveTo(state.mouseX-cs,state.mouseY);ctx.lineTo(state.mouseX+cs,state.mouseY);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(state.mouseX,state.mouseY-cs);ctx.lineTo(state.mouseX,state.mouseY+cs);ctx.stroke();
+  // 就緒文字
+  ctx.fillStyle=`rgba(68,204,255,${pulse})`;
+  ctx.font=`bold 13px 'Share Tech Mono'`;ctx.textAlign='center';
+  ctx.fillText('⚡ 點擊釋放',state.mouseX,state.mouseY-r-8);
+  ctx.restore();
+}
+function drawSwatEffect(){
+  if(!state.swatEffect) return;
+  const s=state.swatEffect,a=s.life/280;
+  ctx.save();ctx.globalAlpha=a*0.5;ctx.strokeStyle='#f0d060';ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(s.x,s.y,ATTACK_RADIUS*(1.1-a*0.1),0,Math.PI*2);ctx.stroke();
+  for(let i=0;i<6;i++){
+    const ang=i/6*Math.PI*2+Date.now()*0.012;
+    ctx.beginPath();ctx.moveTo(s.x+Math.cos(ang)*12,s.y+Math.sin(ang)*12);
+    ctx.lineTo(s.x+Math.cos(ang)*ATTACK_RADIUS*0.75,s.y+Math.sin(ang)*ATTACK_RADIUS*0.75);ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ── 標題畫面 ──────────────────────────────────
+function drawTitle(){
+  ctx.drawImage(state.bg,0,0);
+  ctx.fillStyle='rgba(8,6,2,0.62)';ctx.fillRect(0,0,W,H);
+  const px=W/2-265,py=H/2-255,pw=530,ph=480;
+  ctx.fillStyle='rgba(22,16,8,0.95)';ctx.fillRect(px,py,pw,ph);
+  ctx.strokeStyle=C.amber+'88';ctx.lineWidth=2;ctx.strokeRect(px,py,pw,ph);
+  ctx.strokeStyle=C.amber+'28';ctx.lineWidth=1;ctx.strokeRect(px+8,py+8,pw-16,ph-16);
+  ctx.fillStyle=C.amber+'55';ctx.font='11px serif';ctx.textAlign='left';
+  ctx.fillText('◆',px+16,py+22);ctx.fillText('◆',px+pw-24,py+22);
+  ctx.fillText('◆',px+16,py+ph-6);ctx.fillText('◆',px+pw-24,py+ph-6);
+  const t=Date.now()/1000;ctx.textAlign='center';
+  const em=1+Math.sin(t*1.2)*0.04;
+  ctx.save();ctx.translate(W/2,py+76);ctx.scale(em,em);ctx.font='56px serif';ctx.fillText('🦟',0,0);ctx.restore();
+  ctx.fillStyle=C.amber;ctx.font=`900 42px 'Noto Serif TC',serif`;ctx.shadowColor=C.amber;ctx.shadowBlur=22;ctx.fillText('進化蚊子',W/2,py+158);ctx.shadowBlur=0;
+  ctx.fillStyle='#5a4828';ctx.font=`14px 'Share Tech Mono'`;ctx.fillText('EVOLUTION  MOSQUITO',W/2,py+184);
+  ctx.strokeStyle=C.amber+'44';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px+50,py+200);ctx.lineTo(px+pw-50,py+200);ctx.stroke();
+  ctx.fillStyle='#8a7a58';ctx.font=`15px 'Share Tech Mono'`;
+  ctx.fillText('5種蚊子 · 首領來襲 · 鍊化升級 · 電蚊拍',W/2,py+228);
+  ctx.fillStyle='#6a5a38';ctx.font=`15px 'Share Tech Mono'`;ctx.fillText('── 選擇難度 ──',W/2,py+260);
+  const btns=getDiffButtons(),dkeys=['normal','hard','hell'],diffs=dkeys.map(k=>DIFFICULTY[k]);
+  btns.forEach((b,i)=>{
+    const d=diffs[i],isHover=(titleHover===i);
+    ctx.fillStyle=isHover?d.color+'44':'rgba(30,20,8,0.8)';ctx.beginPath();ctx.roundRect(b.x,b.y,b.w,b.h,4);ctx.fill();
+    ctx.strokeStyle=isHover?d.color:d.color+'55';ctx.lineWidth=isHover?2:1;ctx.beginPath();ctx.roundRect(b.x,b.y,b.w,b.h,4);ctx.stroke();
+    ctx.fillStyle=isHover?d.color:'#9a8a6a';ctx.font=`bold 19px 'Noto Serif TC',serif`;ctx.textAlign='center';
+    if(isHover){ctx.shadowColor=d.color;ctx.shadowBlur=12;}ctx.fillText(d.label,b.x+b.w/2,b.y+26);ctx.shadowBlur=0;
+    ctx.fillStyle=isHover?d.color+'cc':'#5a4a28';ctx.font=`12px 'Share Tech Mono'`;ctx.fillText(d.desc,b.x+b.w/2,b.y+44);
+  });
+  // 血量顯示（累積）
+  if(totalBlood>0){ctx.fillStyle=C.blood+'88';ctx.font=`14px 'Share Tech Mono'`;ctx.fillText(`🩸 蚊子血：${totalBlood}（跨局保留）`,W/2,py+ph-68);}
+  ctx.fillStyle='#4a3a18';ctx.font=`14px 'Share Tech Mono'`;ctx.fillText('點擊難度按鈕開始  ·  [S] 開啟鍊化商店',W/2,py+ph-48);
+  // 離開按鈕
+  const qx=W/2,qy=py+ph-22;
+  const isQHover=(titleHover===99);
+  ctx.fillStyle=isQHover?'rgba(180,30,50,0.25)':'rgba(30,10,10,0.6)';
+  ctx.beginPath();ctx.roundRect(qx-70,qy-14,140,26,3);ctx.fill();
+  ctx.strokeStyle=isQHover?'#c03040':'#4a2020';ctx.lineWidth=1;
+  ctx.beginPath();ctx.roundRect(qx-70,qy-14,140,26,3);ctx.stroke();
+  ctx.fillStyle=isQHover?'#e05060':'#6a3030';ctx.font=`12px 'Share Tech Mono'`;ctx.textAlign='center';
+  ctx.fillText('✕  離開遊戲',qx,qy+5);
+}
+
+// ── 遊戲結束畫面 ──────────────────────────────
+function drawGameOver(){
+  ctx.fillStyle='rgba(8,6,2,0.88)';ctx.fillRect(0,0,W,H);
+  const px=W/2-275,py=H/2-275,pw=550,ph=510;
+  ctx.fillStyle='rgba(16,10,4,0.97)';ctx.fillRect(px,py,pw,ph);
+  ctx.strokeStyle=C.boss.body+'bb';ctx.lineWidth=2;ctx.strokeRect(px,py,pw,ph);
+  ctx.strokeStyle=C.boss.body+'2a';ctx.lineWidth=1;ctx.strokeRect(px+8,py+8,pw-16,ph-16);
+  ctx.fillStyle=C.boss.body+'44';ctx.font='11px serif';ctx.textAlign='left';
+  ctx.fillText('◆',px+16,py+22);ctx.fillText('◆',px+pw-24,py+22);
+  ctx.fillText('◆',px+16,py+ph-6);ctx.fillText('◆',px+pw-24,py+ph-6);
+  ctx.textAlign='center';
+  ctx.font=`900 46px 'Noto Serif TC',serif`;ctx.fillStyle=C.boss.body;ctx.shadowColor=C.boss.body;ctx.shadowBlur=25;ctx.fillText('遊戲結束',W/2,py+80);ctx.shadowBlur=0;
+  ctx.fillStyle=currentDiff.color+'aa';ctx.font=`16px 'Share Tech Mono'`;ctx.fillText(`難度：${state.diffLabel}`,W/2,py+112);
+  ctx.strokeStyle=C.boss.body+'44';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px+50,py+130);ctx.lineTo(px+pw-50,py+130);ctx.stroke();
+  ctx.font=`bold 21px 'Share Tech Mono'`;ctx.fillStyle=C.amber;ctx.fillText(`最終分數　${state.score}`,W/2,py+170);
+  ctx.fillStyle='#9a8a6a';ctx.font=`18px 'Share Tech Mono'`;
+  ctx.fillText(`最高連擊　${state.maxCombo} 連`,W/2,py+204);
+  ctx.fillText(`首領擊殺　${state.bossKills} 次`,W/2,py+236);
+  ctx.fillText(`存活時間　${Math.floor(state.time)} 秒`,W/2,py+268);
+  ctx.fillStyle=C.blood+'aa';ctx.fillText(`蚊子血累積　${totalBlood} 滴`,W/2,py+300);
+  ctx.strokeStyle=C.amber+'33';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px+70,py+318);ctx.lineTo(px+pw-70,py+318);ctx.stroke();
+  let rank='F';
+  if(state.score>=2000)rank='S';else if(state.score>=1000)rank='A';else if(state.score>=500)rank='B';else if(state.score>=200)rank='C';else if(state.score>=50)rank='D';
+  const rc={S:'#f0d060',A:'#7ecf6e',B:'#8090e8',C:'#c0b090',D:'#e07840',F:'#4a3a2a'}[rank];
+  ctx.fillStyle='#4a3a1a';ctx.font=`14px 'Share Tech Mono'`;ctx.fillText('評　　級',W/2,py+348);
+  ctx.font=`900 68px 'Noto Serif TC',serif`;ctx.fillStyle=rc;ctx.shadowColor=rc;ctx.shadowBlur=26;ctx.fillText(rank,W/2,py+424);ctx.shadowBlur=0;
+  const bx=W/2,by=py+ph-46;
+  // 重新開始（左）
+  ctx.fillStyle=C.amber;ctx.beginPath();ctx.roundRect(bx-248,by-22,230,44,4);ctx.fill();
+  ctx.fillStyle='#1a0e00';ctx.font=`bold 20px 'Noto Serif TC',serif`;ctx.textAlign='center';
+  ctx.fillText('▶ 重新開始',bx-133,by+8);
+  // 離開遊戲（右）
+  ctx.fillStyle='rgba(160,30,50,0.85)';ctx.beginPath();ctx.roundRect(bx+18,by-22,230,44,4);ctx.fill();
+  ctx.fillStyle='#ffcccc';ctx.font=`bold 20px 'Noto Serif TC',serif`;
+  ctx.fillText('✕ 離開遊戲',bx+133,by+8);
+}
+
+// ── 主迴圈 ────────────────────────────────────
+function loop(ts){
+  if(state.phase==='paused'){
+    // 暫停時持續重繪靜止畫面（不更新物理）
+    ctx.drawImage(state.bg,0,0);
+    state.particles.forEach(p=>p.draw());
+    state.bloodDrops.forEach(b=>b.draw());
+    state.mosquitoes.forEach(m=>m.draw());
+    state.floatingTexts.forEach(t=>t.draw());
+    drawHUD();
+    // 暫停遮罩
+    ctx.fillStyle='rgba(0,0,0,0.45)';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='rgba(232,160,32,0.92)';
+    ctx.font=`900 28px 'Noto Serif TC',serif`;
+    ctx.textAlign='center';ctx.shadowColor=C.amber;ctx.shadowBlur=18;
+    ctx.fillText('⏸ 遊戲暫停中',W/2,H/2-20);ctx.shadowBlur=0;
+    ctx.fillStyle='#6a5a38';ctx.font=`14px 'Share Tech Mono'`;
+    ctx.fillText('[P]/[Esc] 繼續  ·  [S] 商店  ·  ✕ 離開',W/2,H/2+18);
+    // 暫停時的離開按鈕
+    ctx.fillStyle='rgba(140,25,40,0.82)';ctx.beginPath();ctx.roundRect(W/2-80,H/2+40,160,34,4);ctx.fill();
+    ctx.strokeStyle='#c03040';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(W/2-80,H/2+40,160,34,4);ctx.stroke();
+    ctx.fillStyle='#ffcccc';ctx.font=`bold 15px 'Noto Serif TC',serif`;ctx.textAlign='center';
+    ctx.fillText('✕ 離開遊戲',W/2,H/2+63);
+    requestAnimationFrame(loop);
+    return;
+  }
+  if(state.phase!=='playing') return;
+  const dt=Math.min(ts-state.lastTime,50);state.lastTime=ts;
+  state.time+=dt/1000;state.nextBoss-=dt/1000;state.spawnTimer+=dt;
+
+  // 升級冷卻
+  if(upgrades.zap.cooldown>0) upgrades.zap.cooldown=Math.max(0,upgrades.zap.cooldown-dt);
+  // 冰凍計時
+  if(upgrades.freeze.active){
+    upgrades.freeze.activeTimer-=dt;
+    if(upgrades.freeze.activeTimer<=0) thawFreeze();
+  } else if(upgrades.freeze.cooldown>0){
+    upgrades.freeze.cooldown=Math.max(0,upgrades.freeze.cooldown-dt);
+  }
+  if(upgrades.shield.owned){
+    if(upgrades.shield.active){
+      upgrades.shield.activeTimer-=dt;
+      if(upgrades.shield.activeTimer<=0){upgrades.shield.active=false;upgrades.shield.cooldown=upgrades.shield.maxCooldown;state.floatingTexts.push(new FloatingText(W/2,H/2,'護盾消失！',C.zap,20));}
+    } else if(upgrades.shield.cooldown>0){
+      upgrades.shield.cooldown=Math.max(0,upgrades.shield.cooldown-dt);
+    }
+  }
+
+  if(state.combo>0){state.comboTimer-=dt;if(state.comboTimer<=0)state.combo=0;}
+  if(state.spawnTimer>=currentDiff.spawnInterval){state.spawnTimer=0;spawnMosquito();}
+  if(state.nextBoss<=0){
+    state.nextBoss=currentDiff.bossInterval;
+    state.mosquitoes.push(new Mosquito('boss',W/2,80));
+    Audio.SFX.bossAlert();
+    state.floatingTexts.push(new FloatingText(W/2,H/2-20,'⚠ 首領來了！',C.boss.body,26));
+  }
+
+  // 扣血攻擊
+  updateBleedAttacks(dt);
+
+  state.mosquitoes=state.mosquitoes.filter(m=>m.alive);
+  state.mosquitoes.forEach(m=>m.update(dt));
+  state.particles=state.particles.filter(p=>p.life>0);
+  state.particles.forEach(p=>p.update(dt));
+  state.floatingTexts=state.floatingTexts.filter(t=>t.life>0);
+  state.floatingTexts.forEach(t=>t.update(dt));
+  state.bloodDrops=state.bloodDrops.filter(b=>!b.collected&&b.life>0);
+  state.bloodDrops.forEach(b=>b.update(dt));
+  state.zapEffects=state.zapEffects.filter(z=>z.life>0);
+  state.zapEffects.forEach(z=>z.update(dt));
+  state.bleedAttackEffects=state.bleedAttackEffects.filter(b=>b.life>0);
+  state.bleedAttackEffects.forEach(b=>b.update(dt));
+  if(state.swatEffect){state.swatEffect.life-=dt;if(state.swatEffect.life<=0)state.swatEffect=null;}
+
+  ctx.drawImage(state.bg,0,0);
+  state.particles.forEach(p=>p.draw());
+  state.bloodDrops.forEach(b=>b.draw());
+  state.bleedAttackEffects.forEach(b=>b.draw());
+  state.mosquitoes.forEach(m=>m.draw());
+  state.zapEffects.forEach(z=>z.draw());
+  // 凍結視覺
+  if(upgrades.freeze.active){
+    ctx.save();ctx.fillStyle=`rgba(100,180,255,${0.08+Math.sin(Date.now()/200)*0.03})`;
+    ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle=`rgba(150,210,255,0.4)`;ctx.lineWidth=3;ctx.strokeRect(2,2,W-4,H-4);
+    ctx.fillStyle=`rgba(150,210,255,0.7)`;ctx.font=`bold 16px 'Share Tech Mono'`;ctx.textAlign='center';
+    ctx.fillText(`❄ 凍結中 ${Math.ceil(upgrades.freeze.activeTimer/1000)}s`,W/2,H/2);
+    ctx.restore();
+  }
+  state.floatingTexts.forEach(t=>t.draw());
+  drawZapPreview();drawSwatEffect();drawHUD();
+
+  document.getElementById('statCount').textContent=state.mosquitoes.filter(m=>m.alive).length;
+  document.getElementById('statCombo').textContent=state.maxCombo;
+  document.getElementById('statBoss').textContent=state.bossKills;
+  document.getElementById('statNextBoss').textContent=Math.max(0,Math.ceil(state.nextBoss))+'秒';
+  document.getElementById('statBlood').textContent=totalBlood;
+  requestAnimationFrame(loop);
+}
+
+function titleLoop(){if(state.phase!=='title')return;drawTitle();requestAnimationFrame(titleLoop);}
+function gameoverLoop(){if(state.phase!=='gameover')return;ctx.drawImage(state.bg,0,0);state.particles.forEach(p=>{p.update(16);p.draw();});drawGameOver();requestAnimationFrame(gameoverLoop);}
+
+// ══════════════════════════════════════════════
+// ── 音效系統 ──────────────────────────────────
+// ══════════════════════════════════════════════
+const Audio=(()=>{
+  let actx=null,bgmGain=null,sfxGain=null,bgmPlaying=false,muted=false,bgmTimer=null;
+  function init(){if(actx)return;actx=new(window.AudioContext||window.webkitAudioContext)();bgmGain=actx.createGain();bgmGain.gain.value=0.22;bgmGain.connect(actx.destination);sfxGain=actx.createGain();sfxGain.gain.value=0.55;sfxGain.connect(actx.destination);}
+  function resume(){if(actx&&actx.state==='suspended')actx.resume();}
+  function tone(freq,type,gainVal,startT,dur){const o=actx.createOscillator(),g=actx.createGain();o.type=type;o.frequency.setValueAtTime(freq,startT);g.gain.setValueAtTime(gainVal,startT);g.gain.exponentialRampToValueAtTime(0.0001,startT+dur);o.connect(g);g.connect(sfxGain);o.start(startT);o.stop(startT+dur+0.01);}
+  function noiseSound(gainVal,startT,dur,lpFreq){const buf=actx.createBuffer(1,actx.sampleRate*dur,actx.sampleRate);const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;const src=actx.createBufferSource();src.buffer=buf;const lp=actx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=lpFreq||1200;const g=actx.createGain();g.gain.setValueAtTime(gainVal,startT);g.gain.exponentialRampToValueAtTime(0.0001,startT+dur);src.connect(lp);lp.connect(g);g.connect(sfxGain);src.start(startT);src.stop(startT+dur+0.01);}
+  const SFX={
+    swat(){if(!actx)return;const t=actx.currentTime;noiseSound(0.4,t,0.06,2500);tone(180,'sine',0.3,t,0.08);},
+    miss(){if(!actx)return;const t=actx.currentTime;noiseSound(0.18,t,0.05,400);tone(90,'sine',0.12,t,0.1);},
+    killNormal(){if(!actx)return;const t=actx.currentTime;tone(440,'sine',0.25,t,0.04);tone(660,'sine',0.22,t+.04,0.04);tone(880,'sine',0.18,t+.08,0.06);},
+    killFast(){if(!actx)return;const t=actx.currentTime;tone(550,'sine',0.25,t,0.03);tone(770,'sine',0.22,t+.03,0.03);tone(1100,'sine',0.18,t+.06,0.05);},
+    killInvisible(){if(!actx)return;const t=actx.currentTime;tone(300,'sine',0.2,t,0.05);tone(600,'triangle',0.18,t+.05,0.05);tone(900,'sine',0.15,t+.1,0.08);noiseSound(0.1,t,0.15,600);},
+    killMutant(){if(!actx)return;const t=actx.currentTime;noiseSound(0.3,t,0.1,1000);tone(220,'sawtooth',0.25,t,0.06);tone(330,'sawtooth',0.2,t+.06,0.06);tone(550,'sine',0.15,t+.12,0.08);},
+    killBoss(){if(!actx)return;const t=actx.currentTime;noiseSound(0.6,t,0.18,800);noiseSound(0.4,t+.05,0.22,300);tone(110,'sawtooth',0.4,t,0.15);tone(220,'sawtooth',0.3,t+.05,0.15);tone(440,'sine',0.25,t+.1,0.15);tone(880,'sine',0.2,t+.15,0.12);[523,659,784,1047].forEach((f,i)=>tone(f,'sine',0.18,t+0.35+i*0.07,0.1));},
+    sting(){if(!actx)return;const t=actx.currentTime;tone(1200,'sawtooth',0.3,t,0.03);tone(800,'sawtooth',0.25,t+.03,0.05);noiseSound(0.2,t,0.08,3000);},
+    evolve(){if(!actx)return;const t=actx.currentTime;[262,330,392,523].forEach((f,i)=>tone(f,'triangle',0.2,t+i*0.06,0.1));},
+    bossAlert(){if(!actx)return;const t=actx.currentTime;for(let i=0;i<3;i++){tone(880,'square',0.15,t+i*0.22,0.18);tone(440,'square',0.12,t+i*0.22+0.09,0.09);}},
+    combo(n){if(!actx)return;const t=actx.currentTime,base=330+n*40;tone(base,'sine',0.2,t,0.05);tone(base*1.5,'sine',0.18,t+.05,0.07);},
+    gameStart(){if(!actx)return;const t=actx.currentTime;[262,330,392,523,659].forEach((f,i)=>tone(f,'sine',0.22,t+i*0.08,0.12));},
+    gameOver(){if(!actx)return;const t=actx.currentTime;[523,415,330,262,196].forEach((f,i)=>tone(f,'sawtooth',0.2,t+i*0.15,0.18));noiseSound(0.25,t+0.8,0.3,200);},
+    // 新增音效
+    bleedAttack(){if(!actx)return;const t=actx.currentTime;tone(200,'sawtooth',0.3,t,0.04);tone(150,'sine',0.25,t+0.04,0.1);noiseSound(0.15,t,0.12,500);},
+    bloodCollect(){if(!actx)return;const t=actx.currentTime;tone(880,'sine',0.15,t,0.03);tone(1100,'sine',0.12,t+0.03,0.04);},
+    zapFire(){if(!actx)return;const t=actx.currentTime;noiseSound(0.5,t,0.25,4000);tone(200,'sawtooth',0.3,t,0.05);for(let i=0;i<5;i++)tone(800+i*200,'square',0.12,t+i*0.04,0.08);noiseSound(0.3,t+0.1,0.3,8000);},
+    upgradeBuy(){if(!actx)return;const t=actx.currentTime;[523,659,784].forEach((f,i)=>tone(f,'sine',0.2,t+i*0.06,0.1));},
+  };
+  function startBGM(){
+    if(bgmPlaying||!actx)return;bgmPlaying=true;
+    function kick(s){const o=actx.createOscillator(),g=actx.createGain();o.type='sine';o.frequency.setValueAtTime(100,s);o.frequency.exponentialRampToValueAtTime(38,s+0.15);g.gain.setValueAtTime(0.32,s);g.gain.exponentialRampToValueAtTime(0.0001,s+0.22);o.connect(g);g.connect(bgmGain);o.start(s);o.stop(s+0.25);}
+    function cricket(s){for(let i=0;i<3;i++){const o=actx.createOscillator(),g=actx.createGain();o.type='square';o.frequency.value=2200+Math.random()*400;const vol=0.01+Math.random()*0.007,t2=s+i*0.05;g.gain.setValueAtTime(0,t2);g.gain.linearRampToValueAtTime(vol,t2+0.01);g.gain.exponentialRampToValueAtTime(0.0001,t2+0.04);o.connect(g);g.connect(bgmGain);o.start(t2);o.stop(t2+0.06);}}
+    function hum(s){const o=actx.createOscillator(),g=actx.createGain();o.type='sawtooth';o.frequency.setValueAtTime(280+Math.random()*80,s);o.frequency.linearRampToValueAtTime(260+Math.random()*60,s+1.5);g.gain.setValueAtTime(0.0001,s);g.gain.linearRampToValueAtTime(0.016,s+0.3);g.gain.linearRampToValueAtTime(0.0001,s+1.5);o.connect(g);g.connect(bgmGain);o.start(s);o.stop(s+1.6);}
+    function drone(s){[55,82.4,110].forEach(f=>{const o=actx.createOscillator(),g=actx.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0.0001,s);g.gain.linearRampToValueAtTime(0.035,s+2);g.gain.linearRampToValueAtTime(0.0001,s+8);o.connect(g);g.connect(bgmGain);o.start(s);o.stop(s+9);});}
+    function sched(){if(!bgmPlaying)return;const now=actx.currentTime,bar=0.52;for(let i=0;i<8;i++)kick(now+i*bar);for(let i=0;i<6;i++)cricket(now+Math.random()*4);for(let i=0;i<4;i++)hum(now+i*1.0+Math.random()*0.5);drone(now);bgmTimer=setTimeout(sched,4000);}
+    sched();
+  }
+  function stopBGM(){bgmPlaying=false;clearTimeout(bgmTimer);}
+  function toggleMute(){muted=!muted;if(actx){bgmGain.gain.value=muted?0:0.22;sfxGain.gain.value=muted?0:0.55;}return muted;}
+  return{init,resume,SFX,startBGM,stopBGM,toggleMute,isMuted:()=>muted};
+})();
+
+// ── 靜音按鈕 ──────────────────────────────────
+(function(){
+  const btn=document.createElement('button');
+  btn.textContent='🔊';
+  btn.style.cssText='position:fixed;top:10px;right:12px;z-index:999;background:rgba(20,14,6,0.88);border:1px solid #8a5c0a;color:#e8a020;font-size:15px;width:34px;height:34px;border-radius:4px;cursor:pointer;';
+  btn.addEventListener('click',e=>{e.stopPropagation();Audio.init();Audio.resume();btn.textContent=Audio.toggleMute()?'🔇':'🔊';});
+  document.body.appendChild(btn);
+})();
+
+function quitGame(){
+  Audio.stopBGM();
+  document.getElementById('shopPanel').classList.remove('open');
+  state={...state, phase:'title',
+    mosquitoes:[],particles:[],floatingTexts:[],
+    bloodDrops:[],zapEffects:[],bleedAttackEffects:[]
+  };
+  titleLoop();
+}
+
+
+// ── 動態縮放（canvas CSS 尺寸，保持內部解析度）──
+function applyScale(){
+  const vw=window.innerWidth, vh=window.innerHeight;
+  const uiH=105; // titleBar + statsBar + legend 合計高度
+  const totalH=660+uiH;
+  const scaleX=vw/960;
+  const scaleY=vh/totalH;
+  // 不設下限讓它可以縮小，上限 1.5
+  const s=Math.min(scaleX,scaleY,1.5);
+  const gw=Math.floor(960*s);
+  const gh=Math.floor(660*s);
+  const scaledTotalH=Math.floor(totalH*s);
+  // 剩餘空間平均分配到上下，但至少 0 不裁頂部
+  const pt=Math.max(0,Math.floor((vh-scaledTotalH)/2));
+  document.getElementById('gameWrapper').style.paddingTop=pt+'px';
+  document.documentElement.style.setProperty('--gw', gw+'px');
+  document.documentElement.style.setProperty('--gh', gh+'px');
+  canvas.style.width=gw+'px';
+  canvas.style.height=gh+'px';
+}
+applyScale();
+window.addEventListener('resize',applyScale);
+
+// ── 初始化 ────────────────────────────────────
+state.bg=createBG();
+titleLoop();
+</script>
+</body>
+</html>
