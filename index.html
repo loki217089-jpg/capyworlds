@@ -125,6 +125,30 @@
       border-top: 1px solid #2a1e14;
     }
     footer span { color: #c8a456; }
+
+    /* ── Comments ── */
+    .comments-section {
+      max-width: 840px;
+      margin: 0 auto;
+      padding: 0 24px 60px;
+    }
+    .comments-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #c8a456;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .comments-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, #3d3020, transparent);
+    }
   </style>
 </head>
 <body>
@@ -213,6 +237,26 @@
       <div class="card-desc">關於我</div>
     </a>
   </nav>
+
+  <!-- Comments -->
+  <section class="comments-section">
+    <div class="comments-title">💬 留言區 &nbsp; Comments</div>
+    <script src="https://giscus.app/client.js"
+            data-repo="loki217089-jpg/capyworlds"
+            data-repo-id="R_kgDORlu3uA"
+            data-category="Announcements"
+            data-category-id="DIC_kwDORlu3uM4C4Vhs"
+            data-mapping="pathname"
+            data-strict="0"
+            data-reactions-enabled="1"
+            data-emit-metadata="0"
+            data-input-position="bottom"
+            data-theme="preferred_color_scheme"
+            data-lang="zh-TW"
+            crossorigin="anonymous"
+            async>
+    </script>
+  </section>
 
   <footer>
     © 2025 <span>CapyWorlds</span> &nbsp;·&nbsp; Made with 🦫 &amp; ❤️
