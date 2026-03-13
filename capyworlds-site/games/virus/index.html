@@ -1,0 +1,2401 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VIRUS.EXE — 系統清除</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=Noto+Sans+TC:wght@400;700;900&display=swap');
+
+:root {
+  --bg: #050a05;
+  --panel: #090f09;
+  --border: #1a3a1a;
+  --green: #00ff41;
+  --green2: #39ff14;
+  --green3: #00c030;
+  --red: #ff2244;
+  --yellow: #ffe600;
+  --blue: #00cfff;
+  --purple: #bf00ff;
+  --white: #d0ffd0;
+  --dim: #336633;
+  --combo1: #ffaa00;
+  --comboMax: #ff00aa;
+  --scanline: rgba(0,255,65,0.03);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--green);
+  font-family: 'Share Tech Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+  cursor: none;
+}
+/* 遊戲中鎖定 body scroll */
+body.in-game { overflow: hidden; }
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, var(--scanline) 2px, var(--scanline) 4px);
+  pointer-events: none; z-index: 1000;
+}
+#cursor {
+  position: fixed; width: 20px; height: 20px;
+  pointer-events: none; z-index: 9999;
+  transform: translate(-50%,-50%);
+  font-family: 'VT323', monospace; font-size: 22px;
+  color: var(--green2); text-shadow: 0 0 8px var(--green2);
+  animation: cblink 0.8s infinite; line-height: 1;
+}
+@keyframes cblink { 50% { opacity: 0.3; } }
+
+/* ── 暫停覆蓋 ── */
+#pause-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.7); z-index: 900;
+  align-items: center; justify-content: center;
+  flex-direction: column; gap: 28px;
+}
+#pause-overlay.on { display: flex; }
+#pause-text {
+  font-family: 'VT323', monospace; font-size: 52px;
+  color: var(--green2); text-shadow: 0 0 22px var(--green3);
+  letter-spacing: 8px; animation: pulse 1.2s infinite;
+}
+#pause-back-btn {
+  font-family: 'VT323', monospace; font-size: 22px;
+  background: transparent; border: 2px solid var(--red);
+  color: var(--red); padding: 8px 32px; cursor: pointer;
+  letter-spacing: 3px; transition: all .15s;
+}
+#pause-back-btn:hover { background: var(--red); color: #000; }
+
+/* ── 操作提示 ── */
+#key-hints {
+  position: fixed; bottom: 44px; left: 12px; z-index: 20;
+  font-size: 12px; color: var(--dim); pointer-events: none;
+  line-height: 1.7;
+}
+#key-hints span { color: var(--green3); }
+
+.screen { display: none; min-height: 100vh; position: relative; z-index: 1; }
+.screen.active { display: flex; flex-direction: column; align-items: center; }
+
+/* ── BOOT ── */
+#screen-boot { justify-content: center; padding: 40px 20px; text-align: center; }
+.boot-ascii {
+  font-family: 'VT323', monospace;
+  font-size: clamp(13px, 2.2vw, 20px);
+  color: var(--green); text-shadow: 0 0 10px var(--green3);
+  white-space: pre; margin-bottom: 24px; line-height: 1.2;
+}
+.boot-sub { font-size: 18px; color: var(--green3); letter-spacing: 4px; margin-bottom: 6px; }
+.boot-ver { font-size: 13px; color: var(--dim); margin-bottom: 36px; }
+.boot-log { font-size: 14px; color: var(--green3); max-width: 500px; text-align: left; margin-bottom: 28px; min-height: 90px; }
+.boot-log-line { opacity: 0; animation: fadeIn 0.1s forwards; margin: 3px 0; }
+@keyframes fadeIn { to { opacity: 1; } }
+.btn-start {
+  font-family: 'VT323', monospace; font-size: 28px;
+  padding: 12px 40px; background: transparent;
+  border: 2px solid var(--green); color: var(--green2);
+  cursor: none; letter-spacing: 4px;
+  text-shadow: 0 0 8px var(--green2);
+  animation: pulse 2s infinite;
+  transition: all 0.2s;
+}
+.btn-start:hover { background: rgba(0,255,65,0.1); box-shadow: 0 0 32px rgba(0,255,65,0.5); transform: scale(1.05); }
+@keyframes pulse { 0%,100%{box-shadow:0 0 16px rgba(0,255,65,.2)} 50%{box-shadow:0 0 32px rgba(0,255,65,.5)} }
+
+/* ── HUB ── */
+#screen-hub { padding: 14px; gap: 10px; max-width: 900px; width: 100%; align-self: center; }
+.hub-hdr {
+  width: 100%; display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--border); padding-bottom: 10px;
+}
+.hub-title { font-family: 'VT323', monospace; font-size: 26px; color: var(--green2); text-shadow: 0 0 10px var(--green3); }
+.hub-cred { font-size: 14px; color: var(--yellow); }
+.hub-grid { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.hub-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 12px; }
+.hub-ptitle { font-family: 'VT323', monospace; font-size: 20px; color: var(--green3); margin-bottom: 8px; letter-spacing: 2px; }
+.cursor-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+.cursor-card {
+  border: 1px solid var(--border); border-radius: 3px; padding: 7px 5px;
+  text-align: center; cursor: none; background: rgba(0,20,0,.5); transition: all .15s;
+}
+.cursor-card:hover { border-color: var(--green3); background: rgba(0,50,0,.5); }
+.cursor-card.sel { border-color: var(--green2); background: rgba(0,80,0,.4); box-shadow: 0 0 10px rgba(0,255,65,.3); }
+.cursor-card.locked { opacity: .3; pointer-events: none; }
+.cursor-icon { font-size: 24px; margin-bottom: 3px; }
+.cursor-name { font-size: 11px; color: var(--white); font-family: 'Noto Sans TC',sans-serif; }
+.cursor-desc { font-size: 10px; color: var(--dim); margin-top: 1px; font-family: 'Noto Sans TC',sans-serif; }
+.upgrade-list { display: flex; flex-direction: column; gap: 5px; }
+.upg-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 8px; border: 1px solid var(--border); border-radius: 3px;
+  background: rgba(0,20,0,.5);
+}
+.upg-item.maxed { border-color: var(--green3); }
+.upg-left { display: flex; align-items: center; gap: 7px; }
+.upg-icon { font-size: 17px; }
+.upg-iname { font-size: 12px; color: var(--white); font-family: 'Noto Sans TC',sans-serif; }
+.upg-idesc { font-size: 10px; color: var(--dim); font-family: 'Noto Sans TC',sans-serif; }
+.upg-btn {
+  font-size: 11px; font-family: 'Share Tech Mono',monospace;
+  padding: 3px 8px; background: transparent; border: 1px solid var(--green3);
+  color: var(--green); cursor: none; transition: all .15s;
+}
+.upg-btn:hover:not(:disabled) { background: rgba(0,200,50,.15); }
+.upg-btn:disabled { opacity: .3; }
+.drive-list { display: flex; flex-direction: column; gap: 5px; }
+.drive-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: 3px;
+  cursor: none; background: rgba(0,20,0,.5); transition: all .15s;
+}
+.drive-item:hover:not(.dlocked) { border-color: var(--green3); background: rgba(0,50,0,.5); }
+.drive-item.dlocked { opacity: .3; pointer-events: none; }
+.drive-left { display: flex; align-items: center; gap: 8px; }
+.drive-icon { font-size: 20px; }
+.drive-name { font-size: 13px; color: var(--white); font-family: 'Noto Sans TC',sans-serif; }
+.drive-desc { font-size: 10px; color: var(--dim); font-family: 'Noto Sans TC',sans-serif; }
+.dbadge { font-size: 10px; padding: 2px 6px; border-radius: 2px; }
+.b-new  { background:rgba(0,255,65,.12); color:var(--green2); border:1px solid var(--green3); }
+.b-save { background:rgba(255,230,0,.12); color:var(--yellow); border:1px solid var(--yellow); }
+.b-clr  { background:rgba(0,100,255,.12); color:var(--blue); border:1px solid var(--blue); }
+.stat-row { display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid rgba(26,58,26,.4); font-size:13px; }
+.stat-row:last-child { border-bottom:none; }
+.slabel { color:var(--dim); }
+.sval { color:var(--green2); font-family:'VT323',monospace; font-size:16px; }
+.hub-launch {
+  width:100%; font-family:'VT323',monospace; font-size:24px; padding:12px;
+  background:rgba(0,100,20,.3); border:1px solid var(--green3);
+  color:var(--green2); cursor:none; letter-spacing:3px; transition:all .2s; margin-top:10px;
+}
+.hub-launch:hover { background:rgba(0,150,30,.4); box-shadow:0 0 20px rgba(0,255,65,.3); }
+
+/* ══════════════════════════════════════════
+   響應式設計 — 手機 / 平板 / 電腦
+══════════════════════════════════════════ */
+
+/* 觸控裝置取消 cursor:none */
+@media (hover: none) and (pointer: coarse) {
+  body, .cursor-card, .drive-item, .upg-btn,
+  .hub-launch, #btn-summon, button { cursor: pointer !important; }
+  #cursor { display: none !important; }
+}
+
+/* ── 手機 (≤600px) ── */
+@media (max-width: 600px) {
+  .hub-grid { grid-template-columns: 1fr; }
+  .cursor-grid { grid-template-columns: repeat(2,1fr); }
+  .hub-header { padding: 8px 12px; }
+  .hub-title { font-size: 20px; }
+
+  /* HUD 縮小 */
+  #hud-top { padding: 4px 6px; gap: 4px; flex-wrap: wrap; }
+  .hblock { min-width: 52px; }
+  .hlabel { font-size: 9px; }
+  .hval { font-size: 15px; }
+  #hud-combo { padding: 2px 6px; }
+  .combo-label { font-size: 9px; }
+  .cmul { font-size: 16px; }
+  .cpip { width: 12px; height: 12px; }
+  #hud-summon { padding: 2px 6px; }
+  #btn-summon { font-size: 14px; padding: 3px 10px; }
+  #shint { font-size: 10px; }
+
+  /* 觸控召喚大按鈕 */
+  #touch-summon-btn { display: flex !important; }
+
+  /* key hints 隱藏（鍵盤提示在手機無意義）*/
+  #key-hints { display: none !important; }
+}
+
+/* ── 平板 (601px–1024px) ── */
+@media (min-width: 601px) and (max-width: 1024px) {
+  .hub-grid { grid-template-columns: 1fr 1fr; }
+  .cursor-grid { grid-template-columns: repeat(3,1fr); }
+  #hud-top { padding: 5px 10px; gap: 8px; }
+  .hval { font-size: 17px; }
+  #touch-summon-btn { display: flex !important; }
+  #key-hints { display: none !important; }
+}
+
+/* ── 觸控遊戲介面 ── */
+#touch-summon-btn {
+  display: none;  /* 預設隱藏，觸控裝置顯示 */
+  position: fixed;
+  right: 16px; bottom: 70px;
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: rgba(0,20,0,.85);
+  border: 2px solid var(--border);
+  color: var(--dim);
+  font-family: 'VT323', monospace;
+  font-size: 13px;
+  align-items: center; justify-content: center;
+  flex-direction: column; gap: 2px;
+  z-index: 50; pointer-events: all;
+  text-align: center; line-height: 1.2;
+  transition: all .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+#touch-summon-btn.ready {
+  border-color: var(--combo1);
+  color: var(--yellow);
+  box-shadow: 0 0 18px rgba(255,170,0,.5);
+  animation: sready 1s infinite alternate;
+}
+#touch-summon-btn.maxr {
+  border-color: var(--comboMax);
+  color: var(--comboMax);
+  box-shadow: 0 0 22px rgba(255,0,170,.6);
+  animation: smaxr .5s infinite alternate;
+}
+#touch-pause-btn {
+  display: none;
+  position: fixed;
+  right: 16px; bottom: 16px;
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: rgba(0,10,0,.85);
+  border: 1px solid #333;
+  color: #555;
+  font-family: 'VT323', monospace; font-size: 22px;
+  align-items: center; justify-content: center;
+  z-index: 50; pointer-events: all;
+  -webkit-tap-highlight-color: transparent;
+}
+@media (hover: none) and (pointer: coarse) {
+  #touch-pause-btn { display: flex; }
+}
+
+/* 觸控指示器（顯示手指位置）*/
+#touch-indicator {
+  display: none;
+  position: fixed; pointer-events: none; z-index: 8;
+  width: 40px; height: 40px;
+  border: 2px solid rgba(0,255,65,.5);
+  border-radius: 50%;
+  transform: translate(-50%,-50%);
+}
+
+/* HUB 響應式容器 */
+.hub-wrap {
+  width: 100%; max-width: 800px;
+  padding: 0 12px 40px; overflow-y: auto;
+}
+#screen-hub { align-items: center; overflow-y: auto; }
+
+/* 按鈕在觸控裝置加大點擊區 */
+@media (hover: none) and (pointer: coarse) {
+  .cursor-card { padding: 12px 8px; }
+  .drive-item  { padding: 12px 14px; }
+  .upg-btn     { padding: 8px 14px; font-size: 14px; }
+  .hub-launch  { padding: 16px; font-size: 26px; }
+  button       { min-height: 36px; }
+}
+#screen-game {
+  position: fixed; inset: 0;
+  width: 100%; height: 100%;
+  min-height: unset;
+  padding: 0; margin: 0;
+  overflow: hidden;
+}
+#game-canvas {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: block;
+}
+#game-hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  pointer-events: none; z-index: 10;
+  display: flex; flex-direction: column;
+}
+#hud-top {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 7px 12px;
+  background: rgba(2,10,2,.88); border-bottom: 1px solid var(--border); gap: 10px;
+}
+.hblock { display:flex; flex-direction:column; gap:1px; min-width:90px; }
+.hlabel { font-size: 10px; color:var(--dim); letter-spacing:2px; }
+.hval { font-family:'VT323',monospace; font-size:20px; }
+.hval.hp  { color:var(--red); }
+.hval.atk { color:var(--green2); }
+.hval.cred{ color:var(--yellow); }
+.hval.scr { color:var(--blue); }
+.hbar { width:100%; height:4px; background:#1a1a1a; border-radius:2px; overflow:hidden; margin-top:2px; }
+.hbar-fill { height:100%; border-radius:2px; transition:width .3s; }
+.hbar-fill.hp { background:linear-gradient(90deg,#cc0022,#ff4466); }
+#hud-combo {
+  display:flex; align-items:center; gap:7px; padding:4px 12px;
+  background:rgba(2,10,2,.75); border-bottom:1px solid var(--border);
+}
+.combo-label { font-size:10px; color:var(--dim); letter-spacing:2px; }
+.combo-pips { display:flex; gap:3px; }
+.cpip {
+  width:16px; height:16px; border-radius:50%;
+  border:1px solid #1a3a1a; transition:all .2s;
+  display:flex; align-items:center; justify-content:center; font-size:8px;
+}
+.cpip.on  { border-color:var(--combo1); background:rgba(255,170,0,.2); box-shadow:0 0 5px rgba(255,170,0,.5); }
+.cpip.max { border-color:var(--comboMax); background:rgba(255,0,170,.25); box-shadow:0 0 8px rgba(255,0,170,.7); animation:pipmax .4s infinite alternate; }
+@keyframes pipmax { to { transform:scale(1.3); } }
+.cmul { font-family:'VT323',monospace; font-size:21px; color:var(--combo1); min-width:50px; }
+.cmul.max { color:var(--comboMax); text-shadow:0 0 10px var(--comboMax); }
+#hud-summon {
+  pointer-events:all; display:flex; align-items:center; gap:8px;
+  padding:4px 12px; background:rgba(2,10,2,.7); border-bottom:1px solid var(--border);
+}
+#btn-summon {
+  font-family:'VT323',monospace; font-size:17px; padding:4px 18px;
+  background:transparent; border:1px solid var(--border);
+  color:var(--dim); cursor:not-allowed; letter-spacing:2px; transition:all .2s;
+}
+#btn-summon.ready {
+  border-color:var(--combo1); color:var(--yellow); cursor:none;
+  animation:sready 1s infinite alternate;
+}
+#btn-summon.ready:hover { background:rgba(255,170,0,.15); }
+@keyframes sready { from{box-shadow:0 0 8px rgba(255,170,0,.3)} to{box-shadow:0 0 20px rgba(255,170,0,.7)} }
+#btn-summon.maxr {
+  border-color:var(--comboMax); color:var(--comboMax); cursor:none;
+  animation:smaxr .5s infinite alternate;
+}
+@keyframes smaxr { from{box-shadow:0 0 12px rgba(255,0,170,.5)} to{box-shadow:0 0 28px rgba(255,0,170,.9)} }
+.shint { font-size:11px; color:var(--dim); font-family:'Noto Sans TC',sans-serif; }
+#hud-cp {
+  padding:3px 12px; background:rgba(2,10,2,.6);
+  font-size:11px; color:var(--dim); display:flex; gap:7px; align-items:center;
+}
+.cppip { width:9px; height:9px; border-radius:50%; border:1px solid #1a3a1a; display:inline-block; }
+.cppip.reached { background:var(--green3); border-color:var(--green2); box-shadow:0 0 5px var(--green3); }
+.cppip.cur { background:var(--yellow); border-color:var(--yellow); animation:cpbl .8s infinite; }
+@keyframes cpbl { 50%{opacity:.3;} }
+
+/* ── AUDIO CONTROLS ── */
+#audio-ctrl {
+  position:fixed; bottom:10px; right:10px; z-index:2000;
+  display:flex; gap:5px; pointer-events:all;
+}
+.acbtn {
+  font-size:15px; padding:4px 8px;
+  background:rgba(0,20,0,.85); border:1px solid #1a3a1a;
+  color:var(--green); cursor:none; border-radius:3px; transition:all .15s;
+}
+.acbtn:hover { border-color:var(--green3); }
+.acbtn.off { opacity:.35; }
+
+/* ── SUMMON POPUP ── */
+#summon-pop {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.85); z-index:500;
+  align-items:center; justify-content:center;
+}
+#summon-pop.on { display:flex; }
+#summon-box {
+  background:#030f03; border:2px solid var(--combo1); border-radius:4px;
+  padding:22px 26px; max-width:400px; width:90%;
+  box-shadow:0 0 50px rgba(255,170,0,.3); animation:popin .22s ease;
+}
+#summon-box.maxpow { border-color:var(--comboMax); box-shadow:0 0 55px rgba(255,0,170,.4); }
+@keyframes popin { from{transform:scale(.85) translateY(18px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
+#summon-title { font-family:'VT323',monospace; font-size:26px; text-align:center; margin-bottom:5px; letter-spacing:3px; }
+#summon-sub   { font-size:12px; color:var(--dim); text-align:center; margin-bottom:15px; font-family:'Noto Sans TC',sans-serif; }
+#summon-choices { display:flex; flex-direction:column; gap:7px; }
+.schoice {
+  display:flex; align-items:center; gap:10px; padding:9px 12px;
+  border:1px solid var(--border); border-radius:3px; cursor:none;
+  background:rgba(0,20,0,.5); transition:all .15s;
+}
+.schoice:hover { border-color:var(--green3); background:rgba(0,60,0,.5); transform:translateX(4px); }
+.schoice-icon { font-size:26px; flex-shrink:0; }
+.schoice-name { font-size:14px; color:var(--white); font-family:'Noto Sans TC',sans-serif; font-weight:700; }
+.schoice-desc { font-size:11px; color:var(--dim); font-family:'Noto Sans TC',sans-serif; margin-top:1px; }
+.schoice-pow  { font-family:'VT323',monospace; font-size:19px; flex-shrink:0; }
+
+/* ── CHECKPOINT POPUP ── */
+#cp-pop {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.82); z-index:500;
+  align-items:center; justify-content:center;
+}
+#cp-pop.on { display:flex; }
+#cp-box {
+  background:#030f03; border:2px solid var(--yellow); border-radius:4px;
+  padding:22px 26px; max-width:360px; width:90%; text-align:center;
+  box-shadow:0 0 38px rgba(255,230,0,.22); animation:popin .22s ease;
+}
+#cp-title { font-family:'VT323',monospace; font-size:24px; color:var(--yellow); margin-bottom:7px; letter-spacing:3px; }
+#cp-desc  { font-size:13px; color:var(--dim); margin-bottom:15px; font-family:'Noto Sans TC',sans-serif; line-height:1.5; }
+#cp-btns  { display:flex; flex-direction:column; gap:7px; }
+.cpbtn {
+  width:100%; font-family:'VT323',monospace; font-size:18px; padding:9px;
+  background:transparent; border:1px solid; cursor:none; letter-spacing:2px; transition:all .15s;
+}
+.cpbtn.save { border-color:var(--yellow); color:var(--yellow); }
+.cpbtn.save:hover { background:rgba(255,230,0,.1); }
+.cp-reward { font-size:12px; color:var(--blue); margin-top:7px; font-family:'Noto Sans TC',sans-serif; }
+
+/* ── RESULT POPUPS ── */
+#go-pop, #win-pop {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.9); z-index:600;
+  align-items:center; justify-content:center;
+}
+#go-pop.on, #win-pop.on { display:flex; }
+.rbox { background:#030f03; border-radius:4px; padding:26px 30px; max-width:380px; width:90%; text-align:center; animation:popin .28s ease; }
+#go-pop .rbox  { border:2px solid var(--red);    box-shadow:0 0 38px rgba(255,34,68,.3); }
+#win-pop .rbox { border:2px solid var(--green2); box-shadow:0 0 45px rgba(0,255,65,.4); }
+.rtitle { font-family:'VT323',monospace; font-size:34px; margin-bottom:10px; letter-spacing:3px; }
+.rstats { font-size:13px; color:var(--dim); margin-bottom:6px; font-family:'Noto Sans TC',sans-serif; }
+.rscore { font-family:'VT323',monospace; font-size:22px; color:var(--blue); margin:5px 0; }
+.rbonus { font-size:12px; color:var(--yellow); margin-bottom:18px; font-family:'Noto Sans TC',sans-serif; }
+.rbtns  { display:flex; flex-direction:column; gap:7px; }
+.rbtn {
+  font-family:'VT323',monospace; font-size:19px; padding:9px;
+  background:transparent; border:1px solid; cursor:none; letter-spacing:2px; transition:all .15s;
+}
+.rbtn.retry { border-color:var(--red);    color:var(--red); }
+.rbtn.retry:hover { background:rgba(255,34,68,.1); }
+.rbtn.hub   { border-color:var(--green3); color:var(--green); }
+.rbtn.hub:hover   { background:rgba(0,200,50,.1); }
+
+/* ── BOSS WARNING ── */
+#boss-warn {
+  display:none; position:fixed; inset:0;
+  background:rgba(180,0,0,.08); z-index:400;
+  align-items:center; justify-content:center; pointer-events:none;
+}
+#boss-warn.on { display:flex; }
+#bwtext {
+  font-family:'VT323',monospace; font-size:50px;
+  color:var(--red); text-shadow:0 0 28px var(--red);
+  animation:bwfl .4s infinite alternate; letter-spacing:5px;
+}
+@keyframes bwfl { to{opacity:.35;} }
+
+/* ── FLOAT TEXT ── */
+.flt {
+  position:fixed; font-family:'VT323',monospace; font-size:24px;
+  pointer-events:none; z-index:200; animation:fltup .85s ease forwards;
+}
+@keyframes fltup { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(-52px)} }
+</style>
+</head>
+<body>
+
+<div id="cursor">_</div>
+
+<!-- ══════ BOOT ══════ -->
+<div id="screen-boot" class="screen active">
+  <div class="boot-ascii">
+ ██╗   ██╗██╗██████╗ ██╗   ██╗███████╗
+ ██║   ██║██║██╔══██╗██║   ██║██╔════╝
+ ██║   ██║██║██████╔╝██║   ██║███████╗
+ ╚██╗ ██╔╝██║██╔══██╗██║   ██║╚════██║
+  ╚████╔╝ ██║██║  ██║╚██████╔╝███████║
+   ╚═══╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
+        .EXE ──  系 統 清 除  ── v2.0
+  </div>
+  <div class="boot-sub">SYSTEM PURGE PROTOCOL</div>
+  <div class="boot-ver">BUILD 2026.03 // 含音效版</div>
+  <div class="boot-log" id="boot-log"></div>
+  <button class="btn-start" id="btn-start" style="display:none" onclick="onStart()">[ 執行程式 ]</button>
+</div>
+
+<!-- ══════ HUB ══════ -->
+<div id="screen-hub" class="screen">
+  <div class="hub-hdr">
+    <div class="hub-title">// 系統操作中樞 //</div>
+    <div class="hub-cred">💾 資料碎片: <span id="hub-cred-val">0</span></div>
+  </div>
+  <div class="hub-grid">
+    <div class="hub-panel">
+      <div class="hub-ptitle">▶ 選擇游標</div>
+      <div class="cursor-grid" id="cursor-grid"></div>
+    </div>
+    <div class="hub-panel">
+      <div class="hub-ptitle">▶ 選擇磁碟</div>
+      <div class="drive-list" id="drive-list"></div>
+    </div>
+    <div class="hub-panel">
+      <div class="hub-ptitle">▶ 場外升級</div>
+      <div class="upgrade-list" id="upgrade-list"></div>
+    </div>
+    <div class="hub-panel">
+      <div class="hub-ptitle">▶ 統計資料</div>
+      <div id="hub-stats"></div>
+      <button class="hub-launch" onclick="startGame()">[ 進入磁碟 ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ GAME ══════ -->
+<div id="screen-game" class="screen">
+  <div id="game-hud">
+    <div id="hud-top">
+      <div class="hblock">
+        <div class="hlabel">HP</div>
+        <div class="hval hp" id="hud-hp">100/100</div>
+        <div class="hbar"><div class="hbar-fill hp" id="hud-hpbar" style="width:100%"></div></div>
+      </div>
+      <div class="hblock">
+        <div class="hlabel">攻擊力</div>
+        <div class="hval atk" id="hud-atk">10</div>
+      </div>
+      <div class="hblock">
+        <div class="hlabel">磁碟</div>
+        <div class="hval" style="color:var(--green3)" id="hud-drive">C:/</div>
+      </div>
+      <div class="hblock">
+        <div class="hlabel">分數</div>
+        <div class="hval scr" id="hud-score">0</div>
+      </div>
+      <div class="hblock" style="min-width:60px">
+        <div class="hlabel">碎片</div>
+        <div class="hval cred" id="hud-cred">0</div>
+      </div>
+      <button style="pointer-events:all;font-family:'VT323',monospace;font-size:13px;padding:4px 10px;background:transparent;border:1px solid #333;color:#555;cursor:none;" onclick="pauseBack()">中斷</button>
+    </div>
+    <div id="hud-combo">
+      <div class="combo-label">COMBO</div>
+      <div class="combo-pips" id="combo-pips"></div>
+      <div class="cmul" id="cmul">×1.0</div>
+      <div style="flex:1"></div>
+      <div style="font-size:11px;color:var(--dim)">門檻: <span style="color:var(--combo1)">×2.0</span></div>
+    </div>
+    <div id="hud-summon">
+      <button id="btn-summon" onclick="openSummon()">⚡ 爆發召喚 [T]</button>
+      <div class="shint" id="shint">累積COMBO至×2.0解鎖</div>
+    </div>
+    <div id="hud-cp">
+      <span>存檔點:</span>
+      <span id="cp-pips-hud"></span>
+      <span id="cp-status" style="color:var(--yellow);font-size:11px"></span>
+    </div>
+  </div>
+  <canvas id="game-canvas"></canvas>
+</div>
+
+<!-- ══════ SUMMON POPUP ══════ -->
+<div id="summon-pop">
+  <div id="summon-box">
+    <div id="summon-title"></div>
+    <div id="summon-sub"></div>
+    <div id="summon-choices"></div>
+  </div>
+</div>
+
+<!-- ══════ CHECKPOINT POPUP ══════ -->
+<div id="cp-pop">
+  <div id="cp-box">
+    <div id="cp-title">💾 存檔點</div>
+    <div id="cp-desc">已抵達區段存檔點！<br>進度自動儲存中……</div>
+    <div id="cp-btns"></div>
+    <div class="cp-reward" id="cp-reward"></div>
+  </div>
+</div>
+
+<!-- ══════ GAME OVER ══════ -->
+<div id="go-pop">
+  <div class="rbox">
+    <div class="rtitle" style="color:var(--red)">// 程式崩潰 //</div>
+    <div class="rstats" id="go-stats"></div>
+    <div class="rscore" id="go-score"></div>
+    <div class="rbonus" id="go-bonus"></div>
+    <div class="rbtns">
+      <button class="rbtn retry" id="retry-btn" onclick="retryCP()">[ 從存檔點重試 ]</button>
+      <button class="rbtn hub"   onclick="goHub()">[ 返回操作中樞 ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ VICTORY ══════ -->
+<div id="win-pop">
+  <div class="rbox">
+    <div class="rtitle" style="color:var(--green2)">// 系統清除完畢 //</div>
+    <div class="rstats" id="win-stats"></div>
+    <div class="rscore" id="win-score"></div>
+    <div class="rbonus" id="win-bonus"></div>
+    <div class="rbtns">
+      <button class="rbtn hub" onclick="goHub()">[ 返回操作中樞 ]</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ PAUSE ══════ -->
+<div id="pause-overlay">
+  <div id="pause-text">⏸ PAUSED</div>
+  <div style="font-family:'Share Tech Mono',monospace;font-size:15px;color:var(--dim)">SPACE 繼續遊戲</div>
+  <button id="pause-back-btn" onclick="quitToHub()">⬅ 放棄並回到主畫面</button>
+</div>
+
+<!-- ══════ KEY HINTS ══════ -->
+<div id="key-hints">
+  <span>SPACE</span> 暫停／繼續 &nbsp;
+  <span>T</span> 爆發召喚
+</div>
+
+<!-- ══════ BOSS WARNING ══════ -->
+<div id="boss-warn"><div id="bwtext">⚠ BOSS DETECTED ⚠</div></div>
+
+<!-- ══════ AUDIO CONTROLS ══════ -->
+<div id="audio-ctrl">
+  <button class="acbtn" id="sfx-btn"  onclick="toggleSFX()"  title="音效">🔊 音效</button>
+  <button class="acbtn" id="bgm-btn"  onclick="toggleBGM()"  title="音樂">🎵 音樂</button>
+</div>
+
+<!-- ══════ 觸控按鈕 ══════ -->
+<button id="touch-summon-btn" ontouchstart="handleTouchSummon(event)">
+  <span style="font-size:20px">⚡</span>
+  <span>爆發召喚</span>
+</button>
+<button id="touch-pause-btn" ontouchstart="handleTouchPause(event)">⏸</button>
+<div id="touch-indicator"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  音訊引擎 (Web Audio API)
+// ═══════════════════════════════════════════════
+let AC = null;
+let sfxOn = true, bgmOn = true;
+let bgmTimer = null, bgmStep = 0, bgmGain = null;
+let audioReady = false;
+
+function initAudio() {
+  if (AC) return;
+  AC = new (window.AudioContext || window.webkitAudioContext)();
+  audioReady = true;
+}
+
+// ── 音效 SFX ──
+function sfx(type) {
+  if (!AC || !sfxOn) return;
+  const now = AC.currentTime;
+
+  const osc = (type, freq, endFreq, dur, vol, startDelay = 0) => {
+    const o = AC.createOscillator();
+    const g = AC.createGain();
+    o.connect(g); g.connect(AC.destination);
+    o.type = type;
+    const t = now + startDelay;
+    o.frequency.setValueAtTime(freq, t);
+    if (endFreq) o.frequency.exponentialRampToValueAtTime(endFreq, t + dur);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.start(t); o.stop(t + dur + 0.01);
+  };
+
+  const noise = (dur, vol, startDelay = 0, hpfFreq = 0) => {
+    const len = Math.floor(AC.sampleRate * dur);
+    const buf = AC.createBuffer(1, len, AC.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.max(0, 1 - i / len);
+    const src = AC.createBufferSource();
+    const g = AC.createGain();
+    src.buffer = buf;
+    if (hpfFreq > 0) {
+      const f = AC.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hpfFreq;
+      src.connect(f); f.connect(g);
+    } else {
+      src.connect(g);
+    }
+    g.connect(AC.destination);
+    g.gain.value = vol;
+    src.start(now + startDelay);
+  };
+
+  switch (type) {
+    case 'shoot':
+      osc('square', 700, 200, 0.07, 0.06);
+      break;
+    case 'hit':
+      osc('sawtooth', 180, 70, 0.06, 0.10);
+      noise(0.04, 0.08);
+      break;
+    case 'kill':
+      osc('square', 440, null, 0.05, 0.08);
+      osc('square', 660, null, 0.05, 0.07, 0.06);
+      osc('square', 880, null, 0.07, 0.06, 0.12);
+      break;
+    case 'combo':
+      [523, 659, 784, 1047].forEach((f, i) => osc('square', f, null, 0.1, 0.07, i * 0.065));
+      break;
+    case 'comboMax':
+      [523,659,784,1047,1319,1047,784,1047,1319].forEach((f,i) => osc('square',f,null,0.09,0.09,i*0.055));
+      break;
+    case 'summon':
+      osc('sawtooth', 110, 880, 0.4, 0.14);
+      osc('square',   220, 1760, 0.35, 0.09);
+      break;
+    case 'player_hit':
+      osc('sawtooth', 140, 50, 0.2, 0.18);
+      noise(0.1, 0.12);
+      break;
+    case 'save':
+      [523, 659, 784, 1047].forEach((f, i) => osc('triangle', f, null, 0.18, 0.10, i * 0.1));
+      break;
+    case 'upgrade':
+      [330,440,550,660,880].forEach((f, i) => osc('triangle', f, null, 0.12, 0.09, i * 0.075));
+      break;
+    case 'boss_enter':
+      osc('sawtooth', 80, 30, 0.8, 0.22);
+      osc('square',   440, 220, 0.4, 0.12, 0.1);
+      noise(0.3, 0.15, 0.0);
+      break;
+    case 'bomb':
+      osc('sawtooth', 200, 40, 0.35, 0.18);
+      noise(0.4, 0.30);
+      break;
+    case 'wave_start':
+      osc('triangle', 330, null, 0.08, 0.09);
+      osc('triangle', 440, null, 0.08, 0.09, 0.1);
+      break;
+    case 'victory':
+      [523,659,784,1047,1319,1047,784,1047,1319,1568].forEach((f,i) => osc('square',f,null,0.14,0.09,i*0.11));
+      break;
+    case 'gameover':
+      [440,415,392,349,330,311,294,220].forEach((f,i) => osc('sawtooth',f,null,0.18,0.09,i*0.14));
+      break;
+    case 'click':
+      osc('square', 880, 440, 0.05, 0.05);
+      break;
+  }
+}
+
+// ── 背景音樂 BGM（程序生成 Chiptune）──
+const BGM = {
+  hub: {
+    bpm: 100,
+    mel:  [523,587,659,784,880,784,659,587, 523,493,440,493,523,0,523,0],
+    bass: [131,131,165,196,220,196,165,131, 131,110,110,123,131,131,131,131],
+    drum: [1,0,0,0,1,0,1,0, 1,0,0,0,1,0,0,1],
+  },
+  game: {
+    bpm: 145,
+    mel:  [784,880,784,659,784,880,1047,880, 784,659,784,659,587,659,784,659],
+    bass: [196,196,246,196,196,196,261,196,  196,165,196,165,147,165,196,165],
+    drum: [1,0,1,0,1,0,1,0, 1,0,1,0,1,0,1,1],
+  },
+  boss: {
+    bpm: 178,
+    mel:  [220,246,261,220,196,220,246,261, 294,261,246,220,196,175,165,196],
+    bass: [55,55,65,55,49,55,65,65,         73,65,65,55,49,43,41,49],
+    drum: [1,0,1,1,1,0,1,0, 1,1,1,0,1,1,1,0],
+  },
+};
+
+function startBGM(theme) {
+  if (!AC || !bgmOn) return;
+  stopBGM();
+  const pat = BGM[theme] || BGM.hub;
+  const step = 60 / pat.bpm / 2; // 8分音符間隔(秒)
+  bgmStep = 0;
+  bgmGain = AC.createGain();
+  bgmGain.gain.value = 0.16;
+  bgmGain.connect(AC.destination);
+
+  const tick = () => {
+    if (!bgmOn || !bgmGain) return;
+    const now = AC.currentTime;
+    const i = bgmStep % pat.mel.length;
+
+    // 旋律
+    if (pat.mel[i] > 0) {
+      const o = AC.createOscillator(), g = AC.createGain();
+      o.connect(g); g.connect(bgmGain);
+      o.type = 'square'; o.frequency.value = pat.mel[i];
+      g.gain.setValueAtTime(0.38, now);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + step * 0.82);
+      o.start(now); o.stop(now + step);
+    }
+    // 低音
+    if (pat.bass[i] > 0) {
+      const o = AC.createOscillator(), g = AC.createGain();
+      o.connect(g); g.connect(bgmGain);
+      o.type = 'sawtooth'; o.frequency.value = pat.bass[i];
+      g.gain.setValueAtTime(0.30, now);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + step * 0.88);
+      o.start(now); o.stop(now + step);
+    }
+    // 鼓聲
+    if (pat.drum[i]) {
+      // 大鼓
+      const ok = AC.createOscillator(), gk = AC.createGain();
+      ok.connect(gk); gk.connect(bgmGain);
+      ok.type = 'sine';
+      ok.frequency.setValueAtTime(140, now);
+      ok.frequency.exponentialRampToValueAtTime(50, now + 0.08);
+      gk.gain.setValueAtTime(0.55, now);
+      gk.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
+      ok.start(now); ok.stop(now + 0.12);
+      // 高帽
+      if (bgmStep % 2 === 0) {
+        const len = Math.floor(AC.sampleRate * 0.04);
+        const buf = AC.createBuffer(1, len, AC.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let j = 0; j < len; j++) d[j] = (Math.random() * 2 - 1) * (1 - j / len);
+        const src = AC.createBufferSource();
+        const hpf = AC.createBiquadFilter(); hpf.type = 'highpass'; hpf.frequency.value = 6000;
+        const gh = AC.createGain();
+        src.buffer = buf; src.connect(hpf); hpf.connect(gh); gh.connect(bgmGain);
+        gh.gain.value = 0.18;
+        src.start(now);
+      }
+    }
+    bgmStep++;
+  };
+
+  tick(); // 立即播第一拍
+  bgmTimer = setInterval(tick, step * 1000);
+}
+
+function stopBGM() {
+  if (bgmTimer) { clearInterval(bgmTimer); bgmTimer = null; }
+  if (bgmGain) {
+    try { bgmGain.gain.setValueAtTime(bgmGain.gain.value, AC.currentTime);
+          bgmGain.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + 0.3); }
+    catch(e) {}
+    setTimeout(() => { if(bgmGain){bgmGain.disconnect();bgmGain=null;} }, 400);
+  }
+}
+
+function switchBGM(theme, delay = 400) {
+  stopBGM();
+  setTimeout(() => { if (bgmOn) startBGM(theme); }, delay);
+}
+
+function toggleSFX() {
+  sfxOn = !sfxOn;
+  document.getElementById('sfx-btn').classList.toggle('off', !sfxOn);
+  document.getElementById('sfx-btn').textContent = sfxOn ? '🔊 音效' : '🔇 音效';
+  if (sfxOn) sfx('click');
+}
+function toggleBGM() {
+  bgmOn = !bgmOn;
+  document.getElementById('bgm-btn').classList.toggle('off', !bgmOn);
+  document.getElementById('bgm-btn').textContent = bgmOn ? '🎵 音樂' : '🎵 音樂';
+  if (bgmOn) {
+    const theme = G ? (G.bossWave ? 'boss' : 'game') : 'hub';
+    startBGM(theme);
+  } else {
+    stopBGM();
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  存檔 / META 資料
+// ═══════════════════════════════════════════════
+let META = JSON.parse(localStorage.getItem('vexMeta2') || 'null') || {
+  credits: 0,
+  upgrades: { maxHp:0, atkBonus:0, comboDecay:0, startCred:0, summonCD:0 },
+  stats: { runs:0, totalScore:0, bestScore:0, kills:0, maxCombo:0 },
+  cleared: [],
+};
+let CPSAVE = null;
+let selCursor = 0, selDrive = 0;
+function saveMeta() { localStorage.setItem('vexMeta2', JSON.stringify(META)); }
+
+// ═══════════════════════════════════════════════
+//  遊戲資料
+// ═══════════════════════════════════════════════
+const CURSORS = [
+  // id, icon, name, desc, unlockCred, atkMul, fireRate倍率, special
+  { id:0, icon:'🖱️', name:'標準游標',   desc:'均衡型 | 穩定輸出',         unlockCred:0,  atkMul:1.0, spdMul:1.0,  special:'normal'  },
+  { id:1, icon:'⚡', name:'閃電游標',   desc:'×1.6攻速 | 傷害低 | 連射',  unlockCred:0,  atkMul:0.6, spdMul:1.6,  special:'rapid'   },
+  { id:2, icon:'💥', name:'重擊游標',   desc:'×2.2傷害 | 攻速慢 | 震波',  unlockCred:20, atkMul:2.2, spdMul:0.55, special:'heavy'   },
+  { id:3, icon:'🌀', name:'吸取游標',   desc:'每發回血 | 近距增幅',        unlockCred:25, atkMul:0.85,spdMul:1.0,  special:'drain'   },
+  { id:4, icon:'🎯', name:'狙擊游標',   desc:'穿透全場 | 極高傷害',        unlockCred:30, atkMul:2.5, spdMul:0.5,  special:'pierce'  },
+  { id:5, icon:'🔥', name:'爆炎游標',   desc:'範圍爆炸 | 波及周圍敵人',   unlockCred:40, atkMul:1.2, spdMul:0.85, special:'explode' },
+];
+const DRIVES = [
+  { id:0, icon:'💿', name:'C:\\ 系統根目錄', desc:'入門 | 8波 | BOSS: ROOTKIT.EXE',    col:'#00ff41', waves:8,  bossHpX:1.0 },
+  { id:1, icon:'📀', name:'D:\\ 資料磁碟',   desc:'一般 | 10波 | BOSS: RANSOMWARE_v2',  col:'#00cfff', waves:10, bossHpX:1.5 },
+  { id:2, icon:'🖥️', name:'E:\\ 執行環境',   desc:'困難 | 12波 | BOSS: ZERO_DAY.BAT',   col:'#ffe600', waves:12, bossHpX:2.2 },
+  { id:3, icon:'⚠️', name:'F:\\ 核心系統',   desc:'極限 | 15波 | BOSS: KERNEL_DAEMON',  col:'#ff2244', waves:15, bossHpX:3.5 },
+];
+const UPGRADES = [
+  { id:'maxHp',     icon:'❤️', name:'緊急修復包',   desc:'最大HP +20',        max:5, cost:8  },
+  { id:'atkBonus',  icon:'⚔️', name:'攻擊強化',     desc:'基礎攻擊 +3',       max:5, cost:8  },
+  { id:'comboDecay',icon:'🔗', name:'COMBO延遲器',  desc:'COMBO更不易消退',   max:3, cost:12 },
+  { id:'startCred', icon:'💰', name:'初始資金',      desc:'開局帶 +10碎片',    max:3, cost:10 },
+  { id:'summonCD',  icon:'⚡', name:'召喚加速',      desc:'召喚冷卻-15%/級',   max:3, cost:15 },
+];
+const ENEMIES = [
+  // 射擊型
+  { name:'木馬',     icon:'🐴', hp:18, atk:4,  spd:0.7, score:10, cred:2, col:'#ff6600', sz:15, atype:'bullet' },
+  { name:'蠕蟲',     icon:'🐛', hp:12, atk:3,  spd:1.2, score:8,  cred:1, col:'#ffe600', sz:12, atype:'bullet' },
+  { name:'間諜程式', icon:'👁️', hp:25, atk:6,  spd:0.5, score:15, cred:3, col:'#bf00ff', sz:17, atype:'bullet' },
+  { name:'勒索病毒', icon:'🔒', hp:35, atk:8,  spd:0.4, score:20, cred:4, col:'#ff2244', sz:19, atype:'bullet' },
+  { name:'殭屍進程', icon:'🧟', hp:45, atk:5,  spd:0.9, score:18, cred:3, col:'#00cfff', sz:21, atype:'bullet' },
+  { name:'後門程式', icon:'🚪', hp:55, atk:10, spd:0.3, score:30, cred:6, col:'#ff00aa', sz:23, atype:'bullet' },
+  // 衝撞型
+  { name:'記憶體溢出', icon:'💾', hp:60, atk:18, spd:0.0, score:25, cred:5, col:'#ff4400', sz:20, atype:'ram' },
+  { name:'緩衝區炸彈', icon:'🔴', hp:35, atk:22, spd:2.8, score:22, cred:5, col:'#ff0000', sz:14, atype:'ram' },
+  // 光柱型
+  { name:'掃描程式',   icon:'📡', hp:40, atk:14, spd:0.2, score:28, cred:6, col:'#00ffff', sz:18, atype:'laser' },
+  { name:'系統掃描器', icon:'🔭', hp:70, atk:20, spd:0.1, score:35, cred:7, col:'#ffff00', sz:22, atype:'laser' },
+  // 電磁脈衝型 — 短暫致盲（黑屏遮蓋）玩家視野
+  { name:'EMP炸彈',   icon:'🌐', hp:30, atk:8,  spd:0.5, score:22, cred:5, col:'#9900ff', sz:16, atype:'emp_burst' },
+  // 地雷型 — 靠近就爆炸
+  { name:'邏輯炸彈',  icon:'💿', hp:20, atk:25, spd:0.0, score:18, cred:4, col:'#ff6600', sz:14, atype:'mine' },
+  // 分裂型 — 死亡後分裂成2隻小病毒
+  { name:'病毒母體',  icon:'🦠', hp:80, atk:6,  spd:0.4, score:35, cred:8, col:'#44ff44', sz:24, atype:'split'    },
+  // 傳送型 — 蓄力後瞬移到玩家附近爆發近身
+  { name:'量子病毒',  icon:'🌀', hp:45, atk:16, spd:0.0, score:28, cred:6, col:'#aa00ff', sz:17, atype:'teleport'  },
+  // 護盾型 — 有護盾層，先破甲才能傷血
+  { name:'防火牆',    icon:'🛡️', hp:60, atk:10, spd:0.35,score:32, cred:7, col:'#4488ff', sz:20, atype:'armored'   },
+  // 群體型 — 死亡後釋放3顆追蹤彈
+  { name:'蜂巢進程',  icon:'🐝', hp:35, atk:8,  spd:0.6, score:25, cred:5, col:'#ffcc00', sz:16, atype:'swarm'     },
+];
+const BOSSES = [
+  { name:'ROOTKIT.EXE',     icon:'💀', hp:150, atk:12, score:80,  cred:20, col:'#ff2244', sz:40 },
+  { name:'RANSOMWARE_v2',   icon:'🔐', hp:280, atk:18, score:150, cred:35, col:'#ff6600', sz:44 },
+  { name:'ZERO_DAY.BAT',    icon:'☠️', hp:450, atk:25, score:250, cred:60, col:'#bf00ff', sz:48 },
+  { name:'KERNEL_DAEMON',   icon:'👾', hp:700, atk:35, score:400, cred:100,col:'#ff00aa', sz:52 },
+];
+
+// ── 爆發召喚事件池 ──
+const POOL_T1 = [
+  { icon:'🛡️', name:'防護程序', desc:'獲得15護盾持續5秒',    pow:'防禦', col:'#00cfff', fx:g=>{ g.shield+=15; g.shieldT=300; flt('+15🛡️','#00cfff'); } },
+  { icon:'🔋', name:'能量充填', desc:'回復25HP',              pow:'治療', col:'#00ff41', fx:g=>{ g.hp=Math.min(g.maxHp,g.hp+25); flt('+25HP','#00ff41'); } },
+  { icon:'⚡', name:'超速模式', desc:'攻速×2，持續4秒',      pow:'加速', col:'#ffe600', fx:g=>{ g.speedBuff=2.0; g.speedT=240; flt('×2速!','#ffe600'); } },
+  { icon:'💣', name:'定時炸彈', desc:'3秒後全場40傷害',       pow:'爆炸', col:'#ff6600', fx:g=>{ g.bombT=180; flt('炸彈⏱','#ff6600'); } },
+  { icon:'🧲', name:'電磁脈衝', desc:'敵人減速50%，4秒',     pow:'減速', col:'#bf00ff', fx:g=>{ g.empT=240; flt('EMP!','#bf00ff'); } },
+];
+const POOL_T2 = [
+  { icon:'☄️', name:'殞石衝擊', desc:'立即全場60傷害',        pow:'傷害', col:'#ff2244', fx:g=>{ g.ents.filter(e=>e.t==='E'||e.t==='B').forEach(e=>dmgE(e,60)); flt('殞石!','#ff2244'); } },
+  { icon:'🌐', name:'全域掃描', desc:'全場攻擊×3，3秒',       pow:'超強', col:'#ff00aa', fx:g=>{ g.atkX=3.0; g.atkXT=180; flt('×3攻擊!','#ff00aa'); } },
+  { icon:'💚', name:'緊急還原', desc:'完全回復HP+20護盾',     pow:'全回', col:'#00ff41', fx:g=>{ g.hp=g.maxHp; g.shield=20; g.shieldT=300; flt('完全回復!','#00ff41'); } },
+  { icon:'🎆', name:'連鎖爆炸', desc:'敵人數×10連鎖傷害',    pow:'連鎖', col:'#ff6600', fx:g=>{ const d=g.ents.filter(e=>e.t==='E'||e.t==='B').length*10; g.ents.filter(e=>e.t==='E'||e.t==='B').forEach(e=>dmgE(e,d)); flt(`連鎖${d}!`,'#ff6600'); } },
+];
+const POOL_CHAOS = [
+  { icon:'🎲', name:'混沌協議', desc:'隨機強力效果（難以預測）', pow:'混沌', col:'#bf00ff', fx:g=>{
+    const r=Math.random();
+    if(r<0.25){g.hp=Math.max(1,g.hp-30);flt('-30HP!','#ff2244');}
+    else if(r<0.6){g.ents.filter(e=>e.t==='E'||e.t==='B').forEach(e=>dmgE(e,80));flt('混沌爆發!','#bf00ff');}
+    else{g.hp=g.maxHp;g.atkX=2;g.atkXT=300;flt('混沌祝福!','#bf00ff');}
+  }},
+];
+
+// ═══════════════════════════════════════════════
+//  開機序列
+// ═══════════════════════════════════════════════
+const BOOT_LINES = [
+  '> 初始化 VIRUS.EXE v2.0...',
+  '> 載入防毒核心........... [OK]',
+  '> 掃描系統磁碟........... [4個已偵測]',
+  '> 病毒資料庫更新......... [9種病毒]',
+  '> 爆發召喚引擎........... [已解鎖]',
+  '> 存檔點系統............. [已啟用]',
+  '> 場外升級模組........... [已連線]',
+  '> 音效引擎 (Web Audio)... [已載入]',
+  '> 警告: 系統感染率 97.3%',
+  '> 準備就緒。祝您好運。',
+];
+
+function runBoot() {
+  const log = document.getElementById('boot-log');
+  let i = 0;
+  const next = () => {
+    if (i >= BOOT_LINES.length) {
+      setTimeout(() => document.getElementById('btn-start').style.display = 'block', 300);
+      return;
+    }
+    const div = document.createElement('div');
+    div.className = 'boot-log-line';
+    div.textContent = BOOT_LINES[i++];
+    log.appendChild(div);
+    setTimeout(next, 180 + Math.random() * 140);
+  };
+  setTimeout(next, 500);
+}
+
+function onStart() {
+  initAudio();
+  sfx('click');
+  startBGM('hub');
+  goHub();
+}
+
+// ═══════════════════════════════════════════════
+//  滑鼠 & 鍵盤
+// ═══════════════════════════════════════════════
+document.addEventListener('mousemove', e => {
+  const c = document.getElementById('cursor');
+  c.style.left = e.clientX + 'px';
+  c.style.top  = e.clientY + 'px';
+  if (G && G.running) {
+    // iframe 相容：座標轉換為相對 canvas 左上角
+    const rect = G.canvas.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    G.mx = cx; G.my = cy;
+    G.px = Math.max(20, Math.min(G.canvas.width-20,  cx));
+    G.py = Math.max(90, Math.min(G.canvas.height-20, cy));
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (!G || !G.running) return;
+    if (document.getElementById('summon-pop').classList.contains('on')) return;
+    if (document.getElementById('cp-pop').classList.contains('on')) return;
+    G.paused = !G.paused;
+    document.getElementById('pause-overlay').classList.toggle('on', G.paused);
+    sfx(G.paused ? 'click' : 'wave_start');
+  }
+  if (e.code === 'KeyT') {
+    if (!G || !G.running || G.paused) return;
+    openSummon();
+  }
+});
+
+// ═══════════════════════════════════════════════
+//  觸控操作（手機 / 平板）
+// ═══════════════════════════════════════════════
+function getTouchCanvasPos(touch) {
+  const rect = G.canvas.getBoundingClientRect();
+  return {
+    x: Math.max(20, Math.min(G.canvas.width-20,  touch.clientX - rect.left)),
+    y: Math.max(90, Math.min(G.canvas.height-20, touch.clientY - rect.top))
+  };
+}
+
+// 在遊戲畫面以外的觸控（HUB等）不攔截
+function isGameActive() { return G && G.running && !G.paused; }
+
+document.addEventListener('touchstart', e => {
+  if (!isGameActive()) return;
+  // 排除UI按鈕的觸控
+  if (e.target.closest('#touch-summon-btn,#touch-pause-btn,#audio-ctrl,#game-hud,#summon-pop,#cp-pop,#pause-overlay')) return;
+  const t = e.touches[0];
+  const pos = getTouchCanvasPos(t);
+  G.px = pos.x; G.py = pos.y;
+  // 顯示觸控指示器
+  const ind = document.getElementById('touch-indicator');
+  ind.style.display = 'block';
+  ind.style.left = t.clientX + 'px'; ind.style.top = t.clientY + 'px';
+}, { passive: true });
+
+document.addEventListener('touchmove', e => {
+  if (!isGameActive()) return;
+  if (e.target.closest('#touch-summon-btn,#touch-pause-btn,#audio-ctrl,#game-hud')) return;
+  e.preventDefault();
+  const t = e.touches[0];
+  const pos = getTouchCanvasPos(t);
+  G.px = pos.x; G.py = pos.y;
+  const ind = document.getElementById('touch-indicator');
+  ind.style.left = t.clientX + 'px'; ind.style.top = t.clientY + 'px';
+}, { passive: false });
+
+document.addEventListener('touchend', e => {
+  if (!G || !G.running) return;
+  if (e.touches.length === 0) {
+    document.getElementById('touch-indicator').style.display = 'none';
+  }
+}, { passive: true });
+
+function handleTouchSummon(e) {
+  e.stopPropagation();
+  if (!G || !G.running || G.paused) return;
+  openSummon();
+}
+
+function handleTouchPause(e) {
+  e.stopPropagation();
+  if (!G || !G.running) return;
+  if (document.getElementById('summon-pop').classList.contains('on')) return;
+  if (document.getElementById('cp-pop').classList.contains('on')) return;
+  G.paused = !G.paused;
+  document.getElementById('pause-overlay').classList.toggle('on', G.paused);
+  sfx(G.paused ? 'click' : 'wave_start');
+}
+
+// ═══════════════════════════════════════════════
+//  HUB 畫面
+// ═══════════════════════════════════════════════
+function quitToHub() {
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  if (G) { G.running = false; G.paused = false; }
+  document.getElementById('pause-overlay').classList.remove('on');
+  CPSAVE = null; // 放棄存檔點
+  stopBGM();
+  switchBGM('hub', 200);
+  goHub();
+}
+
+function goHub() {
+  closePopups();
+  showScreen('hub');
+  renderHub();
+}
+
+function renderHub() {
+  document.getElementById('hub-cred-val').textContent = META.credits;
+
+  // 游標選擇
+  const cg = document.getElementById('cursor-grid');
+  cg.innerHTML = '';
+  CURSORS.forEach((c, i) => {
+    const unlocked = META.credits >= c.unlockCred || i < 2;
+    const div = document.createElement('div');
+    div.className = 'cursor-card' + (i === selCursor ? ' sel' : '') + (!unlocked ? ' locked' : '');
+    div.innerHTML = `<div class="cursor-icon">${c.icon}</div><div class="cursor-name">${c.name}</div><div class="cursor-desc">${c.desc}</div>`;
+    div.onclick = () => { if (unlocked) { selCursor = i; sfx('click'); renderHub(); } };
+    cg.appendChild(div);
+  });
+
+  // 磁碟選擇
+  const dl = document.getElementById('drive-list');
+  dl.innerHTML = '';
+  DRIVES.forEach((d, i) => {
+    const unlocked = i === 0 || META.cleared.includes(i - 1);
+    const saved   = CPSAVE && CPSAVE.driveId === i;
+    const cleared = META.cleared.includes(i);
+    const div = document.createElement('div');
+    div.className = 'drive-item' + (!unlocked ? ' dlocked' : '');
+    div.style.borderColor = i === selDrive ? d.col : '';
+    div.innerHTML = `
+      <div class="drive-left">
+        <div class="drive-icon">${d.icon}</div>
+        <div><div class="drive-name">${d.name}</div><div class="drive-desc">${d.desc}</div></div>
+      </div>
+      <div class="dbadge ${saved?'b-save':cleared?'b-clr':'b-new'}">${saved?'有存檔':cleared?'已通關':'新'}</div>`;
+    if (unlocked) div.onclick = () => { selDrive = i; sfx('click'); renderHub(); };
+    dl.appendChild(div);
+  });
+
+  // 升級
+  const ul = document.getElementById('upgrade-list');
+  ul.innerHTML = '';
+  UPGRADES.forEach(u => {
+    const lv = META.upgrades[u.id] || 0;
+    const maxed = lv >= u.max;
+    const canBuy = META.credits >= u.cost && !maxed;
+    const div = document.createElement('div');
+    div.className = 'upg-item' + (maxed ? ' maxed' : '');
+    div.innerHTML = `
+      <div class="upg-left">
+        <div class="upg-icon">${u.icon}</div>
+        <div><div class="upg-iname">${u.name} ${maxed?'[MAX]':'['+lv+'/'+u.max+']'}</div><div class="upg-idesc">${u.desc}</div></div>
+      </div>
+      <button class="upg-btn" ${!canBuy?'disabled':''} onclick="buyUpgrade('${u.id}',${u.cost})">
+        ${maxed?'MAX':'💾'+u.cost}
+      </button>`;
+    ul.appendChild(div);
+  });
+
+  const cur = CURSORS[selCursor];
+  const baseAtk = 10+(META.upgrades.atkBonus||0)*3;
+  const effAtk  = Math.round(baseAtk * cur.atkMul);
+  const fireMs  = Math.round(28/cur.spdMul * (1000/60));
+  const specialDesc = {
+    normal:  '普通子彈，穩定追蹤',
+    rapid:   '3連散射，每發傷害低',
+    heavy:   '命中產生震波環，波及周圍',
+    drain:   '命中回血，近距離傷害+50%',
+    pierce:  '子彈穿透全場所有敵人',
+    explode: '命中爆炸，波及80px範圍🔥',
+  };
+  const hs = document.getElementById('hub-stats');
+  hs.innerHTML = `
+    <div class="stat-row"><span class="slabel">已選游標</span><span class="sval">${cur.icon} ${cur.name}</span></div>
+    <div class="stat-row"><span class="slabel">⚔ 有效攻擊</span><span class="sval" style="color:#ffe600">${effAtk}</span></div>
+    <div class="stat-row"><span class="slabel">⚡ 射擊間隔</span><span class="sval">${fireMs}ms</span></div>
+    <div class="stat-row"><span class="slabel">✨ 特殊效果</span><span class="sval" style="color:#00cfff;font-size:12px">${specialDesc[cur.special]||'—'}</span></div>
+    <div class="stat-row"><span class="slabel">最大HP</span><span class="sval">${80+(META.upgrades.maxHp||0)*20}</span></div>
+    <div class="stat-row"><span class="slabel">總局數</span><span class="sval">${META.stats.runs}</span></div>
+    <div class="stat-row"><span class="slabel">最高分</span><span class="sval">${META.stats.bestScore}</span></div>`;
+}
+
+function buyUpgrade(id, cost) {
+  const u = UPGRADES.find(x => x.id === id);
+  if (!u || META.credits < cost || (META.upgrades[id]||0) >= u.max) return;
+  META.credits -= cost;
+  META.upgrades[id] = (META.upgrades[id]||0) + 1;
+  sfx('upgrade');
+  saveMeta();
+  renderHub();
+}
+
+// ═══════════════════════════════════════════════
+//  遊戲引擎
+// ═══════════════════════════════════════════════
+let G = null;
+let rafId = null;
+
+function startGame() {
+  sfx('click');
+  showScreen('game');
+  const canvas = document.getElementById('game-canvas');
+  resizeCanvas(canvas);
+
+  const drv = DRIVES[selDrive];
+  const cur = CURSORS[selCursor];
+  const maxHp  = 80  + (META.upgrades.maxHp||0)*20;
+  const baseAtk= 10  + (META.upgrades.atkBonus||0)*3;
+  const fromCP = CPSAVE && CPSAVE.driveId === selDrive;
+
+  G = {
+    running: true, paused: false,
+    driveId: selDrive, drv, cur,
+    hp: fromCP ? CPSAVE.hp : maxHp, maxHp,
+    atk: baseAtk * cur.atkMul, baseAtk,
+    score: fromCP ? CPSAVE.score : 0,
+    cred:  fromCP ? CPSAVE.cred  : (META.upgrades.startCred||0)*10,
+    kills: fromCP ? CPSAVE.kills : 0,
+
+    wave: fromCP ? CPSAVE.wave : 0,
+    totalWaves: drv.waves,
+    cpAt: [Math.floor(drv.waves/3), Math.floor(drv.waves*2/3)],
+    cpDone: fromCP ? [...(CPSAVE.cpDone||[])] : [],
+    wDelay: 0, wActive: false, bossWave: false,
+
+    combo: 0, maxCombo: 5, comboT: 0,
+    comboDecayMax: 180 + (META.upgrades.comboDecay||0)*60,
+    summonReady: false, summonCD: 0,
+    summonCDMax: Math.round(300 * (1 - (META.upgrades.summonCD||0)*0.15)),
+
+    shield: 0, shieldT: 0,
+    speedBuff: 1, speedT: 0,
+    atkX: 1, atkXT: 0,
+    bombT: -1, empT: 0, empFlash: 0, hitFlash: 0,
+
+    px: canvas.width/2, py: canvas.height/2,
+    mx: canvas.width/2, my: canvas.height/2,
+    fireT: 0, fireRate: Math.round(28 / cur.spdMul),
+
+    ents: [], // bullets, enemies, boss, particles
+    canvas, ctx: canvas.getContext('2d'),
+  };
+
+  META.stats.runs++;
+  saveMeta();
+  switchBGM('game', 100);
+  startNextWave();
+  updateHUD();
+  if (rafId) cancelAnimationFrame(rafId);
+  gameLoop();
+}
+
+// ── 波次系統 ──
+function comboMul() {
+  const c = G.combo;
+  return c===0?1.0 : c===1?1.5 : c===2?2.0 : c===3?2.5 : c===4?3.0 : 4.0;
+}
+
+function startNextWave() {
+  G.wave++;
+  G.wDelay = 90;
+  G.wActive = false;
+
+  // 最後一波固定是BOSS
+  G.bossWave = (G.wave === G.totalWaves);
+
+  if (G.wave > G.totalWaves) { triggerVictory(); return; }
+  if (G.bossWave) { setTimeout(showBossWarn, 60); return; }
+
+  // 存檔點檢查
+  if (G.cpAt.includes(G.wave-1) && !G.cpDone.includes(G.wave-1)) {
+    setTimeout(() => showCPPopup(G.wave-1), 300);
+  }
+}
+
+function spawnWave() {
+  const cv = G.canvas;
+  const n = 2 + G.wave + Math.floor(G.drv.waves/3);
+  const pool = ENEMIES; // 所有類型在所有地圖都會出現
+  for (let i = 0; i < n; i++) {
+    const tp = pool[Math.floor(Math.random()*pool.length)];
+    const hpX = 1 + G.wave*0.13 + G.driveId*0.28;
+    const side = Math.floor(Math.random()*4);
+    let x,y;
+    if(side===0){x=Math.random()*cv.width;y=-30;}
+    else if(side===1){x=cv.width+30;y=Math.random()*cv.height;}
+    else if(side===2){x=Math.random()*cv.width;y=cv.height+30;}
+    else{x=-30;y=Math.random()*cv.height;}
+    G.ents.push({
+      t:'E', tp, x, y, angle:0,
+      hp:Math.floor(tp.hp*hpX), maxHp:Math.floor(tp.hp*hpX),
+      atk:tp.atk, spd:tp.spd, score:tp.score, cred:tp.cred,
+      col:tp.col, sz:tp.sz, atype:tp.atype,
+      shootT:Math.floor(Math.random()*120), shootRate:120+Math.floor(Math.random()*80),
+    });
+  }
+  G.wActive = true;
+  sfx('wave_start');
+}
+
+function spawnBoss() {
+  const cv = G.canvas;
+  const bd = BOSSES[Math.min(G.driveId, BOSSES.length-1)];
+  G.ents.push({
+    t:'B', bd, x:cv.width/2, y:-70, angle:0,
+    hp:Math.floor(bd.hp*G.drv.bossHpX), maxHp:Math.floor(bd.hp*G.drv.bossHpX),
+    atk:bd.atk, spd:0.5, score:bd.score, cred:bd.cred,
+    col:bd.col, sz:bd.sz,
+    shootT:0, shootRate:38,
+  });
+  G.wActive = true;
+}
+
+function showBossWarn() {
+  document.getElementById('boss-warn').classList.add('on');
+  sfx('boss_enter');
+  switchBGM('boss', 600);
+  setTimeout(() => {
+    document.getElementById('boss-warn').classList.remove('on');
+    spawnBoss();
+  }, 2600);
+}
+
+// ── 主迴圈 ──
+function gameLoop() {
+  if (!G || !G.running) return;
+  if (!G.paused) update();
+  render();
+  rafId = requestAnimationFrame(gameLoop);
+}
+
+function update() {
+  const cv = G.canvas;
+
+  // Wave delay
+  if (G.wDelay > 0) {
+    G.wDelay--;
+    if (G.wDelay === 0) {
+      if (G.bossWave) spawnBoss();
+      else spawnWave();
+    }
+    return;
+  }
+
+  // 滑鼠直接同步，此處只做邊界鉗制
+  G.px = Math.max(20, Math.min(cv.width-20,  G.px));
+  G.py = Math.max(90, Math.min(cv.height-20, G.py));
+
+  // Buff 計時
+  if (G.shieldT > 0) G.shieldT--; else G.shield = Math.max(0, G.shield-0.05);
+  if (G.speedT  > 0) G.speedT--;  else G.speedBuff = 1;
+  if (G.atkXT   > 0) G.atkXT--;   else G.atkX = 1;
+  if (G.summonCD> 0) G.summonCD--;
+  if (G.bombT   > 0) {
+    G.bombT--;
+    if (G.bombT === 0) {
+      G.ents.filter(e=>e.t==='E'||e.t==='B').forEach(e=>dmgE(e,40));
+      sfx('bomb');
+      spawnParts(cv.width/2, cv.height/2, '#ff6600', 22);
+    }
+  }
+  if (G.empT > 0) G.empT--;
+
+  // 自動射擊
+  G.fireT++;
+  const adjRate = Math.round(G.fireRate / G.speedBuff);
+  if (G.fireT >= adjRate) { G.fireT = 0; fireBullet(); }
+
+  // COMBO 消退
+  if (G.combo > 0) {
+    G.comboT++;
+    if (G.comboT >= G.comboDecayMax) { G.comboT=0; G.combo=Math.max(0,G.combo-1); refreshComboPips(); }
+  }
+
+  // 更新所有實體
+  const dead = [];
+  G.ents.forEach((e, i) => {
+    if (e.t === 'PB') { // 玩家子彈
+      e.x += e.vx; e.y += e.vy;
+      if (e.x<-20||e.x>cv.width+20||e.y<-20||e.y>cv.height+20) { dead.push(i); return; }
+      const hitR = (e.sz||4) + 5;
+      let hit = false;
+      G.ents.forEach((t) => {
+        if ((t.t==='E'||t.t==='B') && Math.hypot(e.x-t.x,e.y-t.y) < t.sz + hitR) {
+          if (!hit || e.pierce) {
+            dmgE(t, e.dmg);
+            hit = true;
+            // 特殊命中效果
+            if (e.special==='explode')   triggerExplosion(t.x, t.y, e.explodeR, e.dmg*0.7);
+            if (e.special==='heavy')     triggerShockwave(t.x, t.y, e.dmg);
+            if (e.special==='drain')     G.hp = Math.min(G.maxHp, G.hp + (e.drainAmt||2));
+          }
+          if (!e.pierce) dead.push(i);
+        }
+      });
+
+    } else if (e.t === 'EXP') { // 爆炎爆炸環
+      e.r += (e.maxR - e.r) * 0.25;
+      e.life--;
+      // 傷害爆炸範圍內敵人（只傷害一次）
+      if (!e.dmgDone && e.r > e.maxR*0.5) {
+        e.dmgDone = true;
+        G.ents.filter(x=>x.t==='E'||x.t==='B').forEach(t=>{
+          if (Math.hypot(t.x-e.x,t.y-e.y) < e.maxR) dmgE(t, e.dmg);
+        });
+      }
+      if (e.life<=0) dead.push(i);
+
+    } else if (e.t === 'SHK') { // 重擊震波環
+      e.r += (e.maxR - e.r) * 0.3;
+      e.life--;
+      if (!e.dmgDone && e.r > e.maxR*0.4) {
+        e.dmgDone = true;
+        G.ents.filter(x=>x.t==='E'||x.t==='B').forEach(t=>{
+          if (Math.hypot(t.x-e.x,t.y-e.y) < e.maxR) dmgE(t, e.dmg);
+        });
+      }
+      if (e.life<=0) dead.push(i);
+    } else if (e.t==='E'||e.t==='B') {
+      const spdX = G.empT>0 ? 0.5 : 1;
+      const ddx = G.px-e.x, ddy = G.py-e.y;
+      const dd  = Math.hypot(ddx,ddy);
+      e.angle += 0.04;
+
+      const atype = e.t==='B' ? 'boss' : (e.tp?.atype || e.atype || 'bullet');
+
+      if (atype === 'ram') {
+        // ── 衝撞型 ──
+        if (!e.ramState) e.ramState = 'track';
+        if (!e.ramTimer) e.ramTimer = 0;
+        e.ramTimer++;
+        if (e.ramState === 'track') {
+          e.x += (ddx/dd)*0.5*spdX; e.y += (ddy/dd)*0.5*spdX;
+          e.chargeAngle = Math.atan2(ddy,ddx);
+          if (e.ramTimer >= 90) { e.ramState='charge'; e.ramTimer=0; sfx('boss_enter'); }
+        } else if (e.ramState === 'charge') {
+          const cspd=(e.tp?.spd||2.8)*4.5*spdX;
+          e.x+=Math.cos(e.chargeAngle)*cspd; e.y+=Math.sin(e.chargeAngle)*cspd;
+          if (dd<e.sz+18) { playerHit(e.atk*1.5); if(G.hp<=0)return; }
+          if(e.ramTimer>=18||(e.x<-80||e.x>cv.width+80||e.y<-80||e.y>cv.height+80)){ e.ramState='cooldown'; e.ramTimer=0; e.x=Math.max(60,Math.min(cv.width-60,e.x)); e.y=Math.max(130,Math.min(cv.height-60,e.y)); }
+        } else { if(e.ramTimer>=80){e.ramState='track';e.ramTimer=0;} }
+
+      } else if (atype === 'laser') {
+        // ── 光柱型 ──
+        if (!e.laserState) e.laserState='aim';
+        if (!e.laserTimer) e.laserTimer=0;
+        e.laserTimer++;
+        e.x+=(ddx/dd)*0.15*spdX; e.y+=(ddy/dd)*0.15*spdX;
+        if (e.laserState==='aim') {
+          e.laserAngle=e.laserAngle||0;
+          let da=Math.atan2(ddy,ddx)-e.laserAngle; while(da>Math.PI)da-=Math.PI*2; while(da<-Math.PI)da+=Math.PI*2;
+          e.laserAngle+=da*0.04;
+          if(e.laserTimer>=100){e.laserState='fire';e.laserTimer=0;}
+        } else if (e.laserState==='fire') {
+          e.laserOn=true;
+          const lx=Math.cos(e.laserAngle),ly=Math.sin(e.laserAngle);
+          const t2=(G.px-e.x)*lx+(G.py-e.y)*ly;
+          if(t2>0&&t2<600){const px2=e.x+lx*t2,py2=e.y+ly*t2;if(Math.hypot(G.px-px2,G.py-py2)<16){ playerHit(e.atk*0.04); if(G.hp<=0)return; }}
+          if(e.tp?.name==='系統掃描器')e.laserAngle+=0.012;
+          if(e.laserTimer>=90){e.laserOn=false;e.laserState='rest';e.laserTimer=0;}
+        } else { e.laserOn=false; if(e.laserTimer>=70){e.laserState='aim';e.laserTimer=0;} }
+        e.shootT=(e.shootT||0)+1; if(e.shootT>=120){e.shootT=0;fireEBullet(e);}
+
+      } else if (atype === 'emp_burst') {
+        // ── EMP電磁型：靠近爆發，致盲玩家視野 ──
+        e.x+=(ddx/dd)*e.spd*spdX; e.y+=(ddy/dd)*e.spd*spdX;
+        e.empBurstTimer=(e.empBurstTimer||0)+1;
+        if(e.empBurstTimer>=120){ // 每2秒發射EMP脈衝
+          e.empBurstTimer=0;
+          // 發射4發EMP子彈
+          for(let i=0;i<4;i++){
+            const a=(i/4)*Math.PI*2;
+            G.ents.push({t:'EB',x:e.x,y:e.y,vx:Math.cos(a)*2.2,vy:Math.sin(a)*2.2,dmg:e.atk,col:'#9900ff',bsz:7,homing:false,isEMP:true});
+          }
+          sfx('wave_start');
+        }
+        if(dd<e.sz+14){ playerHit(e.atk*0.06); if(G.hp<=0)return; }
+
+      } else if (atype === 'mine') {
+        e.mineArmed = (e.mineArmed||0)+1;
+        if(e.mineArmed>60 && dd<e.sz+40){
+          triggerExplosion(e.x,e.y,90,e.atk*2);
+          G.ents=G.ents.filter(x=>x!==e);
+          return;
+        }
+
+      } else if (atype === 'split') {
+        e.x+=(ddx/dd)*e.spd*spdX; e.y+=(ddy/dd)*e.spd*spdX;
+        e.shootT=(e.shootT||0)+1; if(e.shootT>=100){e.shootT=0;fireEBullet(e);}
+        if(dd<e.sz+14){ playerHit(e.atk*0.08); if(G.hp<=0)return; }
+
+      } else if (atype === 'teleport') {
+        // ── 傳送型：charge蓄力 → warn預警 → 瞬移 → land落地停頓 → burst衝刺 ──
+        e.tpState = e.tpState || 'charge';
+        e.tpTimer = (e.tpTimer||0)+1;
+
+        if (e.tpState === 'charge') {
+          // 慢速靠近 + 原地震動
+          e.x += (ddx/dd)*0.3*spdX + Math.sin(e.tpTimer*0.3)*0.6;
+          e.y += (ddy/dd)*0.3*spdX;
+          if (e.tpTimer >= 120) { e.tpState='warn'; e.tpTimer=0; }
+
+        } else if (e.tpState === 'warn') {
+          // 預警：在玩家旁顯示目標圈，靜止不動，給玩家1秒反應
+          if (!e.tpTarget) {
+            const a = Math.random()*Math.PI*2;
+            e.tpTarget = { x: G.px+Math.cos(a)*200, y: G.py+Math.sin(a)*200 };
+          }
+          // 目標點超出邊界就修正
+          const cv2 = G.canvas;
+          e.tpTarget.x = Math.max(60, Math.min(cv2.width-60,  e.tpTarget.x));
+          e.tpTarget.y = Math.max(130,Math.min(cv2.height-60, e.tpTarget.y));
+          if (e.tpTimer >= 70) { // 1.2秒後真正傳送
+            e.x = e.tpTarget.x; e.y = e.tpTarget.y;
+            e.tpTarget = null;
+            e.tpState='land'; e.tpTimer=0;
+            spawnParts(e.x,e.y,e.col,20); sfx('boss_enter');
+          }
+
+        } else if (e.tpState === 'land') {
+          // 落地後靜止 50 幀讓玩家看到再衝
+          if (e.tpTimer >= 50) { e.tpState='burst'; e.tpTimer=0; }
+
+        } else if (e.tpState === 'burst') {
+          // 衝刺：有限時間，時間到回蓄力
+          e.x+=(ddx/dd)*3.2*spdX; e.y+=(ddy/dd)*3.2*spdX;
+          if(dd<e.sz+16){ playerHit(e.atk*1.2); if(G.hp<=0)return; }
+          if(e.tpTimer>=50){ e.tpState='charge'; e.tpTimer=0; }
+        }
+
+      } else if (atype === 'armored') {
+        // ── 護盾型：有護甲層，先破甲再傷血 ──
+        if (e.armor === undefined) e.armor = e.maxHp * 0.4; // 護甲值 = 40% 血量
+        e.x+=(ddx/dd)*e.spd*spdX; e.y+=(ddy/dd)*e.spd*spdX;
+        e.shootT=(e.shootT||0)+1; if(e.shootT>=110){e.shootT=0;fireEBullet(e);}
+        if(dd<e.sz+14){ playerHit(e.atk*0.08); if(G.hp<=0)return; }
+
+      } else if (atype === 'swarm') {
+        // ── 群體型：正常射擊，死亡釋放追蹤彈群 ──
+        e.x+=(ddx/dd)*e.spd*spdX; e.y+=(ddy/dd)*e.spd*spdX;
+        e.shootT=(e.shootT||0)+1; if(e.shootT>=90){e.shootT=0;fireEBullet(e);}
+        if(dd<e.sz+14){ playerHit(e.atk*0.08); if(G.hp<=0)return; }
+
+      } else {
+        // ── 預設射擊型 ──
+        e.x+=(ddx/dd)*e.spd*spdX; e.y+=(ddy/dd)*e.spd*spdX;
+        e.shootT=(e.shootT||0)+1; if(e.shootT>=(e.shootRate||80)){e.shootT=0;fireEBullet(e);}
+        if(dd<e.sz+14){ playerHit(e.atk*0.08); if(G.hp<=0)return; }
+      }
+
+      // Boss固定移動+射擊
+      if(e.t==='B'){
+        e.x+=(ddx/dd)*e.spd*spdX; e.y+=(ddy/dd)*e.spd*spdX;
+        e.shootT=(e.shootT||0)+1; if(e.shootT>=e.shootRate){e.shootT=0;fireEBullet(e);}
+        if(dd<e.sz+14){ playerHit(e.atk*0.08); if(G.hp<=0)return; }
+      }
+    } else if (e.t==='EB') { // 敵方子彈
+      // 追蹤彈：逐幀微調方向朝向玩家
+      if (e.homing) {
+        const tx = G.px - e.x, ty = G.py - e.y;
+        const td = Math.hypot(tx, ty);
+        if (td > 0) {
+          const spd = Math.hypot(e.vx, e.vy);
+          e.vx += (tx/td) * spd * e.homStr;
+          e.vy += (ty/td) * spd * e.homStr;
+          // 限制追蹤速度不超過原速
+          const ns = Math.hypot(e.vx,e.vy);
+          if (ns > spd*1.1) { e.vx=e.vx/ns*spd*1.1; e.vy=e.vy/ns*spd*1.1; }
+        }
+      }
+      e.x+=e.vx; e.y+=e.vy;
+      if(e.x<-20||e.x>cv.width+20||e.y<-20||e.y>cv.height+20){dead.push(i);return;}
+      if(Math.hypot(e.x-G.px,e.y-G.py)<18){
+        if(e.isEMP) G.empFlash=(G.empFlash||0)+40;
+        playerHit(e.dmg);
+        dead.push(i);
+      }
+    } else if (e.t==='P') { // 粒子
+      e.x+=e.vx; e.y+=e.vy; e.vy+=0.1; e.life--;
+      if(e.life<=0)dead.push(i);
+    }
+  });
+  [...new Set(dead)].sort((a,b)=>b-a).forEach(i=>G.ents.splice(i,1));
+
+  // 波次清場
+  if (G.wActive && G.ents.filter(e=>e.t==='E'||e.t==='B').length===0) {
+    G.wActive = false;
+    if (G.bossWave) {
+      triggerVictory(); // Boss打完即通關
+    } else {
+      startNextWave();
+    }
+  }
+
+  updateHUD();
+}
+
+function fireBullet() {
+  const targets = G.ents.filter(e=>e.t==='E'||e.t==='B');
+  if (!targets.length) return;
+  const sp = G.cur.special;
+  const dmg = G.atk * comboMul() * G.atkX;
+
+  // 找最近目標
+  const nearest = targets.reduce((b,e)=>Math.hypot(e.x-G.px,e.y-G.py)<Math.hypot(b.x-G.px,b.y-G.py)?e:b);
+  const dx=nearest.x-G.px, dy=nearest.y-G.py, d=Math.hypot(dx,dy);
+
+  if (Math.random()<0.22) sfx('shoot');
+
+  if (sp==='normal') {
+    // ── 標準：瞄準最近目標，標準子彈
+    G.ents.push({ t:'PB', x:G.px, y:G.py, vx:(dx/d)*7, vy:(dy/d)*7, dmg, pierce:false, col:'#00ff41', special:'normal' });
+
+  } else if (sp==='rapid') {
+    // ── 閃電：3發散射連射，子彈細小黃色
+    [-0.18, 0, 0.18].forEach(off=>{
+      const a = Math.atan2(dy,dx)+off;
+      G.ents.push({ t:'PB', x:G.px, y:G.py, vx:Math.cos(a)*9, vy:Math.sin(a)*9, dmg:dmg*0.5, pierce:false, col:'#ffe600', sz:3, special:'rapid' });
+    });
+
+  } else if (sp==='heavy') {
+    // ── 重擊：超大子彈，命中時震波環
+    G.ents.push({ t:'PB', x:G.px, y:G.py, vx:(dx/d)*5, vy:(dy/d)*5, dmg, pierce:false, col:'#ff6600', sz:9, special:'heavy' });
+
+  } else if (sp==='drain') {
+    // ── 吸取：近距離增幅，命中回血
+    const bonus = d < 180 ? 1.5 : 1.0; // 近距離加成
+    G.ents.push({ t:'PB', x:G.px, y:G.py, vx:(dx/d)*7, vy:(dy/d)*7, dmg:dmg*bonus, pierce:false, col:'#00ffaa', sz:5, special:'drain', drainAmt:dmg*bonus*0.12 });
+    // 近距時顯示增幅提示
+    if (d < 180 && Math.random()<0.08) flt('近距+50%','#00ffaa');
+
+  } else if (sp==='pierce') {
+    // ── 狙擊：高速穿透，細長白色
+    G.ents.push({ t:'PB', x:G.px, y:G.py, vx:(dx/d)*14, vy:(dy/d)*14, dmg, pierce:true, col:'#ffffff', sz:3, special:'pierce' });
+
+  } else if (sp==='explode') {
+    // ── 爆炎：命中時以目標為中心爆炸波及範圍100px，視覺超強
+    G.ents.push({ t:'PB', x:G.px, y:G.py, vx:(dx/d)*6, vy:(dy/d)*6, dmg, pierce:false, col:'#ff3300', sz:8, special:'explode', explodeR:100 });
+  }
+}
+
+// ── 爆炎爆炸觸發 ──
+function triggerExplosion(cx, cy, radius, dmg) {
+  G.ents.push({ t:'EXP', x:cx, y:cy, r:8, maxR:radius, life:22, dmg });
+  spawnParts(cx, cy, '#ff4400', 24);
+  spawnParts(cx, cy, '#ffaa00', 16);
+  spawnParts(cx, cy, '#ffffff', 8);
+  sfx('bomb');
+  flt('💥爆炸!', '#ff6600', cx, cy);
+}
+
+// ── 重擊震波觸發 ──
+function triggerShockwave(cx, cy, dmg) {
+  G.ents.push({ t:'SHK', x:cx, y:cy, r:5, maxR:55, life:12, dmg:dmg*0.4 });
+  spawnParts(cx, cy, '#ff6600', 8);
+}
+
+// ── 敵方子彈模式（隨波次漸進複雜）──
+// lv0 波次1-2:  單發直線
+// lv1 波次3-4:  3連扇形
+// lv2 波次5-6:  5連扇形
+// lv3 波次7-8:  3發螺旋（用敵人旋轉角帶動）
+// lv4 波次9-11: 瞄準3發 + 側翼5發展開
+// lv5 波次12+:  雙環全向16發（內追蹤+外放射）
+// lv6 Boss專屬: 三叉追蹤 + 12發圓形 + 2發側翼追蹤
+function fireEBullet(e) {
+  // 子彈數量上限，避免畫面爆炸
+  if (G.ents.filter(x=>x.t==='EB').length >= 40) return;
+  const isBoss = e.t === 'B';
+  const wave   = G.wave;
+  let lv;
+  if (isBoss) { lv = 6; }
+  else if (wave <= 2)  lv = 0;
+  else if (wave <= 4)  lv = 1;
+  else if (wave <= 6)  lv = 2;
+  else if (wave <= 8)  lv = 3;
+  else if (wave <= 11) lv = 4;
+  else                 lv = 5;
+
+  const spd  = isBoss ? 3.8 : 2.5 + G.driveId * 0.25;
+  const bspd = isBoss ? 2.6 : 1.9;
+  const baseAngle = Math.atan2(G.py - e.y, G.px - e.x);
+
+  const shoot = (angle, speed, homing, col) => {
+    G.ents.push({
+      t:'EB', x:e.x, y:e.y,
+      vx: Math.cos(angle)*speed,
+      vy: Math.sin(angle)*speed,
+      dmg: e.atk,
+      homing: !!homing, homStr: 0.055,
+      col: col || (isBoss ? e.col : '#ff2244'),
+      bsz: isBoss ? 6 : 4,
+    });
+  };
+
+  if (lv === 0) {
+    shoot(baseAngle + (Math.random()-0.5)*0.25, spd);
+
+  } else if (lv === 1) {
+    [-0.3, 0, 0.3].forEach(o => shoot(baseAngle+o, spd));
+
+  } else if (lv === 2) {
+    [-0.4, -0.15, 0.15, 0.4].forEach(o => shoot(baseAngle+o, spd));
+
+  } else if (lv === 3) {
+    const rot=e.angle||0;
+    [0,Math.PI*2/3,Math.PI*4/3].forEach(o=>shoot(rot+o,spd*0.95));
+
+  } else if (lv === 4) {
+    [-0.22,0,0.22].forEach(o=>shoot(baseAngle+o,spd));
+    [0,Math.PI*2/3,Math.PI*4/3].forEach(o=>shoot(baseAngle+Math.PI+o,bspd,false,'#ff6600'));
+
+  } else if (lv === 5) {
+    // 減少到6+6發
+    for(let i=0;i<6;i++){const a=(i/6)*Math.PI*2+(e.angle||0); shoot(a,bspd*0.8,true,'#bf00ff');}
+    for(let i=0;i<6;i++){const a=(i/6)*Math.PI*2+(e.angle||0)+Math.PI/6; shoot(a,spd,false,'#ff2244');}
+
+  } else if (lv === 6) {
+    // Boss：3發精準 + 8發圓形 + 2發追蹤
+    [-0.18,0,0.18].forEach(o=>shoot(baseAngle+o,spd,false,e.col));
+    for(let i=0;i<8;i++){const a=(i/8)*Math.PI*2+(e.angle||0); shoot(a,bspd*0.85,false,'#ff6600');}
+    shoot(baseAngle+0.65,spd*0.78,true,'#ff00aa');
+    shoot(baseAngle-0.65,spd*0.78,true,'#ff00aa');
+  }
+}
+
+function playerHit(d) {
+  // 護盾先吸收
+  if (G.shield > 0) {
+    const b = Math.min(G.shield, d); d -= b; G.shield -= b;
+  }
+  if (d <= 0) return;
+  G.hp = Math.max(0, G.hp - d);
+  sfx('player_hit');
+  // 受擊浮字：顯示在玩家位置
+  flt(`-${Math.ceil(d)}`, '#ff2244', G.px, G.py - 10);
+  // 紅色閃爍記號
+  G.hitFlash = 6;
+  if (G.hp <= 0) triggerGameOver();
+}
+
+function dmgE(e, d) {
+  // 護甲型：傷害先扣護甲層
+  const eAtype = e.tp?.atype || e.atype || '';
+  if (eAtype === 'armored' && e.armor !== undefined && e.armor > 0) {
+    const absorbed = Math.min(e.armor, d);
+    e.armor -= absorbed;
+    d -= absorbed;
+    spawnParts(e.x, e.y, '#4488ff', 3); // 藍色護甲粒子
+    flt(`🛡️${Math.ceil(absorbed)}`, '#4488ff', e.x, e.y-10);
+    if (d <= 0) return; // 護甲全吸收
+  }
+  e.hp -= d;
+  spawnParts(e.x, e.y, e.col, 4);
+  sfx('hit');
+  if (e.hp <= 0) {
+    G.score += e.score; G.cred += e.cred; G.kills++;
+    META.stats.kills++;
+    sfx('kill');
+    // 分裂型：死亡後產生2隻小病毒
+    if (eAtype==='split' && !e.isSplitChild) {
+      for(let i=0;i<2;i++){
+        const a=Math.random()*Math.PI*2;
+        G.ents.push({
+          t:'E', tp:null, icon:'🦠', x:e.x+(Math.cos(a)*20), y:e.y+(Math.sin(a)*20), angle:0,
+          hp:12, maxHp:12, atk:e.atk*0.6, spd:1.4, score:8, cred:2,
+          col:'#88ff88', sz:10, shootT:30, shootRate:120, isSplitChild:true, atype:'bullet',
+        });
+      }
+      flt('分裂!','#44ff44',e.x,e.y);
+    }
+    // 群體型：死亡後釋放3顆追蹤彈
+    if (eAtype==='swarm') {
+      for(let i=0;i<3;i++){
+        const a=(i/3)*Math.PI*2;
+        G.ents.push({
+          t:'EB', x:e.x, y:e.y,
+          vx:Math.cos(a)*2.5, vy:Math.sin(a)*2.5,
+          dmg:e.atk*1.2, homing:true, homStr:0.07,
+          col:'#ffcc00', bsz:6,
+        });
+      }
+      flt('蜂群!','#ffcc00',e.x,e.y);
+    }
+    // COMBO
+    G.combo = Math.min(G.maxCombo, G.combo+1);
+    G.comboT = 0;
+    if(G.combo>=G.maxCombo) sfx('comboMax');
+    else if(G.combo>=3) sfx('combo');
+    refreshComboPips();
+    updateSummonBtn();
+    flt(`+${e.score}`, '#00cfff', e.x, e.y);
+    spawnParts(e.x, e.y, e.col, 14);
+    G.ents = G.ents.filter(x=>x!==e);
+  }
+}
+
+function spawnParts(x, y, col, n) {
+  for(let i=0;i<n;i++) G.ents.push({ t:'P', x, y, vx:(Math.random()-0.5)*4, vy:(Math.random()-0.5)*4-2, col, life:18+Math.floor(Math.random()*14), sz:2+Math.random()*3 });
+}
+
+// ── HUD 更新 ──
+function updateHUD() {
+  if (!G) return;
+  document.getElementById('hud-hp').textContent = `${Math.ceil(G.hp)}/${G.maxHp}`;
+  document.getElementById('hud-hpbar').style.width = `${(G.hp/G.maxHp)*100}%`;
+  document.getElementById('hud-atk').textContent = Math.round(G.atk * comboMul() * G.atkX);
+  document.getElementById('hud-drive').textContent = G.drv.name.split(' ')[0];
+  document.getElementById('hud-score').textContent = G.score;
+  document.getElementById('hud-cred').textContent  = G.cred;
+  // 存檔點
+  const cpp = document.getElementById('cp-pips-hud');
+  cpp.innerHTML = '';
+  G.cpAt.forEach(cp => {
+    const pip = document.createElement('span');
+    pip.className='cppip'+(G.cpDone.includes(cp)?' reached':G.wave-1===cp?' cur':'');
+    cpp.appendChild(pip);
+  });
+  document.getElementById('cp-status').textContent = G.cpDone.length ? '✓ 已存檔' : '';
+}
+
+function refreshComboPips() {
+  if (!G) return;
+  const pips = document.getElementById('combo-pips');
+  pips.innerHTML = '';
+  const mul = comboMul();
+  for (let i=0;i<G.maxCombo;i++) {
+    const p = document.createElement('div');
+    p.className='cpip'+(i<G.combo?(G.combo>=G.maxCombo?' max':' on'):'');
+    p.textContent = i<G.combo?'●':'';
+    pips.appendChild(p);
+  }
+  const cm = document.getElementById('cmul');
+  cm.textContent = `×${mul.toFixed(1)}`;
+  cm.className = 'cmul'+(G.combo>=G.maxCombo?' max':'');
+  if (mul > (META.stats.maxCombo||1)) META.stats.maxCombo = mul;
+  updateSummonBtn();
+}
+
+function updateSummonBtn() {
+  if (!G) return;
+  const mul = comboMul();
+  const btn = document.getElementById('btn-summon');
+  const tbtn = document.getElementById('touch-summon-btn');
+  const hint = document.getElementById('shint');
+  const ready = mul>=2.0 && G.summonCD===0;
+  G.summonReady = ready;
+  const isMax = ready && G.combo>=G.maxCombo;
+  if (isMax) {
+    btn.className='maxr'; hint.textContent='⚡ MAX COMBO — 超級召喚可用！';
+    tbtn.className='maxr';
+  } else if (ready) {
+    btn.className='ready'; hint.textContent=`COMBO ×${mul.toFixed(1)} — 爆發召喚可用！`;
+    tbtn.className='ready';
+  } else {
+    btn.className=''; hint.textContent=G.summonCD>0?`冷卻中… (${Math.ceil(G.summonCD/60)}s)`:`累積COMBO至×2.0解鎖（目前×${mul.toFixed(1)}）`;
+    tbtn.className='';
+  }
+}
+
+// ── 渲染 ──
+function render() {
+  const ctx = G.ctx, cv = G.canvas;
+  ctx.fillStyle = '#020a02';
+  ctx.fillRect(0, 0, cv.width, cv.height);
+  // 格線
+  ctx.strokeStyle='rgba(0,40,0,.35)'; ctx.lineWidth=0.5;
+  for(let x=0;x<cv.width;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,cv.height);ctx.stroke();}
+  for(let y=0;y<cv.height;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(cv.width,y);ctx.stroke();}
+
+  // Wave 提示
+  if(!G.wActive && G.wDelay>0 && !G.bossWave){
+    const isFinalWave = (G.wave === G.totalWaves - 1); // 下一波是BOSS
+    ctx.textAlign='center';
+    if (isFinalWave) {
+      ctx.font='18px VT323,monospace'; ctx.fillStyle='rgba(255,34,68,.6)';
+      ctx.fillText(`WAVE ${G.wave} / ${G.totalWaves}  ⚠ 下一波: BOSS`, cv.width/2, cv.height/2);
+    } else {
+      ctx.font='22px VT323,monospace'; ctx.fillStyle='rgba(0,255,65,.45)';
+      ctx.fillText(`WAVE ${G.wave} / ${G.totalWaves}`, cv.width/2, cv.height/2);
+    }
+    ctx.textAlign='left';
+  }
+
+  // EMP 閃光覆蓋（紫色干擾）
+  if (G.empFlash > 0) {
+    G.empFlash--;
+    ctx.fillStyle=`rgba(80,0,160,${G.empFlash/60*0.55})`;
+    ctx.fillRect(0,0,cv.width,cv.height);
+    // 干擾線條
+    ctx.strokeStyle=`rgba(150,0,255,${G.empFlash/60*0.4})`; ctx.lineWidth=1;
+    for(let i=0;i<6;i++){
+      const y2=Math.random()*cv.height;
+      ctx.beginPath(); ctx.moveTo(0,y2); ctx.lineTo(cv.width,y2); ctx.stroke();
+    }
+  }
+
+  // 爆炸環 (EXP)
+  G.ents.filter(e=>e.t==='EXP').forEach(e=>{
+    const alpha=e.life/18;
+    ctx.save();
+    ctx.strokeStyle=`rgba(255,100,0,${alpha*0.9})`; ctx.lineWidth=4;
+    ctx.shadowColor='#ff6600'; ctx.shadowBlur=18;
+    ctx.beginPath(); ctx.arc(e.x,e.y,e.r,0,Math.PI*2); ctx.stroke();
+    ctx.strokeStyle=`rgba(255,220,0,${alpha*0.5})`; ctx.lineWidth=10;
+    ctx.beginPath(); ctx.arc(e.x,e.y,e.r*0.6,0,Math.PI*2); ctx.stroke();
+    ctx.restore();
+  });
+
+  // 震波環 (SHK)
+  G.ents.filter(e=>e.t==='SHK').forEach(e=>{
+    const alpha=e.life/12;
+    ctx.save();
+    ctx.strokeStyle=`rgba(255,150,50,${alpha*0.8})`; ctx.lineWidth=3;
+    ctx.shadowColor='#ff9900'; ctx.shadowBlur=10;
+    ctx.beginPath(); ctx.arc(e.x,e.y,e.r,0,Math.PI*2); ctx.stroke();
+    ctx.restore();
+  });
+
+  // 粒子
+  G.ents.filter(e=>e.t==='P').forEach(p=>{
+    ctx.globalAlpha=p.life/32; ctx.fillStyle=p.col;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.sz,0,Math.PI*2); ctx.fill();
+  });
+  ctx.globalAlpha=1;
+
+  // 玩家子彈（依游標類型有不同外觀）
+  G.ents.filter(e=>e.t==='PB').forEach(b=>{
+    const sz=b.sz||4;
+    ctx.shadowColor=b.col; ctx.shadowBlur=b.special==='pierce'?14:8;
+    ctx.fillStyle=b.col;
+    if(b.special==='heavy'){
+      // 重擊：大橙色方塊旋轉
+      ctx.save(); ctx.translate(b.x,b.y); ctx.rotate(b.x*0.05);
+      ctx.fillRect(-sz,-sz,sz*2,sz*2); ctx.restore();
+    } else if(b.special==='pierce'){
+      // 狙擊：細長白色矩形
+      const a=Math.atan2(b.vy,b.vx);
+      ctx.save(); ctx.translate(b.x,b.y); ctx.rotate(a);
+      ctx.fillRect(-14,-2,28,4); ctx.restore();
+    } else if(b.special==='explode'){
+      // 爆炎：紅橙色帶光暈大球
+      ctx.shadowBlur=16;
+      ctx.beginPath(); ctx.arc(b.x,b.y,sz,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(255,200,0,.4)';
+      ctx.beginPath(); ctx.arc(b.x,b.y,sz+4,0,Math.PI*2); ctx.fill();
+    } else if(b.special==='drain'){
+      // 吸取：青綠色帶旋轉螺旋
+      ctx.beginPath(); ctx.arc(b.x,b.y,sz,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle=b.col; ctx.lineWidth=1.5;
+      const a2=Date.now()*0.01;
+      ctx.beginPath(); ctx.arc(b.x,b.y,sz+3,a2,a2+Math.PI); ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.arc(b.x,b.y,sz,0,Math.PI*2); ctx.fill();
+    }
+    ctx.shadowBlur=0;
+  });
+
+  // 敵方子彈（依各自顏色/大小渲染）
+  G.ents.filter(e=>e.t==='EB').forEach(b=>{
+    const c = b.col || '#ff2244';
+    const sz = b.bsz || 4;
+    ctx.fillStyle=c; ctx.shadowColor=c; ctx.shadowBlur= b.homing ? 10 : 5;
+    ctx.beginPath(); ctx.arc(b.x,b.y,sz,0,Math.PI*2); ctx.fill();
+    // 追蹤彈加個尾跡三角
+    if (b.homing) {
+      const a = Math.atan2(b.vy, b.vx);
+      ctx.strokeStyle = c; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(b.x - Math.cos(a)*10, b.y - Math.sin(a)*10);
+      ctx.lineTo(b.x - Math.cos(a+0.5)*6, b.y - Math.sin(a+0.5)*6);
+      ctx.lineTo(b.x - Math.cos(a-0.5)*6, b.y - Math.sin(a-0.5)*6);
+      ctx.closePath(); ctx.stroke();
+    }
+    ctx.shadowBlur=0;
+  });
+
+  // 敵人 + Boss
+  G.ents.filter(e=>e.t==='E'||e.t==='B').forEach(e=>{
+    const atype = e.t==='B' ? 'boss' : (e.tp?.atype || e.atype || 'bullet');
+
+    // ── 光柱渲染（在敵人底層先畫）──
+    if (atype==='laser' && e.laserOn) {
+      const lx=Math.cos(e.laserAngle), ly=Math.sin(e.laserAngle);
+      const col = e.col;
+      // 外光暈
+      ctx.save();
+      ctx.strokeStyle=col+'55'; ctx.lineWidth=18;
+      ctx.shadowColor=col; ctx.shadowBlur=30;
+      ctx.beginPath(); ctx.moveTo(e.x,e.y); ctx.lineTo(e.x+lx*620,e.y+ly*620); ctx.stroke();
+      // 核心光柱
+      ctx.strokeStyle=col; ctx.lineWidth=4; ctx.shadowBlur=14;
+      ctx.beginPath(); ctx.moveTo(e.x,e.y); ctx.lineTo(e.x+lx*620,e.y+ly*620); ctx.stroke();
+      // 中心白線
+      ctx.strokeStyle='rgba(255,255,255,.7)'; ctx.lineWidth=1.5; ctx.shadowBlur=0;
+      ctx.beginPath(); ctx.moveTo(e.x,e.y); ctx.lineTo(e.x+lx*620,e.y+ly*620); ctx.stroke();
+      ctx.restore();
+    }
+    // 光柱型瞄準線（細線預覽）
+    if (atype==='laser' && !e.laserOn && e.laserState==='aim') {
+      ctx.save();
+      ctx.strokeStyle=e.col+'40'; ctx.lineWidth=2;
+      ctx.setLineDash([8,6]); ctx.shadowColor=e.col; ctx.shadowBlur=6;
+      ctx.beginPath(); ctx.moveTo(e.x,e.y);
+      ctx.lineTo(e.x+Math.cos(e.laserAngle)*600,e.y+Math.sin(e.laserAngle)*600);
+      ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+    }
+
+    // ── 地雷型：警戒脈動圈 ──
+    if (atype==='mine') {
+      const armed = e.mineArmed||0;
+      const pulse = Math.sin(Date.now()*0.01) * 0.5 + 0.5;
+      ctx.save();
+      ctx.strokeStyle=`rgba(255,100,0,${0.3+pulse*0.6})`; ctx.lineWidth=2;
+      ctx.shadowColor='#ff6600'; ctx.shadowBlur=10+pulse*8;
+      ctx.beginPath(); ctx.arc(e.x,e.y,e.sz+40,0,Math.PI*2); ctx.stroke(); // 爆炸範圍預覽
+      ctx.strokeStyle=`rgba(255,200,0,${armed>60?0.9:0.4})`; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.arc(e.x,e.y,e.sz+10+pulse*5,0,Math.PI*2); ctx.stroke();
+      ctx.restore();
+    }
+
+    // ── EMP型：紫色電弧光環 ──
+    if (atype==='emp_burst') {
+      const t2 = (e.empBurstTimer||0)/120;
+      const arc = t2*Math.PI*2;
+      ctx.save();
+      ctx.strokeStyle=`rgba(153,0,255,${0.4+t2*0.5})`; ctx.lineWidth=3;
+      ctx.shadowColor='#9900ff'; ctx.shadowBlur=12;
+      ctx.beginPath(); ctx.arc(e.x,e.y,e.sz+12,0,arc); ctx.stroke();
+      ctx.restore();
+    }
+
+    // ── 分裂型：外層光暈顯示將分裂 ──
+    if (atype==='split' && !e.isSplitChild) {
+      ctx.save();
+      ctx.strokeStyle=`rgba(68,255,68,0.4)`; ctx.lineWidth=1.5;
+      ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.arc(e.x,e.y,e.sz+8,0,Math.PI*2); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+    // ── 傳送型：蓄力時震動光環 ──
+    if (atype==='teleport' && (e.tpState||'charge')==='charge') {
+      const pct=Math.min(1,(e.tpTimer||0)/120);
+      ctx.save();
+      ctx.strokeStyle=`rgba(170,0,255,${0.3+pct*0.6})`; ctx.lineWidth=2;
+      ctx.shadowColor='#aa00ff'; ctx.shadowBlur=14*pct;
+      ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.arc(e.x,e.y,e.sz+8+pct*12,0,Math.PI*2); ctx.stroke();
+      ctx.setLineDash([]); ctx.restore();
+    }
+    // 傳送型：warn狀態 — 在目標位置畫警告圈
+    if (atype==='teleport' && e.tpState==='warn' && e.tpTarget) {
+      const flash = Math.sin(Date.now()*0.025)>0;
+      ctx.save();
+      ctx.strokeStyle=flash?'rgba(255,0,255,0.9)':'rgba(170,0,255,0.5)';
+      ctx.lineWidth=2.5; ctx.shadowColor='#ff00ff'; ctx.shadowBlur=12;
+      ctx.setLineDash([6,4]);
+      ctx.beginPath(); ctx.arc(e.tpTarget.x,e.tpTarget.y,e.sz+14,0,Math.PI*2); ctx.stroke();
+      // 十字標記
+      ctx.setLineDash([]); ctx.lineWidth=1.5;
+      ctx.beginPath();
+      ctx.moveTo(e.tpTarget.x-20,e.tpTarget.y); ctx.lineTo(e.tpTarget.x+20,e.tpTarget.y);
+      ctx.moveTo(e.tpTarget.x,e.tpTarget.y-20); ctx.lineTo(e.tpTarget.x,e.tpTarget.y+20);
+      ctx.stroke();
+      ctx.restore();
+    }
+    // 傳送型：land落地閃光
+    if (atype==='teleport' && e.tpState==='land') {
+      const alpha=(50-(e.tpTimer||0))/50;
+      ctx.save(); ctx.globalAlpha=alpha*0.5;
+      ctx.fillStyle='#cc44ff'; ctx.shadowColor='#aa00ff'; ctx.shadowBlur=20;
+      ctx.beginPath(); ctx.arc(e.x,e.y,e.sz*2.5,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+    // 傳送型：衝刺時殘影
+    if (atype==='teleport' && e.tpState==='burst') {
+      ctx.save(); ctx.globalAlpha=0.25; ctx.fillStyle=e.col;
+      ctx.beginPath(); ctx.arc(e.x-5,e.y-5,e.sz,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+
+    // ── 護盾型：護甲條顯示在血條上方 ──
+    if (atype==='armored' && e.armor > 0) {
+      const bw2=e.sz*2+8, bx2=e.x-bw2/2, by2=e.y-e.sz-21;
+      ctx.fillStyle='#001133'; ctx.fillRect(bx2,by2,bw2,4);
+      const maxArmor=e.maxHp*0.4;
+      ctx.fillStyle='#4488ff'; ctx.shadowColor='#4488ff'; ctx.shadowBlur=5;
+      ctx.fillRect(bx2,by2,bw2*(e.armor/maxArmor),4);
+      ctx.shadowBlur=0;
+    }
+
+    if (atype==='ram' && e.ramState==='track') {
+      const pct = Math.min(1,(e.ramTimer||0)/90);
+      ctx.save();
+      ctx.strokeStyle=`rgba(255,68,0,${pct*0.8})`; ctx.lineWidth=2;
+      ctx.shadowColor='#ff4400'; ctx.shadowBlur=8*pct;
+      ctx.beginPath(); ctx.arc(e.x,e.y,e.sz+6+pct*8,0,Math.PI*2*pct); ctx.stroke();
+      ctx.restore();
+    }
+    // 衝撞型衝刺時殘影
+    if (atype==='ram' && e.ramState==='charge') {
+      ctx.save();
+      ctx.fillStyle=e.col+'33'; ctx.shadowColor=e.col; ctx.shadowBlur=20;
+      ctx.beginPath(); ctx.arc(e.x-Math.cos(e.chargeAngle)*20,e.y-Math.sin(e.chargeAngle)*20,e.sz,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.shadowColor=e.col; ctx.shadowBlur=e.t==='B'?18:8;
+    ctx.fillStyle=e.col+'2a'; ctx.strokeStyle=e.col; ctx.lineWidth=e.t==='B'?2.5:1.5;
+    ctx.beginPath();
+    if(e.t==='B'){
+      for(let i=0;i<6;i++){const a=(i/6)*Math.PI*2+e.angle;const r=e.sz;i===0?ctx.moveTo(e.x+Math.cos(a)*r,e.y+Math.sin(a)*r):ctx.lineTo(e.x+Math.cos(a)*r,e.y+Math.sin(a)*r);}
+      ctx.closePath();
+    } else if (atype==='ram') {
+      for(let i=0;i<3;i++){const a=e.angle+(i/3)*Math.PI*2;i===0?ctx.moveTo(e.x+Math.cos(a)*e.sz,e.y+Math.sin(a)*e.sz):ctx.lineTo(e.x+Math.cos(a)*e.sz,e.y+Math.sin(a)*e.sz);}
+      ctx.closePath();
+    } else if (atype==='laser') {
+      const r=e.sz; ctx.rect(e.x-r,e.y-r,r*2,r*2);
+    } else if (atype==='mine') {
+      // 地雷：菱形
+      const r=e.sz;
+      ctx.moveTo(e.x,e.y-r); ctx.lineTo(e.x+r,e.y); ctx.lineTo(e.x,e.y+r); ctx.lineTo(e.x-r,e.y);
+      ctx.closePath();
+    } else if (atype==='emp_burst') {
+      // EMP：六芒星
+      for(let i=0;i<6;i++){
+        const a=e.angle+(i/6)*Math.PI*2;
+        const rr=(i%2===0)?e.sz:e.sz*0.5;
+        i===0?ctx.moveTo(e.x+Math.cos(a)*rr,e.y+Math.sin(a)*rr):ctx.lineTo(e.x+Math.cos(a)*rr,e.y+Math.sin(a)*rr);
+      }
+      ctx.closePath();
+    } else if (atype==='split') {
+      // 分裂：五邊形
+      for(let i=0;i<5;i++){const a=e.angle+(i/5)*Math.PI*2-Math.PI/2;i===0?ctx.moveTo(e.x+Math.cos(a)*e.sz,e.y+Math.sin(a)*e.sz):ctx.lineTo(e.x+Math.cos(a)*e.sz,e.y+Math.sin(a)*e.sz);}
+      ctx.closePath();
+    } else if (atype==='swarm') {
+      // 群體：六邊形
+      for(let i=0;i<6;i++){const a=e.angle+(i/6)*Math.PI*2;i===0?ctx.moveTo(e.x+Math.cos(a)*e.sz,e.y+Math.sin(a)*e.sz):ctx.lineTo(e.x+Math.cos(a)*e.sz,e.y+Math.sin(a)*e.sz);}
+      ctx.closePath();
+    } else if (atype==='teleport') {
+      // 傳送：八角形
+      for(let i=0;i<8;i++){const a=e.angle+(i/8)*Math.PI*2;i===0?ctx.moveTo(e.x+Math.cos(a)*e.sz,e.y+Math.sin(a)*e.sz):ctx.lineTo(e.x+Math.cos(a)*e.sz,e.y+Math.sin(a)*e.sz);}
+      ctx.closePath();
+    } else if (atype==='armored') {
+      // 護盾：粗邊六角
+      ctx.lineWidth=3.5;
+      for(let i=0;i<6;i++){const a=e.angle+(i/6)*Math.PI*2;i===0?ctx.moveTo(e.x+Math.cos(a)*e.sz,e.y+Math.sin(a)*e.sz):ctx.lineTo(e.x+Math.cos(a)*e.sz,e.y+Math.sin(a)*e.sz);}
+      ctx.closePath();
+    } else {
+      ctx.arc(e.x,e.y,e.sz,0,Math.PI*2);
+    }
+    ctx.fill(); ctx.stroke(); ctx.shadowBlur=0;
+    // HP 條
+    const bw=e.sz*2+8, bh=4, bx=e.x-bw/2, by=e.y-e.sz-13;
+    ctx.fillStyle='#111'; ctx.fillRect(bx,by,bw,bh);
+    ctx.fillStyle=e.col; ctx.fillRect(bx,by,bw*(e.hp/e.maxHp),bh);
+    // 圖示
+    const eIcon = e.t==='B' ? e.bd.icon : (e.tp?.icon || e.icon || '🦠');
+    ctx.font=`${e.sz}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(eIcon, e.x, e.y);
+    if(e.t==='B'){ctx.font='14px VT323,monospace';ctx.fillStyle=e.col;ctx.fillText(e.bd.name,e.x,e.y+e.sz+18);}
+    ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  });
+
+  // 受擊閃紅效果
+  if (G.hitFlash > 0) {
+    G.hitFlash--;
+    ctx.fillStyle=`rgba(255,0,0,${G.hitFlash/6*0.25})`;
+    ctx.fillRect(0,0,cv.width,cv.height);
+  }
+
+  // 護盾環
+  if(G.shield>0){
+    ctx.strokeStyle=`rgba(0,207,255,${Math.min(1,G.shield/20)*.8})`; ctx.lineWidth=2;
+    ctx.shadowColor='#00cfff'; ctx.shadowBlur=10;
+    ctx.beginPath(); ctx.arc(G.px,G.py,28,0,Math.PI*2); ctx.stroke();
+    ctx.shadowBlur=0;
+  }
+
+  // 玩家
+  ctx.shadowColor='#00ff41'; ctx.shadowBlur=14;
+  ctx.font='22px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(CURSORS[selCursor].icon, G.px, G.py);
+  ctx.shadowBlur=0; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+
+  // 玩家血條（游標上方）
+  const pbw=48, pbh=5, pbx=G.px-pbw/2, pby=G.py-34;
+  ctx.fillStyle='#222'; ctx.fillRect(pbx,pby,pbw,pbh);
+  const hpRatio=G.hp/G.maxHp;
+  ctx.fillStyle=hpRatio>0.5?'#00ff41':hpRatio>0.25?'#ffe600':'#ff2244';
+  ctx.fillRect(pbx,pby,pbw*hpRatio,pbh);
+  ctx.strokeStyle='#444'; ctx.lineWidth=1;
+  ctx.strokeRect(pbx,pby,pbw,pbh);
+  // 暫停時疊加文字
+  if (G.paused) {
+    ctx.fillStyle='rgba(0,0,0,.5)'; ctx.fillRect(0,0,cv.width,cv.height);
+    ctx.font='48px VT323,monospace'; ctx.fillStyle='#39ff14';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.shadowColor='#00ff41'; ctx.shadowBlur=20;
+    ctx.fillText('⏸  PAUSED  —  SPACE 繼續', cv.width/2, cv.height/2);
+    ctx.shadowBlur=0; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  }
+}
+// ═══════════════════════════════════════════════
+function openSummon() {
+  if(!G||!G.summonReady) return;
+  G.paused=true;
+  sfx('summon');
+  const isMax = G.combo>=G.maxCombo;
+  const box  = document.getElementById('summon-box');
+  const title= document.getElementById('summon-title');
+  const sub  = document.getElementById('summon-sub');
+  const ch   = document.getElementById('summon-choices');
+  box.className = isMax?'maxpow':'';
+  title.style.color = isMax?'var(--comboMax)':'var(--combo1)';
+  title.textContent = isMax?`⚡ MAX COMBO 超級召喚！`:`⚡ 爆發召喚 ×${comboMul().toFixed(1)}`;
+  sub.textContent = '選擇一個效果觸發';
+  let pool;
+  if(isMax) pool=[...POOL_T2,...POOL_CHAOS];
+  else if(G.combo>=3) pool=[...POOL_T1,...POOL_T2];
+  else pool=[...POOL_T1];
+  const picks = pool.sort(()=>Math.random()-.5).slice(0,3);
+  ch.innerHTML='';
+  picks.forEach(ev=>{
+    const d=document.createElement('div');
+    d.className='schoice';
+    d.innerHTML=`<div class="schoice-icon">${ev.icon}</div><div style="flex:1"><div class="schoice-name">${ev.name}</div><div class="schoice-desc">${ev.desc}</div></div><div class="schoice-pow" style="color:${ev.col}">${ev.pow}</div>`;
+    d.onclick=()=>{
+      ev.fx(G);
+      G.combo=Math.max(0,G.combo-2);
+      G.summonCD=G.summonCDMax;
+      G.paused=false;
+      document.getElementById('summon-pop').classList.remove('on');
+      refreshComboPips(); updateSummonBtn();
+    };
+    ch.appendChild(d);
+  });
+  document.getElementById('summon-pop').classList.add('on');
+}
+
+// ═══════════════════════════════════════════════
+//  存檔點彈窗
+// ═══════════════════════════════════════════════
+function showCPPopup(cpIdx) {
+  if(!G) return;
+  G.paused=true;
+  G.cpDone.push(cpIdx);
+  CPSAVE={ driveId:G.driveId, wave:G.wave, hp:G.hp, score:G.score, cred:G.cred, kills:G.kills, cpDone:[...G.cpDone] };
+  sfx('save');
+  const hpR = Math.floor(G.maxHp*0.2);
+  document.getElementById('cp-reward').textContent=`✓ 存檔完成！+${hpR} HP 補給`;
+  const btns=document.getElementById('cp-btns');
+  btns.innerHTML='';
+  const btn=document.createElement('button');
+  btn.className='cpbtn save'; btn.textContent='[ 儲存並繼續 ]';
+  btn.onclick=()=>{
+    G.hp=Math.min(G.maxHp,G.hp+hpR);
+    G.paused=false;
+    document.getElementById('cp-pop').classList.remove('on');
+    saveMeta();
+  };
+  btns.appendChild(btn);
+  document.getElementById('cp-pop').classList.add('on');
+}
+
+// ═══════════════════════════════════════════════
+//  結局
+// ═══════════════════════════════════════════════
+function triggerGameOver() {
+  if(!G||!G.running) return;
+  G.running=false; cancelAnimationFrame(rafId);
+  stopBGM(); setTimeout(()=>sfx('gameover'),120);
+  META.stats.totalScore+=G.score;
+  if(G.score>META.stats.bestScore) META.stats.bestScore=G.score;
+  META.credits+=G.cred;
+  saveMeta();
+  document.getElementById('go-stats').textContent=`Wave ${G.wave}/${G.totalWaves} | 擊殺 ${G.kills} | COMBO ×${comboMul().toFixed(1)}`;
+  document.getElementById('go-score').textContent=`分數: ${G.score}`;
+  document.getElementById('go-bonus').textContent=`+${G.cred} 資料碎片已獲得`;
+  document.getElementById('retry-btn').style.display = CPSAVE&&CPSAVE.driveId===selDrive?'block':'none';
+  document.getElementById('go-pop').classList.add('on');
+}
+
+function triggerVictory() {
+  if(!G||!G.running) return;
+  G.running=false; cancelAnimationFrame(rafId);
+  stopBGM(); setTimeout(()=>sfx('victory'),150);
+  if(!META.cleared.includes(G.driveId)) META.cleared.push(G.driveId);
+  CPSAVE=null;
+  const totalCred=G.cred+15;
+  META.credits+=totalCred;
+  META.stats.totalScore+=G.score;
+  if(G.score>META.stats.bestScore) META.stats.bestScore=G.score;
+  saveMeta();
+  document.getElementById('win-stats').textContent=`Wave ${G.wave-1}/${G.totalWaves} | 擊殺 ${G.kills} | ${G.drv.name}`;
+  document.getElementById('win-score').textContent=`分數: ${G.score}`;
+  document.getElementById('win-bonus').textContent=`通關獎勵 +15碎片！總計 +${totalCred}`;
+  document.getElementById('win-pop').classList.add('on');
+}
+
+function retryCP() {
+  if(!CPSAVE) return;
+  document.getElementById('go-pop').classList.remove('on');
+  startGame();
+}
+
+function pauseBack() {
+  if(!G) return;
+  G.running=false; cancelAnimationFrame(rafId);
+  META.credits+=G.cred; META.stats.totalScore+=G.score;
+  saveMeta(); stopBGM(); goHub();
+}
+
+// ═══════════════════════════════════════════════
+//  Float 文字
+// ═══════════════════════════════════════════════
+function flt(txt, col, x, y) {
+  const el = document.createElement('div');
+  el.className = 'flt'; el.style.color = col; el.style.textShadow = `0 0 8px ${col}`;
+  el.textContent = txt;
+  const cv = document.getElementById('game-canvas');
+  const r  = cv.getBoundingClientRect();
+  // canvas 座標 → 頁面座標（iframe 相容）
+  const scaleX = r.width  / (cv.width  || r.width);
+  const scaleY = r.height / (cv.height || r.height);
+  el.style.left = (r.left + (x||G?.px||400)*scaleX + (Math.random()*28-14)) + 'px';
+  el.style.top  = (r.top  + (y||G?.py||300)*scaleY - 18) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 880);
+}
+
+// ═══════════════════════════════════════════════
+//  工具
+// ═══════════════════════════════════════════════
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  document.body.classList.toggle('in-game', id==='game');
+  const hints = document.getElementById('key-hints');
+  if (hints) hints.style.display = id==='game' ? 'block' : 'none';
+}
+function closePopups(){
+  ['summon-pop','cp-pop','go-pop','win-pop','boss-warn'].forEach(id=>{
+    document.getElementById(id).classList.remove('on');
+  });
+}
+
+// ── Canvas 尺寸（iframe 相容）──
+function resizeCanvas(canvas) {
+  const r = canvas.getBoundingClientRect();
+  canvas.width  = Math.round(r.width)  || window.innerWidth;
+  canvas.height = Math.round(r.height) || window.innerHeight;
+}
+
+window.addEventListener('resize', () => {
+  if (G && G.running) {
+    resizeCanvas(G.canvas);
+  }
+});
+
+// ═══════════════════════════════════════════════
+//  啟動
+// ═══════════════════════════════════════════════
+runBoot();
+</script>
+</body>
+</html>
