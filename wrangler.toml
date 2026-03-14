@@ -5,4 +5,4 @@ compatibility_date = "2024-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "capyworlds-comments"
-database_id = "REPLACE_WITH_YOUR_D1_ID"
+database_id = "52ec1a28-19a5-4922-89e7-fef9136b266e"
