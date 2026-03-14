@@ -195,15 +195,68 @@
       border-radius: 12px;
       padding: 14px 18px;
     }
+    .comment-item.reply {
+      background: #191410;
+      border-color: #2a2016;
+      margin-left: 28px;
+      margin-top: 8px;
+      border-left: 2px solid #c8a45640;
+    }
     .comment-meta {
       display: flex;
       gap: 10px;
       align-items: center;
       margin-bottom: 6px;
+      flex-wrap: wrap;
     }
     .comment-name { font-weight: 700; color: #c8a456; font-size: 14px; }
     .comment-date { color: #4a3828; font-size: 12px; }
     .comment-content { color: #c8b89a; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+    .comment-actions { margin-top: 8px; display: flex; gap: 8px; }
+    .btn-reply {
+      background: none; border: 1px solid #3d3020; border-radius: 6px;
+      color: #7a6a58; font-size: 12px; padding: 3px 10px; cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-reply:hover { border-color: #c8a456; color: #c8a456; }
+    .btn-delete {
+      background: none; border: 1px solid #5a2020; border-radius: 6px;
+      color: #7a4040; font-size: 12px; padding: 3px 10px; cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-delete:hover { border-color: #c45050; color: #c45050; }
+    .inline-reply-form {
+      margin-top: 10px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .inline-reply-form input,
+    .inline-reply-form textarea {
+      background: #13100c; border: 1px solid #3d3020; border-radius: 8px;
+      padding: 8px 12px; color: #e8ddd0; font-family: inherit; font-size: 13px; outline: none;
+    }
+    .inline-reply-form textarea { min-height: 60px; resize: vertical; }
+    .inline-reply-form input:focus,
+    .inline-reply-form textarea:focus { border-color: #c8a456; }
+    .inline-reply-btns { display: flex; gap: 8px; justify-content: flex-end; }
+    .inline-reply-btns button {
+      border: none; border-radius: 6px; padding: 6px 16px;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+    }
+    .btn-cancel { background: #2a1e14; color: #7a6a58; }
+    .btn-send { background: #c8a456; color: #13100c; }
+    .admin-bar {
+      display: none; background: #1a0e06; border: 1px solid #5a2020;
+      border-radius: 10px; padding: 10px 16px; margin-bottom: 16px;
+      font-size: 13px; color: #c45050; align-items: center; gap: 10px;
+    }
+    .admin-bar.show { display: flex; }
+    .admin-bar input {
+      background: #13100c; border: 1px solid #5a2020; border-radius: 6px;
+      padding: 5px 10px; color: #e8ddd0; font-size: 13px; outline: none; flex: 1;
+    }
+    .admin-bar button {
+      background: #5a2020; border: none; border-radius: 6px;
+      color: #e8ddd0; font-size: 13px; padding: 5px 14px; cursor: pointer;
+    }
     .comment-msg { color: #7a6a58; font-size: 13px; text-align: center; padding: 20px 0; }
   </style>
 </head>
@@ -296,7 +349,15 @@
 
   <!-- Comments -->
   <section class="comments-section">
-    <div class="comments-title">💬 留言區 &nbsp; Comments</div>
+    <div class="comments-title" id="commentsTitle">💬 留言區 &nbsp; Comments</div>
+
+    <!-- 管理員登入列 -->
+    <div class="admin-bar" id="adminBar">
+      🔑 管理員密碼：
+      <input type="password" id="adminKeyInput" placeholder="輸入密碼" />
+      <button onclick="adminLogin()">登入</button>
+      <button onclick="adminLogout()" id="adminLogoutBtn" style="display:none;background:#2a1e14;color:#c45050">登出</button>
+    </div>
 
     <form class="comment-form" id="commentForm">
       <input type="text" id="commentName" placeholder="你的名稱" maxlength="50" required />
@@ -311,6 +372,48 @@
 
   <script>
     const API = 'https://capyworlds-comments.loki217089.workers.dev';
+    let adminKey = sessionStorage.getItem('adminKey') || '';
+    let titleClickCount = 0, titleClickTimer = null;
+
+    // 點標題 5 下開啟管理員列
+    document.getElementById('commentsTitle').addEventListener('click', () => {
+      titleClickCount++;
+      clearTimeout(titleClickTimer);
+      titleClickTimer = setTimeout(() => { titleClickCount = 0; }, 1500);
+      if (titleClickCount >= 5) {
+        titleClickCount = 0;
+        document.getElementById('adminBar').classList.toggle('show');
+        updateAdminUI();
+      }
+    });
+
+    function adminLogin() {
+      const key = document.getElementById('adminKeyInput').value.trim();
+      if (!key) return;
+      adminKey = key;
+      sessionStorage.setItem('adminKey', key);
+      updateAdminUI();
+      loadComments();
+    }
+    function adminLogout() {
+      adminKey = '';
+      sessionStorage.removeItem('adminKey');
+      document.getElementById('adminBar').classList.remove('show');
+      updateAdminUI();
+      loadComments();
+    }
+    function updateAdminUI() {
+      const logoutBtn = document.getElementById('adminLogoutBtn');
+      const input = document.getElementById('adminKeyInput');
+      if (adminKey) {
+        logoutBtn.style.display = '';
+        input.style.display = 'none';
+        input.previousSibling && (input.previousSibling.textContent = '✅ 管理員模式');
+      } else {
+        logoutBtn.style.display = 'none';
+        input.style.display = '';
+      }
+    }
 
     async function loadComments() {
       const list = document.getElementById('commentList');
@@ -321,18 +424,74 @@
           list.innerHTML = '<div class="comment-msg">還沒有留言，來說第一句話吧！</div>';
           return;
         }
-        list.innerHTML = data.map(c => `
-          <div class="comment-item">
-            <div class="comment-meta">
-              <span class="comment-name">${esc(c.name)}</span>
-              <span class="comment-date">${formatDate(c.created_at)}</span>
-            </div>
-            <div class="comment-content">${esc(c.content)}</div>
-          </div>
-        `).join('');
+        // 分離頂層和回覆
+        const top = data.filter(c => !c.parent_id);
+        const replies = data.filter(c => c.parent_id);
+        list.innerHTML = top.map(c => renderComment(c, replies)).join('');
       } catch {
         list.innerHTML = '<div class="comment-msg">留言載入失敗，請稍後再試。</div>';
       }
+    }
+
+    function renderComment(c, replies, isReply) {
+      const myReplies = replies ? replies.filter(r => r.parent_id === c.id) : [];
+      return `
+        <div class="comment-item${isReply ? ' reply' : ''}" id="comment-${c.id}">
+          <div class="comment-meta">
+            <span class="comment-name">${esc(c.name)}</span>
+            <span class="comment-date">${formatDate(c.created_at)}</span>
+          </div>
+          <div class="comment-content">${esc(c.content)}</div>
+          <div class="comment-actions">
+            ${!isReply ? `<button class="btn-reply" onclick="toggleReply(${c.id})">↩ 回覆</button>` : ''}
+            ${adminKey ? `<button class="btn-delete" onclick="deleteComment(${c.id})">🗑 刪除</button>` : ''}
+          </div>
+          <div id="reply-form-${c.id}" style="display:none"></div>
+          ${myReplies.map(r => renderComment(r, [], true)).join('')}
+        </div>
+      `;
+    }
+
+    function toggleReply(parentId) {
+      const el = document.getElementById(`reply-form-${parentId}`);
+      if (el.innerHTML) { el.innerHTML = ''; el.style.display = 'none'; return; }
+      el.style.display = '';
+      el.innerHTML = `
+        <div class="inline-reply-form">
+          <input type="text" placeholder="你的名稱" maxlength="50" id="rname-${parentId}" />
+          <textarea placeholder="回覆內容..." maxlength="500" id="rcontent-${parentId}"></textarea>
+          <div class="inline-reply-btns">
+            <button class="btn-cancel" onclick="toggleReply(${parentId})">取消</button>
+            <button class="btn-send" onclick="submitReply(${parentId})">送出回覆</button>
+          </div>
+        </div>
+      `;
+      document.getElementById(`rname-${parentId}`).focus();
+    }
+
+    async function submitReply(parentId) {
+      const name = document.getElementById(`rname-${parentId}`).value.trim();
+      const content = document.getElementById(`rcontent-${parentId}`).value.trim();
+      if (!name || !content) { alert('請填寫名稱和回覆內容'); return; }
+      const res = await fetch(API + '/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, content, parent_id: parentId }),
+      });
+      const data = await res.json();
+      if (data.ok) { await loadComments(); }
+      else { alert(data.error || '送出失敗'); }
+    }
+
+    async function deleteComment(id) {
+      if (!confirm('確定要刪除這則留言嗎？')) return;
+      const res = await fetch(`${API}/comments/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${adminKey}` },
+      });
+      const data = await res.json();
+      if (data.ok) { await loadComments(); }
+      else { alert(data.error || '刪除失敗，請確認密碼正確'); }
     }
 
     document.getElementById('commentForm').addEventListener('submit', async e => {
@@ -340,8 +499,7 @@
       const btn = document.getElementById('submitBtn');
       const name = document.getElementById('commentName').value.trim();
       const content = document.getElementById('commentContent').value.trim();
-      btn.disabled = true;
-      btn.textContent = '送出中...';
+      btn.disabled = true; btn.textContent = '送出中...';
       try {
         const res = await fetch(API + '/comments', {
           method: 'POST',
@@ -349,17 +507,10 @@
           body: JSON.stringify({ name, content }),
         });
         const data = await res.json();
-        if (data.ok) {
-          document.getElementById('commentContent').value = '';
-          await loadComments();
-        } else {
-          alert(data.error || '送出失敗');
-        }
-      } catch {
-        alert('網路錯誤，請稍後再試');
-      }
-      btn.disabled = false;
-      btn.textContent = '送出留言';
+        if (data.ok) { document.getElementById('commentContent').value = ''; await loadComments(); }
+        else { alert(data.error || '送出失敗'); }
+      } catch { alert('網路錯誤，請稍後再試'); }
+      btn.disabled = false; btn.textContent = '送出留言';
     });
 
     function esc(s) {
@@ -370,6 +521,7 @@
       return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
     }
 
+    if (adminKey) updateAdminUI();
     loadComments();
   </script>
 
