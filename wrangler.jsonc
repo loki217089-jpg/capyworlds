@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "capyworlds",
+  "main": "worker/index.js",
   "compatibility_date": "2025-09-27",
   "observability": {
     "enabled": true
@@ -10,5 +11,12 @@
   },
   "compatibility_flags": [
     "nodejs_compat"
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "capyworlds-comments",
+      "database_id": "52ec1a28-19a5-4922-89e7-fef9136b266e"
+    }
   ]
 }
