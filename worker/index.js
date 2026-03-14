@@ -1,3 +1,4 @@
+// v1.0.1
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
