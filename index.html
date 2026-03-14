@@ -149,6 +149,62 @@
       height: 1px;
       background: linear-gradient(90deg, #3d3020, transparent);
     }
+    .comment-form {
+      background: #1e1812;
+      border: 1px solid #3d3020;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .comment-form input,
+    .comment-form textarea {
+      background: #13100c;
+      border: 1px solid #3d3020;
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #e8ddd0;
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .comment-form input:focus,
+    .comment-form textarea:focus { border-color: #c8a456; }
+    .comment-form textarea { resize: vertical; min-height: 80px; }
+    .comment-form button {
+      align-self: flex-end;
+      background: #c8a456;
+      color: #13100c;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 24px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .comment-form button:hover { opacity: 0.85; }
+    .comment-form button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .comment-list { display: flex; flex-direction: column; gap: 14px; }
+    .comment-item {
+      background: #1e1812;
+      border: 1px solid #2a1e14;
+      border-radius: 12px;
+      padding: 14px 18px;
+    }
+    .comment-meta {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .comment-name { font-weight: 700; color: #c8a456; font-size: 14px; }
+    .comment-date { color: #4a3828; font-size: 12px; }
+    .comment-content { color: #c8b89a; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+    .comment-msg { color: #7a6a58; font-size: 13px; text-align: center; padding: 20px 0; }
   </style>
 </head>
 <body>
@@ -241,20 +297,80 @@
   <!-- Comments -->
   <section class="comments-section">
     <div class="comments-title">💬 留言區 &nbsp; Comments</div>
-    <div id="waline"></div>
+
+    <form class="comment-form" id="commentForm">
+      <input type="text" id="commentName" placeholder="你的名稱" maxlength="50" required />
+      <textarea id="commentContent" placeholder="留下你的想法..." maxlength="500" required></textarea>
+      <button type="submit" id="submitBtn">送出留言</button>
+    </form>
+
+    <div class="comment-list" id="commentList">
+      <div class="comment-msg">載入中...</div>
+    </div>
   </section>
 
-  <link rel="stylesheet" href="https://unpkg.com/@waline/client@v3/dist/waline.css"/>
-  <script type="module">
-    import { init } from 'https://unpkg.com/@waline/client@v3/dist/waline.js';
-    init({
-      el: '#waline',
-      serverURL: 'https://YOUR_WALINE_SERVER.vercel.app', // ← 部署後換成你的網址
-      lang: 'zh-TW',
-      emoji: ['//unpkg.com/@waline/emojis@1.2.0/weibo'],
-      pageview: true,
-      comment: true,
+  <script>
+    const API = 'https://capyworlds-comments.REPLACE_YOUR_SUBDOMAIN.workers.dev';
+
+    async function loadComments() {
+      const list = document.getElementById('commentList');
+      try {
+        const res = await fetch(API + '/comments');
+        const data = await res.json();
+        if (!data.length) {
+          list.innerHTML = '<div class="comment-msg">還沒有留言，來說第一句話吧！</div>';
+          return;
+        }
+        list.innerHTML = data.map(c => `
+          <div class="comment-item">
+            <div class="comment-meta">
+              <span class="comment-name">${esc(c.name)}</span>
+              <span class="comment-date">${formatDate(c.created_at)}</span>
+            </div>
+            <div class="comment-content">${esc(c.content)}</div>
+          </div>
+        `).join('');
+      } catch {
+        list.innerHTML = '<div class="comment-msg">留言載入失敗，請稍後再試。</div>';
+      }
+    }
+
+    document.getElementById('commentForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const name = document.getElementById('commentName').value.trim();
+      const content = document.getElementById('commentContent').value.trim();
+      btn.disabled = true;
+      btn.textContent = '送出中...';
+      try {
+        const res = await fetch(API + '/comments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, content }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          document.getElementById('commentContent').value = '';
+          await loadComments();
+        } else {
+          alert(data.error || '送出失敗');
+        }
+      } catch {
+        alert('網路錯誤，請稍後再試');
+      }
+      btn.disabled = false;
+      btn.textContent = '送出留言';
     });
+
+    function esc(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+    function formatDate(iso) {
+      const d = new Date(iso);
+      return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+    }
+
+    loadComments();
   </script>
 
   <footer>
