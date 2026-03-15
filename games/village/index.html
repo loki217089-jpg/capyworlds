@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>水豚小村 · 你的歸宿</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0d0a08;--panel:#1a1410;--panel2:#211810;--panel3:#2a1e12;
+  --border:#4a3520;--border2:#3a2818;
+  --gold:#f0c040;--gold2:#ffd97d;--gold3:#c8a030;
+  --text:#e8ddd0;--text2:#b09870;--text3:#806850;--text4:#5a4030;
+  --red:#e74c3c;--green:#40c870;--blue:#4a90e0;--purple:#9060e0;
+  --spring-c:#e890c0;--summer-c:#70d040;--autumn-c:#f09030;--winter-c:#80b0e8;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;min-height:100vh;overflow-x:hidden}
+
+/* ───── INTRO ───── */
+#intro{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;text-align:center;background:radial-gradient(ellipse at 50% 30%,#1e1408 0%,#0a0806 100%)}
+.intro-capy{font-size:5.5rem;margin-bottom:16px;animation:float 3.5s ease-in-out infinite;filter:drop-shadow(0 0 24px rgba(240,192,64,.35))}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.intro-title{font-size:2.6rem;font-weight:900;color:var(--gold);letter-spacing:4px;text-shadow:0 0 40px rgba(240,192,64,.3);margin-bottom:6px}
+.intro-sub{font-size:.85rem;color:var(--text3);letter-spacing:2px;margin-bottom:10px}
+.intro-divider{width:60px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:16px auto 20px}
+.intro-story{font-size:.8rem;color:var(--text3);line-height:2;max-width:300px;margin-bottom:28px;font-style:italic}
+.intro-form{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:22px;width:100%;max-width:320px}
+.intro-form label{display:block;font-size:.68rem;color:var(--text3);margin-bottom:5px;letter-spacing:1.5px;text-transform:uppercase}
+.intro-form input{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;padding:10px 13px;color:var(--text);font-size:.88rem;font-family:inherit;margin-bottom:14px;outline:none;transition:border-color .2s}
+.intro-form input:focus{border-color:var(--gold)}
+.intro-form input::placeholder{color:var(--text4)}
+.btn-start{width:100%;background:linear-gradient(135deg,#f0c040 0%,#c08020 100%);border:none;border-radius:10px;padding:13px;font-size:.95rem;font-weight:800;color:#1a1005;cursor:pointer;letter-spacing:2px;font-family:inherit;transition:transform .1s,box-shadow .2s;margin-top:4px}
+.btn-start:hover{box-shadow:0 0 24px rgba(240,192,64,.4);transform:scale(1.02)}
+.btn-start:active{transform:scale(.97)}
+
+/* ───── GAME LAYOUT ───── */
+#game{display:none;flex-direction:column;min-height:100vh;max-width:480px;margin:0 auto;position:relative}
+
+/* Header */
+.g-header{background:var(--panel);border-bottom:1px solid var(--border2);padding:9px 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;gap:8px}
+.g-hdr-left{min-width:0}
+.village-nm{font-size:.88rem;font-weight:800;color:var(--gold);letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.player-nm{font-size:.62rem;color:var(--text3);margin-top:1px}
+.g-hdr-right{text-align:right;flex-shrink:0}
+.season-chip{font-size:.62rem;font-weight:700;padding:2px 9px;border-radius:20px;display:inline-block;margin-bottom:2px}
+.day-txt{font-size:.65rem;color:var(--text2)}
+
+/* Resources */
+.res-bar{display:flex;gap:0;border-bottom:1px solid var(--border2);overflow:hidden}
+.res-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:6px 4px;gap:1px;border-right:1px solid var(--border2);background:var(--panel2)}
+.res-item:last-child{border-right:none}
+.res-ic{font-size:.9rem}
+.res-val{font-size:.72rem;font-weight:800;color:var(--text)}
+.res-lbl{font-size:.52rem;color:var(--text3)}
+
+/* ───── MAP ───── */
+#map-wrap{position:relative;width:100%;background:var(--panel);border-bottom:2px solid var(--border);overflow:hidden}
+#map-wrap::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 70%,rgba(0,0,0,.3) 100%);pointer-events:none}
+#sky{position:absolute;top:0;left:0;right:0;height:35%;transition:background 4s ease}
+#ground{position:absolute;bottom:0;left:0;right:0;height:55%;border-radius:60% 60% 0 0 / 30% 30% 0 0;transition:background 3s ease}
+#map-items{position:absolute;inset:0}
+
+.bldg{position:absolute;transform:translate(-50%,-50%);text-align:center;cursor:pointer;z-index:5;transition:transform .2s}
+.bldg:hover{transform:translate(-50%,-50%) scale(1.12)}
+.bldg:active{transform:translate(-50%,-50%) scale(.95)}
+.bldg-ic{display:block;filter:drop-shadow(0 3px 8px rgba(0,0,0,.6));line-height:1}
+.bldg-lbl{font-size:.5rem;color:rgba(255,255,255,.65);white-space:nowrap;margin-top:1px;text-shadow:0 1px 4px #000}
+
+.vlgr-dot{position:absolute;transform:translate(-50%,-50%);text-align:center;cursor:pointer;z-index:6;transition:left 1.2s cubic-bezier(.4,0,.2,1),top 1.2s cubic-bezier(.4,0,.2,1)}
+.vlgr-dot:hover .vd-ic{transform:scale(1.2)}
+.vd-ic{display:block;transition:transform .2s;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));line-height:1}
+.vd-nm{font-size:.5rem;white-space:nowrap;margin-top:1px;text-shadow:0 1px 4px #000;font-weight:700}
+.vd-bubble{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:.6rem;background:rgba(26,20,16,.9);border:1px solid var(--border);border-radius:8px;padding:3px 7px;margin-bottom:4px;pointer-events:none;opacity:0;animation:bubble-show 3s ease-out forwards}
+@keyframes bubble-show{0%{opacity:0;transform:translateX(-50%) translateY(4px)}10%{opacity:1;transform:translateX(-50%) translateY(0)}80%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-6px)}}
+
+/* ───── LOG ───── */
+#log-section{background:var(--panel);border-bottom:1px solid var(--border2);padding:8px 13px;max-height:130px;overflow-y:auto}
+.log-hdr{font-size:.6rem;color:var(--text4);letter-spacing:1.5px;margin-bottom:5px}
+.log-line{font-size:.72rem;color:var(--text2);padding:2px 0;line-height:1.5;display:flex;gap:6px;border-bottom:1px solid rgba(255,255,255,.03)}
+.log-line:last-child{border-bottom:none}
+.log-line.special{color:var(--gold)}
+.log-line.event{color:#90e878}
+.log-time{font-size:.6rem;color:var(--text4);flex-shrink:0;margin-top:1px}
+
+/* ───── VILLAGER BAR ───── */
+#vlgr-section{background:var(--panel2);border-bottom:1px solid var(--border2);padding:8px 13px}
+.vlgr-sec-hdr{font-size:.6rem;color:var(--text4);letter-spacing:1.5px;margin-bottom:7px}
+.vlgr-row{display:flex;gap:7px;overflow-x:auto;padding-bottom:3px}
+.vlgr-card{background:var(--panel);border:1px solid var(--border2);border-radius:10px;padding:7px 6px;text-align:center;cursor:pointer;flex-shrink:0;width:68px;transition:border-color .2s,transform .15s}
+.vlgr-card:hover{border-color:rgba(240,192,64,.35);transform:translateY(-3px)}
+.vlgr-card:active{transform:scale(.94)}
+.vc-ic{font-size:1.5rem;display:block;margin-bottom:2px}
+.vc-nm{font-size:.58rem;color:var(--text2);font-weight:700}
+.vc-rel{font-size:.52rem;margin-top:2px}
+.vc-bar{height:3px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:3px;overflow:hidden}
+.vc-fill{height:100%;border-radius:2px;transition:width .6s}
+
+/* ───── TABS ───── */
+#tabs{display:flex;background:var(--panel);border-bottom:2px solid var(--border2)}
+.tab-btn{flex:1;padding:9px 4px;font-size:.68rem;color:var(--text3);background:none;border:none;cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .2s;letter-spacing:.5px}
+.tab-btn.act{color:var(--gold);border-bottom-color:var(--gold)}
+#tab-body{flex:1;overflow-y:auto;background:var(--panel);padding:13px;min-height:180px}
+
+/* ───── HOME TAB ───── */
+.card{background:var(--panel2);border:1px solid var(--border2);border-radius:12px;padding:13px;margin-bottom:10px}
+.card-title{font-size:.72rem;color:var(--gold);font-weight:700;margin-bottom:9px;letter-spacing:.5px}
+.comfort-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.comfort-lbl{font-size:.7rem;color:var(--text2)}
+.comfort-val{font-size:.7rem;color:var(--gold);font-weight:700}
+.comfort-bar{height:7px;background:rgba(255,255,255,.07);border-radius:4px;overflow:hidden}
+.comfort-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--gold3),#ff8040);transition:width .7s}
+.home-placed{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.placed-item{font-size:1.3rem;padding:5px;background:rgba(255,255,255,.04);border-radius:7px;border:1px solid rgba(255,255,255,.08);cursor:default;title:attr(data-name)}
+.furn-grid{display:flex;flex-wrap:wrap;gap:7px;margin-top:7px}
+.furn-btn{background:var(--panel);border:1px solid var(--border2);border-radius:8px;padding:7px 9px;font-size:.7rem;color:var(--text2);cursor:pointer;font-family:inherit;transition:border-color .2s,background .2s;display:flex;align-items:center;gap:5px}
+.furn-btn:hover{border-color:rgba(240,192,64,.3);background:rgba(240,192,64,.05);color:var(--text)}
+.furn-cost{font-size:.62rem;color:var(--text3)}
+
+/* ───── DIARY TAB ───── */
+.diary-hdr{font-size:.62rem;color:var(--text4);letter-spacing:1.5px;margin-bottom:10px}
+.diary-entry{border-left:2px solid var(--border);padding:7px 11px;margin-bottom:8px}
+.diary-entry.milestone{border-left-color:var(--gold)}
+.diary-dt{font-size:.6rem;color:var(--text4);margin-bottom:3px}
+.diary-txt{font-size:.75rem;color:var(--text2);line-height:1.7}
+
+/* ───── VILLAGE TAB ───── */
+.stat-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.72rem}
+.stat-row:last-child{border-bottom:none}
+.stat-lbl{color:var(--text2)}
+.stat-val{color:var(--text);font-weight:700}
+.vlgr-rel-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer}
+.vlgr-rel-row:last-child{border-bottom:none}
+.vrr-ic{font-size:1.4rem;flex-shrink:0}
+.vrr-info{flex:1}
+.vrr-name{font-size:.75rem;font-weight:700}
+.vrr-bar{height:4px;background:rgba(255,255,255,.07);border-radius:2px;margin-top:3px;overflow:hidden}
+.vrr-fill{height:100%;border-radius:2px;transition:width .6s}
+.vrr-pts{font-size:.62rem;color:var(--text3);flex-shrink:0}
+
+/* ───── MODAL ───── */
+#modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:flex-end;justify-content:center}
+#modal.open{display:flex}
+.modal-box{background:var(--panel);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:480px;max-height:82vh;overflow-y:auto}
+.modal-vlgr-hdr{display:flex;align-items:center;gap:12px;padding-bottom:13px;border-bottom:1px solid var(--border2);margin-bottom:14px}
+.mvh-ic{font-size:2.8rem;flex-shrink:0}
+.mvh-name{font-size:1rem;font-weight:800}
+.mvh-job{font-size:.7rem;color:var(--text2);margin-top:1px}
+.mvh-rel{font-size:.63rem;padding:2px 8px;border-radius:10px;border:1px solid;display:inline-block;margin-top:4px}
+.dialogue-box{background:rgba(255,255,255,.03);border:1px solid var(--border2);border-radius:11px;padding:13px;font-size:.82rem;line-height:1.8;color:var(--text);margin-bottom:12px;min-height:58px;transition:opacity .3s}
+.modal-actions{display:flex;flex-direction:column;gap:7px;margin-bottom:8px}
+.modal-btn{background:var(--panel2);border:1px solid var(--border2);border-radius:9px;padding:10px 13px;font-size:.78rem;color:var(--text);cursor:pointer;font-family:inherit;text-align:left;transition:border-color .15s,background .15s;line-height:1.3}
+.modal-btn:hover{border-color:rgba(240,192,64,.35);background:rgba(240,192,64,.04);color:var(--text)}
+.modal-btn.gold{color:var(--gold);border-color:rgba(240,192,64,.28)}
+.modal-close{width:100%;background:none;border:1px solid rgba(255,255,255,.08);border-radius:9px;padding:9px;font-size:.78rem;color:var(--text3);cursor:pointer;font-family:inherit;margin-top:2px;transition:color .2s}
+.modal-close:hover{color:var(--text)}
+
+/* ───── FESTIVAL OVERLAY ───── */
+#festival{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;align-items:center;justify-content:center;text-align:center;padding:24px}
+#festival.open{display:flex}
+.fest-box{max-width:300px}
+.fest-ic{font-size:4.5rem;margin-bottom:14px;animation:float 2s ease-in-out infinite;display:block}
+.fest-title{font-size:1.5rem;font-weight:900;color:var(--gold);letter-spacing:3px;margin-bottom:10px}
+.fest-text{font-size:.82rem;color:var(--text);line-height:1.9;margin-bottom:22px}
+.fest-btn{background:linear-gradient(135deg,#f0c040,#c08020);border:none;border-radius:10px;padding:12px 30px;font-size:.9rem;font-weight:800;color:#1a1005;cursor:pointer;letter-spacing:2px;font-family:inherit;transition:transform .1s}
+.fest-btn:active{transform:scale(.96)}
+
+/* ───── NOTIFICATION ───── */
+#notif{position:fixed;top:56px;left:50%;transform:translateX(-50%) translateY(-4px);background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:7px 16px;font-size:.75rem;color:var(--text);z-index:300;pointer-events:none;opacity:0;transition:opacity .3s,transform .3s;white-space:nowrap;max-width:90vw;text-overflow:ellipsis;overflow:hidden}
+#notif.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ───── SCROLLBAR ───── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ INTRO ═══════════════════ -->
+<div id="intro">
+  <div class="intro-capy">🦫</div>
+  <div class="intro-title">水豚小村</div>
+  <div class="intro-sub">找到屬於你的地方</div>
+  <div class="intro-divider"></div>
+  <div class="intro-story">
+    有一個小村子，幾隻溫柔的水豚住在那裡。<br>
+    他們圍著廣場大樹，等待著某個人的到來。<br>
+    也許，那個人就是你。
+  </div>
+  <div class="intro-form">
+    <label>你的名字</label>
+    <input id="inp-name" type="text" placeholder="旅人" maxlength="8">
+    <label>村子的名字</label>
+    <input id="inp-village" type="text" placeholder="水豚小村" maxlength="10">
+    <button class="btn-start" onclick="startGame()">🏡 踏上旅途</button>
+  </div>
+</div>
+
+<!-- ═══════════════════ GAME ═══════════════════ -->
+<div id="game">
+
+  <!-- Header -->
+  <div class="g-header">
+    <div class="g-hdr-left">
+      <div class="village-nm" id="hdr-village">村名</div>
+      <div class="player-nm" id="hdr-player">居民：旅人</div>
+    </div>
+    <div class="g-hdr-right">
+      <div id="season-chip" class="season-chip">🌸 春</div>
+      <div class="day-txt" id="hdr-day">第1天</div>
+    </div>
+  </div>
+
+  <!-- Resources -->
+  <div class="res-bar">
+    <div class="res-item"><span class="res-ic">🍎</span><span class="res-val" id="r-food">30</span><span class="res-lbl">食物</span></div>
+    <div class="res-item"><span class="res-ic">🪵</span><span class="res-val" id="r-wood">20</span><span class="res-lbl">木材</span></div>
+    <div class="res-item"><span class="res-ic">💛</span><span class="res-val" id="r-happy">50</span><span class="res-lbl">幸福</span></div>
+    <div class="res-item"><span class="res-ic">🤝</span><span class="res-val" id="r-bond">0</span><span class="res-lbl">友誼</span></div>
+  </div>
+
+  <!-- Map -->
+  <div id="map-wrap">
+    <div id="sky"></div>
+    <div id="ground"></div>
+    <div id="map-items"></div>
+  </div>
+
+  <!-- Activity Log -->
+  <div id="log-section">
+    <div class="log-hdr">📜 村子動態</div>
+    <div id="log-list"></div>
+  </div>
+
+  <!-- Villager Bar -->
+  <div id="vlgr-section">
+    <div class="vlgr-sec-hdr">🦫 村民</div>
+    <div class="vlgr-row" id="vlgr-row"></div>
+  </div>
+
+  <!-- Tabs -->
+  <div id="tabs">
+    <button class="tab-btn act" onclick="switchTab('home')">🏠 你的家</button>
+    <button class="tab-btn" onclick="switchTab('diary')">📔 日記</button>
+    <button class="tab-btn" onclick="switchTab('village')">🌳 村子</button>
+  </div>
+  <div id="tab-body"></div>
+
+</div>
+
+<!-- ═══════════════════ MODAL ═══════════════════ -->
+<div id="modal" onclick="closeModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ FESTIVAL ═══════════════════ -->
+<div id="festival">
+  <div class="fest-box">
+    <div id="fest-body"></div>
+    <button class="fest-btn" onclick="closeFest()">✨ 繼續</button>
+  </div>
+</div>
+
+<!-- Notification -->
+<div id="notif"></div>
+
+<script>
+// ══════════════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════════════
+
+const VLGR_DATA = [
+  {
+    id:'aju', name:'阿橘', ic:'🦫', color:'#e8a040', job:'農夫', personality:'開朗熱情',
+    dialogues:[
+      '今天天氣真好，適合在田裡工作！',
+      '我剛採收了一批蔬菜，你要嚐嚐嗎？',
+      '看到你我就開心起來了！',
+      '這塊地是爺爺留下來的，我很珍惜它。',
+      '你來了就好，我今天特地等你。',
+    ],
+    friendDialogue:[
+      '[NAME]！你來了！我今天特地留了最好的蘋果給你！',
+      '有你在，田裡的工作都變得有趣了。',
+      '我跟豆豆說你是我最好的朋友，他不信，哈哈！',
+    ],
+    familyDialogue:[
+      '[NAME]，我覺得你已經是這個村子的靈魂了。',
+      '這裡因為有你，完全不一樣了。真的。',
+    ],
+    giftResp:'謝謝你，[NAME]！這個我最喜歡了！',
+    villageTalks:[
+      '"[VILLAGE]的土地很肥沃，每年都有好收成。"',
+      '"這個村子小歸小，但人情味很濃。"',
+      '"我希望[VILLAGE]永遠都這樣平靜下去。"',
+    ],
+  },
+  {
+    id:'lan', name:'小藍', ic:'🦦', color:'#5088e0', job:'漁夫', personality:'沉靜內斂',
+    dialogues:[
+      '...(點頭)',
+      '今天魚塘有條大魚，但我讓牠走了。',
+      '水面平靜的時候，我喜歡就這樣看著。',
+      '說話不多，但我很高興你在這裡。',
+      '有些事情不用說，你懂的。',
+    ],
+    friendDialogue:[
+      '你來了。我在等你。',
+      '[NAME]，你上次說的那件事，我一直在想。',
+      '有你在，我話好像也多了一點。',
+    ],
+    familyDialogue:[
+      '[NAME]，這裡就是你的家，不用道謝。',
+      '我不太會說話，但我很慶幸你留下來了。',
+    ],
+    giftResp:'...(眼睛亮起來) 謝謝，[NAME]。',
+    villageTalks:[
+      '"魚塘的水來自山上，很清澈。"',
+      '"[VILLAGE]的夜晚很安靜，我喜歡。"',
+      '"水面有時候會映出整個天空。"',
+    ],
+  },
+  {
+    id:'mao', name:'毛球', ic:'🐑', color:'#e0e0c8', job:'麵包師', personality:'溫柔體貼',
+    dialogues:[
+      '歡迎！要不要嚐嚐剛出爐的麵包？',
+      '我覺得用心做的食物是有溫度的。',
+      '你最近好嗎？我有點擔心你。',
+      '小村子有小村子的好，大家都認識你。',
+      '今天我烤了一個特別大的麵包，因為想到你。',
+    ],
+    friendDialogue:[
+      '[NAME]！你來得正好，我烤了你最喜歡的口味！',
+      '偶爾我會想，要是你沒來這個村子不知道會怎樣。',
+      '你知道嗎，每次你進來，麵包坊都變得暖和多了。',
+    ],
+    familyDialogue:[
+      '每天早上我都等著你來，[NAME]。這裡是你的家。',
+      '你就是這個村子的秘密配方，讓一切都不一樣了。',
+    ],
+    giftResp:'哎呀！[NAME]，你最好了！我要好好珍惜！',
+    villageTalks:[
+      '"[VILLAGE]的早晨聞起來就像新鮮麵包。"',
+      '"大家聚在一起吃東西，是我最開心的時刻。"',
+      '"食物是有記憶的，吃了會想起快樂的事。"',
+    ],
+  },
+  {
+    id:'dou', name:'豆豆', ic:'🐾', color:'#80e858', job:'村裡最小的', personality:'活潑好奇',
+    dialogues:[
+      '哇！是你！你去哪裡了？',
+      '你知道村子後面有棵樹晚上會發光嗎！',
+      '跟我玩嘛！跟我玩嘛！',
+      '我長大以後也要當像你一樣厲害的人！',
+      '我今天找到一塊超漂亮的石頭，送你！',
+    ],
+    friendDialogue:[
+      '[NAME]！！你來了！！昨天我就一直在等你！！',
+      '老榕說真正的朋友不需要每天見面——我才不信，我每天都想你！',
+      '你是我最最最好的朋友！比阿橘還好！（悄悄說）',
+    ],
+    familyDialogue:[
+      '[NAME]，你就住在這裡，永遠不要走好不好？',
+      '我跟大家說你是我哥哥姊姊！大家都說好！',
+    ],
+    giftResp:'哇哇哇！！！[NAME]！！！謝謝你！！我好喜歡！！！',
+    villageTalks:[
+      '"[VILLAGE]最厲害的地方就是廣場那棵大樹！"',
+      '"我要把整個村子都探索一遍！"',
+      '"你有沒有發現村子角落有個小秘密基地？"',
+    ],
+  },
+  {
+    id:'rong', name:'老榕', ic:'🦉', color:'#c8a050', job:'村子長老', personality:'睿智慈祥',
+    dialogues:[
+      '孩子，你來了。這裡是你的歸宿。',
+      '我見過很多人來，也見過很多人走。但你不同。',
+      '村子的根，長在人的心裡。',
+      '時光最誠實，它會告訴你哪裡才是家。',
+      '我年輕時也四處流浪，後來才明白。',
+    ],
+    friendDialogue:[
+      '[NAME]，你的到來是村子的福氣。',
+      '我昨晚夢到你坐在廣場大樹下，笑著。',
+      '孩子，你在這裡的每一天都值得記下來。',
+    ],
+    familyDialogue:[
+      '[NAME]，你已經是這個村子的家人了。不是比喻，是真的。',
+      '無論你去哪裡，這裡永遠是你回來的地方。',
+    ],
+    giftResp:'（微微頷首）謝謝你，[NAME]。這份心意，老朽銘記於心。',
+    villageTalks:[
+      '"[VILLAGE]這個名字是前人取的，有它的道理。"',
+      '"一棵樹要長得好，需要深根。村子也是。"',
+      '"你看那廣場大樹，它記得每一個在這裡停留的人。"',
+    ],
+  },
+];
+
+const BLDG_DATA = [
+  {id:'home',  name:'你的小屋',  ic:'🏠', x:38, y:38, size:'2rem', desc:'這裡是你的家，一個屬於你的地方。'},
+  {id:'farm',  name:'農場',      ic:'🌾', x:14, y:55, size:'1.8rem', desc:'阿橘用心照顧的田地，每天產出食物。'},
+  {id:'pond',  name:'魚塘',      ic:'🪷', x:74, y:62, size:'1.8rem', desc:'小藍最愛待的地方，水面總是很平靜。'},
+  {id:'bakery',name:'麵包坊',    ic:'🍞', x:60, y:24, size:'1.8rem', desc:'毛球的麵包香氣飄出老遠。'},
+  {id:'tree',  name:'廣場大樹',  ic:'🌳', x:42, y:60, size:'2.4rem', desc:'村民聚集的地方，每個節日都在這裡。'},
+];
+
+const SEASONS = ['🌸 春','☀️ 夏','🍂 秋','❄️ 冬'];
+const SEASON_CLS = ['spring','summer','autumn','winter'];
+const SEASON_COL = ['#e890c0','#80d838','#f09030','#80b0e8'];
+
+const SKY_COLORS = {
+  spring: ['#1a0e18','#2a1820','#5a3050','#8a5060','#c07080','#c07080','#8a5060','#5a3050','#2a1820','#1a0e18','#1a0e18','#120c14'],
+  summer: ['#0a0e18','#141e28','#2a4060','#4070a0','#70a0c8','#70a0c8','#4070a0','#2a4060','#141e28','#0a0e18','#0a0e18','#0a0c14'],
+  autumn: ['#1a1008','#2a1e10','#5a3818','#8a5020','#c07030','#c07030','#8a5020','#5a3818','#2a1e10','#1a1008','#1a1008','#141008'],
+  winter: ['#0c1018','#141828','#1e2838','#2a3850','#405878','#405878','#2a3850','#1e2838','#141828','#0c1018','#0c1018','#0c0e18'],
+};
+const GROUND_COLORS = {
+  spring: '#1a2a10',
+  summer: '#182810',
+  autumn: '#2a1e08',
+  winter: '#141c22',
+};
+
+const TIME_NAMES = ['深夜','深夜','凌晨','凌晨','清晨','清晨','早上','早上','上午','上午','中午','午後','下午','下午','傍晚','傍晚','黃昏','夜晚','夜晚','深夜','深夜','深夜','深夜','深夜'];
+
+const FURNITURE = [
+  {id:'plant',    ic:'🪴', name:'盆栽',   cost:8,  comfort:7},
+  {id:'lamp',     ic:'🪔', name:'油燈',   cost:12, comfort:10},
+  {id:'bookshelf',ic:'📚', name:'書架',   cost:18, comfort:13},
+  {id:'cat',      ic:'🐱', name:'小貓',   cost:25, comfort:20},
+  {id:'sunflower',ic:'🌻', name:'向日葵', cost:10, comfort:8},
+  {id:'clock',    ic:'⏰', name:'掛鐘',   cost:15, comfort:10},
+  {id:'painting', ic:'🖼️', name:'畫作',   cost:22, comfort:15},
+  {id:'candle',   ic:'🕯️', name:'蠟燭',   cost:7,  comfort:6},
+  {id:'cushion',  ic:'🛋️', name:'軟墊',   cost:14, comfort:11},
+  {id:'windchime',ic:'🎐', name:'風鈴',   cost:16, comfort:12},
+];
+
+const GIFTS = [
+  {id:'apple',   ic:'🍎', name:'蘋果',  cost:0},
+  {id:'flower',  ic:'🌸', name:'花束',  cost:5},
+  {id:'fish',    ic:'🐟', name:'鮮魚',  cost:5},
+  {id:'cake',    ic:'🎂', name:'蛋糕',  cost:10},
+  {id:'letter',  ic:'💌', name:'手寫信',cost:0},
+  {id:'gem',     ic:'💎', name:'寶石',  cost:18},
+];
+
+const HOURLY_EVENTS = [
+  v => `${v.name}在田裡哼著歌，歌聲傳到了整個村子。`,
+  v => `${v.name}靜靜坐在魚塘邊，看著水面發呆。`,
+  v => `${v.name}的麵包坊飄出誘人的香味。`,
+  v => `${v.name}在廣場大樹下玩耍，笑聲清脆。`,
+  v => `${v.name}坐在屋前，若有所思地看著遠方。`,
+];
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+
+let G = {};
+let _tick = null;
+let _tab = 'home';
+
+function newState(playerName, villageName) {
+  return {
+    playerName, villageName,
+    day:1, hour:6, seasonDay:0, seasonIdx:0, year:1,
+    food:30, wood:20, happiness:50,
+    villagers: VLGR_DATA.map(v => ({id:v.id, friendship:0, x:25+Math.random()*50, y:38+Math.random()*28, lastTalkDay:-1})),
+    home: {comfort:0, items:[]},
+    diary: [],
+    log: [],
+    flags: {},
+    visitCount: 0,
+    lastVisit: Date.now(),
+    _ok: true,
+  };
+}
+
+function save() { try { localStorage.setItem('capyvillage', JSON.stringify(G)); } catch(e){} }
+function loadSave() { try { const d=localStorage.getItem('capyvillage'); return d?JSON.parse(d):null; } catch(e){ return null; } }
+
+// ══════════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════════
+
+function sub(text) {
+  return text.replace(/\[NAME\]/g, G.playerName).replace(/\[VILLAGE\]/g, G.villageName);
+}
+
+function vd(id) { return VLGR_DATA.find(v=>v.id===id); }
+function vs(id) { return G.villagers.find(v=>v.id===id); }
+function totalBond() { return G.villagers.reduce((a,v)=>a+v.friendship,0); }
+
+function relInfo(f) {
+  if (f>=100) return {label:'家人',   color:'#ff8040', tier:'family'};
+  if (f>= 70) return {label:'摯友',   color:'#f0c040', tier:'best'};
+  if (f>= 45) return {label:'好友',   color:'#b060e8', tier:'good'};
+  if (f>= 20) return {label:'朋友',   color:'#4a9eff', tier:'friend'};
+  if (f>=  5) return {label:'鄰居',   color:'#50c870', tier:'neighbor'};
+  return            {label:'陌生人', color:'#888',    tier:'stranger'};
+}
+
+function notify(msg) {
+  const el = document.getElementById('notif');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+function addLog(text, type='') {
+  G.log.unshift({text, type, time: TIME_NAMES[G.hour], day:G.day});
+  if (G.log.length > 35) G.log.pop();
+  renderLog();
+}
+
+function addDiary(text, milestone=false) {
+  G.diary.unshift({text, day:G.day, season:SEASONS[G.seasonIdx], milestone});
+}
+
+// ══════════════════════════════════════════════
+//  START
+// ══════════════════════════════════════════════
+
+function startGame() {
+  const pn = document.getElementById('inp-name').value.trim() || '旅人';
+  const vn = document.getElementById('inp-village').value.trim() || '水豚小村';
+  const saved = loadSave();
+
+  if (saved && saved._ok && saved.playerName === pn) {
+    G = saved;
+    G.visitCount = (G.visitCount||0) + 1;
+    const away = Math.floor((Date.now() - (G.lastVisit||Date.now())) / 60000);
+    G.lastVisit = Date.now();
+    save();
+    showGame();
+    if (away >= 30) setTimeout(() => showWelcomeBack(away), 600);
+    else addLog(`🌟 ${G.playerName}回到了${G.villageName}。`, 'special');
+  } else {
+    G = newState(pn, vn);
+    G.visitCount = 1;
+    G.lastVisit = Date.now();
+    save();
+    showGame();
+    setTimeout(showFirstWelcome, 500);
+  }
+}
+
+function showGame() {
+  document.getElementById('intro').style.display = 'none';
+  document.getElementById('game').style.display = 'flex';
+  document.getElementById('game').style.flexDirection = 'column';
+  initUI();
+  startTick();
+}
+
+function showFirstWelcome() {
+  showFest('🏡', `歡迎來到${G.villageName}！`,
+    `${G.playerName}，你終於來了。\n\n這個村子已經等你很久了。\n\n村民們很期待認識你——\n去打個招呼吧。`);
+  addDiary(`${G.playerName}抵達了${G.villageName}。一切都是新的開始。`, true);
+  addLog(`✨ ${G.playerName}抵達了${G.villageName}！村民們興奮地等待著。`, 'special');
+}
+
+function showWelcomeBack(min) {
+  const awayTxt = min<60 ? `${min}分鐘` : min<1440 ? `${Math.floor(min/60)}小時` : `${Math.floor(min/1440)}天`;
+  showFest('🌟', '你回來了！',
+    `${G.playerName}，你離開了${awayTxt}。\n\n阿橘一直往路口張望，\n豆豆問了好幾次你什麼時候回來。\n\n歡迎回家。`);
+  addLog(`🌟 ${G.playerName}回到村子了！大家都很高興！`, 'special');
+  addDiary(`離開了一段時間，回來了。村子還在，大家都在。`, true);
+}
+
+// ══════════════════════════════════════════════
+//  TICK
+// ══════════════════════════════════════════════
+
+function startTick() {
+  clearInterval(_tick);
+  _tick = setInterval(tick, 2000); // 2s = 1 game hour
+}
+
+function tick() {
+  G.hour = (G.hour + 1) % 24;
+
+  // Move villagers randomly
+  if (Math.random() < 0.25) {
+    const vi = Math.floor(Math.random() * G.villagers.length);
+    const v = G.villagers[vi];
+    v.x = Math.max(8, Math.min(92, v.x + (Math.random()-.5)*18));
+    v.y = Math.max(32, Math.min(72, v.y + (Math.random()-.5)*12));
+  }
+
+  // Resource drip (every 3 hours)
+  if (G.hour % 3 === 0) {
+    G.food    = Math.min(999, G.food + 2);
+    G.wood    = Math.min(999, G.wood + 1);
+    G.happiness = Math.min(100, G.happiness + 0.3);
+  }
+
+  if (G.hour === 0) newDay();
+  if (G.hour % 5 === 0) randomEvent();
+
+  renderMap();
+  renderHeader();
+  renderResources();
+  save();
+}
+
+function newDay() {
+  G.day++;
+  G.seasonDay++;
+  G.food = Math.min(999, G.food + 6);
+  G.wood = Math.min(999, G.wood + 4);
+  G.happiness = Math.min(100, G.happiness + 2);
+
+  if (G.seasonDay >= 7) {
+    G.seasonDay = 0;
+    G.seasonIdx = (G.seasonIdx + 1) % 4;
+    if (G.seasonIdx === 0) G.year++;
+    newSeason();
+  }
+
+  // Day milestones
+  if (G.day === 7 && !G.flags.week1) {
+    G.flags.week1 = true;
+    setTimeout(() => {
+      showFest('🎉', '一週了！',
+        `${G.playerName}，你在${G.villageName}住滿一週了！\n\n大家在廣場大樹下\n為你舉辦了一個小派對。\n\n你不再只是過客——\n你是這個村子的一份子。`);
+      addDiary('在村子住滿了第一週。這裡開始有家的感覺。', true);
+    }, 1000);
+  }
+  if (G.day === 30 && !G.flags.month1) {
+    G.flags.month1 = true;
+    setTimeout(() => {
+      showFest('🌟', '一個月了！',
+        `第30天了，${G.playerName}。\n\n你已經深深地嵌入\n這個村子的每一天了。\n\n老榕說，扎根需要時間，\n而你的根已經很深了。`);
+      addDiary('在村子住了整整一個月。這裡已經是我的家了。', true);
+    }, 1000);
+  }
+
+  // Daily flavor
+  const flavors = [
+    `第${G.day}天，${G.villageName}的清晨平靜而美好。`,
+    `清晨的薄霧散去，又是新的一天。`,
+    `阿橘說今天土壤很肥沃，是個好兆頭。`,
+    `豆豆一早就出門探險，說要找新奇的東西。`,
+    `老榕說，這個村子每天都在成長。`,
+    `毛球特別早起，說要做一個特別的麵包。`,
+    `小藍說魚塘今天的水格外清澈。`,
+  ];
+  addLog(flavors[Math.floor(Math.random()*flavors.length)], 'event');
+}
+
+function newSeason() {
+  const s = SEASONS[G.seasonIdx];
+  addLog(`🌀 季節交替——${s}到來了。`, 'special');
+  addDiary(`${s}了。村子換了一副面孔，依然美麗。`);
+  const msgs = [
+    ['🌸','春天來了！', `${G.villageName}的春天，花朵都開了。\n毛球說要烤春天口味的麵包。\n阿橘說田裡可以播新種子了。\n\n新的開始。`],
+    ['☀️','盛夏節！', `夏天的太陽很熱烈。\n豆豆拉著你去魚塘玩水。\n今晚廣場大樹下有螢火蟲！`],
+    ['🍂','豐收秋！', `秋天的顏色讓人心暖。\n阿橘說今年豐收，要辦豐收宴。\n老榕說，這一年，你讓村子更完整了。`],
+    ['❄️','冬日暖爐！', `冬天來了，大家更常聚在一起。\n毛球的麵包坊成了最受歡迎的地方。\n小藍的魚塘結了薄冰——\n他說這是最美的冬天。`],
+  ];
+  const [ic, title, text] = msgs[G.seasonIdx];
+  setTimeout(() => showFest(ic, title, text), 800);
+}
+
+function randomEvent() {
+  const events = [
+    () => addLog(`阿橘在田裡唱歌，歌聲傳遍了整個村子。`),
+    () => addLog(`小藍靜靜坐在魚塘邊，看著水面發呆。`),
+    () => addLog(`毛球的麵包坊飄出誘人的香味。`),
+    () => addLog(`豆豆在廣場大樹下玩耍，笑聲清脆。`),
+    () => addLog(`老榕坐在屋前，若有所思地看著遠方。`),
+    () => addLog(`微風吹過，廣場大樹的葉子沙沙作響。`),
+    () => addLog(`${G.playerName}的小屋透出溫暖的燈光。`),
+    () => { if(G.food>15) addLog(`村民們聚在一起吃晚餐，笑聲陣陣。`, 'event'); },
+    () => addLog(`有隻小鳥停在${G.villageName}的廣場，唱了好一會兒。`),
+    () => addLog(`今晚的星空特別清澈，可以看到好多星星。`),
+  ];
+  events[Math.floor(Math.random()*events.length)]();
+}
+
+// ══════════════════════════════════════════════
+//  UI INIT & RENDER
+// ══════════════════════════════════════════════
+
+function initUI() {
+  document.getElementById('hdr-village').textContent = G.villageName;
+  document.getElementById('hdr-player').textContent = `居民：${G.playerName}`;
+
+  // Set map height (responsive)
+  const mw = document.getElementById('map-wrap');
+  const w = Math.min(window.innerWidth, 480);
+  mw.style.height = Math.round(w * 0.62) + 'px';
+
+  renderHeader();
+  renderResources();
+  renderMap();
+  renderLog();
+  renderVlgrRow();
+  renderTab();
+}
+
+function renderHeader() {
+  const col = SEASON_COL[G.seasonIdx];
+  const chip = document.getElementById('season-chip');
+  chip.textContent = SEASONS[G.seasonIdx];
+  chip.style.background = col+'20';
+  chip.style.color = col;
+  chip.style.border = `1px solid ${col}44`;
+
+  document.getElementById('hdr-day').textContent = `第${G.day}天 ${TIME_NAMES[G.hour]}`;
+
+  // Sky color
+  const sk = SKY_COLORS[SEASON_CLS[G.seasonIdx]];
+  const hi = Math.floor(G.hour / 2);
+  document.getElementById('sky').style.background = sk[hi] || sk[0];
+  document.getElementById('ground').style.background = GROUND_COLORS[SEASON_CLS[G.seasonIdx]];
+}
+
+function renderResources() {
+  document.getElementById('r-food').textContent    = Math.floor(G.food);
+  document.getElementById('r-wood').textContent    = Math.floor(G.wood);
+  document.getElementById('r-happy').textContent   = Math.floor(G.happiness);
+  document.getElementById('r-bond').textContent    = Math.floor(totalBond());
+}
+
+function renderMap() {
+  let h = '';
+  // Buildings
+  BLDG_DATA.forEach(b => {
+    h += `<div class="bldg" style="left:${b.x}%;top:${b.y}%" onclick="showBuilding('${b.id}')">
+      <span class="bldg-ic" style="font-size:${b.size}">${b.ic}</span>
+      <div class="bldg-lbl">${b.name}</div>
+    </div>`;
+  });
+  // Villagers
+  G.villagers.forEach((v, i) => {
+    const d = VLGR_DATA[i];
+    const rel = relInfo(v.friendship);
+    h += `<div class="vlgr-dot" style="left:${v.x}%;top:${v.y}%" onclick="openVlgrModal('${d.id}')">
+      <span class="vd-ic" style="font-size:1.55rem">${d.ic}</span>
+      <div class="vd-nm" style="color:${rel.color}">${d.name}</div>
+    </div>`;
+  });
+  document.getElementById('map-items').innerHTML = h;
+}
+
+function renderLog() {
+  const el = document.getElementById('log-list');
+  if (!el) return;
+  el.innerHTML = G.log.slice(0,10).map(e =>
+    `<div class="log-line ${e.type}"><span class="log-time">${e.time}</span>${e.text}</div>`
+  ).join('');
+}
+
+function renderVlgrRow() {
+  document.getElementById('vlgr-row').innerHTML = VLGR_DATA.map((d, i) => {
+    const v = G.villagers[i];
+    const r = relInfo(v.friendship);
+    return `<div class="vlgr-card" onclick="openVlgrModal('${d.id}')">
+      <span class="vc-ic">${d.ic}</span>
+      <div class="vc-nm">${d.name}</div>
+      <div class="vc-rel" style="color:${r.color}">${r.label}</div>
+      <div class="vc-bar"><div class="vc-fill" style="width:${v.friendship}%;background:${r.color}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════════════
+
+function switchTab(tab) {
+  _tab = tab;
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('act', ['home','diary','village'][i] === tab);
+  });
+  renderTab();
+}
+
+function renderTab() {
+  const el = document.getElementById('tab-body');
+  if (_tab === 'home')    el.innerHTML = buildHomeTab();
+  else if (_tab === 'diary')   el.innerHTML = buildDiaryTab();
+  else el.innerHTML = buildVillageTab();
+}
+
+function buildHomeTab() {
+  const h = G.home;
+  const pct = Math.min(100, h.comfort);
+  const feel = pct<20?'空蕩蕩':pct<50?'有點溫馨':pct<80?'很舒適':'完美的家';
+  let s = `<div class="card">
+    <div class="card-title">🏠 ${G.playerName}的小屋</div>
+    <div class="comfort-row">
+      <span class="comfort-lbl">舒適度</span>
+      <span class="comfort-val">${Math.floor(pct)}/100 · ${feel}</span>
+    </div>
+    <div class="comfort-bar"><div class="comfort-fill" style="width:${pct}%"></div></div>
+    <div style="font-size:.62rem;color:var(--text3);margin-top:5px">讓這裡成為你最想回來的地方</div>`;
+
+  if (h.items.length) {
+    s += `<div class="home-placed" style="margin-top:10px">`;
+    h.items.forEach(id => {
+      const f = FURNITURE.find(x=>x.id===id);
+      if (f) s += `<div class="placed-item" title="${f.name}">${f.ic}</div>`;
+    });
+    s += `</div>`;
+  }
+  s += `</div>`;
+
+  const unowned = FURNITURE.filter(f => !h.items.includes(f.id));
+  if (unowned.length) {
+    s += `<div class="card"><div class="card-title">添置家具 <span style="font-size:.62rem;color:var(--text3)">（消耗木材）</span></div>
+      <div class="furn-grid">`;
+    unowned.forEach(f => {
+      s += `<button class="furn-btn" onclick="buyFurniture('${f.id}')">
+        ${f.ic} ${f.name} <span class="furn-cost">🪵${f.cost}</span>
+      </button>`;
+    });
+    s += `</div></div>`;
+  } else {
+    s += `<div class="card"><div style="font-size:.75rem;color:var(--gold);text-align:center;padding:6px">✨ 你的家已經完美了！</div></div>`;
+  }
+  return s;
+}
+
+function buildDiaryTab() {
+  if (!G.diary.length)
+    return `<div style="color:var(--text3);font-size:.75rem;text-align:center;padding:24px">日記還是空的。<br>去體驗村子的生活吧！</div>`;
+  return `<div class="diary-hdr">📔 ${G.playerName}的村子日記</div>` +
+    G.diary.map(e => `<div class="diary-entry${e.milestone?' milestone':''}">
+      <div class="diary-dt">${e.season} · 第${e.day}天</div>
+      <div class="diary-txt">${e.text}</div>
+    </div>`).join('');
+}
+
+function buildVillageTab() {
+  const bond = totalBond();
+  let s = `<div class="card">
+    <div class="card-title">🌳 ${G.villageName} 概覽</div>
+    <div class="stat-row"><span class="stat-lbl">📅 時間</span><span class="stat-val">第${G.day}天 · ${SEASONS[G.seasonIdx]} · 第${G.year}年</span></div>
+    <div class="stat-row"><span class="stat-lbl">💛 村子幸福度</span><span class="stat-val">${Math.floor(G.happiness)}/100</span></div>
+    <div class="stat-row"><span class="stat-lbl">🤝 總友誼值</span><span class="stat-val">${Math.floor(bond)} / ${VLGR_DATA.length*100}</span></div>
+    <div class="stat-row"><span class="stat-lbl">🏠 小屋舒適度</span><span class="stat-val">${Math.floor(Math.min(100,G.home.comfort))}/100</span></div>
+    <div class="stat-row"><span class="stat-lbl">📔 日記頁數</span><span class="stat-val">${G.diary.length} 頁</span></div>
+  </div>`;
+
+  s += `<div class="card"><div class="card-title">🦫 村民關係</div>`;
+  VLGR_DATA.forEach((d,i) => {
+    const v = G.villagers[i];
+    const r = relInfo(v.friendship);
+    s += `<div class="vlgr-rel-row" onclick="openVlgrModal('${d.id}')">
+      <span class="vrr-ic">${d.ic}</span>
+      <div class="vrr-info">
+        <div class="vrr-name">${d.name} <span style="font-size:.62rem;color:${r.color}">${r.label}</span></div>
+        <div class="vrr-bar"><div class="vrr-fill" style="width:${v.friendship}%;background:${r.color}"></div></div>
+      </div>
+      <span class="vrr-pts">${Math.floor(v.friendship)}/100</span>
+    </div>`;
+  });
+  s += `</div>`;
+  return s;
+}
+
+// ══════════════════════════════════════════════
+//  HOME FURNITURE
+// ══════════════════════════════════════════════
+
+function buyFurniture(id) {
+  const f = FURNITURE.find(x=>x.id===id);
+  if (!f) return;
+  if (G.wood < f.cost) { notify(`🪵 木材不足！需要 ${f.cost} 木材`); return; }
+  G.wood -= f.cost;
+  G.home.items.push(id);
+  G.home.comfort += f.comfort;
+  addLog(`🏠 小屋添置了 ${f.ic}${f.name}，舒適度提升了！`, 'event');
+  addDiary(`為小屋添置了${f.name}。這裡越來越有家的感覺了。`);
+  notify(`✨ 添置了 ${f.ic}${f.name}！舒適+${f.comfort}`);
+  renderResources();
+  renderTab();
+  save();
+}
+
+// ══════════════════════════════════════════════
+//  BUILDING CLICK
+// ══════════════════════════════════════════════
+
+function showBuilding(id) {
+  const b = BLDG_DATA.find(x=>x.id===id);
+  if (!b) return;
+  let extra = '';
+  if (id === 'home') {
+    extra = `<div style="font-size:.75rem;color:var(--text2);background:rgba(255,255,255,.03);border-radius:9px;padding:11px;margin-bottom:12px;line-height:1.9">
+      這是你在${G.villageName}的家。<br>
+      舒適度：${Math.floor(Math.min(100,G.home.comfort))}/100<br>
+      家具：${G.home.items.length} 件<br>
+      <span style="color:var(--gold)">這裡永遠為你開著燈。</span>
+    </div>`;
+  }
+  document.getElementById('modal-body').innerHTML = `
+    <div style="text-align:center;padding:8px 0 16px">
+      <div style="font-size:3.5rem;margin-bottom:8px">${b.ic}</div>
+      <div style="font-size:1rem;font-weight:800;color:var(--gold)">${b.name}</div>
+      <div style="font-size:.75rem;color:var(--text2);margin-top:5px">${b.desc}</div>
+    </div>
+    ${extra}
+    <button class="modal-close" onclick="closeModal()">關閉</button>
+  `;
+  document.getElementById('modal').classList.add('open');
+}
+
+// ══════════════════════════════════════════════
+//  VILLAGER INTERACTION
+// ══════════════════════════════════════════════
+
+function openVlgrModal(id) {
+  const d = vd(id);
+  const v = vs(id);
+  const r = relInfo(v.friendship);
+
+  let pool;
+  if (r.tier==='family') pool = [...d.familyDialogue, ...d.friendDialogue];
+  else if (r.tier==='best'||r.tier==='good') pool = [...d.friendDialogue, ...d.dialogues];
+  else pool = d.dialogues;
+  const line = sub(pool[Math.floor(Math.random()*pool.length)]);
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="modal-vlgr-hdr">
+      <span class="mvh-ic">${d.ic}</span>
+      <div>
+        <div class="mvh-name" style="color:${r.color}">${d.name}</div>
+        <div class="mvh-job">${d.job} · ${d.personality}</div>
+        <span class="mvh-rel" style="color:${r.color};border-color:${r.color}44">${r.label} (${Math.floor(v.friendship)}/100)</span>
+      </div>
+    </div>
+    <div class="dialogue-box" id="dlg-box">"${line}"</div>
+    <div class="modal-actions">
+      <button class="modal-btn gold" onclick="talkMore('${id}')">💬 繼續聊聊</button>
+      <button class="modal-btn" onclick="askVillage('${id}')">🌳 聊聊村子</button>
+      <button class="modal-btn" onclick="showGiftMenu('${id}')">🎁 送個禮物</button>
+    </div>
+    <button class="modal-close" onclick="closeModal()">離開</button>
+  `;
+  document.getElementById('modal').classList.add('open');
+}
+
+function talkMore(id) {
+  const d = vd(id);
+  const v = vs(id);
+  const sameDay = v.lastTalkDay === G.day;
+  const gain = sameDay ? 1 : 3;
+  const prev = relInfo(v.friendship).tier;
+  v.friendship = Math.min(100, v.friendship + gain);
+  v.lastTalkDay = G.day;
+  const curr = relInfo(v.friendship);
+
+  if (prev !== curr.tier) onRelUp(id, curr);
+
+  const pool = [...d.dialogues, ...(v.friendship>=20?d.friendDialogue:[])];
+  const line = sub(pool[Math.floor(Math.random()*pool.length)]);
+  swapDialogue(line);
+
+  if (!sameDay) addLog(`${G.playerName}跟${d.name}聊了聊天。`);
+  renderVlgrRow();
+  renderResources();
+  if (_tab==='village') renderTab();
+  save();
+}
+
+function askVillage(id) {
+  const d = vd(id);
+  const v = vs(id);
+  const line = sub(d.villageTalks[Math.floor(Math.random()*d.villageTalks.length)]);
+  v.friendship = Math.min(100, v.friendship + 1);
+  swapDialogue(line);
+  renderVlgrRow();
+  save();
+}
+
+function swapDialogue(text) {
+  const el = document.getElementById('dlg-box');
+  if (!el) return;
+  el.style.opacity = '0';
+  setTimeout(() => { el.textContent = text; el.style.opacity = '1'; }, 220);
+}
+
+function showGiftMenu(id) {
+  const d = vd(id);
+  const r = relInfo(vs(id).friendship);
+  document.getElementById('modal-body').innerHTML = `
+    <div class="modal-vlgr-hdr">
+      <span class="mvh-ic">${d.ic}</span>
+      <div>
+        <div class="mvh-name" style="color:${r.color}">${d.name}</div>
+        <div class="mvh-job">選擇要送的禮物</div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      ${GIFTS.map(g=>`<button class="modal-btn" onclick="giveGift('${id}','${g.id}')">
+        ${g.ic} ${g.name} ${g.cost?`<span style="color:var(--text3)">消耗 ${g.cost} 幸福</span>`:'<span style="color:var(--gold)">免費</span>'}
+      </button>`).join('')}
+    </div>
+    <button class="modal-close" onclick="openVlgrModal('${id}')">← 返回</button>
+  `;
+}
+
+function giveGift(vlId, giftId) {
+  const d = vd(vlId);
+  const v = vs(vlId);
+  const g = GIFTS.find(x=>x.id===giftId);
+  if (!g) return;
+  if (g.cost && G.happiness < g.cost) { notify('💛 幸福感不足！'); return; }
+  if (g.cost) G.happiness = Math.max(0, G.happiness - g.cost);
+
+  const prev = relInfo(v.friendship).tier;
+  v.friendship = Math.min(100, v.friendship + 8);
+  const curr = relInfo(v.friendship);
+  if (prev !== curr.tier) onRelUp(vlId, curr);
+
+  const resp = sub(d.giftResp);
+  addLog(`${G.playerName}送了${g.ic}${g.name}給${d.name}。`, 'event');
+  addDiary(`送了${g.name}給${d.name}。他/她看起來非常開心。`);
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="modal-vlgr-hdr">
+      <span class="mvh-ic">${d.ic}</span>
+      <div>
+        <div class="mvh-name">${d.name}</div>
+        <div class="mvh-job">收到了 ${g.ic} ${g.name}</div>
+      </div>
+    </div>
+    <div class="dialogue-box">"${resp}"</div>
+    <div style="font-size:.72rem;color:var(--gold);text-align:center;padding:3px 0 8px">友誼 +8 💛</div>
+    <button class="modal-close" onclick="openVlgrModal('${vlId}')">← 繼續對話</button>
+    <button class="modal-close" onclick="closeModal()" style="margin-top:5px">關閉</button>
+  `;
+  renderVlgrRow();
+  renderResources();
+  if (_tab==='village') renderTab();
+  save();
+}
+
+function onRelUp(id, rel) {
+  const d = vd(id);
+  addLog(`✨ 與${d.name}的關係升級為「${rel.label}」！`, 'special');
+  addDiary(`與${d.name}成為了${rel.label}。這份情誼很珍貴。`, true);
+  notify(`✨ 與${d.name}成為了${rel.label}！`);
+  if (rel.tier === 'family') {
+    const line = sub(d.familyDialogue[0]);
+    setTimeout(() => showFest('❤️', `你和${d.name}成為了家人！`,
+      `${d.name}說：\n\n"${line}"\n\n在${G.villageName}，\n你不再是外來者了。`), 400);
+  }
+}
+
+// ══════════════════════════════════════════════
+//  FESTIVAL & MODAL
+// ══════════════════════════════════════════════
+
+function showFest(ic, title, text) {
+  document.getElementById('fest-body').innerHTML = `
+    <span class="fest-ic">${ic}</span>
+    <div class="fest-title">${title}</div>
+    <div class="fest-text">${text.replace(/\n/g,'<br>')}</div>
+  `;
+  document.getElementById('festival').classList.add('open');
+}
+
+function closeFest() {
+  document.getElementById('festival').classList.remove('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+// ══════════════════════════════════════════════
+//  ENTRY
+// ══════════════════════════════════════════════
+
+window.addEventListener('load', () => {
+  const saved = loadSave();
+  if (saved && saved._ok) {
+    document.getElementById('inp-name').value    = saved.playerName  || '';
+    document.getElementById('inp-village').value = saved.villageName || '';
+  }
+});
+</script>
+</body>
+</html>

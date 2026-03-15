@@ -1326,7 +1326,8 @@ function statDiff(newSt, oldSt){
 function req(){
   const c=$('peq');
   // 已裝備槽
-  let eqHtml='<div style="font-size:.72rem;color:var(--text2);margin-bottom:8px;font-weight:700">已裝備（點擊卸下）</div>';
+  let eqHtml=`<button onclick="autoEquipBest()" style="width:100%;margin-bottom:10px;background:linear-gradient(90deg,rgba(240,192,64,.12),rgba(180,79,255,.12));border:1px solid rgba(240,192,64,.5);border-radius:8px;padding:8px;font-size:.74rem;font-weight:800;color:#f0c040;cursor:pointer;letter-spacing:1px;font-family:inherit">⚡ 一鍵最佳裝備</button>`;
+  eqHtml+='<div style="font-size:.72rem;color:var(--text2);margin-bottom:8px;font-weight:700">已裝備（點擊卸下）</div>';
   eqHtml+='<div class="eqgr" id="eqg">';
   SLT.forEach((sl,i)=>{
     const eq=G.equips[i];
@@ -1916,6 +1917,38 @@ function learnCrossSkill(clsKey,idx){
 function lrnTa(i){const TA=getTA();if(!G.talentPts||G.talents[i]>=TA[i].mx)return;G.talentPts--;G.talents[i]++;addLog(`🌟 天賦：${TA[i].n} Lv${G.talents[i]}！`,'lr');notify(`🌟 天賦提升！`);render();rta();}
 function goDng(i){if(G.bestFloor<DNG[i].un)return;G.dungId=i;G.floor=DNG[i].un;G.flKills=0;G.flNeed=5;G.enemy=mkEnemy();addLog(`🗺 進入 ${DNG[i].n}！`,'ls');notify(`🗺 進入 ${DNG[i].n}！`);render();rdn();}
 function eqItem(idx){const it=G.inventory[idx];if(!it)return;if(G.equips[it.slot])G.inventory.push(G.equips[it.slot]);G.equips[it.slot]=it;G.inventory.splice(idx,1);addLog(`🔧 裝備 ${it.ic} ${it.n}！`,'lr');render();req();}
+const _RAR_SCORE={common:0,rare:100,epic:300,legend:700,mythic:1500};
+function itemScore(it){return Object.values(it.st).reduce((a,v)=>a+(v||0),0)+(_RAR_SCORE[it.rar]||0);}
+function autoEquipBest(){
+  // 找每個部位分數最高的背包裝備
+  const bestForSlot={};
+  G.inventory.forEach(it=>{
+    const s=itemScore(it);
+    if(!bestForSlot[it.slot]||s>bestForSlot[it.slot].score)
+      bestForSlot[it.slot]={item:it,score:s};
+  });
+  // 與當前裝備比較，收集需要替換的清單
+  const toEquip=[];
+  for(let slot=0;slot<6;slot++){
+    const best=bestForSlot[slot];
+    if(!best)continue;
+    const curScore=G.equips[slot]?itemScore(G.equips[slot]):-1;
+    if(best.score>curScore)toEquip.push({slot,item:best.item});
+  }
+  if(!toEquip.length){notify('✅ 已是最佳裝備狀態！');return;}
+  toEquip.forEach(({slot,item})=>{
+    const idx=G.inventory.indexOf(item);
+    if(idx===-1)return;
+    if(G.equips[slot])G.inventory.push(G.equips[slot]);
+    G.equips[slot]=item;
+    G.inventory.splice(idx,1);
+    addLog(`⚡ 自動裝備 ${item.ic} ${item.n}！`,'lr');
+  });
+  notify(`⚡ 自動最佳裝備！換了 ${toEquip.length} 件`);
+  playSound('levelup');
+  render();
+  req();
+}
 function sellItem(idx){const it=G.inventory[idx];if(!it)return;const sp={common:20,rare:80,epic:300,legend:1200}[it.rar]||20;G.gold+=sp;G.inventory.splice(idx,1);addLog(`💰 販賣 ${it.n}，獲得 ${sp} 金幣`,'lr');playSound('coin');render();req();}
 function enhanceItem(idx){
   const it=G.inventory[idx];
