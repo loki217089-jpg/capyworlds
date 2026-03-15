@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>殭屍蔓延 — Zombie Idle</title>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6193561251326215" crossorigin="anonymous"></script>
+<style>
+:root {
+  --bg:     #050a05;
+  --bg2:    #0a120a;
+  --bg3:    #111b11;
+  --panel:  #0d170d;
+  --border: #1a2e1a;
+  --green:  #3ddc58;
+  --green2: #22a838;
+  --toxic:  #7fff00;
+  --red:    #ef4444;
+  --yellow: #fbbf24;
+  --purple: #a78bfa;
+  --text:   #bbdcbb;
+  --dim:    #5a7a5a;
+  --gold:   #f59e0b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Courier New', Courier, monospace;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── HEADER ─────────────────────────────────── */
+#hdr {
+  background: var(--bg2);
+  border-bottom: 2px solid var(--border);
+  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  z-index: 10;
+}
+#hdr h1 { font-size: 17px; color: var(--green); text-shadow: 0 0 12px #3ddc5870; letter-spacing: 2px; }
+#hdr-stats { display: flex; gap: 18px; }
+.hs { display: flex; flex-direction: column; align-items: center; }
+.hs-l { color: var(--dim); font-size: 10px; }
+.hs-v { color: var(--green); font-size: 13px; font-weight: bold; }
+#save-btn {
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--dim); padding: 3px 9px; cursor: pointer;
+  font-size: 11px; border-radius: 3px; font-family: inherit;
+  transition: color .15s, border-color .15s;
+}
+#save-btn:hover { color: var(--text); border-color: var(--green2); }
+
+/* ── TICKER ─────────────────────────────────── */
+#tick-w {
+  background: #020702;
+  border-bottom: 1px solid var(--border);
+  padding: 3px 0; overflow: hidden; flex-shrink: 0;
+}
+#tick {
+  display: inline-block;
+  white-space: nowrap; font-size: 11px; color: var(--dim);
+  padding-left: 100%;
+  animation: scroll 50s linear infinite;
+}
+@keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+
+/* ── LAYOUT ──────────────────────────────────── */
+#game { display: flex; flex: 1; overflow: hidden; }
+
+/* ── LEFT ────────────────────────────────────── */
+#left {
+  width: 275px; flex-shrink: 0;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+#buy-btns {
+  display: flex; gap: 4px; padding: 7px 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2); flex-shrink: 0;
+}
+.bb {
+  flex: 1; padding: 4px 0;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--dim); cursor: pointer; font-size: 11px;
+  border-radius: 3px; font-family: inherit; transition: all .1s;
+}
+.bb:hover { color: var(--text); }
+.bb.on { background: var(--green2); border-color: var(--green); color: #fff; font-weight: bold; }
+#left-ttl {
+  padding: 6px 10px; font-size: 10px; color: var(--dim);
+  border-bottom: 1px solid var(--border); letter-spacing: 1px; flex-shrink: 0;
+}
+#zlist { overflow-y: auto; flex: 1; }
+
+/* Zombie row */
+.zrow {
+  display: flex; align-items: center; gap: 7px;
+  padding: 7px 9px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background .1s; position: relative;
+}
+.zrow:hover { background: var(--bg3); }
+.zrow.ok  { border-left: 3px solid var(--green2); }
+.zrow.dim { opacity: .32; cursor: default; }
+.zem { font-size: 26px; width: 32px; text-align: center; flex-shrink: 0; }
+.zi  { flex: 1; min-width: 0; }
+.zn  { font-size: 12px; font-weight: bold; }
+.zpr { font-size: 10px; color: var(--dim); }
+.zco { font-size: 11px; color: var(--red); }
+.zco.ok { color: var(--green); }
+.zct {
+  background: var(--bg); border: 1px solid var(--border);
+  min-width: 34px; text-align: center; padding: 2px 3px;
+  font-size: 12px; font-weight: bold; border-radius: 3px; color: var(--yellow);
+}
+.zprog {
+  position: absolute; bottom: 0; left: 0;
+  height: 2px; background: var(--green2); transition: width .4s;
+}
+
+/* ── CENTER ──────────────────────────────────── */
+#center {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 20px; position: relative; overflow: hidden;
+}
+#center::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, #0c1e0c 0%, #050a05 70%);
+  pointer-events: none;
+}
+#click-area {
+  position: relative; cursor: pointer; z-index: 1;
+  transition: transform .06s; -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+#click-area:active { transform: scale(.93); }
+#bsvg {
+  width: 155px; height: 155px;
+  filter: drop-shadow(0 0 22px #3ddc5855);
+  animation: float 3.5s ease-in-out infinite;
+}
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
+#click-area:hover #bsvg { filter: drop-shadow(0 0 32px #3ddc5888); }
+#clabel {
+  position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%);
+  font-size: 10px; color: var(--dim); white-space: nowrap;
+}
+#stats {
+  margin-top: 42px; text-align: center; z-index: 1;
+}
+#bd { font-size: 30px; color: var(--green); font-weight: bold; text-shadow: 0 0 14px #3ddc5855; }
+#bl { font-size: 11px; color: var(--dim); margin-bottom: 2px; }
+#bps-line { font-size: 14px; }
+#cp-line  { font-size: 11px; color: var(--dim); margin-top: 3px; }
+
+/* Event bar */
+#evt {
+  position: fixed; top: 56px; left: 50%;
+  transform: translateX(-50%) translateY(-80px);
+  background: #1a0505; border: 2px solid var(--red);
+  padding: 9px 22px; font-size: 13px; color: var(--red);
+  border-radius: 4px; z-index: 100; transition: transform .35s;
+  text-align: center; pointer-events: none;
+}
+#evt.on { transform: translateX(-50%) translateY(0); }
+
+/* Particles */
+.pt {
+  position: fixed; pointer-events: none;
+  font-size: 13px; color: var(--green); font-weight: bold;
+  z-index: 200; animation: ptf .9s ease-out forwards;
+}
+@keyframes ptf {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(-55px) scale(.5); }
+}
+
+/* ── RIGHT ───────────────────────────────────── */
+#right {
+  width: 295px; flex-shrink: 0;
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+#tabs {
+  display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.tb {
+  flex: 1; padding: 8px 4px;
+  background: transparent; border: none; border-bottom: 2px solid transparent;
+  color: var(--dim); cursor: pointer; font-size: 11px; font-family: inherit;
+  transition: all .15s;
+}
+.tb:hover { color: var(--text); }
+.tb.on { color: var(--green); border-bottom-color: var(--green); }
+.tp { display: none; flex: 1; overflow-y: auto; }
+.tp.on { display: block; }
+
+/* Upgrades */
+#upg-list { padding: 7px; display: flex; flex-direction: column; gap: 5px; }
+.uc {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 4px; padding: 7px 9px; cursor: pointer; transition: all .15s;
+}
+.uc:hover { border-color: var(--green2); background: var(--bg2); }
+.uc.no { opacity: .45; cursor: default; }
+.uc.no:hover { border-color: var(--border); background: var(--bg3); }
+.ut { display: flex; justify-content: space-between; align-items: flex-start; }
+.un { font-size: 12px; font-weight: bold; }
+.uco { font-size: 11px; color: var(--red); }
+.uco.ok { color: var(--green); }
+.ud { font-size: 10px; color: var(--dim); margin-top: 2px; }
+
+/* Achievements */
+#ach-list { padding: 7px; display: flex; flex-direction: column; gap: 5px; }
+.ac {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 4px; padding: 7px 9px;
+  display: flex; gap: 7px; align-items: center;
+}
+.ac.got { border-color: var(--gold); }
+.ac.nope .ai, .ac.nope .an, .ac.nope .ad { opacity: .3; }
+.ai { font-size: 18px; flex-shrink: 0; }
+.an { font-size: 11px; font-weight: bold; }
+.ad { font-size: 10px; color: var(--dim); }
+
+/* Prestige */
+#pres-panel { padding: 14px; display: flex; flex-direction: column; gap: 11px; }
+#dna-box { text-align: center; }
+#dna-num { font-size: 28px; color: var(--purple); font-weight: bold; }
+#dna-lbl { font-size: 11px; color: var(--dim); }
+#dna-gain { font-size: 12px; margin-top: 3px; }
+#pres-btn {
+  background: #1a0a2e; border: 2px solid var(--purple);
+  color: var(--purple); padding: 11px;
+  cursor: pointer; font-family: inherit; font-size: 13px;
+  font-weight: bold; border-radius: 4px; transition: all .2s; letter-spacing: 1px;
+}
+#pres-btn:hover { background: #250c40; box-shadow: 0 0 16px #a78bfa30; }
+#pres-info { font-size: 10px; color: var(--dim); line-height: 1.7; }
+#dna-upg-list { display: flex; flex-direction: column; gap: 6px; }
+.du {
+  background: var(--bg3); border: 1px solid #2a1a4a;
+  border-radius: 4px; padding: 8px 9px; cursor: pointer; transition: all .15s;
+}
+.du:hover { border-color: var(--purple); }
+.du.got { opacity: .5; pointer-events: none; border-style: dashed; }
+.dun { font-size: 12px; color: var(--purple); font-weight: bold; }
+.duc { font-size: 10px; color: var(--dim); }
+.dud { font-size: 10px; color: var(--text); margin-top: 2px; }
+
+/* Toast */
+#toast {
+  position: fixed; bottom: 18px; right: 18px;
+  background: var(--bg2); border: 1px solid var(--gold);
+  border-radius: 6px; padding: 9px 13px; max-width: 230px;
+  z-index: 1000; transform: translateX(270px); transition: transform .3s;
+  pointer-events: none;
+}
+#toast.on { transform: translateX(0); }
+#t-ttl { font-size: 12px; font-weight: bold; }
+#t-dsc { font-size: 10px; color: var(--dim); margin-top: 2px; }
+
+/* Responsive */
+@media(max-width:780px){
+  #left { width: 220px; } #right { width: 230px; }
+  #bsvg { width: 120px; height: 120px; } #bd { font-size: 22px; }
+}
+@media(max-width:540px){
+  #game { flex-direction: column; }
+  #left,#right { width: 100%; max-height: 220px; }
+  #center { min-height: 260px; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="hdr">
+  <h1>🧟 殭屍蔓延</h1>
+  <div id="hdr-stats">
+    <div class="hs"><span class="hs-l">🧠 腦髓</span><span class="hs-v" id="h-b">0</span></div>
+    <div class="hs"><span class="hs-l">⚡ /秒</span><span class="hs-v" id="h-bps">0</span></div>
+    <div class="hs"><span class="hs-l">🧬 DNA</span><span class="hs-v" id="h-dna">0</span></div>
+    <div class="hs"><span class="hs-l">⏱ 遊玩</span><span class="hs-v" id="h-t">0:00</span></div>
+  </div>
+  <button id="save-btn" onclick="save()">💾 儲存</button>
+</div>
+
+<!-- TICKER -->
+<div id="tick-w"><span id="tick">載入中...</span></div>
+
+<!-- GAME -->
+<div id="game">
+
+  <!-- LEFT: ZOMBIES -->
+  <div id="left">
+    <div id="buy-btns">
+      <button class="bb on" onclick="setBuy(1)"   id="bm1">×1</button>
+      <button class="bb"    onclick="setBuy(10)"  id="bm10">×10</button>
+      <button class="bb"    onclick="setBuy(100)" id="bm100">×100</button>
+      <button class="bb"    onclick="setBuy(-1)"  id="bm-1">最多</button>
+    </div>
+    <div id="left-ttl">— 殭屍部隊 —</div>
+    <div id="zlist"></div>
+  </div>
+
+  <!-- CENTER -->
+  <div id="center">
+    <div id="click-area" onclick="onClickBrain(event)" tabindex="0"
+         onkeydown="if(event.key===' '||event.key==='Enter')onClickBrain(event)">
+      <svg id="bsvg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#1a2e1a"/>
+            <stop offset="100%" stop-color="#050a05"/>
+          </radialGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <!-- Orbit ring -->
+        <circle cx="100" cy="100" r="88" fill="none" stroke="#3ddc58" stroke-width=".8"
+                stroke-dasharray="5 8" opacity=".25">
+          <animateTransform attributeName="transform" type="rotate"
+            from="0 100 100" to="360 100 100" dur="12s" repeatCount="indefinite"/>
+        </circle>
+        <!-- Brain body -->
+        <path d="M100,38 C116,36 133,42 141,54 C149,66 146,78 139,87
+                 C150,89 159,97 160,109 C161,122 153,132 142,136
+                 C146,146 143,156 133,161 C122,167 108,163 102,155
+                 C100,165 92,170 80,168 C66,165 57,153 60,142
+                 C49,139 41,129 42,117 C43,105 52,97 62,94
+                 C55,85 56,73 65,65 C74,57 88,54 98,57 C96,48 97,39 100,38 Z"
+              fill="#1e0d24" stroke="#7fff00" stroke-width="2" filter="url(#glow)"/>
+        <!-- Folds -->
+        <path d="M100,38 C99,55 89,65 88,80" stroke="#7fff00" stroke-width="1.4" fill="none" opacity=".65"/>
+        <path d="M118,44 C113,58 115,70 110,83" stroke="#7fff00" stroke-width="1.4" fill="none" opacity=".65"/>
+        <path d="M78,62 C84,73 79,84 83,96" stroke="#7fff00" stroke-width="1.4" fill="none" opacity=".65"/>
+        <path d="M62,100 C76,97 90,101 100,99 C110,97 124,101 138,99"
+              stroke="#7fff00" stroke-width="1.4" fill="none" opacity=".65"/>
+        <path d="M60,118 C74,115 88,119 100,117 C112,115 126,119 140,117"
+              stroke="#7fff00" stroke-width="1.4" fill="none" opacity=".65"/>
+        <path d="M68,136 C80,133 92,137 100,135 C108,133 120,137 130,135"
+              stroke="#7fff00" stroke-width="1.4" fill="none" opacity=".65"/>
+        <!-- Eyes -->
+        <circle cx="83" cy="103" r="5" fill="#ef4444" opacity=".9">
+          <animate attributeName="opacity" values=".9;.4;.9" dur="2.8s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="117" cy="103" r="5" fill="#ef4444" opacity=".9">
+          <animate attributeName="opacity" values=".9;.4;.9" dur="2.8s" begin=".3s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="83" cy="103" r="2" fill="#ff0" opacity=".6"/>
+        <circle cx="117" cy="103" r="2" fill="#ff0" opacity=".6"/>
+        <!-- Drips -->
+        <path d="M88,161 Q90,172 89,177" stroke="#3ddc58" stroke-width="2.5" fill="none"
+              stroke-linecap="round" opacity=".7"/>
+        <path d="M112,159 Q114,168 113,172" stroke="#3ddc58" stroke-width="2.5" fill="none"
+              stroke-linecap="round" opacity=".7"/>
+        <!-- Pulse -->
+        <circle cx="100" cy="100" r="6" fill="#3ddc58" opacity=".3">
+          <animate attributeName="r" values="5;11;5" dur="2s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values=".3;.6;.3" dur="2s" repeatCount="indefinite"/>
+        </circle>
+      </svg>
+      <div id="clabel">點擊獲取腦髓</div>
+    </div>
+    <div id="stats">
+      <div id="bl">🧠 腦髓</div>
+      <div id="bd">0</div>
+      <div id="bps-line">每秒 <span id="bps-v">0</span> 個腦髓</div>
+      <div id="cp-line">點擊力量: <span id="cp-v">1</span></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: TABS -->
+  <div id="right">
+    <div id="tabs">
+      <button class="tb on" onclick="showTab('upg')"  id="tb-upg">⚡ 強化</button>
+      <button class="tb"    onclick="showTab('ach')"  id="tb-ach">🏆 成就</button>
+      <button class="tb"    onclick="showTab('pres')" id="tb-pres">🧬 進化</button>
+    </div>
+    <div class="tp on" id="tp-upg"><div id="upg-list"></div></div>
+    <div class="tp"    id="tp-ach"><div id="ach-list"></div></div>
+    <div class="tp"    id="tp-pres">
+      <div id="pres-panel">
+        <div id="dna-box">
+          <div id="dna-num">0</div>
+          <div id="dna-lbl">🧬 DNA 積分</div>
+          <div id="dna-gain">下次可獲得: <span id="dna-g" style="color:var(--purple)">0</span> DNA</div>
+        </div>
+        <button id="pres-btn" onclick="prestige()">🧬 觸發進化重置</button>
+        <div id="pres-info">
+          ⚠️ 進化重置清除所有腦髓與殭屍。<br>
+          🧬 換取 DNA 積分，購買永久強化。<br>
+          📈 DNA = √(總腦髓 ÷ 1,000,000,000)<br>
+          💡 建議獲得至少 <b>1 DNA</b> 再進化。
+        </div>
+        <div id="dna-upg-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EVENT BANNER -->
+<div id="evt"></div>
+
+<!-- TOAST -->
+<div id="toast"><div id="t-ttl"></div><div id="t-dsc"></div></div>
+
+<script>
+// ══════════════════════════════════════════════
+//  DATA
+// ══════════════════════════════════════════════
+
+const ZD = [
+  { id:0, name:'普通殭屍',  em:'🧟',  fl:'腐爛的肉體，永不停歇的飢渴',  bc:15,           bp:0.1    },
+  { id:1, name:'殭屍跑者',  em:'🧟‍♀️', fl:'它們移動得很快...太快了',    bc:100,          bp:0.5    },
+  { id:2, name:'殭屍犬',    em:'🐕',  fl:'最忠誠的（已死）夥伴',       bc:1100,         bp:4      },
+  { id:3, name:'感染者',    em:'🦠',  fl:'無形的殺手，無聲的蔓延',     bc:12000,        bp:20     },
+  { id:4, name:'腦髓獵人',  em:'🧠',  fl:'只為最高品質的腦髓而生',    bc:130000,       bp:100    },
+  { id:5, name:'死靈法師',  em:'💀',  fl:'掌控死者的黑暗藝術大師',    bc:1400000,      bp:400    },
+  { id:6, name:'變種殭屍',  em:'☣️',  fl:'病毒變異的終極恐怖產物',    bc:20000000,     bp:1600   },
+  { id:7, name:'殭屍巢穴',  em:'🏚️', fl:'無數死者的安居之所',        bc:330000000,    bp:6400   },
+  { id:8, name:'淪陷都市',  em:'🏙️', fl:'整座城市化為殭屍樂園',      bc:5100000000,   bp:26000  },
+  { id:9, name:'Z型病毒',   em:'💉',  fl:'這種病毒已感染了...所有人', bc:75000000000,  bp:104000 },
+];
+
+const UD = [
+  // Click
+  { id:'ck1', nm:'鋒利的爪子',  ds:'點擊 ×2',       co:100,          ty:'c', ml:2,   rq:null        },
+  { id:'ck2', nm:'腐爛的牙齒',  ds:'點擊 ×5',       co:2000,         ty:'c', ml:5,   rq:null        },
+  { id:'ck3', nm:'殭屍狂怒',    ds:'點擊 ×10',      co:50000,        ty:'c', ml:10,  rq:null        },
+  { id:'ck4', nm:'腦髓渴望',    ds:'點擊 ×50',      co:5000000,      ty:'c', ml:50,  rq:null        },
+  { id:'ck5', nm:'末日之力',    ds:'點擊 ×200',     co:500000000,    ty:'c', ml:200, rq:null        },
+  // Zombie-specific (×2, ×2, ×5 per type)
+  { id:'z0a', nm:'殭屍補給',    ds:'普通殭屍 ×2',   co:100,          ty:'z', zi:0, ml:2, rq:{zi:0,n:1}  },
+  { id:'z0b', nm:'殭屍群落',    ds:'普通殭屍 ×2',   co:500,          ty:'z', zi:0, ml:2, rq:{zi:0,n:10} },
+  { id:'z0c', nm:'殭屍浪潮',    ds:'普通殭屍 ×5',   co:10000,        ty:'z', zi:0, ml:5, rq:{zi:0,n:25} },
+  { id:'z1a', nm:'奔跑感染',    ds:'殭屍跑者 ×2',   co:1000,         ty:'z', zi:1, ml:2, rq:{zi:1,n:1}  },
+  { id:'z1b', nm:'速度狂魔',    ds:'殭屍跑者 ×2',   co:5000,         ty:'z', zi:1, ml:2, rq:{zi:1,n:10} },
+  { id:'z1c', nm:'極速蔓延',    ds:'殭屍跑者 ×5',   co:100000,       ty:'z', zi:1, ml:5, rq:{zi:1,n:25} },
+  { id:'z2a', nm:'獵犬訓練',    ds:'殭屍犬 ×2',     co:11000,        ty:'z', zi:2, ml:2, rq:{zi:2,n:1}  },
+  { id:'z2b', nm:'狗群效應',    ds:'殭屍犬 ×2',     co:55000,        ty:'z', zi:2, ml:2, rq:{zi:2,n:10} },
+  { id:'z2c', nm:'殭屍犬隊',    ds:'殭屍犬 ×5',     co:1100000,      ty:'z', zi:2, ml:5, rq:{zi:2,n:25} },
+  { id:'z3a', nm:'病毒變異',    ds:'感染者 ×2',     co:120000,       ty:'z', zi:3, ml:2, rq:{zi:3,n:1}  },
+  { id:'z3b', nm:'基因重組',    ds:'感染者 ×2',     co:600000,       ty:'z', zi:3, ml:2, rq:{zi:3,n:10} },
+  { id:'z3c', nm:'超級病原體',  ds:'感染者 ×5',     co:12000000,     ty:'z', zi:3, ml:5, rq:{zi:3,n:25} },
+  { id:'z4a', nm:'腦髓精煉',    ds:'腦髓獵人 ×2',   co:1300000,      ty:'z', zi:4, ml:2, rq:{zi:4,n:1}  },
+  { id:'z4b', nm:'神經網絡',    ds:'腦髓獵人 ×2',   co:6500000,      ty:'z', zi:4, ml:2, rq:{zi:4,n:10} },
+  { id:'z4c', nm:'集體意識',    ds:'腦髓獵人 ×5',   co:130000000,    ty:'z', zi:4, ml:5, rq:{zi:4,n:25} },
+  { id:'z5a', nm:'黑暗儀式',    ds:'死靈法師 ×2',   co:14000000,     ty:'z', zi:5, ml:2, rq:{zi:5,n:1}  },
+  { id:'z5b', nm:'死靈軍團',    ds:'死靈法師 ×2',   co:70000000,     ty:'z', zi:5, ml:2, rq:{zi:5,n:10} },
+  { id:'z5c', nm:'永恆詛咒',    ds:'死靈法師 ×5',   co:1400000000,   ty:'z', zi:5, ml:5, rq:{zi:5,n:25} },
+  { id:'z6a', nm:'變異強化',    ds:'變種殭屍 ×2',   co:200000000,    ty:'z', zi:6, ml:2, rq:{zi:6,n:1}  },
+  { id:'z6b', nm:'終極進化',    ds:'變種殭屍 ×2',   co:1000000000,   ty:'z', zi:6, ml:2, rq:{zi:6,n:10} },
+  { id:'z6c', nm:'混沌基因',    ds:'變種殭屍 ×5',   co:20000000000,  ty:'z', zi:6, ml:5, rq:{zi:6,n:25} },
+  { id:'z7a', nm:'巢穴擴張',    ds:'殭屍巢穴 ×2',   co:3300000000,   ty:'z', zi:7, ml:2, rq:{zi:7,n:1}  },
+  { id:'z7b', nm:'巢穴聯網',    ds:'殭屍巢穴 ×2',   co:16500000000,  ty:'z', zi:7, ml:2, rq:{zi:7,n:10} },
+  { id:'z7c', nm:'殭屍帝國',    ds:'殭屍巢穴 ×5',   co:330000000000, ty:'z', zi:7, ml:5, rq:{zi:7,n:25} },
+  { id:'z8a', nm:'都市淪陷',    ds:'淪陷都市 ×2',   co:51000000000,  ty:'z', zi:8, ml:2, rq:{zi:8,n:1}  },
+  { id:'z8b', nm:'全球感染',    ds:'淪陷都市 ×2',   co:255000000000, ty:'z', zi:8, ml:2, rq:{zi:8,n:10} },
+  { id:'z8c', nm:'大陸蔓延',    ds:'淪陷都市 ×5',   co:5.1e12,       ty:'z', zi:8, ml:5, rq:{zi:8,n:25} },
+  { id:'z9a', nm:'基因汙染',    ds:'Z型病毒 ×2',    co:750000000000, ty:'z', zi:9, ml:2, rq:{zi:9,n:1}  },
+  { id:'z9b', nm:'不治之症',    ds:'Z型病毒 ×2',    co:3.75e12,      ty:'z', zi:9, ml:2, rq:{zi:9,n:10} },
+  { id:'z9c', nm:'末日病毒',    ds:'Z型病毒 ×5',    co:7.5e13,       ty:'z', zi:9, ml:5, rq:{zi:9,n:25} },
+  // Global
+  { id:'gl1', nm:'群體感染',    ds:'所有殭屍 ×2',   co:100000,       ty:'g', ml:2, rq:{tz:100}  },
+  { id:'gl2', nm:'病毒進化',    ds:'所有殭屍 ×3',   co:50000000,     ty:'g', ml:3, rq:{tz:500}  },
+  { id:'gl3', nm:'殭屍啟示錄', ds:'所有殭屍 ×5',   co:1e10,         ty:'g', ml:5, rq:{tz:2000} },
+];
+
+const DNAD = [
+  { id:'d1', nm:'原始感染',  ds:'所有生產 ×2 (永久)', co:1,   ml:2  },
+  { id:'d2', nm:'病毒擴散',  ds:'所有生產 ×2 (永久)', co:3,   ml:2  },
+  { id:'d3', nm:'變異加速',  ds:'所有生產 ×3 (永久)', co:10,  ml:3  },
+  { id:'d4', nm:'基因革命',  ds:'所有生產 ×5 (永久)', co:30,  ml:5  },
+  { id:'d5', nm:'殭屍神啟',  ds:'所有生產 ×10(永久)', co:100, ml:10 },
+];
+
+const ACHD = [
+  { id:'a1',  ic:'🧠', nm:'第一滴腦髓',  ds:'賺取第一顆腦',             c: s => s.tb >= 1            },
+  { id:'a2',  ic:'🧟', nm:'召喚者',       ds:'擁有第一隻殭屍',            c: s => totZ(s) >= 1         },
+  { id:'a3',  ic:'🧟', nm:'殭屍小隊',     ds:'擁有 10 隻殭屍',            c: s => totZ(s) >= 10        },
+  { id:'a4',  ic:'💀', nm:'殭屍部隊',     ds:'擁有 50 隻殭屍',            c: s => totZ(s) >= 50        },
+  { id:'a5',  ic:'☠️', nm:'殭屍軍團',     ds:'擁有 100 隻殭屍',           c: s => totZ(s) >= 100       },
+  { id:'a6',  ic:'🌍', nm:'殭屍帝國',     ds:'擁有 500 隻殭屍',           c: s => totZ(s) >= 500       },
+  { id:'a7',  ic:'🏆', nm:'千腦大業',     ds:'累計賺取 1,000 腦髓',       c: s => s.tb >= 1000         },
+  { id:'a8',  ic:'💎', nm:'百萬腦髓',     ds:'累計賺取 100 萬腦髓',       c: s => s.tb >= 1e6          },
+  { id:'a9',  ic:'👑', nm:'十億腦髓',     ds:'累計賺取 10 億腦髓',        c: s => s.tb >= 1e9          },
+  { id:'a10', ic:'☣️', nm:'末日降臨',     ds:'累計賺取 1 兆腦髓',         c: s => s.tb >= 1e12         },
+  { id:'a11', ic:'👆', nm:'點擊高手',     ds:'點擊 100 次',               c: s => s.tc >= 100          },
+  { id:'a12', ic:'🖱️', nm:'點擊狂魔',    ds:'點擊 1,000 次',             c: s => s.tc >= 1000         },
+  { id:'a13', ic:'🧬', nm:'初次進化',     ds:'完成第一次 DNA 進化',       c: s => s.tp >= 1            },
+  { id:'a14', ic:'🧪', nm:'進化大師',     ds:'完成 5 次 DNA 進化',        c: s => s.tp >= 5            },
+  { id:'a15', ic:'🔬', nm:'多樣感染',     ds:'擁有所有種類的殭屍',        c: s => s.z.every(z=>z.n>0) },
+];
+
+const EVTS = [
+  { nm:'☣️ 殭屍暴動！',   ds:'生產力 ×3，持續 30 秒！', ml:3, dur:30 },
+  { nm:'🧠 腦髓豐收！',   ds:'生產力 ×2，持續 60 秒！', ml:2, dur:60 },
+  { nm:'⚡ 感染加速！',   ds:'生產力 ×5，持續 15 秒！', ml:5, dur:15 },
+  { nm:'💀 死亡浪潮！',   ds:'生產力 ×4，持續 20 秒！', ml:4, dur:20 },
+];
+
+const TICKS = [
+  '🧟 殭屍末日降臨...居民紛紛被感染',
+  '🦠 新型病毒株出現，科學家束手無策',
+  '🏙️ 市中心已完全淪陷，請勿靠近',
+  '💀 軍隊全數陣亡，政府失去控制',
+  '🧠 腦髓是殭屍力量的唯一來源',
+  '☣️ 生化武器研究室發生嚴重洩漏',
+  '🚁 最後一架直升機已離開城市',
+  '📡 所有通訊中斷，世界陷入黑暗',
+  '🌍 感染已蔓延至六大洲',
+  '💉 所有疫苗研發宣告失敗',
+  '🔴 緊急廣播：所有人請留在室內',
+  '💀 倖存者數量越來越少...',
+  '🧟‍♀️ 殭屍跑者可以爬樓梯了',
+  '☠️ 死亡率 99.9%，希望已幻滅',
+  '🌑 黑暗時代正式降臨',
+  '🦷 咬傷報告每秒新增 10,000 件',
+];
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+
+let G = {
+  b:  0,    // brains
+  tb: 0,    // total brains ever
+  dna: 0,
+  tp:  0,   // total prestiges
+  tc:  0,   // total clicks
+  pt:  0,   // play time (seconds)
+  lt:  Date.now(),  // last tick
+  ls:  Date.now(),  // last save
+  z:   ZD.map(z => ({ id: z.id, n: 0 })),
+  upg: {},  // id -> true
+  du:  {},  // dna upgrade id -> true
+  ach: {},  // achievement id -> true
+  em:  1,   // event multiplier
+  ee:  0,   // event end timestamp
+  bm:  1,   // buy mode
+};
+
+// ══════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════
+
+function fmt(n) {
+  if (!isFinite(n) || n === undefined) return '0';
+  if (n < 0) return '-' + fmt(-n);
+  if (n < 1000) return Math.floor(n).toString();
+  const sfx = ['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc','Ud','Dd'];
+  const i = Math.min(Math.floor(Math.log10(n) / 3), sfx.length - 1);
+  const v = n / Math.pow(1000, i);
+  return (v >= 100 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2)) + sfx[i];
+}
+
+function fmtT(s) {
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = Math.floor(s % 60);
+  return h > 0
+    ? `${h}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`
+    : `${m}:${String(ss).padStart(2,'0')}`;
+}
+
+function totZ(s) { return s.z.reduce((a, z) => a + z.n, 0); }
+
+// Cost to buy `amt` of zombie `zid` starting from current count
+function zCost(zid, amt) {
+  if (amt <= 0) return 0;
+  const bc = ZD[zid].bc, cnt = G.z[zid].n;
+  return bc * Math.pow(1.15, cnt) * (Math.pow(1.15, amt) - 1) / 0.15;
+}
+
+function zNextCost(zid) { return ZD[zid].bc * Math.pow(1.15, G.z[zid].n); }
+
+function maxBuy(zid) {
+  const bc = ZD[zid].bc;
+  let cnt = G.z[zid].n, funds = G.b, n = 0;
+  while (true) {
+    const c = bc * Math.pow(1.15, cnt + n);
+    if (funds < c || n >= 9999) break;
+    funds -= c; n++;
+  }
+  return n;
+}
+
+function zMult(zid) {
+  let m = 1;
+  for (const u of UD) {
+    if (!G.upg[u.id]) continue;
+    if (u.ty === 'z' && u.zi === zid) m *= u.ml;
+    if (u.ty === 'g') m *= u.ml;
+  }
+  for (const d of DNAD) { if (G.du[d.id]) m *= d.ml; }
+  return m;
+}
+
+function bps() {
+  let s = 0;
+  for (const z of ZD) { if (G.z[z.id].n > 0) s += G.z[z.id].n * z.bp * zMult(z.id); }
+  return s * (Date.now() < G.ee ? G.em : 1);
+}
+
+function clickPow() {
+  let cp = 1;
+  for (const u of UD) { if (u.ty === 'c' && G.upg[u.id]) cp *= u.ml; }
+  const b = bps();
+  if (b > 0) cp += b * 0.01; // BPS bonus
+  return Math.max(1, cp);
+}
+
+function dnaGain() { return Math.floor(Math.sqrt(G.tb / 1e9)); }
+
+function isUnlocked(u) {
+  if (!u.rq) return true;
+  if (u.rq.zi !== undefined && G.z[u.rq.zi].n < u.rq.n) return false;
+  if (u.rq.tz !== undefined && totZ(G) < u.rq.tz) return false;
+  return true;
+}
+
+// ══════════════════════════════════════════════
+//  GAME LOOP
+// ══════════════════════════════════════════════
+
+function tick() {
+  const now = Date.now(), dt = Math.min((now - G.lt) / 1000, 10);
+  G.lt = now; G.pt += dt;
+  const earned = bps() * dt;
+  G.b += earned; G.tb += earned;
+  if (now - G.ls > 30000) save();
+  if (Math.random() < dt / 300) triggerEvent();
+  checkAch();
+  renderHdr();
+  renderCenter();
+  renderZombies();
+}
+
+// ══════════════════════════════════════════════
+//  ACTIONS
+// ══════════════════════════════════════════════
+
+function onClickBrain(e) {
+  const cp = Math.max(1, Math.floor(clickPow()));
+  G.b += cp; G.tb += cp; G.tc++;
+  const x = e.clientX || 400, y = e.clientY || 300;
+  spawnPt(x, y, '+' + fmt(cp));
+  const s = document.getElementById('bsvg');
+  s.style.transform = 'scale(1.12)';
+  setTimeout(() => s.style.transform = '', 100);
+}
+
+function setBuy(m) {
+  G.bm = m;
+  document.querySelectorAll('.bb').forEach(b => b.classList.remove('on'));
+  document.getElementById('bm' + m).classList.add('on');
+  renderZombies();
+}
+
+function buyZ(zid) {
+  const amt = G.bm === -1 ? maxBuy(zid) : G.bm;
+  if (amt <= 0) return;
+  const cost = zCost(zid, amt);
+  if (G.b < cost) return;
+  G.b -= cost; G.z[zid].n += amt;
+  renderZombies(); renderUpg();
+}
+
+function buyUpg(id) {
+  if (G.upg[id]) return;
+  const u = UD.find(x => x.id === id);
+  if (!u || G.b < u.co || !isUnlocked(u)) return;
+  G.b -= u.co; G.upg[id] = true;
+  renderUpg(); renderZombies();
+}
+
+function buyDNA(id) {
+  if (G.du[id]) return;
+  const d = DNAD.find(x => x.id === id);
+  if (!d || G.dna < d.co) return;
+  G.dna -= d.co; G.du[id] = true;
+  renderPres();
+}
+
+function prestige() {
+  const gain = dnaGain();
+  if (gain <= 0) { toast('⚠️ 無法進化', '需要更多腦髓才能獲得 DNA！', '#ef4444'); return; }
+  if (!confirm(`確認進化？\n獲得 ${gain} DNA 積分\n所有腦髓和殭屍將被重置`)) return;
+  G.dna += gain; G.tp++;
+  G.b = 0; G.tb = 0;
+  G.z = ZD.map(z => ({ id: z.id, n: 0 }));
+  G.upg = {}; G.em = 1; G.ee = 0;
+  toast('🧬 進化成功！', `獲得 ${gain} DNA 積分`, '#a78bfa');
+  render();
+}
+
+function triggerEvent() {
+  if (bps() < 1) return;
+  const ev = EVTS[Math.floor(Math.random() * EVTS.length)];
+  G.em = ev.ml; G.ee = Date.now() + ev.dur * 1000;
+  const el = document.getElementById('evt');
+  el.innerHTML = `<b>${ev.nm}</b><br><small>${ev.ds}</small>`;
+  el.classList.add('on');
+  setTimeout(() => el.classList.remove('on'), 5000);
+}
+
+function checkAch() {
+  for (const a of ACHD) {
+    if (!G.ach[a.id] && a.c(G)) {
+      G.ach[a.id] = true;
+      toast('🏆 成就解鎖！', `${a.ic} ${a.nm}`, '#f59e0b');
+    }
+  }
+}
+
+// ══════════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════════
+
+function renderHdr() {
+  document.getElementById('h-b').textContent   = fmt(G.b);
+  document.getElementById('h-bps').textContent = fmt(bps());
+  document.getElementById('h-dna').textContent = fmt(G.dna);
+  document.getElementById('h-t').textContent   = fmtT(G.pt);
+}
+
+function renderCenter() {
+  document.getElementById('bd').textContent    = fmt(G.b);
+  document.getElementById('bps-v').textContent = fmt(bps());
+  document.getElementById('cp-v').textContent  = fmt(Math.floor(clickPow()));
+}
+
+function renderZombies() {
+  const list = document.getElementById('zlist');
+  list.innerHTML = '';
+  for (const zd of ZD) {
+    const zs = G.z[zd.id];
+    const visible = zs.n > 0 || G.tb >= zd.bc * 0.5 || zd.id === 0;
+    if (!visible) {
+      // Show teaser for next locked zombie
+      const prev = zd.id > 0 ? G.z[zd.id - 1].n : 1;
+      if (prev === 0) continue;
+      const div = document.createElement('div');
+      div.className = 'zrow dim';
+      div.innerHTML = `<div class="zem">❓</div><div class="zi"><div class="zn" style="color:var(--dim)">???</div><div class="zpr">尚未解鎖</div></div>`;
+      list.appendChild(div); continue;
+    }
+    const amt    = G.bm === -1 ? Math.max(1, maxBuy(zd.id)) : G.bm;
+    const rawAmt = G.bm === -1 ? maxBuy(zd.id) : G.bm;
+    const cost   = zCost(zd.id, Math.max(1, rawAmt));
+    const afford = G.b >= cost && rawAmt > 0;
+    const prod   = zd.bp * zMult(zd.id);
+    const pct    = Math.min(100, (G.b / zNextCost(zd.id)) * 100);
+    const label  = G.bm !== 1 ? ` (${amt})` : '';
+    const div    = document.createElement('div');
+    div.className = 'zrow' + (afford ? ' ok' : '');
+    div.onclick   = () => buyZ(zd.id);
+    div.innerHTML = `
+      <div class="zem">${zd.em}</div>
+      <div class="zi">
+        <div class="zn">${zd.name}</div>
+        <div class="zpr">${zs.n > 0 ? fmt(zs.n * prod) + '/秒' : fmt(prod) + '/秒 × 數量'}</div>
+        <div class="zco${afford ? ' ok' : ''}">🧠 ${fmt(cost)}${label}</div>
+      </div>
+      <div class="zct">${zs.n}</div>
+      <div class="zprog" style="width:${pct}%"></div>`;
+    list.appendChild(div);
+  }
+}
+
+let curTab = 'upg';
+
+function renderUpg() {
+  const list = document.getElementById('upg-list');
+  list.innerHTML = '';
+  let shown = 0;
+  for (const u of UD) {
+    if (G.upg[u.id] || !isUnlocked(u)) continue;
+    const ok = G.b >= u.co;
+    const div = document.createElement('div');
+    div.className = 'uc' + (ok ? '' : ' no');
+    div.onclick = () => buyUpg(u.id);
+    div.innerHTML = `
+      <div class="ut">
+        <div class="un">${u.nm}</div>
+        <div class="uco${ok ? ' ok' : ''}">🧠 ${fmt(u.co)}</div>
+      </div>
+      <div class="ud">${u.ds}</div>`;
+    list.appendChild(div);
+    shown++;
+  }
+  if (!shown) list.innerHTML = '<div style="padding:14px;color:var(--dim);font-size:11px;text-align:center">所有強化均已購買或尚未解鎖</div>';
+}
+
+function renderAch() {
+  const list = document.getElementById('ach-list');
+  let got = 0;
+  list.innerHTML = '';
+  for (const a of ACHD) {
+    const unlocked = !!G.ach[a.id];
+    if (unlocked) got++;
+    const div = document.createElement('div');
+    div.className = 'ac ' + (unlocked ? 'got' : 'nope');
+    div.innerHTML = `
+      <div class="ai">${a.ic}</div>
+      <div>
+        <div class="an">${unlocked ? a.nm : '???'}</div>
+        <div class="ad">${unlocked ? a.ds : '尚未解鎖'}</div>
+      </div>`;
+    list.appendChild(div);
+  }
+  const info = document.createElement('div');
+  info.style.cssText = 'padding:8px;font-size:10px;color:var(--dim);text-align:center';
+  info.textContent = `已解鎖 ${got} / ${ACHD.length}`;
+  list.insertBefore(info, list.firstChild);
+}
+
+function renderPres() {
+  document.getElementById('dna-num').textContent = fmt(G.dna);
+  document.getElementById('dna-g').textContent   = fmt(dnaGain());
+  const list = document.getElementById('dna-upg-list');
+  list.innerHTML = '';
+  for (const d of DNAD) {
+    const bought = !!G.du[d.id];
+    const ok     = G.dna >= d.co;
+    const div    = document.createElement('div');
+    div.className = 'du' + (bought ? ' got' : '');
+    div.onclick = () => buyDNA(d.id);
+    div.innerHTML = `
+      <div style="display:flex;justify-content:space-between">
+        <div class="dun">${bought ? '✓ ' : ''}${d.nm}</div>
+        <div class="duc">${bought ? '已購買' : '🧬 ' + d.co + ' DNA'}</div>
+      </div>
+      <div class="dud">${d.ds}</div>`;
+    list.appendChild(div);
+  }
+}
+
+function render() {
+  renderHdr(); renderCenter(); renderZombies();
+  if (curTab === 'upg')  renderUpg();
+  if (curTab === 'ach')  renderAch();
+  if (curTab === 'pres') renderPres();
+}
+
+function showTab(t) {
+  curTab = t;
+  document.querySelectorAll('.tb').forEach(b => b.classList.remove('on'));
+  document.querySelectorAll('.tp').forEach(p => p.classList.remove('on'));
+  document.getElementById('tb-' + t).classList.add('on');
+  document.getElementById('tp-' + t).classList.add('on');
+  if (t === 'upg')  renderUpg();
+  if (t === 'ach')  renderAch();
+  if (t === 'pres') renderPres();
+}
+
+// ══════════════════════════════════════════════
+//  PARTICLES & TOAST
+// ══════════════════════════════════════════════
+
+function spawnPt(x, y, txt) {
+  const p = document.createElement('div');
+  p.className = 'pt';
+  p.textContent = txt;
+  p.style.left = (x - 15 + (Math.random() - 0.5) * 30) + 'px';
+  p.style.top  = (y - 8) + 'px';
+  document.body.appendChild(p);
+  setTimeout(() => p.remove(), 950);
+}
+
+let toastT = null;
+function toast(ttl, dsc, col = '#f59e0b') {
+  const el = document.getElementById('toast');
+  document.getElementById('t-ttl').textContent = ttl;
+  document.getElementById('t-ttl').style.color = col;
+  document.getElementById('t-dsc').textContent = dsc;
+  el.classList.add('on');
+  if (toastT) clearTimeout(toastT);
+  toastT = setTimeout(() => el.classList.remove('on'), 4000);
+}
+
+// ══════════════════════════════════════════════
+//  SAVE / LOAD
+// ══════════════════════════════════════════════
+
+const SAVE_KEY = 'zi_v1';
+
+function save() {
+  G.ls = Date.now();
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(G));
+    const btn = document.getElementById('save-btn');
+    btn.textContent = '✓ 已儲存';
+    setTimeout(() => btn.textContent = '💾 儲存', 2000);
+  } catch(e) {}
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return;
+    const sv = JSON.parse(raw);
+    Object.assign(G, sv);
+    // Ensure zombie array is complete
+    G.z = ZD.map(z => {
+      const s = (sv.z || []).find(x => x.id === z.id);
+      return s || { id: z.id, n: 0 };
+    });
+    // Offline progress (capped at 8h, 50% efficiency)
+    const off = Math.min((Date.now() - (sv.lt || Date.now())) / 1000, 28800);
+    if (off > 60) {
+      const earn = bps() * off * 0.5;
+      G.b += earn; G.tb += earn;
+      setTimeout(() => toast('⏰ 離線收益', `離線 ${fmtT(off)}，獲得 ${fmt(earn)} 🧠`, '#3ddc58'), 1200);
+    }
+    G.lt = Date.now();
+    G.em = 1; G.ee = 0;
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════════════
+//  TICKER
+// ══════════════════════════════════════════════
+
+function rotateTicker() {
+  const msgs = [...TICKS].sort(() => Math.random() - 0.5);
+  document.getElementById('tick').textContent = msgs.join('　　　　');
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+
+function init() {
+  load();
+  render();
+  setInterval(tick, 50);
+  setInterval(rotateTicker, 48000);
+  rotateTicker();
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); save(); }
+  });
+  // First-time welcome
+  if (G.tc === 0 && G.tb === 0) {
+    setTimeout(() => toast('🧟 殭屍末日開始！', '點擊腦髓獲取資源，召喚殭屍大軍！', '#3ddc58'), 600);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
