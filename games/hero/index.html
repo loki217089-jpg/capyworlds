@@ -402,6 +402,37 @@ kbd {
 @keyframes starSpin {
   to { transform: rotate(360deg); }
 }
+/* ── 連段機會 固定開關按鈕 ── */
+#chanceToggleBtn {
+  position: fixed;
+  bottom: 90px;
+  right: 16px;
+  z-index: 7900;
+  background: linear-gradient(135deg, #1a0030, #3d006e);
+  border: 2px solid #f0c040;
+  border-radius: 14px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: .72rem;
+  font-weight: 800;
+  color: #f0c040;
+  box-shadow: 0 0 16px rgba(240,192,64,.4);
+  letter-spacing: 1px;
+  user-select: none;
+  transition: opacity .2s, box-shadow .2s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+#chanceToggleBtn:hover {
+  box-shadow: 0 0 24px rgba(240,192,64,.75);
+}
+#chanceToggleBtn:active {
+  transform: scale(.95);
+}
+#chanceToggleBtn.disabled {
+  opacity: .3;
+  pointer-events: none;
+}
 
 /* ── 連段模式覆蓋層 ── */
 #comboOverlay {
@@ -782,6 +813,8 @@ kbd {
   <div id="pmt" style="display:none"></div>
 </div>
 </div>
+<!-- 連段機會 固定開關 -->
+<button id="chanceToggleBtn" onclick="manualShowChance()" title="點擊呼出連段機會">⚡ 連段機會</button>
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 const G={gold:0,gem:0,mat:0,soul:0,pots:3,bonCD:0,hero:{lv:1,exp:0,hp:100,maxHp:100,mp:50,maxMp:50,atk:15,def:5,mag:20,spd:10,crit:8,cdmg:150},skillCDs:{0:0,1:0,2:0,3:0,4:0,5:0,6:0,7:0},enemy:null,auto:true,speed:1,atkTimer:0,enmTimer:0,floor:1,dungId:0,flKills:0,flNeed:5,isBoss:false,upgrades:[0,0,0,0,0,0,0,0],talents:[0,0,0,0,0,0],talentPts:0,equips:[null,null,null,null,null,null],inventory:[],kills:0,deaths:0,maxDmg:0,startTime:Date.now(),bestFloor:1,statusFx:[],heroClass:'mage',dropLv:0,eqFilter:{rar:'all',slot:'all',upgrade:false,hideEquipped:false},jobLv:1,jobExp:0,learnedSkills:[],enhanceLimit:5,lastLogin:0,loginStreak:0};
 
@@ -2460,19 +2493,25 @@ let _comboTotalMiss = 0;
 let _comboPeakCombo = 0;
 let _comboTotalDmg  = 0;
 
-// 每3秒嘗試生成機會窗口
-function startChanceWindowLoop() {
-  if (_chanceTimer) clearInterval(_chanceTimer);
-  _chanceTimer = setInterval(() => {
-    if (!_chanceActive && !_comboModeActive && G.auto && G.enemy) {
-      showChanceWindow();
-    }
-  }, 3000);
+function updateChanceToggleBtn() {
+  const btn = document.getElementById('chanceToggleBtn');
+  if (!btn) return;
+  if (_chanceActive || _comboModeActive) {
+    btn.classList.add('disabled');
+  } else {
+    btn.classList.remove('disabled');
+  }
+}
+
+function manualShowChance() {
+  if (_chanceActive || _comboModeActive) return;
+  showChanceWindow();
 }
 
 function showChanceWindow() {
   if (_chanceActive || _comboModeActive) return;
   _chanceActive = true;
+  updateChanceToggleBtn();
 
   const pick = CHANCE_MSGS[Math.floor(Math.random() * CHANCE_MSGS.length)];
   const LIFETIME = 4000; // 4秒消失
@@ -2528,6 +2567,7 @@ function showChanceWindow() {
 
 function closeChanceWindow() {
   _chanceActive = false;
+  updateChanceToggleBtn();
   const el = document.getElementById('chanceWindow');
   if (!el) return;
   if (el._timeout) clearTimeout(el._timeout);
@@ -2539,6 +2579,7 @@ function closeChanceWindow() {
 function enterComboMode() {
   if (_comboModeActive) return;
   _comboModeActive = true;
+  updateChanceToggleBtn();
   _comboKillCount = 0;
   _comboStartTime = Date.now();
   _comboTotalHits = 0;
@@ -2716,6 +2757,7 @@ function exitComboMode() {
   if (!_comboModeActive) return;
   _comboModeActive = false;
   G.comboModePaused = false;
+  updateChanceToggleBtn();
 
   if (G.typing.expireTimer) { clearTimeout(G.typing.expireTimer); G.typing.expireTimer = null; }
   G.typing.active = false;
@@ -3014,7 +3056,7 @@ setTimeout(() => { initSkillDrag(); initTouchDrag(); }, 500);
 G.combo = 0;
 G.manualMode = false;
 setTimeout(checkLoginBonus, 800);
-setTimeout(startChanceWindowLoop, 2000);
+// 連段機會窗口改為手動觸發（固定開關按鈕）
 G.typing = {
   activeKey: null,    // 當前要按的鍵
   nextKey: null,      // 下一個鍵（預覽）
