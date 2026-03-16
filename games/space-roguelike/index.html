@@ -62,7 +62,11 @@ window.addEventListener('resize', () => {
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const CHUNK = 1800;
-const DRAG = 0.88;
+const DRAG = 0.93;
+const BOOST_FORCE_MULT = 3.5;
+const BOOST_MAX_SPD = 900;
+const BOOST_FUEL_USE = 35;   // per second
+const BOOST_FUEL_REGEN = 18; // per second
 const BULLET_SPEED = 650;
 const BULLET_LIFE = 1.2;
 const BULLET_DMG = 12;
@@ -140,7 +144,9 @@ function createPlayer() {
     combatExpert: false,
     evasion: false,
     autoRepair: false,
-    thrustForce: 280,
+    thrustForce: 380,
+    boostFuel: 100, maxBoostFuel: 100,
+    boosting: false,
     escaped: false
   };
 }
@@ -152,7 +158,7 @@ const loadedChunks = new Set();
 function chunkKey(cx, cy) { return cx+','+cy; }
 
 function distTier(cx, cy) {
-  return Math.floor(Math.sqrt(cx*cx+cy*cy) / 3);
+  return Math.floor(Math.sqrt(cx*cx+cy*cy) / 2);
 }
 
 function generateChunk(cx, cy) {
@@ -175,13 +181,16 @@ function generateChunk(cx, cy) {
       const d = r*(0.6+rng()*0.4);
       verts.push({x:Math.cos(a)*d, y:Math.sin(a)*d});
     }
-    asteroids.push({x:ax,y:ay,r:r,verts,hp:Math.floor(r*2),maxHp:Math.floor(r*2),
+    const astHp = 2 + Math.floor(r/14); // 3-5 shots to break
+    asteroids.push({x:ax,y:ay,r:r,verts,hp:astHp,maxHp:astHp,alive:true,
+      ore: 2+Math.floor(rng()*4),
       color:`hsl(${25+rng()*20},${20+rng()*20}%,${30+rng()*20}%)`});
   }
 
   const enemies = [];
-  const maxEnemies = Math.min(4, Math.floor(rng()*(4+tier)));
-  const numEnemies = Math.floor(rng()*maxEnemies);
+  const baseDist = Math.sqrt(cx*cx+cy*cy);
+  // Guarantee 1-3 enemies in all but the very starting chunk
+  const numEnemies = baseDist < 0.1 ? 2 : Math.min(6, 1 + Math.floor(rng()*(2+tier*1.5)));
   const types = ['drone','pirate','alien'];
   for (let i = 0; i < numEnemies; i++) {
     const ex = ox + rng()*CHUNK;
@@ -219,7 +228,9 @@ function generateChunk(cx, cy) {
   }
 
   let station = null;
-  if (rng() < 0.125 && (cx!==0||cy!==0)) {
+  // Guarantee a station at (2,0) for early-game access; elsewhere 1-in-5 chance
+  const forceStation = (cx===2&&cy===0);
+  if (forceStation || (rng() < 0.20 && (cx!==0||cy!==0))) {
     station = {
       x: ox + 200+rng()*(CHUNK-400),
       y: oy + 200+rng()*(CHUNK-400),
@@ -424,7 +435,7 @@ function startGame() {
   gameTime = 0; playTime = 0;
   statusMsg = ''; statusTimer = 0;
   state = 'playing';
-  setStatus('領航員陳，加油！蒐集5個翹曲核心！');
+  setStatus('射擊隕石蒐集礦石 → 往右找太空站升級 → 蒐集5個翹曲核心！');
 }
 
 function setStatus(msg) { statusMsg=msg; statusTimer=3; }
@@ -477,10 +488,21 @@ function updatePlayer(dt) {
   const left = keys['KeyA']||keys['ArrowLeft'];
   const right = keys['KeyD']||keys['ArrowRight'];
 
-  if (up)    player.vy -= thrust*dt;
-  if (down)  player.vy += thrust*dt;
-  if (left)  player.vx -= thrust*dt;
-  if (right) player.vx += thrust*dt;
+  // Boost (Shift key)
+  const wantBoost = (keys['ShiftLeft']||keys['ShiftRight']) && (up||down||left||right);
+  if (wantBoost && player.boostFuel > 0) {
+    player.boosting = true;
+    player.boostFuel = Math.max(0, player.boostFuel - BOOST_FUEL_USE*dt);
+  } else {
+    player.boosting = false;
+    player.boostFuel = Math.min(player.maxBoostFuel, player.boostFuel + BOOST_FUEL_REGEN*dt);
+  }
+  const thrustMult = player.boosting ? BOOST_FORCE_MULT : 1;
+
+  if (up)    player.vy -= thrust*thrustMult*dt;
+  if (down)  player.vy += thrust*thrustMult*dt;
+  if (left)  player.vx -= thrust*thrustMult*dt;
+  if (right) player.vx += thrust*thrustMult*dt;
 
   // Aim at mouse
   const sx = player.x - player.x + W/2;
@@ -503,7 +525,7 @@ function updatePlayer(dt) {
 
   // Clamp max speed
   const spd = Math.sqrt(player.vx**2+player.vy**2);
-  const maxSpd = 400;
+  const maxSpd = player.boosting ? BOOST_MAX_SPD : 500 + (player.engineLevel-1)*80;
   if (spd>maxSpd) { player.vx*=maxSpd/spd; player.vy*=maxSpd/spd; }
 
   player.x += player.vx*dt;
@@ -512,6 +534,7 @@ function updatePlayer(dt) {
   // Collision with asteroids
   for (const [,chunk] of chunks) {
     for (const ast of chunk.asteroids) {
+      if (!ast.alive) continue;
       const d = dist(player.x,player.y,ast.x,ast.y);
       if (d < 22+ast.r) {
         const nx=(player.x-ast.x)/d, ny=(player.y-ast.y)/d;
@@ -579,8 +602,26 @@ function updateBullets(dt) {
     let hitAst=false;
     for (const [,chunk] of chunks) {
       for (const ast of chunk.asteroids) {
+        if (!ast.alive) continue;
         if (dist2(b.x,b.y,ast.x,ast.y)<(b.r+ast.r)**2) {
-          explosion(b.x,b.y,4,'#aaaaaa');
+          ast.hp -= b.dmg;
+          explosion(b.x,b.y,5,'#aa8855');
+          if (ast.hp <= 0) {
+            ast.alive = false;
+            explosion(ast.x,ast.y,18,'#886644');
+            explosion(ast.x,ast.y,8,'#ffcc66');
+            // Drop ore
+            const oreCount = ast.ore || 3;
+            const lootMult = player.lootFinder ? 1.4 : 1;
+            for (let k=0; k<Math.ceil(oreCount*lootMult); k++) {
+              chunk.items.push({x:ast.x+(Math.random()-0.5)*60,y:ast.y+(Math.random()-0.5)*60,
+                type:'ore',r:12,bobOffset:Math.random()*Math.PI*2,alive:true});
+            }
+            if (Math.random() < 0.25) {
+              chunk.items.push({x:ast.x+(Math.random()-0.5)*30,y:ast.y+(Math.random()-0.5)*30,
+                type:'crystal',r:12,bobOffset:Math.random()*Math.PI*2,alive:true});
+            }
+          }
           bullets.splice(i,1); hitAst=true; break;
         }
       }
@@ -870,6 +911,7 @@ function drawBlackHole() {
 function drawAsteroids() {
   for (const [,chunk] of chunks) {
     for (const ast of chunk.asteroids) {
+      if (!ast.alive) continue;
       const dx=ast.x-player.x, dy=ast.y-player.y;
       if (Math.abs(dx)>W&&Math.abs(dy)>H) continue;
       ctx.save();
@@ -883,6 +925,17 @@ function drawAsteroids() {
       ctx.strokeStyle='rgba(200,200,200,0.2)';
       ctx.lineWidth=1;
       ctx.stroke();
+      // HP bar (always visible — tells player it's breakable)
+      const hpf=ast.hp/ast.maxHp;
+      ctx.fillStyle='rgba(0,0,0,0.6)';
+      ctx.fillRect(-ast.r, -ast.r-10, ast.r*2, 5);
+      ctx.fillStyle=hpf>0.5?'#ff8833':'#ffcc00';
+      ctx.fillRect(-ast.r, -ast.r-10, ast.r*2*hpf, 5);
+      // Ore icon hint
+      ctx.fillStyle='rgba(180,130,60,0.7)';
+      ctx.font='9px monospace';
+      ctx.textAlign='center';
+      ctx.fillText('⛏ '+ast.ore, 0, ast.r+12);
       ctx.restore();
     }
   }
@@ -1165,10 +1218,10 @@ function drawParticles() {
 function drawHUD(t) {
   // Top left panel
   ctx.fillStyle='rgba(0,5,20,0.75)';
-  ctx.fillRect(10,10,220,90);
+  ctx.fillRect(10,10,220,106);
   ctx.strokeStyle='rgba(50,100,200,0.5)';
   ctx.lineWidth=1;
-  ctx.strokeRect(10,10,220,90);
+  ctx.strokeRect(10,10,220,106);
 
   // Hull bar
   ctx.fillStyle='#331111';
@@ -1190,17 +1243,32 @@ function drawHUD(t) {
   ctx.fillText('護盾',14,52);
   ctx.fillText(`${Math.ceil(player.shield)}/${player.maxShield}`,55,51);
 
+  // Boost fuel bar
+  const boostY = 60;
+  ctx.fillStyle='#112200';
+  ctx.fillRect(50,boostY,160,10);
+  const bf=player.boostFuel/player.maxBoostFuel;
+  ctx.fillStyle=player.boosting?'#aaff22':'#55aa22';
+  ctx.fillRect(50,boostY,160*bf,10);
+  ctx.fillStyle=player.boosting?'#ccff44':'#88cc44';
+  ctx.fillText('加速',14,boostY+9);
+  if (player.boosting) {
+    ctx.fillStyle='#ccff44'; ctx.font='bold 11px Courier New';
+    ctx.fillText('◀▶ BOOST!',90,boostY+9);
+    ctx.font='11px Courier New';
+  }
+
   // Resources
   ctx.fillStyle='#aaaaaa'; ctx.font='11px Courier New';
-  ctx.fillText(`礦石: ${player.ore}  晶體: ${player.crystal}  異星: ${player.alienTech}`,14,75);
+  ctx.fillText(`礦石: ${player.ore}  晶體: ${player.crystal}  異星: ${player.alienTech}`,14,90);
 
   // Speed / gravity warning
   const d=dist(player.x,player.y,0,0);
   if (d<600) {
     ctx.fillStyle='rgba(150,0,200,0.15)';
-    ctx.fillRect(10,106,220,20);
+    ctx.fillRect(10,120,220,20);
     ctx.fillStyle='#cc66ff'; ctx.font='11px Courier New';
-    ctx.fillText('⚠ 黑洞引力強化中',14,120);
+    ctx.fillText('⚠ 黑洞引力強化中',14,134);
   }
 
   // Top center: Warp cores
@@ -1278,6 +1346,7 @@ function drawMinimap(t) {
   // Asteroids (small dots)
   for (const [,chunk] of chunks) {
     for (const ast of chunk.asteroids) {
+      if (!ast.alive) continue;
       const ax=toMapX(ast.x), ay=toMapY(ast.y);
       if (ax<mx||ax>mx+mw||ay<my||ay>my+mh) continue;
       ctx.fillStyle='rgba(100,80,60,0.5)';
@@ -1410,7 +1479,7 @@ function renderTitle() {
   // Controls
   ctx.font='12px Courier New';
   ctx.fillStyle='#556677';
-  const controls=['WASD / 方向鍵: 推進   滑鼠: 瞄準   左鍵 / 空白鍵: 射擊','E: 進入太空站   ESC: 暫停'];
+  const controls=['WASD / 方向鍵: 推進   Shift: 加速器   滑鼠: 瞄準   左鍵 / 空白鍵: 射擊','射擊隕石可蒐集礦石   E: 進入太空站   ESC: 暫停'];
   controls.forEach((l,i)=>ctx.fillText(l,W/2,H/2+80+i*20));
 
   // Start prompt
@@ -1509,6 +1578,7 @@ generateChunk(1,0);
 generateChunk(-1,0);
 generateChunk(0,1);
 generateChunk(0,-1);
+generateChunk(2,0);  // guaranteed station here
 
 requestAnimationFrame(loop);
 </script>
