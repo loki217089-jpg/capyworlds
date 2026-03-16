@@ -381,7 +381,7 @@ function generateChunk(cx, cy) {
       const d = r*(0.6+rng()*0.4);
       verts.push({x:Math.cos(a)*d, y:Math.sin(a)*d});
     }
-    const astHp = 2 + Math.floor(r/14); // 3-5 shots to break
+    const astHp = Math.ceil(r * 1.4) + 8; // 4-9 shots: r=20→36, r=40→64, r=60→92
     asteroids.push({x:ax,y:ay,r:r,verts,hp:astHp,maxHp:astHp,alive:true,
       ore: 2+Math.floor(rng()*4),
       color:`hsl(${25+rng()*20},${20+rng()*20}%,${30+rng()*20}%)`});
@@ -390,22 +390,27 @@ function generateChunk(cx, cy) {
   const enemies = [];
   const baseDist = Math.sqrt(cx*cx+cy*cy);
   // Guarantee 1-3 enemies in all but the very starting chunk
-  const numEnemies = baseDist < 0.1 ? 2 : Math.min(6, 1 + Math.floor(rng()*(2+tier*1.5)));
-  const types = ['drone','pirate','alien'];
+  const numEnemies = baseDist < 0.1 ? 3 : Math.min(9, 2 + Math.floor(rng()*(3+tier*2)));
+  const types = ['drone','pirate','alien','gunship'];
   for (let i = 0; i < numEnemies; i++) {
     const ex = ox + rng()*CHUNK;
     const ey = oy + rng()*CHUNK;
-    const typeIdx = Math.floor(rng()*Math.min(3,1+Math.floor(tier/2)));
+    // typeIdx progresses with tier: drone only at 0, all 4 by tier 3
+    const typeIdx = Math.floor(rng()*Math.min(4, 1+tier));
     const t = types[typeIdx];
     const scale = 1 + tier*0.15;
     let hp, speed, dmg, fr, r, color;
-    if (t==='drone')  {hp=30*scale;speed=95;dmg=10*scale;fr=0;r=14;color='#88aacc';}
-    if (t==='pirate') {hp=55*scale;speed=130;dmg=12*scale;fr=1.8;r=15;color='#ff8833';}
-    if (t==='alien')  {hp=80*scale;speed=155;dmg=20*scale;fr=1.2;r=17;color='#aa44ff';}
+    if (t==='drone')   {hp=30*scale; speed=100; dmg=10*scale; fr=0;   r=14; color='#88aacc';}
+    if (t==='pirate')  {hp=55*scale; speed=135; dmg=12*scale; fr=1.8; r=15; color='#ff8833';}
+    if (t==='alien')   {hp=80*scale; speed=155; dmg=20*scale; fr=1.4; r=17; color='#aa44ff';}
+    if (t==='gunship') {hp=110*scale;speed=115; dmg=15*scale; fr=1.0; r=19; color='#ff3355';}
     enemies.push({x:ex,y:ey,vx:0,vy:0,type:t,hp:Math.ceil(hp),maxHp:Math.ceil(hp),
       speed,dmg:Math.ceil(dmg),fireRate:fr,fireTimer:rng()*fr,r,color,
       state:'patrol',patrolAngle:rng()*Math.PI*2,patrolTimer:0,
-      angle:rng()*Math.PI*2,alive:true});
+      angle:rng()*Math.PI*2,alive:true,
+      // new attack fields
+      shotCount:0, charging:false, chargeCD:0, chargeDur:0,
+      circleAngle:rng()*Math.PI*2, burstLeft:0});
   }
 
   const items = [];
@@ -464,9 +469,9 @@ let bullets = [];
 let enemyBullets = [];
 let particles = [];
 
-function spawnBullet(x,y,angle,speed,dmg,owner='player') {
+function spawnBullet(x,y,angle,speed,dmg,owner='player',homing=false) {
   const b = {x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,
-    life:BULLET_LIFE,dmg,owner,r:4};
+    life:BULLET_LIFE+(homing?0.8:0),dmg,owner,r:4,homing};
   if (owner==='player') bullets.push(b);
   else enemyBullets.push(b);
 }
@@ -894,6 +899,15 @@ function dropLoot(x,y,chunk) {
 function updateEnemyBullets(dt) {
   for (let i=enemyBullets.length-1;i>=0;i--) {
     const b=enemyBullets[i];
+    // Homing: slowly steer toward player
+    if (b.homing) {
+      const ha=Math.atan2(player.y-b.y,player.x-b.x);
+      const ca=Math.atan2(b.vy,b.vx);
+      let da=ha-ca; while(da>Math.PI)da-=Math.PI*2; while(da<-Math.PI)da+=Math.PI*2;
+      const na=ca+clamp(da,-2.2*dt,2.2*dt);
+      const spd2=Math.sqrt(b.vx**2+b.vy**2);
+      b.vx=Math.cos(na)*spd2; b.vy=Math.sin(na)*spd2;
+    }
     b.x+=b.vx*dt; b.y+=b.vy*dt; b.life-=dt;
     if (b.life<=0) { enemyBullets.splice(i,1); continue; }
     // Hit player
@@ -928,30 +942,67 @@ function updateEnemies(dt) {
         en.vy += Math.sin(en.patrolAngle)*en.speed*0.3*dt;
       } else if (en.state==='chase'||en.state==='attack') {
         const nx=dx/d, ny=dy/d;
-        en.vx += nx*en.speed*dt;
-        en.vy += ny*en.speed*dt;
-        en.angle = Math.atan2(dy,dx);
+        // Gunship: circle around player instead of charging straight
+        if (en.type==='gunship' && en.state==='attack') {
+          en.circleAngle += dt * 1.1;
+          const orbitDist = 170;
+          const tx = player.x + Math.cos(en.circleAngle)*orbitDist;
+          const ty = player.y + Math.sin(en.circleAngle)*orbitDist;
+          const cdx=tx-en.x, cdy=ty-en.y, cd=Math.sqrt(cdx*cdx+cdy*cdy)+0.01;
+          en.vx += (cdx/cd)*en.speed*dt;
+          en.vy += (cdy/cd)*en.speed*dt;
+          en.angle = Math.atan2(dy,dx);
+        } else {
+          // Drone charge: speed burst when attacking close-up
+          if (en.type==='drone') {
+            if(en.charging){ en.chargeDur-=dt; if(en.chargeDur<=0){en.charging=false;en.chargeCD=3+Math.random()*2;} }
+            else { en.chargeCD-=dt; }
+            if(!en.charging && en.chargeCD<=0 && en.state==='attack' && d<220){
+              en.charging=true; en.chargeDur=0.55; en.chargeCD=0;
+              explosion(en.x,en.y,6,'#ff9944');
+            }
+          }
+          const effSpeed = (en.type==='drone'&&en.charging) ? en.speed*3.2 : en.speed;
+          en.vx += nx*effSpeed*dt;
+          en.vy += ny*effSpeed*dt;
+          en.angle = Math.atan2(dy,dx);
+        }
       }
 
       // Drag
       en.vx*=0.85; en.vy*=0.85;
       const spd=Math.sqrt(en.vx**2+en.vy**2);
-      if (spd>en.speed) { en.vx*=en.speed/spd; en.vy*=en.speed/spd; }
+      const maxESpd = (en.type==='drone'&&en.charging) ? en.speed*3.2 : en.speed*1.05;
+      if (spd>maxESpd) { en.vx*=maxESpd/spd; en.vy*=maxESpd/spd; }
       en.x+=en.vx*dt; en.y+=en.vy*dt;
 
       // Melee damage (drone)
       if (en.type==='drone'&&d<en.r+22&&player.invulTimer<=0) {
-        damagePlayer(en.dmg*dt);
+        damagePlayer(en.dmg*(en.charging?2:1)*dt);
       }
 
-      // Ranged attack
-      if ((en.type==='pirate'||en.type==='alien')&&en.state==='attack') {
+      // Ranged attacks
+      if ((en.type==='pirate'||en.type==='alien'||en.type==='gunship')&&en.state==='attack') {
         en.fireTimer-=dt;
         if (en.fireTimer<=0) {
           en.fireTimer=en.fireRate;
           const ang=Math.atan2(dy,dx);
-          const projSpd = en.type==='alien'?400:500;
-          spawnBullet(en.x,en.y,ang,projSpd,en.dmg,'enemy');
+          if (en.type==='pirate') {
+            // Every 3rd shot fires a spread of 3
+            en.shotCount++;
+            if (en.shotCount%3===0) {
+              for(let si=-1;si<=1;si++) spawnBullet(en.x,en.y,ang+si*0.38,470,en.dmg*0.75,'enemy');
+            } else {
+              spawnBullet(en.x,en.y,ang,500,en.dmg,'enemy');
+            }
+          } else if (en.type==='alien') {
+            // Slow homing bolt
+            spawnBullet(en.x,en.y,ang,260,en.dmg*1.25,'enemy',true);
+          } else if (en.type==='gunship') {
+            // Rapid 2-shot burst
+            spawnBullet(en.x,en.y,ang-0.08,520,en.dmg,'enemy');
+            spawnBullet(en.x,en.y,ang+0.08,520,en.dmg,'enemy');
+          }
         }
       }
 
@@ -1181,41 +1232,131 @@ function drawItems(t) {
   for (const [,chunk] of chunks) {
     for (const item of chunk.items) {
       if (!item.alive) continue;
-      const bob=Math.sin(t*0.001*3+item.bobOffset)*4;
+      const bob = Math.sin(t*0.001*2.8+item.bobOffset)*4;
+      const sx = item.x - player.x + W/2;
+      const sy = item.y - player.y + H/2;
+      if (sx<-80||sx>W+80||sy<-80||sy>H+80) continue;
       ctx.save();
-      ctx.translate(item.x,item.y+bob);
-
-      const colors={energy:'#00ffee',hull:'#4488ff',ore:'#aa7733',
-                    crystal:'#cc44ff',alientech:'#ffee00',warpcore:'#ffdd00'};
-      const c=colors[item.type]||'#ffffff';
-
-      if (item.type==='warpcore') {
-        const pulse=0.7+0.3*Math.sin(t*0.001*5);
-        ctx.shadowColor=c; ctx.shadowBlur=20*pulse;
-        ctx.beginPath();
-        ctx.arc(0,0,item.r*pulse,0,Math.PI*2);
-        ctx.fillStyle=c; ctx.fill();
-        ctx.shadowBlur=0;
-        // Inner star
-        ctx.fillStyle='#ffffff';
-        for (let i=0;i<5;i++) {
-          const a=i/5*Math.PI*2-Math.PI/2+t*0.001*2;
-          ctx.beginPath();
-          ctx.arc(Math.cos(a)*7,Math.sin(a)*7,2,0,Math.PI*2);
-          ctx.fill();
-        }
-      } else {
-        ctx.shadowColor=c; ctx.shadowBlur=12;
-        ctx.beginPath();
-        ctx.arc(0,0,item.r,0,Math.PI*2);
-        ctx.fillStyle=c+'44';
-        ctx.fill();
-        ctx.strokeStyle=c;
-        ctx.lineWidth=2;
-        ctx.stroke();
-        ctx.shadowBlur=0;
-      }
+      ctx.translate(item.x, item.y+bob);
+      drawItemIcon(item.type, item.r, t, item.bobOffset||0);
       ctx.restore();
+    }
+  }
+}
+
+function drawItemIcon(type, r, t, seed) {
+  ctx.shadowBlur = 0;
+  if (type === 'ore') {
+    // Jagged rock with orange veins
+    ctx.shadowColor='#dd8833'; ctx.shadowBlur=10;
+    ctx.fillStyle='#5a3a18'; ctx.strokeStyle='#bb6622'; ctx.lineWidth=2;
+    ctx.beginPath();
+    const n=8;
+    for(let i=0;i<n;i++){
+      const a=(i/n)*Math.PI*2;
+      const rd=r*(0.65+0.38*Math.sin(a*3.1+seed*7+1.2));
+      i===0?ctx.moveTo(Math.cos(a)*rd,Math.sin(a)*rd):ctx.lineTo(Math.cos(a)*rd,Math.sin(a)*rd);
+    }
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    // Orange mineral veins
+    ctx.shadowBlur=0; ctx.strokeStyle='rgba(255,140,40,0.65)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(-r*.4,-r*.2); ctx.lineTo(r*.3,r*.35); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-r*.1,-r*.45); ctx.lineTo(r*.15,-r*.1); ctx.stroke();
+
+  } else if (type === 'crystal') {
+    // Tall gem with facets
+    ctx.shadowColor='#cc44ff'; ctx.shadowBlur=20;
+    ctx.fillStyle='#2a0044'; ctx.strokeStyle='#dd66ff'; ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(0, -r*1.35);
+    ctx.lineTo(r*.85, -r*.2); ctx.lineTo(r*.6, r*.9);
+    ctx.lineTo(-r*.6, r*.9); ctx.lineTo(-r*.85,-r*.2);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    // Inner facet lines
+    ctx.shadowBlur=0; ctx.strokeStyle='rgba(230,160,255,.45)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,-r*1.35); ctx.lineTo(0,r*.3); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-r*.85,-r*.2); ctx.lineTo(r*.85,-r*.2); ctx.stroke();
+    // Shine spot
+    ctx.fillStyle='rgba(255,220,255,.65)';
+    ctx.beginPath(); ctx.arc(-r*.22,-r*.55,r*.13,0,Math.PI*2); ctx.fill();
+
+  } else if (type === 'alientech') {
+    // Hexagonal circuit board
+    ctx.shadowColor='#ffee00'; ctx.shadowBlur=16;
+    ctx.fillStyle='#1a1100'; ctx.strokeStyle='#ffcc00'; ctx.lineWidth=2;
+    ctx.beginPath();
+    for(let i=0;i<6;i++){
+      const a=(i/6)*Math.PI*2+Math.PI/6;
+      i===0?ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r):ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);
+    }
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    // Circuit traces
+    ctx.shadowBlur=0; ctx.strokeStyle='rgba(255,200,0,.65)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(-r*.6,0); ctx.lineTo(r*.6,0); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,-r*.6); ctx.lineTo(0,r*.6); ctx.stroke();
+    // Solder dots
+    ctx.fillStyle='#ffdd00';
+    [[r*.5,0],[0,-r*.5],[-r*.45,r*.28],[r*.3,r*.42]].forEach(([px,py])=>{
+      ctx.beginPath(); ctx.arc(px,py,r*.1,0,Math.PI*2); ctx.fill();
+    });
+    ctx.beginPath(); ctx.arc(0,0,r*.22,0,Math.PI*2); ctx.fill();
+
+  } else if (type === 'energy') {
+    // Battery cell with lightning bolt
+    ctx.shadowColor='#00ffcc'; ctx.shadowBlur=16;
+    const bw=r*.9, bh=r*1.7;
+    ctx.fillStyle='#002233'; ctx.strokeStyle='#00ddbb'; ctx.lineWidth=2;
+    ctx.fillRect(-bw,-bh*.5,bw*2,bh);
+    ctx.strokeRect(-bw,-bh*.5,bw*2,bh);
+    // Terminal cap
+    ctx.fillStyle='#00ffcc';
+    ctx.fillRect(-bw*.35,-bh*.5-r*.2,bw*.7,r*.22);
+    // Charge bar
+    ctx.fillStyle='#00ffcc';
+    ctx.fillRect(-bw+3,-bh*.5+3,bw*2-6,bh*.62);
+    // Lightning bolt cutout
+    ctx.fillStyle='#001a22';
+    ctx.beginPath();
+    ctx.moveTo(-r*.18,-r*.42); ctx.lineTo(r*.1,-r*.04);
+    ctx.lineTo(-r*.06,-r*.04); ctx.lineTo(r*.18,r*.42);
+    ctx.lineTo(-r*.1,r*.04); ctx.lineTo(r*.06,r*.04);
+    ctx.closePath(); ctx.fill();
+    ctx.shadowBlur=0;
+
+  } else if (type === 'hull') {
+    // Shield shape with cross
+    ctx.shadowColor='#4488ff'; ctx.shadowBlur=16;
+    ctx.fillStyle='#001144'; ctx.strokeStyle='#4488ff'; ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(0, -r*1.1);
+    ctx.lineTo(r, -r*.4); ctx.lineTo(r, r*.35);
+    ctx.quadraticCurveTo(r, r*1.15, 0, r*1.4);
+    ctx.quadraticCurveTo(-r, r*1.15, -r, r*.35);
+    ctx.lineTo(-r, -r*.4);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    // Shine
+    ctx.shadowBlur=0; ctx.strokeStyle='rgba(120,180,255,.4)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(-r*.4,-r*.7); ctx.lineTo(-r*.1,r*.3); ctx.stroke();
+    // Cross
+    ctx.strokeStyle='rgba(120,180,255,.75)'; ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.moveTo(0,-r*.4); ctx.lineTo(0,r*.55); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-r*.38,r*.08); ctx.lineTo(r*.38,r*.08); ctx.stroke();
+    ctx.shadowBlur=0;
+
+  } else if (type === 'warpcore') {
+    // Pulsing orb with orbiting stars
+    const pulse=0.75+0.25*Math.sin(t*0.005);
+    ctx.shadowColor='#ffdd00'; ctx.shadowBlur=28*pulse;
+    ctx.beginPath(); ctx.arc(0,0,r*pulse,0,Math.PI*2);
+    ctx.fillStyle='#ffdd00'; ctx.fill(); ctx.shadowBlur=0;
+    // Outer ring
+    ctx.strokeStyle='rgba(255,220,80,.5)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(0,0,r*1.5,0,Math.PI*2); ctx.stroke();
+    // Orbiting dots
+    ctx.fillStyle='#ffffff';
+    for(let i=0;i<5;i++){
+      const a=i/5*Math.PI*2+t*0.002;
+      ctx.beginPath(); ctx.arc(Math.cos(a)*r*1.5,Math.sin(a)*r*1.5,2.5,0,Math.PI*2); ctx.fill();
     }
   }
 }
@@ -1345,6 +1486,27 @@ function drawEnemies(t) {
           ctx.beginPath(); ctx.moveTo(Math.cos(a)*r*0.5,Math.sin(a)*r*0.5);
           ctx.lineTo(Math.cos(a)*r*1.4,Math.sin(a)*r*1.4); ctx.stroke();
         }
+      } else if (en.type==='gunship') {
+        // Heavy capital ship — wide rectangular hull
+        ctx.beginPath();
+        ctx.moveTo(r*1.1,r*0.35); ctx.lineTo(r*1.1,-r*0.35);
+        ctx.lineTo(-r*0.6,-r*0.55); ctx.lineTo(-r*1.0,-r*0.55);
+        ctx.lineTo(-r*1.0,r*0.55); ctx.lineTo(-r*0.6,r*0.55);
+        ctx.closePath();
+        ctx.fillStyle='#1a1a2e'; ctx.fill();
+        ctx.strokeStyle='#ff4444'; ctx.lineWidth=2; ctx.stroke();
+        // Twin gun barrels
+        ctx.strokeStyle='#cc3333'; ctx.lineWidth=3;
+        ctx.beginPath(); ctx.moveTo(r*0.6,r*0.28); ctx.lineTo(r*1.4,r*0.28); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(r*0.6,-r*0.28); ctx.lineTo(r*1.4,-r*0.28); ctx.stroke();
+        // Engine glow on back
+        ctx.fillStyle='#ff3300';
+        ctx.beginPath(); ctx.arc(-r*0.9,r*0.35,4,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(-r*0.9,-r*0.35,4,0,Math.PI*2); ctx.fill();
+        // Warning stripe
+        ctx.strokeStyle='rgba(255,80,0,0.5)'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(-r*0.2,r*0.55); ctx.lineTo(r*0.4,r*0.55); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(-r*0.2,-r*0.55); ctx.lineTo(r*0.4,-r*0.55); ctx.stroke();
       }
       // HP bar
       const hpFrac=en.hp/en.maxHp;
@@ -1432,9 +1594,20 @@ function drawBullets(t) {
     ctx.save();
     ctx.translate(b.x,b.y);
     ctx.rotate(ang);
-    ctx.fillStyle='#ff6600';
-    ctx.shadowColor='#ff6600'; ctx.shadowBlur=8;
-    ctx.beginPath(); ctx.ellipse(0,0,7,3,0,0,Math.PI*2); ctx.fill();
+    if (b.homing) {
+      // Homing bolt: pulsing purple orb with crosshair
+      const pulse=0.8+0.2*Math.sin(t*0.015);
+      ctx.shadowColor='#cc44ff'; ctx.shadowBlur=14*pulse;
+      ctx.fillStyle='#cc44ff';
+      ctx.beginPath(); ctx.arc(0,0,5,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='rgba(200,100,255,0.7)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(-8,0); ctx.lineTo(8,0); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,-8); ctx.lineTo(0,8); ctx.stroke();
+    } else {
+      ctx.fillStyle='#ff6600';
+      ctx.shadowColor='#ff6600'; ctx.shadowBlur=8;
+      ctx.beginPath(); ctx.ellipse(0,0,7,3,0,0,Math.PI*2); ctx.fill();
+    }
     ctx.restore();
   }
   ctx.shadowBlur=0;
@@ -1465,7 +1638,7 @@ function drawHUD(t) {
   const hf=player.hull/player.maxHull;
   ctx.fillStyle=hf>0.5?'#cc2222':hf>0.25?'#ff6600':'#ff0000';
   ctx.fillRect(50,20,160*hf,14);
-  ctx.fillStyle='#ffffff'; ctx.font='11px Courier New'; ctx.textAlign='left';
+  ctx.fillStyle='#ffffff'; ctx.font='13px Courier New'; ctx.textAlign='left';
   ctx.fillText('船殼',14,32);
   ctx.fillText(`${Math.ceil(player.hull)}/${player.maxHull}`,55,31);
 
@@ -1489,13 +1662,13 @@ function drawHUD(t) {
   ctx.fillStyle=player.boosting?'#ccff44':'#88cc44';
   ctx.fillText('加速',14,boostY+9);
   if (player.boosting) {
-    ctx.fillStyle='#ccff44'; ctx.font='bold 11px Courier New';
+    ctx.fillStyle='#ccff44'; ctx.font='bold 13px Courier New';
     ctx.fillText('◀▶ BOOST!',90,boostY+9);
-    ctx.font='11px Courier New';
+    ctx.font='13px Courier New';
   }
 
   // Resources
-  ctx.fillStyle='#aaaaaa'; ctx.font='11px Courier New';
+  ctx.fillStyle='#aaaaaa'; ctx.font='13px Courier New';
   ctx.fillText(`礦石: ${player.ore}  晶體: ${player.crystal}  異星: ${player.alienTech}`,14,90);
 
   // Speed / gravity warning
@@ -1503,7 +1676,7 @@ function drawHUD(t) {
   if (d<600) {
     ctx.fillStyle='rgba(150,0,200,0.15)';
     ctx.fillRect(10,120,220,20);
-    ctx.fillStyle='#cc66ff'; ctx.font='11px Courier New';
+    ctx.fillStyle='#cc66ff'; ctx.font='13px Courier New';
     ctx.fillText('⚠ 黑洞引力強化中',14,134);
   }
 
@@ -1513,7 +1686,7 @@ function drawHUD(t) {
   ctx.fillRect(cx2-120,10,240,36);
   ctx.strokeStyle='rgba(50,100,200,0.5)'; ctx.lineWidth=1;
   ctx.strokeRect(cx2-120,10,240,36);
-  ctx.fillStyle='#aaaaaa'; ctx.font='11px Courier New'; ctx.textAlign='center';
+  ctx.fillStyle='#aaaaaa'; ctx.font='13px Courier New'; ctx.textAlign='center';
   ctx.fillText('翹曲核心',cx2,24);
   for (let i=0;i<5;i++) {
     const sx=cx2-90+i*38;
@@ -1552,7 +1725,7 @@ function drawHUD(t) {
   // Warp core location hints (when none collected)
   if (player.warpCores===0 && Math.floor(t*0.001)%8<4) {
     ctx.fillStyle='rgba(255,220,0,0.5)';
-    ctx.font='10px Courier New'; ctx.textAlign='center';
+    ctx.font='12px Courier New'; ctx.textAlign='center';
     ctx.fillText('翹曲核心分佈在銀河各處 — 向遠方探索！',W/2,H-70);
   }
 
@@ -1576,7 +1749,7 @@ function drawHUD(t) {
       ctx.fillStyle='#ffdd00';
       ctx.beginPath(); ctx.moveTo(16,0); ctx.lineTo(-8,8); ctx.lineTo(-8,-8); ctx.closePath();
       ctx.fill();
-      ctx.font='10px Courier New'; ctx.textAlign='center'; ctx.fillStyle='#ffdd00';
+      ctx.font='12px Courier New'; ctx.textAlign='center'; ctx.fillStyle='#ffdd00';
       ctx.fillText(`${Math.floor(Math.sqrt(nearestDist))}u`,0,20);
       ctx.restore(); ctx.globalAlpha=1;
     }
@@ -1697,7 +1870,7 @@ function drawMinimap(t) {
   ctx.restore();
 
   // Coordinates
-  ctx.fillStyle='rgba(100,120,160,0.7)'; ctx.font='10px Courier New'; ctx.textAlign='right';
+  ctx.fillStyle='rgba(100,120,160,0.7)'; ctx.font='12px Courier New'; ctx.textAlign='right';
   ctx.fillText(`${Math.floor(player.x)}, ${Math.floor(player.y)}`,mx+mw-2,my+mh+12);
 }
 
