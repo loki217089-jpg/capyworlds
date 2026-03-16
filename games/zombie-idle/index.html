@@ -834,7 +834,6 @@ function renderZombies() {
     const div    = document.createElement('div');
     div.id        = 'zr-' + zd.id;
     div.className = 'zrow' + (afford ? ' ok' : '');
-    div.onclick   = () => buyZ(zd.id);
     div.innerHTML = `
       <div class="zem">${zd.em}</div>
       <div class="zi">
@@ -1177,7 +1176,23 @@ function autoUpgrade() {
 
 function init() {
   load();
+  // Sync buy-mode button state with loaded save
+  document.querySelectorAll('.bb').forEach(b => b.classList.remove('on'));
+  const bmId = 'bm' + G.bm;
+  const bmEl = document.getElementById(bmId);
+  if (bmEl) bmEl.classList.add('on');
+
   render();
+
+  // Event delegation for zombie rows — fixes race condition where tick()
+  // clears innerHTML every 50ms, destroying onclick handlers mid-click.
+  document.getElementById('zlist').addEventListener('click', e => {
+    const row = e.target.closest('.zrow');
+    if (!row || row.classList.contains('dim')) return;
+    const zid = parseInt(row.id.replace('zr-', ''), 10);
+    if (!isNaN(zid)) buyZ(zid);
+  });
+
   setInterval(tick, 50);
   setInterval(rotateTicker, 48000);
   rotateTicker();
