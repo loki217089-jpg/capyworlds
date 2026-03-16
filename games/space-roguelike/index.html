@@ -1,1099 +1,1516 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>虛空領航員 — Void Navigator</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Segoe UI',monospace}
-canvas{display:block;cursor:crosshair}
-#overlay{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;user-select:none}
-#shopModal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-  background:rgba(5,8,20,0.97);border:1px solid #2a4a6a;border-radius:12px;
-  padding:24px;width:min(600px,95vw);max-height:85vh;overflow-y:auto;z-index:100;color:#c8dff0;pointer-events:all}
-#shopModal h2{color:#4af;font-size:20px;margin-bottom:6px;letter-spacing:2px}
-#shopModal .sub{color:#567;font-size:13px;margin-bottom:16px}
-.shop-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.shop-item{background:rgba(20,40,70,0.8);border:1px solid #1a3a5a;border-radius:8px;
-  padding:12px;cursor:pointer;transition:border-color .2s,background .2s}
-.shop-item:hover{border-color:#4af;background:rgba(30,60,100,0.9)}
-.shop-item.bought{opacity:0.45;cursor:not-allowed;border-color:#333}
-.shop-item.cant-afford{opacity:0.5;cursor:not-allowed}
-.shop-item h3{font-size:13px;color:#8cf;margin-bottom:4px}
-.shop-item p{font-size:11px;color:#789;line-height:1.4}
-.shop-item .cost{font-size:11px;color:#fa8;margin-top:6px;font-weight:bold}
-#shopClose{margin-top:16px;width:100%;padding:10px;background:#1a3a6a;border:1px solid #4af;
-  color:#4af;border-radius:6px;cursor:pointer;font-size:14px;letter-spacing:1px}
-#shopClose:hover{background:#2a5a9a}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #000010; overflow: hidden; font-family: 'Courier New', monospace; color: #fff; }
+canvas { display: block; }
+#ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+#shop-overlay {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  background: rgba(5,10,30,0.95); border: 1px solid #2244aa; border-radius: 12px;
+  padding: 24px; width: 480px; max-height: 80vh; overflow-y: auto;
+  display: none; pointer-events: all; z-index: 100;
+  box-shadow: 0 0 40px rgba(50,100,255,0.4);
+}
+#shop-overlay h2 { text-align: center; color: #88ccff; margin-bottom: 8px; font-size: 20px; }
+#shop-overlay .resources { text-align: center; color: #aaa; margin-bottom: 16px; font-size: 13px; }
+#shop-overlay .section-title { color: #ffcc44; margin: 12px 0 6px; font-size: 13px; border-bottom: 1px solid #333; padding-bottom: 4px; }
+.shop-item { display: flex; justify-content: space-between; align-items: center;
+  padding: 7px 10px; margin: 4px 0; border-radius: 6px; background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08); transition: background 0.1s; }
+.shop-item:hover { background: rgba(255,255,255,0.09); }
+.shop-item .item-name { font-size: 13px; color: #ddd; }
+.shop-item .item-cost { font-size: 12px; color: #aaa; }
+.shop-item button { background: #1a3a6a; border: 1px solid #2255aa; color: #88ccff;
+  padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; pointer-events: all; }
+.shop-item button:hover:not(:disabled) { background: #2255aa; }
+.shop-item button:disabled { opacity: 0.4; cursor: not-allowed; }
+#shop-close { display: block; margin: 16px auto 0; background: #aa2222; border: none;
+  color: #fff; padding: 8px 24px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+#shop-close:hover { background: #cc3333; }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="overlay"></div>
-<div id="shopModal">
-  <h2>⚡ 太空站補給</h2>
-  <div class="sub">使用礦石與晶體升級你的太空艇</div>
-  <div class="shop-grid" id="shopGrid"></div>
-  <button id="shopClose" onclick="closeShop()">離開太空站 [E]</button>
+<div id="ui">
+  <div id="shop-overlay">
+    <h2>太空站補給</h2>
+    <div class="resources" id="shop-resources"></div>
+    <div class="section-title">船艦升級</div>
+    <div id="shop-upgrades"></div>
+    <div class="section-title">領航員天賦</div>
+    <div id="shop-perks"></div>
+    <button id="shop-close">離開 (E)</button>
+  </div>
 </div>
-
 <script>
 'use strict';
-// ═══════════════════════════════════
-//  虛空領航員 — Void Navigator
-// ═══════════════════════════════════
 
+// ─── CANVAS SETUP ────────────────────────────────────────────────────────────
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
-let W, H;
-function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
-resize();
-window.addEventListener('resize', resize);
+let W = canvas.width = window.innerWidth;
+let H = canvas.height = window.innerHeight;
+window.addEventListener('resize', () => {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+});
 
-// ── Constants ──
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const CHUNK = 1800;
-const LOAD_R = 2;
-const WARP_POSITIONS = [
-  {x:7500,y:2500},{x:-6500,y:5500},{x:3500,y:-8500},{x:-5500,y:-4500},{x:9000,y:-5500}
-];
-const PORTAL_POS = {x:12000,y:0};
+const DRAG = 0.88;
+const BULLET_SPEED = 650;
+const BULLET_LIFE = 1.2;
+const BULLET_DMG = 12;
+const FIRE_RATE = 0.22;
+const SHIELD_REGEN = 8;
+const SHIELD_REGEN_DELAY = 3;
+const BH_RADIUS = 200;
+const BH_DMG = 50;
 
-// ── Seeded RNG ──
-function makeRng(cx,cy){
-  let s = Math.imul(cx^0xdeadbeef, 2654435761) ^ Math.imul(cy^0xcafebabe, 2246822519);
-  s = s >>> 0;
-  return ()=>{
-    s ^= s << 13; s ^= s >> 17; s ^= s << 5;
-    return (s>>>0)/0xFFFFFFFF;
+const WARP_CORE_POSITIONS = [
+  {x:7500,y:2500},{x:-6500,y:5500},{x:3500,y:-8500},
+  {x:-5500,y:-4500},{x:9000,y:-5500}
+];
+const ESCAPE_PORTAL_POS = {x:12000,y:0};
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let state = 'title'; // title, playing, paused, shop, gameover, victory
+let gameTime = 0;
+let playTime = 0;
+let statusMsg = '';
+let statusTimer = 0;
+let shopStation = null;
+
+// ─── RNG ──────────────────────────────────────────────────────────────────────
+function mulberry32(seed) {
+  return function() {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
   };
 }
+function chunkSeed(cx, cy) {
+  return (cx * 73856093) ^ (cy * 19349663) ^ 0xDEADBEEF;
+}
 
-// ── Input ──
-const keys={};
-const mouse={x:W/2,y:H/2,down:false};
-window.addEventListener('keydown',e=>{
-  keys[e.code]=true;
-  if(e.code==='Escape') togglePause();
-  if(e.code==='KeyE') toggleShop();
-  if(e.code==='Enter'||e.code==='NumpadEnter'){
-    if(gs.state==='title') startGame();
-    else if(gs.state==='dead'||gs.state==='win') startGame();
+// ─── STARFIELD ────────────────────────────────────────────────────────────────
+const stars = [];
+(function initStars() {
+  const rng = mulberry32(42);
+  const layers = [{n:200,speed:0.1,sz:1},{n:100,speed:0.25,sz:1.5},{n:50,speed:0.5,sz:2}];
+  for (const l of layers) {
+    for (let i = 0; i < l.n; i++) {
+      stars.push({
+        x: rng()*4000-2000, y: rng()*4000-2000,
+        speed: l.speed, sz: l.sz,
+        brightness: 0.4+rng()*0.6
+      });
+    }
   }
-  e.preventDefault();
-},{passive:false});
-window.addEventListener('keyup',e=>{ keys[e.code]=false; });
-canvas.addEventListener('mousemove',e=>{ mouse.x=e.clientX; mouse.y=e.clientY; });
-canvas.addEventListener('mousedown',e=>{ mouse.down=true; if(gs.state==='title') startGame(); });
-canvas.addEventListener('mouseup',e=>{ mouse.down=false; });
-canvas.addEventListener('contextmenu',e=>e.preventDefault());
+})();
 
-
-// ── Stars (parallax) ──
-const starLayers = [
-  Array.from({length:200},()=>({x:Math.random()*4000,y:Math.random()*4000,r:0.6+Math.random()*0.8,s:0.05})),
-  Array.from({length:100},()=>({x:Math.random()*4000,y:Math.random()*4000,r:0.9+Math.random()*1.2,s:0.15})),
-  Array.from({length:40}, ()=>({x:Math.random()*4000,y:Math.random()*4000,r:1.2+Math.random()*1.8,s:0.3})),
-];
-
-// ── Game State ──
-const gs = {
-  state:'title', // title|playing|paused|dead|win
-  time:0,
-  playTime:0,
-  score:0,
-  shopOpen:false,
-  nearStation:null,
-  statusMsg:'',
-  statusTimer:0,
-  gravity:0,
-  gravTimer:0,
-};
-
-// ── Player ──
-function makePlayer(){
+// ─── PLAYER ──────────────────────────────────────────────────────────────────
+let player;
+function createPlayer() {
   return {
-    x:600,y:0, vx:0,vy:0,
-    angle:0,
-    hull:100,maxHull:100,
-    shield:60,maxShield:60,
-    shieldTimer:0,
-    invTimer:0,
-    fireCooldown:0,
-    ore:0,crystal:0,tech:0,warpCores:0,
-    collectedCores:new Set(),
-    engineLv:1,shieldLv:1,hullLv:1,weaponLv:1,
-    deepScanner:false,lootFinder:false,combatExpert:false,
-    evasion:false,autoRepair:false,autoRepairTimer:0,
-    radius:14,
+    x: 600, y: 0, vx: 0, vy: 0,
+    angle: 0,
+    hull: 100, maxHull: 100,
+    shield: 60, maxShield: 60,
+    fireTimer: 0,
+    invulTimer: 0,
+    shieldCooldown: 0,
+    ore: 0, crystal: 0, alienTech: 0,
+    warpCores: 0,
+    warpCoreSet: new Set(),
+    // upgrades
+    engineLevel: 1,
+    shieldLevel: 1,
+    hullLevel: 1,
+    weaponLevel: 1,
+    // perks
+    deepScanner: false,
+    lootFinder: false,
+    combatExpert: false,
+    evasion: false,
+    autoRepair: false,
+    thrustForce: 280,
+    escaped: false
   };
 }
-let player = makePlayer();
 
-// ── Entities ──
-let chunks=new Map(), asteroids=[], enemies=[], items=[], bullets=[], eparticles=[], particles=[];
+// ─── WORLD CHUNKS ─────────────────────────────────────────────────────────────
+const chunks = new Map();
+const loadedChunks = new Set();
 
-// ── Warp core items in world ──
-let warpCoreItems = WARP_POSITIONS.map((p,i)=>({
-  x:p.x,y:p.y,type:'warpCore',radius:18,id:i,collected:false,bobT:Math.random()*Math.PI*2
-}));
-let escapePortal = null;
+function chunkKey(cx, cy) { return cx+','+cy; }
 
-// ── Chunk generation ──
-function getChunk(cx,cy){
-  const k=`${cx},${cy}`;
-  if(chunks.has(k)) return chunks.get(k);
-  const rng=makeRng(cx,cy);
-  const wx=cx*CHUNK, wy=cy*CHUNK;
-  const dist=Math.sqrt(cx*cx+cy*cy);
-  const ch={cx,cy,asteroids:[],enemies:[],items:[],station:null};
+function distTier(cx, cy) {
+  return Math.floor(Math.sqrt(cx*cx+cy*cy) / 3);
+}
 
-  // Asteroids
-  const na=6+Math.floor(rng()*8);
-  for(let i=0;i<na;i++){
-    const r=20+rng()*28;
-    const pts=[];
-    const ns=7+Math.floor(rng()*5);
-    for(let j=0;j<ns;j++){
-      const a=(j/ns)*Math.PI*2;
-      pts.push({a,r:r*(0.7+rng()*0.6)});
+function generateChunk(cx, cy) {
+  const key = chunkKey(cx, cy);
+  if (chunks.has(key)) return;
+  const rng = mulberry32(chunkSeed(cx, cy));
+  const tier = distTier(cx, cy);
+  const ox = cx * CHUNK, oy = cy * CHUNK;
+
+  const asteroids = [];
+  const numAst = Math.floor(rng()*8)+5;
+  for (let i = 0; i < numAst; i++) {
+    const ax = ox + rng()*CHUNK;
+    const ay = oy + rng()*CHUNK;
+    const r = 20 + rng()*40;
+    const verts = [];
+    const nv = Math.floor(rng()*4)+6;
+    for (let v = 0; v < nv; v++) {
+      const a = (v/nv)*Math.PI*2;
+      const d = r*(0.6+rng()*0.4);
+      verts.push({x:Math.cos(a)*d, y:Math.sin(a)*d});
     }
-    ch.asteroids.push({x:wx+rng()*CHUNK,y:wy+rng()*CHUNK,radius:r,pts,
-      hp:3+Math.floor(dist),ore:2+Math.floor(rng()*3),angle:rng()*Math.PI*2});
+    asteroids.push({x:ax,y:ay,r:r,verts,hp:Math.floor(r*2),maxHp:Math.floor(r*2),
+      color:`hsl(${25+rng()*20},${20+rng()*20}%,${30+rng()*20}%)`});
   }
 
-  // Enemies
-  if(dist>0.5){
-    const ne=Math.floor(Math.min(dist*0.8+rng()*2,5));
-    for(let i=0;i<ne;i++){
-      const ex=wx+100+rng()*(CHUNK-200), ey=wy+100+rng()*(CHUNK-200);
-      const tier=Math.floor(dist);
-      const types=['drone','drone','pirate','pirate','alien'];
-      const type=types[Math.min(Math.floor(rng()*(tier+2)),4)];
-      ch.enemies.push(makeEnemy(ex,ey,type,tier,rng));
-    }
+  const enemies = [];
+  const maxEnemies = Math.min(4, Math.floor(rng()*(4+tier)));
+  const numEnemies = Math.floor(rng()*maxEnemies);
+  const types = ['drone','pirate','alien'];
+  for (let i = 0; i < numEnemies; i++) {
+    const ex = ox + rng()*CHUNK;
+    const ey = oy + rng()*CHUNK;
+    const typeIdx = Math.floor(rng()*Math.min(3,1+Math.floor(tier/2)));
+    const t = types[typeIdx];
+    const scale = 1 + tier*0.15;
+    let hp, speed, dmg, fr, r, color;
+    if (t==='drone')  {hp=30*scale;speed=95;dmg=10*scale;fr=0;r=14;color='#88aacc';}
+    if (t==='pirate') {hp=55*scale;speed=130;dmg=12*scale;fr=1.8;r=15;color='#ff8833';}
+    if (t==='alien')  {hp=80*scale;speed=155;dmg=20*scale;fr=1.2;r=17;color='#aa44ff';}
+    enemies.push({x:ex,y:ey,vx:0,vy:0,type:t,hp:Math.ceil(hp),maxHp:Math.ceil(hp),
+      speed,dmg:Math.ceil(dmg),fireRate:fr,fireTimer:rng()*fr,r,color,
+      state:'patrol',patrolAngle:rng()*Math.PI*2,patrolTimer:0,
+      angle:rng()*Math.PI*2,alive:true});
   }
 
-  // Items
-  const ni=1+Math.floor(rng()*4);
-  for(let i=0;i<ni;i++){
-    ch.items.push(makeItem(wx+rng()*CHUNK,wy+rng()*CHUNK,dist,rng));
+  const items = [];
+  const numItems = Math.floor(rng()*4)+1;
+  const itemTypes = ['energy','hull','ore','crystal','alientech'];
+  for (let i = 0; i < numItems; i++) {
+    const ix = ox + rng()*CHUNK;
+    const iy = oy + rng()*CHUNK;
+    const it = itemTypes[Math.floor(rng()*itemTypes.length)];
+    items.push({x:ix,y:iy,type:it,r:12,bobOffset:rng()*Math.PI*2,alive:true});
   }
 
-  // Station (1/8 chance, not in center chunk)
-  if(dist>1 && rng()<0.125){
-    ch.station={x:wx+400+rng()*(CHUNK-800),y:wy+400+rng()*(CHUNK-800),radius:36,visited:false};
-  }
-
-  chunks.set(k,ch);
-  return ch;
-}
-
-function makeEnemy(x,y,type,tier,rng){
-  const base={drone:{hp:30,speed:95,dmg:10,rate:0,color:'#55aacc',radius:13},
-    pirate:{hp:55,speed:130,dmg:12,rate:1.8,color:'#ff8822',radius:15},
-    alien:{hp:80,speed:155,dmg:20,rate:1.2,color:'#cc44ff',radius:17}};
-  const b=base[type];
-  const scale=1+tier*0.15;
-  return {x,y,vx:0,vy:0,type,hp:b.hp*scale,maxHp:b.hp*scale,
-    speed:b.speed,dmg:b.dmg*scale,rate:b.rate,color:b.color,radius:b.radius,
-    fireCd:rng()*(b.rate||1),angle:0,
-    state:'patrol',
-    px:x+(rng()-0.5)*500,py:y+(rng()-0.5)*500,
-    active:false,dead:false};
-}
-
-function makeItem(x,y,dist,rng){
-  const roll=rng();
-  let type;
-  if(roll<0.25) type='energyCell';
-  else if(roll<0.50) type='hullPlate';
-  else if(roll<0.70) type='ore';
-  else if(roll<0.87) type='crystal';
-  else type='tech';
-  const colors={energyCell:'#00ffcc',hullPlate:'#4488ff',ore:'#cc8844',crystal:'#cc44ff',tech:'#ffff44'};
-  return {x,y,type,color:colors[type],radius:11,bobT:rng()*Math.PI*2,collected:false};
-}
-
-
-// ── Load/Unload chunks around player ──
-function updateChunks(){
-  const pcx=Math.floor(player.x/CHUNK), pcy=Math.floor(player.y/CHUNK);
-  asteroids=[]; enemies=[]; items=[];
-  const stations=[];
-  for(let dx=-LOAD_R;dx<=LOAD_R;dx++){
-    for(let dy=-LOAD_R;dy<=LOAD_R;dy++){
-      const ch=getChunk(pcx+dx,pcy+dy);
-      ch.asteroids.forEach(a=>{if(!a.dead) asteroids.push(a)});
-      ch.enemies.forEach(e=>{if(!e.dead) enemies.push(e)});
-      ch.items.forEach(it=>{if(!it.collected) items.push(it)});
-      if(ch.station) stations.push(ch.station);
-    }
-  }
-  // warp cores
-  warpCoreItems.forEach(wc=>{if(!wc.collected) items.push(wc)});
-  // escape portal
-  if(escapePortal) stations.push(escapePortal);
-  return stations;
-}
-
-// ── Physics helpers ──
-function dist2(a,b){ return (a.x-b.x)**2+(a.y-b.y)**2; }
-function dist(a,b){ return Math.sqrt(dist2(a,b)); }
-function angle(a,b){ return Math.atan2(b.y-a.y,b.x-a.x); }
-function lerp(a,b,t){ return a+(b-a)*t; }
-function clamp(v,lo,hi){ return Math.max(lo,Math.min(hi,v)); }
-
-// ── Collision circles ──
-function circlesOverlap(a,b){ return dist2(a,b)<(a.radius+b.radius)**2; }
-
-// ── Player update ──
-function updatePlayer(dt, stationsList){
-  const p=player;
-  if(p.hull<=0) return;
-
-  // Thrust
-  const spd = 220*(1+(p.engineLv-1)*0.3);
-  let ax=0,ay=0;
-  if(keys['KeyW']||keys['ArrowUp'])    { ax+=Math.cos(p.angle)*spd; ay+=Math.sin(p.angle)*spd; }
-  if(keys['KeyS']||keys['ArrowDown'])  { ax-=Math.cos(p.angle)*spd*0.5; ay-=Math.sin(p.angle)*spd*0.5; }
-  if(keys['KeyA']||keys['ArrowLeft'])  { p.angle -= 2.2*dt; }
-  if(keys['KeyD']||keys['ArrowRight']) { p.angle += 2.2*dt; }
-
-  // Aim with mouse (auto-rotate toward mouse if not using keyboard turn)
-  const mx=(mouse.x-W/2)+p.x, my=(mouse.y-H/2)+p.y;
-  const targetAngle=Math.atan2(my-p.y,mx-p.x);
-  if(!keys['KeyA']&&!keys['ArrowLeft']&&!keys['KeyD']&&!keys['ArrowRight']){
-    let da=targetAngle-p.angle;
-    while(da>Math.PI) da-=Math.PI*2; while(da<-Math.PI) da+=Math.PI*2;
-    p.angle+=clamp(da*8*dt,-2.5*dt,2.5*dt);
-  }
-
-  // Gravity from black hole
-  const d=dist(p,{x:0,y:0});
-  if(d>0.1){
-    const grav=gs.gravity/(Math.pow(d,0.8)+0.001);
-    const gravCapped=Math.min(grav,60);
-    ax-=(p.x/d)*gravCapped;
-    ay-=(p.y/d)*gravCapped;
-    // Black hole damage
-    if(d<200 && p.invTimer<=0){ damagePlayer(50*dt,'黑洞正在吞噬你！'); }
-  }
-
-  p.vx=(p.vx+ax*dt)*0.88;
-  p.vy=(p.vy+ay*dt)*0.88;
-  p.x+=p.vx*dt;
-  p.y+=p.vy*dt;
-
-  // Asteroid collision
-  for(const a of asteroids){
-    if(dist2(p,a)<(p.radius+a.radius)**2){
-      const ang=angle(a,p);
-      p.vx+=Math.cos(ang)*3; p.vy+=Math.sin(ang)*3;
-      if(p.invTimer<=0) damagePlayer(15,'撞上小行星！');
+  // Warp cores at fixed positions
+  for (const wcp of WARP_CORE_POSITIONS) {
+    const wcx = Math.floor(wcp.x/CHUNK), wcy = Math.floor(wcp.y/CHUNK);
+    if (wcx===cx && wcy===cy) {
+      items.push({x:wcp.x,y:wcp.y,type:'warpcore',r:16,bobOffset:0,alive:true,
+        id:`${wcp.x},${wcp.y}`});
     }
   }
 
-  // Shooting
-  p.fireCooldown-=dt;
-  const fireRate=0.22*(p.combatExpert?0.7:1);
-  if((mouse.down||keys['Space'])&&p.fireCooldown<=0){
-    p.fireCooldown=fireRate;
-    const bspd=650;
-    const dmgMult=[1,1.35,1.75][p.weaponLv-1];
-    bullets.push({x:p.x,y:p.y,
-      vx:Math.cos(p.angle)*bspd,vy:Math.sin(p.angle)*bspd,
-      dmg:12*dmgMult,life:1.2,owner:'player',radius:5,color:'#4af'});
-    spawnParticle(p.x,p.y,'#4af',3,4,0.15);
+  let station = null;
+  if (rng() < 0.125 && (cx!==0||cy!==0)) {
+    station = {
+      x: ox + 200+rng()*(CHUNK-400),
+      y: oy + 200+rng()*(CHUNK-400),
+      r: 30, alive: true,
+      angle: rng()*Math.PI*2
+    };
   }
+
+  let portal = null;
+  const pcx = Math.floor(ESCAPE_PORTAL_POS.x/CHUNK);
+  const pcy = Math.floor(ESCAPE_PORTAL_POS.y/CHUNK);
+  if (pcx===cx && pcy===cy) {
+    portal = {x:ESCAPE_PORTAL_POS.x, y:ESCAPE_PORTAL_POS.y, r:50, active:false};
+  }
+
+  chunks.set(key, {cx,cy,asteroids,enemies,items,station,portal,generated:true});
+}
+
+function getChunksAround(wx, wy, radius) {
+  const result = [];
+  const r = Math.ceil(radius/CHUNK)+1;
+  const ccx = Math.floor(wx/CHUNK), ccy = Math.floor(wy/CHUNK);
+  for (let dx=-r;dx<=r;dx++) for (let dy=-r;dy<=r;dy++) {
+    result.push({cx:ccx+dx,cy:ccy+dy});
+  }
+  return result;
+}
+
+// ─── BULLETS ─────────────────────────────────────────────────────────────────
+let bullets = [];
+let enemyBullets = [];
+let particles = [];
+
+function spawnBullet(x,y,angle,speed,dmg,owner='player') {
+  const b = {x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,
+    life:BULLET_LIFE,dmg,owner,r:4};
+  if (owner==='player') bullets.push(b);
+  else enemyBullets.push(b);
+}
+
+function spawnParticle(x,y,vx,vy,life,color,r) {
+  particles.push({x,y,vx,vy,life,maxLife:life,color,r});
+}
+
+function explosion(x,y,n,color) {
+  for (let i=0;i<n;i++) {
+    const a = Math.random()*Math.PI*2;
+    const s = 50+Math.random()*150;
+    spawnParticle(x,y,Math.cos(a)*s,Math.sin(a)*s,0.3+Math.random()*0.5,color,2+Math.random()*3);
+  }
+}
+
+// ─── ENGINE TRAIL ─────────────────────────────────────────────────────────────
+let engineTrail = [];
+
+// ─── INPUT ───────────────────────────────────────────────────────────────────
+const keys = {};
+const mouse = {x:W/2,y:H/2,down:false};
+
+window.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (e.code==='Escape') {
+    if (state==='playing') state='paused';
+    else if (state==='paused') state='playing';
+    else if (state==='shop') { closeShop(); state='playing'; }
+  }
+  if (e.code==='Enter') {
+    if (state==='title') startGame();
+    else if (state==='gameover'||state==='victory') startGame();
+  }
+  if (e.code==='KeyE') {
+    if (state==='playing') tryOpenShop();
+    else if (state==='shop') { closeShop(); state='playing'; }
+  }
+  if (e.code==='Space' && state==='playing') {
+    mouse.down = true;
+  }
+});
+window.addEventListener('keyup', e => {
+  keys[e.code] = false;
+  if (e.code==='Space') mouse.down = false;
+});
+canvas.addEventListener('mousemove', e => { mouse.x=e.clientX; mouse.y=e.clientY; });
+canvas.addEventListener('mousedown', e => { if(e.button===0) mouse.down=true; });
+canvas.addEventListener('mouseup', e => { if(e.button===0) mouse.down=false; });
+canvas.addEventListener('click', e => {
+  if (state==='title') startGame();
+});
+
+// ─── SHOP ─────────────────────────────────────────────────────────────────────
+const shopOverlay = document.getElementById('shop-overlay');
+const shopResources = document.getElementById('shop-resources');
+const shopUpgrades = document.getElementById('shop-upgrades');
+const shopPerks = document.getElementById('shop-perks');
+document.getElementById('shop-close').addEventListener('click', () => {
+  closeShop(); state='playing';
+});
+
+function tryOpenShop() {
+  let nearest = null, nd = Infinity;
+  for (const [,chunk] of chunks) {
+    if (chunk.station&&chunk.station.alive) {
+      const d = dist(player.x,player.y,chunk.station.x,chunk.station.y);
+      if (d<80&&d<nd) { nd=d; nearest=chunk.station; }
+    }
+  }
+  if (nearest) { shopStation=nearest; openShop(); state='shop'; }
+}
+
+function openShop() {
+  shopOverlay.style.display='block';
+  renderShop();
+}
+function closeShop() {
+  shopOverlay.style.display='none';
+  shopStation=null;
+}
+function renderShop() {
+  shopResources.textContent=`礦石: ${player.ore} | 晶體: ${player.crystal} | 異星科技: ${player.alienTech}`;
+
+  const upgrades = [
+    {name:'引擎 Mk2 (速度+25%)',cost:{ore:10},req:()=>player.engineLevel<2,
+      buy:()=>{player.engineLevel=2;player.thrustForce=350;}},
+    {name:'引擎 Mk3 (速度+55%)',cost:{ore:20,crystal:5},req:()=>player.engineLevel<3,
+      buy:()=>{player.engineLevel=3;player.thrustForce=434;}},
+    {name:'護盾產生器 Mk2 (+40護盾)',cost:{ore:8},req:()=>player.shieldLevel<2,
+      buy:()=>{player.shieldLevel=2;player.maxShield+=40;player.shield=Math.min(player.shield+40,player.maxShield);}},
+    {name:'護盾產生器 Mk3 (+80護盾)',cost:{ore:15,crystal:3},req:()=>player.shieldLevel<3,
+      buy:()=>{player.shieldLevel=3;player.maxShield+=40;player.shield=Math.min(player.shield+40,player.maxShield);}},
+    {name:'船殼加固 Mk2 (+40船殼)',cost:{ore:10},req:()=>player.hullLevel<2,
+      buy:()=>{player.hullLevel=2;player.maxHull+=40;player.hull=Math.min(player.hull+40,player.maxHull);}},
+    {name:'船殼加固 Mk3 (+80船殼)',cost:{ore:18},req:()=>player.hullLevel<3,
+      buy:()=>{player.hullLevel=3;player.maxHull+=40;player.hull=Math.min(player.hull+40,player.maxHull);}},
+    {name:'武器系統 Mk2 (傷害+35%)',cost:{ore:12},req:()=>player.weaponLevel<2,
+      buy:()=>{player.weaponLevel=2;}},
+    {name:'武器系統 Mk3 (傷害+75%)',cost:{ore:22,crystal:5},req:()=>player.weaponLevel<3,
+      buy:()=>{player.weaponLevel=3;}},
+    {name:'緊急維修 (船殼恢復)',cost:{ore:15},req:()=>player.hull<player.maxHull,
+      buy:()=>{player.hull=player.maxHull;}},
+    {name:'護盾充能 (護盾恢復)',cost:{ore:8},req:()=>player.shield<player.maxShield,
+      buy:()=>{player.shield=player.maxShield;}},
+  ];
+  const perks = [
+    {name:'深度掃描器 (掃描範圍x2)',cost:{crystal:10},req:()=>!player.deepScanner,
+      buy:()=>{player.deepScanner=true;}},
+    {name:'戰利品探測 (物品品質+30%)',cost:{crystal:8},req:()=>!player.lootFinder,
+      buy:()=>{player.lootFinder=true;}},
+    {name:'戰鬥專家 (射速+30%)',cost:{ore:10,crystal:5},req:()=>!player.combatExpert,
+      buy:()=>{player.combatExpert=true;}},
+    {name:'迴避訓練 (20%閃避)',cost:{crystal:15},req:()=>!player.evasion,
+      buy:()=>{player.evasion=true;}},
+    {name:'自動修復 (船殼緩慢回復)',cost:{crystal:20,ore:10},req:()=>!player.autoRepair,
+      buy:()=>{player.autoRepair=true;}},
+  ];
+
+  function renderItems(container, list) {
+    container.innerHTML='';
+    for (const item of list) {
+      if (!item.req()) continue;
+      const canAfford = canBuy(item.cost);
+      const div = document.createElement('div');
+      div.className='shop-item';
+      const costStr = Object.entries(item.cost).map(([k,v])=>{
+        const labels={ore:'礦石',crystal:'晶體',alienTech:'異星科技'};
+        return `${labels[k]||k}x${v}`;
+      }).join(' + ');
+      div.innerHTML=`<span class="item-name">${item.name}</span>
+        <span class="item-cost">${costStr}</span>
+        <button ${canAfford?'':'disabled'}>購買</button>`;
+      div.querySelector('button').addEventListener('click', () => {
+        if (canBuy(item.cost)) {
+          spendResources(item.cost);
+          item.buy();
+          setStatus('購買成功！');
+          renderShop();
+        }
+      });
+      container.appendChild(div);
+    }
+  }
+  renderItems(shopUpgrades, upgrades);
+  renderItems(shopPerks, perks);
+}
+
+function canBuy(cost) {
+  if (cost.ore&&player.ore<cost.ore) return false;
+  if (cost.crystal&&player.crystal<cost.crystal) return false;
+  if (cost.alienTech&&player.alienTech<cost.alienTech) return false;
+  return true;
+}
+function spendResources(cost) {
+  if (cost.ore) player.ore-=cost.ore;
+  if (cost.crystal) player.crystal-=cost.crystal;
+  if (cost.alienTech) player.alienTech-=cost.alienTech;
+}
+
+// ─── GAME INIT ────────────────────────────────────────────────────────────────
+function startGame() {
+  player = createPlayer();
+  bullets = []; enemyBullets = []; particles = []; engineTrail = [];
+  chunks.clear();
+  gameTime = 0; playTime = 0;
+  statusMsg = ''; statusTimer = 0;
+  state = 'playing';
+  setStatus('領航員陳，加油！蒐集5個翹曲核心！');
+}
+
+function setStatus(msg) { statusMsg=msg; statusTimer=3; }
+function dist(x1,y1,x2,y2) { return Math.sqrt((x2-x1)**2+(y2-y1)**2); }
+function dist2(x1,y1,x2,y2) { return (x2-x1)**2+(y2-y1)**2; }
+function lerp(a,b,t) { return a+(b-a)*t; }
+function clamp(v,a,b) { return Math.max(a,Math.min(b,v)); }
+
+// ─── UPDATE ───────────────────────────────────────────────────────────────────
+let lastTime = 0;
+function update(dt) {
+  if (state!=='playing'&&state!=='shop') return;
+  gameTime+=dt;
+  if (state==='playing') playTime+=dt;
+
+  // Load chunks
+  const scanRange = player.deepScanner ? 2 : 1;
+  const nearChunks = getChunksAround(player.x,player.y,CHUNK*(scanRange+1));
+  for (const {cx,cy} of nearChunks) generateChunk(cx,cy);
+
+  updatePlayer(dt);
+  updateBullets(dt);
+  updateEnemyBullets(dt);
+  updateEnemies(dt);
+  updateItems(dt);
+  updatePortal(dt);
+  updateParticles(dt);
+  updateBlackHole(dt);
+
+  // Status timer
+  if (statusTimer>0) statusTimer-=dt;
+}
+
+function getPlayerDmg() {
+  const base = BULLET_DMG;
+  if (player.weaponLevel===2) return Math.floor(base*1.35);
+  if (player.weaponLevel===3) return Math.floor(base*1.75);
+  return base;
+}
+function getPlayerFireRate() {
+  let fr = FIRE_RATE;
+  if (player.combatExpert) fr*=0.7;
+  return fr;
+}
+
+function updatePlayer(dt) {
+  const thrust = player.thrustForce;
+  const up = keys['KeyW']||keys['ArrowUp'];
+  const down = keys['KeyS']||keys['ArrowDown'];
+  const left = keys['KeyA']||keys['ArrowLeft'];
+  const right = keys['KeyD']||keys['ArrowRight'];
+
+  if (up)    player.vy -= thrust*dt;
+  if (down)  player.vy += thrust*dt;
+  if (left)  player.vx -= thrust*dt;
+  if (right) player.vx += thrust*dt;
+
+  // Aim at mouse
+  const sx = player.x - player.x + W/2;
+  const sy = player.y - player.y + H/2;
+  player.angle = Math.atan2(mouse.y-H/2, mouse.x-W/2);
+
+  // Engine trail
+  if (up||down||left||right) {
+    const ta = player.angle+Math.PI + (Math.random()-0.5)*0.4;
+    engineTrail.push({
+      x:player.x+Math.cos(ta)*18,y:player.y+Math.sin(ta)*18,
+      vx:(Math.random()-0.5)*30,vy:(Math.random()-0.5)*30,
+      life:0.3,maxLife:0.3,color:`hsl(${200+Math.random()*30},100%,${60+Math.random()*20}%)`
+    });
+  }
+
+  // Drag
+  player.vx *= DRAG;
+  player.vy *= DRAG;
+
+  // Clamp max speed
+  const spd = Math.sqrt(player.vx**2+player.vy**2);
+  const maxSpd = 400;
+  if (spd>maxSpd) { player.vx*=maxSpd/spd; player.vy*=maxSpd/spd; }
+
+  player.x += player.vx*dt;
+  player.y += player.vy*dt;
+
+  // Collision with asteroids
+  for (const [,chunk] of chunks) {
+    for (const ast of chunk.asteroids) {
+      const d = dist(player.x,player.y,ast.x,ast.y);
+      if (d < 22+ast.r) {
+        const nx=(player.x-ast.x)/d, ny=(player.y-ast.y)/d;
+        player.x = ast.x+nx*(22+ast.r);
+        player.y = ast.y+ny*(22+ast.r);
+        const dot = player.vx*nx+player.vy*ny;
+        if (dot<0) { player.vx-=dot*nx*1.5; player.vy-=dot*ny*1.5; }
+        if (player.invulTimer<=0) {
+          damagePlayer(8);
+          explosion(player.x,player.y,5,'#888888');
+        }
+      }
+    }
+  }
+
+  // Fire
+  if (player.fireTimer>0) player.fireTimer-=dt;
+  if (mouse.down && player.fireTimer<=0) {
+    player.fireTimer = getPlayerFireRate();
+    spawnBullet(player.x,player.y,player.angle,BULLET_SPEED,getPlayerDmg(),'player');
+    // Muzzle flash
+    spawnParticle(player.x+Math.cos(player.angle)*25,player.y+Math.sin(player.angle)*25,
+      Math.cos(player.angle)*80,Math.sin(player.angle)*80,0.08,'#ffffaa',6);
+  }
+
+  // Invul timer
+  if (player.invulTimer>0) player.invulTimer-=dt;
 
   // Shield regen
-  if(p.invTimer>0) p.invTimer-=dt;
-  p.shieldTimer-=dt;
-  if(p.shieldTimer<=0 && p.shield<p.maxShield){
-    p.shield=Math.min(p.maxShield,p.shield+8*dt);
+  if (player.shieldCooldown>0) player.shieldCooldown-=dt;
+  else if (player.shield<player.maxShield) {
+    player.shield=Math.min(player.maxShield,player.shield+SHIELD_REGEN*dt);
   }
 
   // Auto repair
-  if(p.autoRepair){
-    p.autoRepairTimer+=dt;
-    if(p.autoRepairTimer>=1){ p.hull=Math.min(p.maxHull,p.hull+2); p.autoRepairTimer=0; }
-  }
-
-  // Item pickup
-  for(const it of items){
-    if(!it.collected && dist2(p,it)<(p.radius+it.radius)**2){
-      collectItem(it);
-    }
-  }
-
-  // Station proximity
-  gs.nearStation=null;
-  for(const st of stationsList){
-    if(dist(p,st)<120){ gs.nearStation=st; break; }
-  }
-
-  // Death
-  if(p.hull<=0){ p.hull=0; gs.state='dead'; gs.shopOpen=false; document.getElementById('shopModal').style.display='none'; }
-}
-
-function damagePlayer(dmg, msg){
-  const p=player;
-  if(p.invTimer>0) return;
-  if(p.evasion && Math.random()<0.2){ setStatus('閃避！'); return; }
-  if(p.shield>0){
-    const absorbed=Math.min(p.shield,dmg);
-    p.shield-=absorbed; dmg-=absorbed;
-    p.shieldTimer=3;
-  }
-  if(dmg>0){ p.hull-=dmg; spawnParticle(p.x,p.y,'#f44',8,6,0.3); }
-  p.invTimer=0.5;
-  if(msg) setStatus(msg);
-}
-
-function collectItem(it){
-  it.collected=true;
-  const p=player;
-  if(it.type==='energyCell'){ p.shield=Math.min(p.maxShield,p.shield+30); setStatus('護盾補充 +30'); }
-  else if(it.type==='hullPlate'){ p.hull=Math.min(p.maxHull,p.hull+30); setStatus('船殼修復 +30'); }
-  else if(it.type==='ore'){ const n=2+Math.floor(Math.random()*3+(p.lootFinder?1:0)); p.ore+=n; setStatus(`礦石 +${n}`); }
-  else if(it.type==='crystal'){ const n=1+(p.lootFinder&&Math.random()<0.4?1:0); p.crystal+=n; setStatus(`晶體 +${n}`); }
-  else if(it.type==='tech'){ p.tech+=1; setStatus('異星科技 +1'); }
-  else if(it.type==='warpCore'){
-    if(!p.collectedCores.has(it.id)){
-      p.collectedCores.add(it.id);
-      p.warpCores++;
-      setStatus(`翹曲核心 ${p.warpCores}/5 — 繼續前進！`);
-      spawnParticle(it.x,it.y,'#ffd700',20,10,0.8);
-      if(p.warpCores>=5 && !escapePortal){
-        escapePortal={x:PORTAL_POS.x,y:PORTAL_POS.y,radius:60,isPortal:true};
-        setStatus('所有翹曲核心收集完畢！逃脫門戶已開啟！');
-      }
-    }
-  }
-  gs.score+=10;
-}
-
-
-// ── Enemy AI ──
-function updateEnemies(dt){
-  const p=player;
-  for(const e of enemies){
-    if(e.dead) continue;
-    const dp=dist(p,e);
-    // State transitions
-    if(dp<350) e.state='chase';
-    else if(dp>500) e.state='patrol';
-
-    let tx=e.px, ty=e.py;
-    if(e.state==='chase'||e.state==='attack'){
-      tx=p.x; ty=p.y;
-      if(dp<250) e.state='attack';
-    }
-
-    // Move toward target
-    const ta=Math.atan2(ty-e.y,tx-e.x);
-    e.angle=ta;
-    if(dp>e.radius+20){
-      e.vx+=(Math.cos(ta)*e.speed-e.vx)*dt*3;
-      e.vy+=(Math.sin(ta)*e.speed-e.vy)*dt*3;
-    } else {
-      e.vx*=0.8; e.vy*=0.8;
-    }
-    e.x+=e.vx*dt; e.y+=e.vy*dt;
-
-    // Melee (drone)
-    if(e.type==='drone' && circlesOverlap(e,p)){
-      if(p.invTimer<=0) damagePlayer(e.dmg*dt,'無人機撞擊！');
-    }
-
-    // Ranged attack
-    if(e.rate>0 && e.state==='attack'){
-      e.fireCd-=dt;
-      if(e.fireCd<=0){
-        e.fireCd=e.rate;
-        const bspd=400;
-        const col=e.type==='pirate'?'#ff8833':'#dd44ff';
-        bullets.push({x:e.x,y:e.y,
-          vx:Math.cos(ta)*bspd,vy:Math.sin(ta)*bspd,
-          dmg:e.dmg,life:2,owner:'enemy',radius:5,color:col});
-      }
-    }
+  if (player.autoRepair && player.hull<player.maxHull) {
+    player.hull=Math.min(player.maxHull,player.hull+2*dt);
   }
 }
 
-// ── Bullets ──
-function updateBullets(dt){
-  for(let i=bullets.length-1;i>=0;i--){
+function damagePlayer(dmg) {
+  if (player.invulTimer>0) return;
+  if (player.evasion && Math.random()<0.2) { setStatus('閃避！'); return; }
+  if (player.shield>0) {
+    const sd = Math.min(player.shield,dmg);
+    player.shield-=sd; dmg-=sd;
+  }
+  if (dmg>0) player.hull-=dmg;
+  player.shieldCooldown=SHIELD_REGEN_DELAY;
+  player.invulTimer=0.5;
+  if (player.hull<=0) {
+    player.hull=0;
+    explosion(player.x,player.y,30,'#ff4400');
+    explosion(player.x,player.y,20,'#ffaa00');
+    state='gameover';
+  }
+}
+
+function updateBullets(dt) {
+  for (let i=bullets.length-1;i>=0;i--) {
     const b=bullets[i];
     b.x+=b.vx*dt; b.y+=b.vy*dt; b.life-=dt;
-    if(b.life<=0){ bullets.splice(i,1); continue; }
-
-    if(b.owner==='player'){
-      // vs enemies
-      let hit=false;
-      for(const e of enemies){
-        if(!e.dead && dist2(b,e)<(b.radius+e.radius)**2){
-          e.hp-=b.dmg;
-          spawnParticle(b.x,b.y,e.color,5,4,0.2);
-          if(e.hp<=0){ e.dead=true; gs.score+=50;
-            spawnParticle(e.x,e.y,'#ff8822',12,7,0.5);
+    if (b.life<=0) { bullets.splice(i,1); continue; }
+    // Hit asteroids
+    let hitAst=false;
+    for (const [,chunk] of chunks) {
+      for (const ast of chunk.asteroids) {
+        if (dist2(b.x,b.y,ast.x,ast.y)<(b.r+ast.r)**2) {
+          explosion(b.x,b.y,4,'#aaaaaa');
+          bullets.splice(i,1); hitAst=true; break;
+        }
+      }
+      if (hitAst) break;
+    }
+    if (hitAst) continue;
+    // Hit enemies
+    let hitEnemy=false;
+    for (const [,chunk] of chunks) {
+      for (const en of chunk.enemies) {
+        if (!en.alive) continue;
+        if (dist2(b.x,b.y,en.x,en.y)<(b.r+en.r)**2) {
+          en.hp-=b.dmg;
+          explosion(b.x,b.y,6,en.color);
+          if (en.hp<=0) {
+            en.alive=false;
+            explosion(en.x,en.y,20,en.color);
+            explosion(en.x,en.y,10,'#ffffff');
             // Drop loot
-            const rng=makeRng(Math.floor(e.x),Math.floor(e.y));
-            items.push(makeItem(e.x+(rng()-0.5)*60,e.y+(rng()-0.5)*60,1,rng));
+            dropLoot(en.x,en.y,chunk);
           }
-          hit=true; break;
+          bullets.splice(i,1); hitEnemy=true; break;
         }
       }
-      // vs asteroids
-      if(!hit){
-        for(const a of asteroids){
-          if(!a.dead && dist2(b,a)<(b.radius+a.radius)**2){
-            a.hp--;
-            spawnParticle(b.x,b.y,'#aa7755',4,3,0.2);
-            if(a.hp<=0){
-              a.dead=true; gs.score+=10;
-              spawnParticle(a.x,a.y,'#886644',8,5,0.4);
-              const rng=makeRng(Math.floor(a.x),Math.floor(a.y));
-              for(let j=0;j<a.ore;j++)
-                items.push({x:a.x+(rng()-0.5)*50,y:a.y+(rng()-0.5)*50,
-                  type:'ore',color:'#cc8844',radius:10,bobT:rng()*Math.PI*2,collected:false});
-            }
-            hit=true; break;
-          }
+      if (hitEnemy) break;
+    }
+  }
+}
+
+function dropLoot(x,y,chunk) {
+  const roll = Math.random();
+  let type;
+  if (roll<0.3) type='ore';
+  else if (roll<0.55) type='energy';
+  else if (roll<0.75) type='hull';
+  else if (roll<0.9) type='crystal';
+  else type='alientech';
+  chunk.items.push({x,y,type,r:12,bobOffset:Math.random()*Math.PI*2,alive:true});
+}
+
+function updateEnemyBullets(dt) {
+  for (let i=enemyBullets.length-1;i>=0;i--) {
+    const b=enemyBullets[i];
+    b.x+=b.vx*dt; b.y+=b.vy*dt; b.life-=dt;
+    if (b.life<=0) { enemyBullets.splice(i,1); continue; }
+    // Hit player
+    if (dist2(b.x,b.y,player.x,player.y)<(b.r+18)**2) {
+      damagePlayer(b.dmg);
+      explosion(b.x,b.y,8,'#ff3300');
+      enemyBullets.splice(i,1);
+    }
+  }
+}
+
+function updateEnemies(dt) {
+  for (const [,chunk] of chunks) {
+    for (const en of chunk.enemies) {
+      if (!en.alive) continue;
+      const dx=player.x-en.x, dy=player.y-en.y;
+      const d=Math.sqrt(dx*dx+dy*dy);
+
+      // State machine
+      if (d<350) en.state='chase';
+      if (d>500) en.state='patrol';
+      if (en.state==='chase'&&d<250) en.state='attack';
+      if (en.state==='attack'&&d>300) en.state='chase';
+
+      if (en.state==='patrol') {
+        en.patrolTimer-=dt;
+        if (en.patrolTimer<=0) {
+          en.patrolAngle+=( Math.random()-0.5)*1.5;
+          en.patrolTimer=1+Math.random()*2;
+        }
+        en.vx += Math.cos(en.patrolAngle)*en.speed*0.3*dt;
+        en.vy += Math.sin(en.patrolAngle)*en.speed*0.3*dt;
+      } else if (en.state==='chase'||en.state==='attack') {
+        const nx=dx/d, ny=dy/d;
+        en.vx += nx*en.speed*dt;
+        en.vy += ny*en.speed*dt;
+        en.angle = Math.atan2(dy,dx);
+      }
+
+      // Drag
+      en.vx*=0.85; en.vy*=0.85;
+      const spd=Math.sqrt(en.vx**2+en.vy**2);
+      if (spd>en.speed) { en.vx*=en.speed/spd; en.vy*=en.speed/spd; }
+      en.x+=en.vx*dt; en.y+=en.vy*dt;
+
+      // Melee damage (drone)
+      if (en.type==='drone'&&d<en.r+22&&player.invulTimer<=0) {
+        damagePlayer(en.dmg*dt);
+      }
+
+      // Ranged attack
+      if ((en.type==='pirate'||en.type==='alien')&&en.state==='attack') {
+        en.fireTimer-=dt;
+        if (en.fireTimer<=0) {
+          en.fireTimer=en.fireRate;
+          const ang=Math.atan2(dy,dx);
+          const projSpd = en.type==='alien'?400:500;
+          spawnBullet(en.x,en.y,ang,projSpd,en.dmg,'enemy');
         }
       }
-      if(hit){ bullets.splice(i,1); }
-    } else {
-      // Enemy bullet vs player
-      if(circlesOverlap(b,player)){
-        damagePlayer(b.dmg,'被擊中！');
-        bullets.splice(i,1);
+
+      // Collision with player (for nudging)
+      if (d<en.r+22) {
+        const nx=dx/d, ny=dy/d;
+        en.x=player.x-nx*(en.r+22);
+        en.y=player.y-ny*(en.r+22);
       }
     }
   }
 }
 
-// ── Particles ──
-function spawnParticle(x,y,color,n,spd,life){
-  for(let i=0;i<n;i++){
-    const a=Math.random()*Math.PI*2;
-    const s=(0.5+Math.random())*spd;
-    particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,
-      color,life,maxLife:life,r:1.5+Math.random()*2.5});
+function updateItems(dt) {
+  for (const [,chunk] of chunks) {
+    for (const item of chunk.items) {
+      if (!item.alive) continue;
+      if (dist2(player.x,player.y,item.x,item.y)<(18+item.r)**2) {
+        collectItem(item);
+        item.alive=false;
+      }
+    }
   }
 }
-function updateParticles(dt){
-  for(let i=particles.length-1;i>=0;i--){
+
+function collectItem(item) {
+  const lootMult = player.lootFinder ? 1.3 : 1;
+  switch(item.type) {
+    case 'energy':
+      player.shield=Math.min(player.maxShield,player.shield+30*lootMult);
+      setStatus('護盾充能 +30');
+      break;
+    case 'hull':
+      player.hull=Math.min(player.maxHull,player.hull+30*lootMult);
+      setStatus('船殼修復 +30');
+      break;
+    case 'ore':
+      const oreAmt=Math.floor((2+Math.random()*3)*lootMult);
+      player.ore+=oreAmt;
+      setStatus(`礦石 +${oreAmt}`);
+      break;
+    case 'crystal':
+      const cryAmt=Math.floor((1+Math.random()*2)*lootMult);
+      player.crystal+=cryAmt;
+      setStatus(`晶體 +${cryAmt}`);
+      break;
+    case 'alientech':
+      player.alienTech+=1;
+      setStatus('異星科技 +1');
+      break;
+    case 'warpcore':
+      if (!player.warpCoreSet.has(item.id)) {
+        player.warpCoreSet.add(item.id);
+        player.warpCores++;
+        setStatus(`翹曲核心 ${player.warpCores}/5 已蒐集！`);
+        explosion(item.x,item.y,30,'#ffdd00');
+        explosion(item.x,item.y,20,'#ffffff');
+        if (player.warpCores>=5) setStatus('所有翹曲核心已蒐集！前往逃脫傳送門！');
+      }
+      break;
+  }
+  explosion(item.x,item.y,8,'#ffffff');
+}
+
+function updatePortal(dt) {
+  if (player.warpCores<5) return;
+  const pcx=Math.floor(ESCAPE_PORTAL_POS.x/CHUNK), pcy=Math.floor(ESCAPE_PORTAL_POS.y/CHUNK);
+  const chunk=chunks.get(chunkKey(pcx,pcy));
+  if (!chunk||!chunk.portal) return;
+  chunk.portal.active=true;
+  if (dist2(player.x,player.y,ESCAPE_PORTAL_POS.x,ESCAPE_PORTAL_POS.y)<70**2) {
+    state='victory';
+  }
+}
+
+function updateBlackHole(dt) {
+  const d=dist(player.x,player.y,0,0);
+  if (d<BH_RADIUS) {
+    damagePlayer(BH_DMG*dt);
+  }
+  // Gravity
+  const pullForce = 0.5*(gameTime/60);
+  if (d>5) {
+    const acc=Math.min(60,pullForce/Math.pow(d,0.8));
+    player.vx -= (player.x/d)*acc*dt;
+    player.vy -= (player.y/d)*acc*dt;
+  }
+}
+
+function updateParticles(dt) {
+  for (let i=particles.length-1;i>=0;i--) {
     const p=particles[i];
-    p.x+=p.vx*dt; p.y+=p.vy*dt; p.vx*=0.92; p.vy*=0.92; p.life-=dt;
-    if(p.life<=0) particles.splice(i,1);
+    p.x+=p.vx*dt; p.y+=p.vy*dt;
+    p.vx*=0.9; p.vy*=0.9;
+    p.life-=dt;
+    if (p.life<=0) particles.splice(i,1);
+  }
+  for (let i=engineTrail.length-1;i>=0;i--) {
+    const p=engineTrail[i];
+    p.x+=p.vx*dt; p.y+=p.vy*dt;
+    p.life-=dt;
+    if (p.life<=0) engineTrail.splice(i,1);
   }
 }
 
-// ── Black hole gravity ramp ──
-function updateGravity(dt){
-  gs.gravTimer+=dt;
-  if(gs.gravTimer>=60){ gs.gravTimer=0; gs.gravity+=0.5; }
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function render(timestamp) {
+  ctx.fillStyle='#000010';
+  ctx.fillRect(0,0,W,H);
+
+  if (state==='title') { renderTitle(); return; }
+
+  drawStars();
+
+  ctx.save();
+  ctx.translate(W/2-player.x, H/2-player.y);
+
+  drawBlackHole();
+  drawAsteroids();
+  drawItems(timestamp);
+  drawStations(timestamp);
+  drawPortal(timestamp);
+  drawEnemies(timestamp);
+  drawEngineTrail();
+  drawPlayer(timestamp);
+  drawBullets(timestamp);
+  drawParticles();
+
+  ctx.restore();
+
+  drawHUD(timestamp);
+
+  if (state==='paused') drawPaused();
+  if (state==='gameover') drawGameOver();
+  if (state==='victory') drawVictory(timestamp);
 }
 
-// ── Escape portal check ──
-function checkEscape(){
-  if(escapePortal && player.warpCores>=5){
-    if(dist(player,escapePortal)<escapePortal.radius+player.radius){
-      gs.state='win'; document.getElementById('shopModal').style.display='none';
-    }
-  }
-}
-
-// ── Helpers ──
-function setStatus(msg){ gs.statusMsg=msg; gs.statusTimer=2.5; }
-
-// ── Shop ──
-const UPGRADES = [
-  {id:'engine2',label:'引擎 Mk2',desc:'速度 +30%',cost:{ore:10},req:()=>player.engineLv<2,apply:()=>{player.engineLv=2;}},
-  {id:'engine3',label:'引擎 Mk3',desc:'速度 +60%',cost:{ore:20,crystal:5},req:()=>player.engineLv<3,apply:()=>{player.engineLv=3;}},
-  {id:'shield2',label:'護盾 Mk2',desc:'最大護盾 +40',cost:{ore:8},req:()=>player.shieldLv<2,apply:()=>{player.shieldLv=2;player.maxShield+=40;player.shield=Math.min(player.shield+40,player.maxShield);}},
-  {id:'shield3',label:'護盾 Mk3',desc:'最大護盾 +80',cost:{ore:15,crystal:3},req:()=>player.shieldLv<3,apply:()=>{player.shieldLv=3;player.maxShield+=80;player.shield=Math.min(player.shield+80,player.maxShield);}},
-  {id:'hull2',label:'船殼 Mk2',desc:'最大船殼 +40',cost:{ore:10},req:()=>player.hullLv<2,apply:()=>{player.hullLv=2;player.maxHull+=40;player.hull=Math.min(player.hull+40,player.maxHull);}},
-  {id:'hull3',label:'船殼 Mk3',desc:'最大船殼 +80',cost:{ore:18},req:()=>player.hullLv<3,apply:()=>{player.hullLv=3;player.maxHull+=80;player.hull=Math.min(player.hull+80,player.maxHull);}},
-  {id:'weapon2',label:'武器 Mk2',desc:'傷害 +35%',cost:{ore:12},req:()=>player.weaponLv<2,apply:()=>{player.weaponLv=2;}},
-  {id:'weapon3',label:'武器 Mk3',desc:'傷害 +75%',cost:{ore:22,crystal:5},req:()=>player.weaponLv<3,apply:()=>{player.weaponLv=3;}},
-  {id:'repair',label:'緊急修復',desc:'船殼全量恢復',cost:{ore:15},req:()=>player.hull<player.maxHull,apply:()=>{player.hull=player.maxHull;}},
-  {id:'shieldCharge',label:'護盾補充',desc:'護盾全量恢復',cost:{ore:8},req:()=>player.shield<player.maxShield,apply:()=>{player.shield=player.maxShield;}},
-  {id:'scanner',label:'深度掃描儀',desc:'物品感知範圍 ×2',cost:{crystal:10},req:()=>!player.deepScanner,apply:()=>{player.deepScanner=true;}},
-  {id:'loot',label:'搜索專家',desc:'物品品質 +30%',cost:{crystal:8},req:()=>!player.lootFinder,apply:()=>{player.lootFinder=true;}},
-  {id:'combat',label:'戰鬥訓練',desc:'射速 +30%',cost:{ore:10,crystal:5},req:()=>!player.combatExpert,apply:()=>{player.combatExpert=true;}},
-  {id:'evasion',label:'迴避系統',desc:'20% 閃避機率',cost:{crystal:15},req:()=>!player.evasion,apply:()=>{player.evasion=true;}},
-  {id:'autoRepair',label:'自動修復',desc:'緩慢回復船殼 2/s',cost:{ore:10,crystal:20},req:()=>!player.autoRepair,apply:()=>{player.autoRepair=true;}},
-];
-
-function canAfford(cost){
-  return (!cost.ore||player.ore>=cost.ore) && (!cost.crystal||player.crystal>=cost.crystal) && (!cost.tech||player.tech>=cost.tech);
-}
-function spendCost(cost){
-  if(cost.ore) player.ore-=cost.ore;
-  if(cost.crystal) player.crystal-=cost.crystal;
-  if(cost.tech) player.tech-=cost.tech;
-}
-function costStr(cost){
-  const parts=[];
-  if(cost.ore) parts.push(`礦石×${cost.ore}`);
-  if(cost.crystal) parts.push(`晶體×${cost.crystal}`);
-  if(cost.tech) parts.push(`異星科技×${cost.tech}`);
-  return parts.join(' + ');
-}
-
-let boughtUpgrades=new Set();
-function openShop(){
-  if(!gs.nearStation) return;
-  gs.shopOpen=true;
-  const grid=document.getElementById('shopGrid');
-  grid.innerHTML='';
-  UPGRADES.forEach((u,i)=>{
-    const avail=u.req();
-    const afford=canAfford(u.cost);
-    const bought=boughtUpgrades.has(u.id)&&u.id!=='repair'&&u.id!=='shieldCharge';
-    const div=document.createElement('div');
-    div.className='shop-item'+(bought?' bought':(!afford?' cant-afford':''));
-    div.innerHTML=`<h3>${u.label}</h3><p>${u.desc}</p><div class="cost">${costStr(u.cost)}</div>`;
-    if(!bought && avail && afford){
-      div.onclick=()=>{
-        spendCost(u.cost); u.apply();
-        if(u.id!=='repair'&&u.id!=='shieldCharge') boughtUpgrades.add(u.id);
-        setStatus(`升級完成：${u.label}`);
-        openShop();
-      };
-    }
-    grid.appendChild(div);
-  });
-  document.getElementById('shopModal').style.display='block';
-}
-function closeShop(){ gs.shopOpen=false; document.getElementById('shopModal').style.display='none'; }
-function toggleShop(){ if(gs.state!=='playing') return; gs.shopOpen?closeShop():openShop(); }
-function togglePause(){ if(gs.state==='playing'){ gs.state='paused'; closeShop(); } else if(gs.state==='paused') gs.state='playing'; }
-
-
-// ── Camera ──
-const cam={x:0,y:0};
-function updateCam(){
-  cam.x=lerp(cam.x,player.x-W/2,0.12);
-  cam.y=lerp(cam.y,player.y-H/2,0.12);
-}
-
-// ══════════ RENDERING ══════════
-
-function drawStars(){
-  const t=gs.playTime;
-  for(let li=0;li<starLayers.length;li++){
-    const layer=starLayers[li];
-    const s=layer[0].s;
-    ctx.fillStyle='#fff';
-    for(const st of layer){
-      const sx=((st.x-cam.x*s)%4000+4000)%4000;
-      const sy=((st.y-cam.y*s)%4000+4000)%4000;
-      ctx.globalAlpha=0.3+0.5*li/starLayers.length;
-      ctx.beginPath(); ctx.arc(sx,sy,st.r,0,Math.PI*2); ctx.fill();
-    }
+function drawStars() {
+  for (const s of stars) {
+    const px = ((s.x - player.x*s.speed) % W + W*2) % W;
+    const py = ((s.y - player.y*s.speed) % H + H*2) % H;
+    ctx.globalAlpha = s.brightness;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(px,py,s.sz,s.sz);
   }
   ctx.globalAlpha=1;
 }
 
-function drawBlackHole(){
-  const bx=0-cam.x, by=0-cam.y;
-  const r=200;
-  // Glow rings
-  for(let i=5;i>0;i--){
-    const g=ctx.createRadialGradient(bx,by,r,bx,by,r+i*30);
-    g.addColorStop(0,`rgba(80,0,160,${0.15/i})`);
-    g.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(bx,by,r+i*30,0,Math.PI*2); ctx.fill();
-  }
+function drawBlackHole() {
+  const x=0,y=0,r=BH_RADIUS;
+  // Outer glow
+  const grad=ctx.createRadialGradient(x,y,r*0.5,x,y,r*2.5);
+  grad.addColorStop(0,'rgba(80,0,120,0.6)');
+  grad.addColorStop(0.5,'rgba(30,0,60,0.3)');
+  grad.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.beginPath();
+  ctx.arc(x,y,r*2.5,0,Math.PI*2);
+  ctx.fillStyle=grad;
+  ctx.fill();
+
   // Core
-  const cg=ctx.createRadialGradient(bx,by,0,bx,by,r);
-  cg.addColorStop(0,'#000');
-  cg.addColorStop(0.6,'#100020');
-  cg.addColorStop(0.8,'#300050');
-  cg.addColorStop(1,'rgba(80,0,120,0)');
-  ctx.fillStyle=cg; ctx.beginPath(); ctx.arc(bx,by,r,0,Math.PI*2); ctx.fill();
+  const coreGrad=ctx.createRadialGradient(x,y,0,x,y,r);
+  coreGrad.addColorStop(0,'rgba(0,0,0,1)');
+  coreGrad.addColorStop(0.7,'rgba(10,0,20,0.95)');
+  coreGrad.addColorStop(1,'rgba(60,0,100,0.8)');
+  ctx.beginPath();
+  ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fillStyle=coreGrad;
+  ctx.fill();
+
   // Accretion ring
   ctx.save();
-  ctx.translate(bx,by);
-  const t=gs.playTime;
-  for(let i=0;i<36;i++){
-    const a=i/36*Math.PI*2+t*0.3;
-    const ri=r+10+Math.sin(a*3+t)*8;
-    ctx.globalAlpha=0.3+0.3*Math.sin(a*5+t*2);
-    ctx.fillStyle=i%2===0?'#8800ff':'#ff4400';
-    ctx.beginPath(); ctx.arc(Math.cos(a)*ri,Math.sin(a)*ri,3,0,Math.PI*2); ctx.fill();
+  ctx.translate(x,y);
+  ctx.rotate(gameTime*0.3);
+  for (let i=0;i<3;i++) {
+    ctx.rotate(Math.PI*2/3);
+    ctx.beginPath();
+    ctx.ellipse(0,0,r*1.6,r*0.4,0,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(150,50,255,${0.3-i*0.08})`;
+    ctx.lineWidth=3-i;
+    ctx.stroke();
   }
   ctx.restore();
-  ctx.globalAlpha=1;
 }
 
-function drawAsteroids(){
-  for(const a of asteroids){
-    if(a.dead) continue;
-    const ax=a.x-cam.x, ay=a.y-cam.y;
-    if(ax<-100||ax>W+100||ay<-100||ay>H+100) continue;
-    ctx.save(); ctx.translate(ax,ay); ctx.rotate(a.angle);
-    ctx.beginPath();
-    for(let i=0;i<a.pts.length;i++){
-      const pt=a.pts[i];
-      const px=Math.cos(pt.a)*pt.r, py=Math.sin(pt.a)*pt.r;
-      i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
-    }
-    ctx.closePath();
-    ctx.fillStyle='#5a4838'; ctx.fill();
-    ctx.strokeStyle='#887766'; ctx.lineWidth=1.5; ctx.stroke();
-    ctx.restore();
-    // HP bars on large asteroids
-    if(a.hp<3+Math.floor(dist(player,a)/CHUNK)){
-      ctx.fillStyle='rgba(0,0,0,0.6)';
-      ctx.fillRect(ax-20,ay-a.radius-10,40,5);
-      ctx.fillStyle='#88ff44';
-      ctx.fillRect(ax-20,ay-a.radius-10,40*(a.hp/3),5);
+function drawAsteroids() {
+  for (const [,chunk] of chunks) {
+    for (const ast of chunk.asteroids) {
+      const dx=ast.x-player.x, dy=ast.y-player.y;
+      if (Math.abs(dx)>W&&Math.abs(dy)>H) continue;
+      ctx.save();
+      ctx.translate(ast.x,ast.y);
+      ctx.beginPath();
+      ctx.moveTo(ast.verts[0].x,ast.verts[0].y);
+      for (let i=1;i<ast.verts.length;i++) ctx.lineTo(ast.verts[i].x,ast.verts[i].y);
+      ctx.closePath();
+      ctx.fillStyle=ast.color;
+      ctx.fill();
+      ctx.strokeStyle='rgba(200,200,200,0.2)';
+      ctx.lineWidth=1;
+      ctx.stroke();
+      ctx.restore();
     }
   }
 }
 
-function drawEnemies(){
-  const t=gs.playTime;
-  for(const e of enemies){
-    if(e.dead) continue;
-    const ex=e.x-cam.x, ey=e.y-cam.y;
-    if(ex<-100||ex>W+100||ey<-100||ey>H+100) continue;
-    ctx.save(); ctx.translate(ex,ey); ctx.rotate(e.angle);
-    if(e.type==='drone'){
-      // Hexagon drone
-      ctx.beginPath();
-      for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; ctx.lineTo(Math.cos(a)*e.radius,Math.sin(a)*e.radius); }
-      ctx.closePath();
-      ctx.fillStyle='#223344'; ctx.fill();
-      ctx.strokeStyle=e.color; ctx.lineWidth=2; ctx.stroke();
-    } else if(e.type==='pirate'){
-      // Arrow shape
-      ctx.beginPath();
-      ctx.moveTo(e.radius,0); ctx.lineTo(-e.radius,-e.radius*0.7);
-      ctx.lineTo(-e.radius*0.5,0); ctx.lineTo(-e.radius,e.radius*0.7);
-      ctx.closePath();
-      ctx.fillStyle='#331a00'; ctx.fill();
-      ctx.strokeStyle=e.color; ctx.lineWidth=2; ctx.stroke();
-    } else {
-      // Alien diamond
-      ctx.beginPath();
-      ctx.moveTo(e.radius*1.2,0); ctx.lineTo(0,-e.radius*0.8);
-      ctx.lineTo(-e.radius*1.2,0); ctx.lineTo(0,e.radius*0.8);
-      ctx.closePath();
-      ctx.fillStyle='#1a0033'; ctx.fill();
-      ctx.strokeStyle=e.color; ctx.lineWidth=2; ctx.stroke();
-      // Eye glow
-      ctx.globalAlpha=0.7;
-      ctx.fillStyle=e.color;
-      ctx.beginPath(); ctx.arc(e.radius*0.3,0,3,0,Math.PI*2); ctx.fill();
-    }
-    ctx.restore();
-    // HP bar
-    ctx.fillStyle='rgba(0,0,0,0.6)';
-    ctx.fillRect(ex-e.radius,ey-e.radius-10,e.radius*2,5);
-    ctx.fillStyle='#ff4444';
-    ctx.fillRect(ex-e.radius,ey-e.radius-10,e.radius*2*(e.hp/e.maxHp),5);
-    ctx.globalAlpha=1;
-  }
-}
+function drawItems(t) {
+  for (const [,chunk] of chunks) {
+    for (const item of chunk.items) {
+      if (!item.alive) continue;
+      const bob=Math.sin(t*0.001*3+item.bobOffset)*4;
+      ctx.save();
+      ctx.translate(item.x,item.y+bob);
 
-function drawItems(){
-  const t=gs.playTime;
-  for(const it of items){
-    if(it.collected) continue;
-    const ix=it.x-cam.x, iy=it.y-cam.y+(Math.sin(it.bobT+t*1.5)*5);
-    if(ix<-60||ix>W+60||iy<-60||iy>H+60) continue;
-    // Outer glow
-    const g=ctx.createRadialGradient(ix,iy,0,ix,iy,it.radius*2.5);
-    g.addColorStop(0,it.color+'66'); g.addColorStop(1,'transparent');
-    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(ix,iy,it.radius*2.5,0,Math.PI*2); ctx.fill();
-    // Core
-    ctx.fillStyle=it.type==='warpCore'
-      ? `hsl(${45+Math.sin(t*3)*15},100%,${55+Math.sin(t*5)*10}%)`
-      : it.color;
-    ctx.beginPath(); ctx.arc(ix,iy,it.radius,0,Math.PI*2); ctx.fill();
-    ctx.strokeStyle='#fff'; ctx.globalAlpha=0.4; ctx.lineWidth=1;
-    ctx.stroke(); ctx.globalAlpha=1;
-    // Icon
-    ctx.fillStyle='#fff'; ctx.globalAlpha=0.9;
-    ctx.font=`${it.type==='warpCore'?14:10}px sans-serif`;
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    const icons={energyCell:'⚡',hullPlate:'🛡',ore:'⛏',crystal:'💎',tech:'🔬',warpCore:'⭐'};
-    ctx.fillText(icons[it.type]||'●',ix,iy);
-    ctx.globalAlpha=1;
-    // Label for warp cores
-    if(it.type==='warpCore'){
-      ctx.fillStyle='#ffd700'; ctx.font='bold 11px monospace';
-      ctx.textAlign='center'; ctx.textBaseline='top';
-      ctx.fillText('翹曲核心',ix,iy+it.radius+4);
-    }
-  }
-}
+      const colors={energy:'#00ffee',hull:'#4488ff',ore:'#aa7733',
+                    crystal:'#cc44ff',alientech:'#ffee00',warpcore:'#ffdd00'};
+      const c=colors[item.type]||'#ffffff';
 
-function drawStations(stationsList){
-  const t=gs.playTime;
-  for(const st of stationsList){
-    const sx=st.x-cam.x, sy=st.y-cam.y;
-    if(sx<-200||sx>W+200||sy<-200||sy>H+200) continue;
-    if(st.isPortal){
-      // Escape portal
-      for(let i=3;i>0;i--){
-        ctx.globalAlpha=0.2/i;
-        ctx.fillStyle='#00ffaa';
-        ctx.beginPath(); ctx.arc(sx,sy,st.radius+i*20,0,Math.PI*2); ctx.fill();
-      }
-      ctx.globalAlpha=1;
-      const ag=ctx.createRadialGradient(sx,sy,0,sx,sy,st.radius);
-      ag.addColorStop(0,'#aaffdd'); ag.addColorStop(0.5,'#00ff88'); ag.addColorStop(1,'transparent');
-      ctx.fillStyle=ag; ctx.beginPath(); ctx.arc(sx,sy,st.radius,0,Math.PI*2); ctx.fill();
-      ctx.strokeStyle='#00ffaa'; ctx.lineWidth=3;
-      ctx.beginPath(); ctx.arc(sx,sy,st.radius,0,Math.PI*2); ctx.stroke();
-      ctx.fillStyle='#fff'; ctx.font='bold 12px monospace';
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText('逃脫門戶',sx,sy);
-    } else {
-      // Space station
-      ctx.save(); ctx.translate(sx,sy); ctx.rotate(t*0.2);
-      // Station body
-      ctx.beginPath();
-      for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; ctx.lineTo(Math.cos(a)*st.radius,Math.sin(a)*st.radius); }
-      ctx.closePath(); ctx.fillStyle='#0a1a2a'; ctx.fill();
-      ctx.strokeStyle='#44aaff'; ctx.lineWidth=2; ctx.stroke();
-      // Arms
-      for(let i=0;i<3;i++){
-        const a=i/3*Math.PI*2;
-        ctx.strokeStyle='#44aaff'; ctx.lineWidth=3;
-        ctx.beginPath(); ctx.moveTo(Math.cos(a)*st.radius,Math.sin(a)*st.radius);
-        ctx.lineTo(Math.cos(a)*(st.radius+18),Math.sin(a)*(st.radius+18)); ctx.stroke();
-        ctx.fillStyle='#0055aa';
-        ctx.beginPath(); ctx.arc(Math.cos(a)*(st.radius+18),Math.sin(a)*(st.radius+18),6,0,Math.PI*2); ctx.fill();
+      if (item.type==='warpcore') {
+        const pulse=0.7+0.3*Math.sin(t*0.001*5);
+        ctx.shadowColor=c; ctx.shadowBlur=20*pulse;
+        ctx.beginPath();
+        ctx.arc(0,0,item.r*pulse,0,Math.PI*2);
+        ctx.fillStyle=c; ctx.fill();
+        ctx.shadowBlur=0;
+        // Inner star
+        ctx.fillStyle='#ffffff';
+        for (let i=0;i<5;i++) {
+          const a=i/5*Math.PI*2-Math.PI/2+t*0.001*2;
+          ctx.beginPath();
+          ctx.arc(Math.cos(a)*7,Math.sin(a)*7,2,0,Math.PI*2);
+          ctx.fill();
+        }
+      } else {
+        ctx.shadowColor=c; ctx.shadowBlur=12;
+        ctx.beginPath();
+        ctx.arc(0,0,item.r,0,Math.PI*2);
+        ctx.fillStyle=c+'44';
+        ctx.fill();
+        ctx.strokeStyle=c;
+        ctx.lineWidth=2;
+        ctx.stroke();
+        ctx.shadowBlur=0;
       }
       ctx.restore();
-      // Safe zone ring
-      ctx.globalAlpha=0.08;
-      ctx.fillStyle='#44aaff';
-      ctx.beginPath(); ctx.arc(sx,sy,120,0,Math.PI*2); ctx.fill();
-      ctx.globalAlpha=0.3;
-      ctx.strokeStyle='#44aaff'; ctx.lineWidth=1; ctx.setLineDash([5,8]);
-      ctx.beginPath(); ctx.arc(sx,sy,120,0,Math.PI*2); ctx.stroke();
-      ctx.setLineDash([]); ctx.globalAlpha=1;
     }
   }
 }
 
-function drawPlayer(){
-  const p=player;
-  const px=p.x-cam.x, py=p.y-cam.y;
-  // Engine glow
-  if(keys['KeyW']||keys['ArrowUp']){
-    const gt=ctx.createRadialGradient(px,py,0,px,py,22);
-    gt.addColorStop(0,'rgba(100,200,255,0.6)'); gt.addColorStop(1,'transparent');
-    ctx.fillStyle=gt; ctx.beginPath(); ctx.arc(px,py,22,0,Math.PI*2); ctx.fill();
-    // Engine particles
-    if(Math.random()<0.5) spawnParticle(
-      p.x-Math.cos(p.angle)*14, p.y-Math.sin(p.angle)*14,
-      '#88ccff',1,2,0.15);
-  }
-  ctx.save(); ctx.translate(px,py); ctx.rotate(p.angle);
-  // Ship body (triangle with detail)
-  ctx.beginPath();
-  ctx.moveTo(18,0); ctx.lineTo(-12,-10); ctx.lineTo(-8,0); ctx.lineTo(-12,10);
-  ctx.closePath();
-  ctx.fillStyle='#0a2040'; ctx.fill();
-  ctx.strokeStyle=p.invTimer>0?'#ff4444':'#4af'; ctx.lineWidth=2; ctx.stroke();
-  // Cockpit
-  ctx.fillStyle='#88ddff'; ctx.globalAlpha=0.8;
-  ctx.beginPath(); ctx.arc(6,0,4,0,Math.PI*2); ctx.fill();
-  ctx.globalAlpha=1;
-  ctx.restore();
-  // Shield ring
-  if(p.shield>0){
-    ctx.globalAlpha=0.2+(p.shield/p.maxShield)*0.2;
-    ctx.strokeStyle='#44aaff'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.arc(px,py,p.radius+5,0,Math.PI*2); ctx.stroke();
-    ctx.globalAlpha=1;
-  }
-}
-
-function drawBullets(){
-  for(const b of bullets){
-    const bx=b.x-cam.x, by=b.y-cam.y;
+function drawStations(t) {
+  for (const [,chunk] of chunks) {
+    if (!chunk.station||!chunk.station.alive) continue;
+    const st=chunk.station;
+    ctx.save();
+    ctx.translate(st.x,st.y);
+    ctx.rotate(st.angle+t*0.0002);
+    // Body
+    ctx.fillStyle='#334455';
+    ctx.strokeStyle='#55aaff';
+    ctx.lineWidth=2;
     ctx.beginPath();
-    ctx.arc(bx,by,b.radius*0.5,0,Math.PI*2);
-    ctx.fillStyle=b.color; ctx.fill();
-    // Glow
-    const g=ctx.createRadialGradient(bx,by,0,bx,by,b.radius*2);
-    g.addColorStop(0,b.color+'99'); g.addColorStop(1,'transparent');
-    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(bx,by,b.radius*2,0,Math.PI*2); ctx.fill();
+    ctx.rect(-st.r,-st.r,st.r*2,st.r*2);
+    ctx.fill(); ctx.stroke();
+    // Solar panels
+    ctx.fillStyle='#223366';
+    ctx.strokeStyle='#4477cc';
+    ctx.lineWidth=1;
+    ctx.fillRect(-st.r*2.5,-6,st.r*1.4,12);
+    ctx.strokeRect(-st.r*2.5,-6,st.r*1.4,12);
+    ctx.fillRect(st.r+0,-6,st.r*1.4,12);
+    ctx.strokeRect(st.r+0,-6,st.r*1.4,12);
+    // Light
+    const pulse=0.5+0.5*Math.sin(t*0.001*3);
+    ctx.fillStyle=`rgba(0,255,150,${pulse})`;
+    ctx.beginPath(); ctx.arc(0,0,5,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+
+    // Interaction prompt
+    const d=dist(player.x,player.y,st.x,st.y);
+    if (d<120) {
+      ctx.save();
+      ctx.translate(st.x,st.y-50);
+      ctx.fillStyle='rgba(0,0,0,0.7)';
+      ctx.fillRect(-70,-14,140,24);
+      ctx.fillStyle='#88ffcc';
+      ctx.font='13px Courier New';
+      ctx.textAlign='center';
+      ctx.fillText('按 E 進入太空站',0,4);
+      ctx.restore();
+    }
   }
 }
 
-function drawParticles(){
-  for(const p of particles){
+function drawPortal(t) {
+  if (player.warpCores<5) return;
+  const pcx=Math.floor(ESCAPE_PORTAL_POS.x/CHUNK), pcy=Math.floor(ESCAPE_PORTAL_POS.y/CHUNK);
+  const chunk=chunks.get(chunkKey(pcx,pcy));
+  if (!chunk||!chunk.portal||!chunk.portal.active) return;
+  const por=chunk.portal;
+  ctx.save();
+  ctx.translate(por.x,por.y);
+  ctx.rotate(t*0.001*1.5);
+  for (let i=0;i<3;i++) {
+    ctx.rotate(Math.PI*2/3);
+    const grad=ctx.createRadialGradient(0,0,por.r*0.3,0,0,por.r*1.5);
+    grad.addColorStop(0,'rgba(0,255,255,0.8)');
+    grad.addColorStop(1,'rgba(0,255,255,0)');
+    ctx.beginPath(); ctx.arc(0,0,por.r*1.5,0,Math.PI*2);
+    ctx.fillStyle=grad; ctx.fill();
+  }
+  const innerGrad=ctx.createRadialGradient(0,0,0,0,0,por.r);
+  innerGrad.addColorStop(0,'rgba(255,255,255,0.9)');
+  innerGrad.addColorStop(0.5,'rgba(0,200,255,0.7)');
+  innerGrad.addColorStop(1,'rgba(0,100,200,0.2)');
+  ctx.beginPath(); ctx.arc(0,0,por.r,0,Math.PI*2);
+  ctx.fillStyle=innerGrad; ctx.fill();
+  ctx.restore();
+
+  // Label
+  ctx.save();
+  ctx.translate(por.x,por.y-80);
+  ctx.fillStyle='rgba(0,0,0,0.7)';
+  ctx.fillRect(-60,-14,120,24);
+  ctx.fillStyle='#00ffff';
+  ctx.font='bold 13px Courier New';
+  ctx.textAlign='center';
+  ctx.fillText('逃脫傳送門',0,4);
+  ctx.restore();
+}
+
+function drawEnemies(t) {
+  for (const [,chunk] of chunks) {
+    for (const en of chunk.enemies) {
+      if (!en.alive) continue;
+      ctx.save();
+      ctx.translate(en.x,en.y);
+      ctx.rotate(en.angle);
+      const r=en.r;
+      if (en.type==='drone') {
+        // Hexagonal drone
+        ctx.beginPath();
+        for (let i=0;i<6;i++) {
+          const a=i/6*Math.PI*2;
+          i===0?ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r):ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);
+        }
+        ctx.closePath();
+        ctx.fillStyle='#334455'; ctx.fill();
+        ctx.strokeStyle='#88aacc'; ctx.lineWidth=2; ctx.stroke();
+        ctx.beginPath(); ctx.arc(0,0,5,0,Math.PI*2);
+        ctx.fillStyle='#88aacc'; ctx.fill();
+      } else if (en.type==='pirate') {
+        // Triangle ship
+        ctx.beginPath();
+        ctx.moveTo(r,0); ctx.lineTo(-r*0.7,r*0.6); ctx.lineTo(-r*0.4,0); ctx.lineTo(-r*0.7,-r*0.6);
+        ctx.closePath();
+        ctx.fillStyle='#553322'; ctx.fill();
+        ctx.strokeStyle='#ff8833'; ctx.lineWidth=2; ctx.stroke();
+        // Engine
+        ctx.fillStyle='#ff5500';
+        ctx.beginPath(); ctx.arc(-r*0.4,0,4,0,Math.PI*2); ctx.fill();
+      } else if (en.type==='alien') {
+        // Diamond + spikes
+        ctx.beginPath();
+        ctx.moveTo(r,0); ctx.lineTo(0,r*0.7); ctx.lineTo(-r,0); ctx.lineTo(0,-r*0.7);
+        ctx.closePath();
+        ctx.fillStyle='#220033'; ctx.fill();
+        ctx.strokeStyle='#aa44ff'; ctx.lineWidth=2; ctx.stroke();
+        // Spikes
+        ctx.strokeStyle='#cc66ff'; ctx.lineWidth=1;
+        for (let i=0;i<4;i++) {
+          const a=i/4*Math.PI*2+Math.PI/4;
+          ctx.beginPath(); ctx.moveTo(Math.cos(a)*r*0.5,Math.sin(a)*r*0.5);
+          ctx.lineTo(Math.cos(a)*r*1.4,Math.sin(a)*r*1.4); ctx.stroke();
+        }
+      }
+      // HP bar
+      const hpFrac=en.hp/en.maxHp;
+      ctx.fillStyle='#550000';
+      ctx.fillRect(-r,-r-10,r*2,5);
+      ctx.fillStyle=hpFrac>0.5?'#00cc44':'#ff4400';
+      ctx.fillRect(-r,-r-10,r*2*hpFrac,5);
+      ctx.restore();
+    }
+  }
+}
+
+function drawEngineTrail() {
+  for (const p of engineTrail) {
+    const alpha=p.life/p.maxLife;
+    ctx.globalAlpha=alpha*0.7;
+    ctx.fillStyle=p.color;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,3*alpha,0,Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha=1;
+}
+
+function drawPlayer(t) {
+  ctx.save();
+  ctx.translate(player.x,player.y);
+  ctx.rotate(player.angle);
+
+  // Shield bubble
+  if (player.shield>0) {
+    const sf=player.shield/player.maxShield;
+    ctx.beginPath(); ctx.arc(0,0,28,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(0,150,255,${sf*0.4})`;
+    ctx.lineWidth=2;
+    if (player.invulTimer>0) ctx.strokeStyle=`rgba(255,255,255,${sf*0.6})`;
+    ctx.stroke();
+  }
+
+  // Engine glow
+  const engGrad=ctx.createRadialGradient(-20,0,0,-20,0,14);
+  engGrad.addColorStop(0,'rgba(0,150,255,0.9)');
+  engGrad.addColorStop(1,'rgba(0,50,255,0)');
+  ctx.beginPath(); ctx.arc(-20,0,14,0,Math.PI*2);
+  ctx.fillStyle=engGrad; ctx.fill();
+
+  // Ship body
+  ctx.beginPath();
+  ctx.moveTo(24,0);
+  ctx.lineTo(-14,13);
+  ctx.lineTo(-8,0);
+  ctx.lineTo(-14,-13);
+  ctx.closePath();
+  if (player.invulTimer>0&&Math.floor(t*0.01)%2===0) {
+    ctx.fillStyle='rgba(255,255,255,0.8)';
+  } else {
+    ctx.fillStyle='#334466';
+  }
+  ctx.fill();
+  ctx.strokeStyle='#66aaff';
+  ctx.lineWidth=2;
+  ctx.stroke();
+
+  // Cockpit
+  ctx.beginPath(); ctx.arc(10,0,5,0,Math.PI*2);
+  ctx.fillStyle='#aaddff'; ctx.fill();
+
+  ctx.restore();
+}
+
+function drawBullets(t) {
+  for (const b of bullets) {
+    const ang=Math.atan2(b.vy,b.vx);
+    ctx.save();
+    ctx.translate(b.x,b.y);
+    ctx.rotate(ang);
+    ctx.shadowColor='#88ffff'; ctx.shadowBlur=8;
+    ctx.fillStyle='#00ffff';
+    ctx.beginPath(); ctx.ellipse(0,0,8,3,0,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  ctx.shadowBlur=0;
+  for (const b of enemyBullets) {
+    const ang=Math.atan2(b.vy,b.vx);
+    ctx.save();
+    ctx.translate(b.x,b.y);
+    ctx.rotate(ang);
+    ctx.fillStyle='#ff6600';
+    ctx.shadowColor='#ff6600'; ctx.shadowBlur=8;
+    ctx.beginPath(); ctx.ellipse(0,0,7,3,0,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  ctx.shadowBlur=0;
+}
+
+function drawParticles() {
+  for (const p of particles) {
     const alpha=p.life/p.maxLife;
     ctx.globalAlpha=alpha;
     ctx.fillStyle=p.color;
-    ctx.beginPath(); ctx.arc(p.x-cam.x,p.y-cam.y,p.r*alpha,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r*alpha,0,Math.PI*2); ctx.fill();
   }
   ctx.globalAlpha=1;
 }
 
+// ─── HUD ──────────────────────────────────────────────────────────────────────
+function drawHUD(t) {
+  // Top left panel
+  ctx.fillStyle='rgba(0,5,20,0.75)';
+  ctx.fillRect(10,10,220,90);
+  ctx.strokeStyle='rgba(50,100,200,0.5)';
+  ctx.lineWidth=1;
+  ctx.strokeRect(10,10,220,90);
 
-// ── HUD ──
-function drawHUD(){
-  const p=player;
-  ctx.save();
+  // Hull bar
+  ctx.fillStyle='#331111';
+  ctx.fillRect(50,20,160,14);
+  const hf=player.hull/player.maxHull;
+  ctx.fillStyle=hf>0.5?'#cc2222':hf>0.25?'#ff6600':'#ff0000';
+  ctx.fillRect(50,20,160*hf,14);
+  ctx.fillStyle='#ffffff'; ctx.font='11px Courier New'; ctx.textAlign='left';
+  ctx.fillText('船殼',14,32);
+  ctx.fillText(`${Math.ceil(player.hull)}/${player.maxHull}`,55,31);
 
-  // Top-left: bars
-  const bw=180, bh=14, bx=18, by=18;
-  // Hull
-  ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(bx-2,by-2,bw+4,bh+4);
-  ctx.fillStyle='#222'; ctx.fillRect(bx,by,bw,bh);
-  ctx.fillStyle='#ee4444'; ctx.fillRect(bx,by,bw*(p.hull/p.maxHull),bh);
-  ctx.fillStyle='#fff'; ctx.font='bold 11px monospace'; ctx.textAlign='left'; ctx.textBaseline='middle';
-  ctx.fillText(`船殼 ${Math.ceil(p.hull)}/${p.maxHull}`,bx+4,by+bh/2);
-  // Shield
-  ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(bx-2,by+bh+4,bw+4,bh+4);
-  ctx.fillStyle='#222'; ctx.fillRect(bx,by+bh+6,bw,bh);
-  ctx.fillStyle='#2288ff'; ctx.fillRect(bx,by+bh+6,bw*(p.shield/p.maxShield),bh);
-  ctx.fillStyle='#aaddff'; ctx.fillText(`護盾 ${Math.ceil(p.shield)}/${p.maxShield}`,bx+4,by+bh+6+bh/2);
+  // Shield bar
+  ctx.fillStyle='#111133';
+  ctx.fillRect(50,40,160,14);
+  const sf=player.shield/player.maxShield;
+  ctx.fillStyle='#2255cc';
+  ctx.fillRect(50,40,160*sf,14);
+  ctx.fillStyle='#aaddff';
+  ctx.fillText('護盾',14,52);
+  ctx.fillText(`${Math.ceil(player.shield)}/${player.maxShield}`,55,51);
+
   // Resources
-  const resy=by+bh*2+20;
-  ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(bx-2,resy-2,bw+4,56);
-  ctx.font='13px monospace'; ctx.textBaseline='top';
-  ctx.fillStyle='#cc8844'; ctx.fillText(`⛏ 礦石: ${p.ore}`,bx+4,resy+2);
-  ctx.fillStyle='#cc44ff'; ctx.fillText(`💎 晶體: ${p.crystal}`,bx+4,resy+18);
-  ctx.fillStyle='#ffff44'; ctx.fillText(`🔬 異星科技: ${p.tech}`,bx+4,resy+34);
+  ctx.fillStyle='#aaaaaa'; ctx.font='11px Courier New';
+  ctx.fillText(`礦石: ${player.ore}  晶體: ${player.crystal}  異星: ${player.alienTech}`,14,75);
 
-  // Top-center: Warp core progress
-  const wbx=W/2-80, wby=14;
-  ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(wbx-8,wby-4,176,36);
-  ctx.font='bold 11px monospace'; ctx.textAlign='center'; ctx.textBaseline='top';
-  ctx.fillStyle='#aaa'; ctx.fillText('翹曲核心',W/2,wby);
-  for(let i=0;i<5;i++){
-    const cx2=wbx+i*32+16, cy2=wby+22;
-    ctx.fillStyle=i<p.warpCores?'#ffd700':'#333';
-    ctx.beginPath(); ctx.arc(cx2,cy2,12,0,Math.PI*2); ctx.fill();
-    ctx.strokeStyle=i<p.warpCores?'#ffaa00':'#555'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.arc(cx2,cy2,12,0,Math.PI*2); ctx.stroke();
-    if(i<p.warpCores){ ctx.fillStyle='#000'; ctx.font='14px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('⭐',cx2,cy2); }
-    else { ctx.fillStyle='#555'; ctx.font='12px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText((i+1).toString(),cx2,cy2); }
+  // Speed / gravity warning
+  const d=dist(player.x,player.y,0,0);
+  if (d<600) {
+    ctx.fillStyle='rgba(150,0,200,0.15)';
+    ctx.fillRect(10,106,220,20);
+    ctx.fillStyle='#cc66ff'; ctx.font='11px Courier New';
+    ctx.fillText('⚠ 黑洞引力強化中',14,120);
   }
 
-  // Minimap (top-right)
-  const mx=W-220, my=14, mw=200, mh=160;
-  ctx.fillStyle='rgba(0,5,15,0.75)'; ctx.fillRect(mx,my,mw,mh);
-  ctx.strokeStyle='#1a4a6a'; ctx.lineWidth=1; ctx.strokeRect(mx,my,mw,mh);
-  const mmScale=mw/3000; // 3000 world units = minimap width
-  const mmOx=player.x-1500, mmOy=player.y-(mh/2/mmScale);
-  // Black hole on minimap
-  const bhmmx=mx+(0-mmOx)*mmScale, bhmmy=my+(0-mmOy)*mmScale;
-  if(bhmmx>mx-10&&bhmmx<mx+mw+10&&bhmmy>my-10&&bhmmy<my+mh+10){
-    ctx.fillStyle='#6600cc'; ctx.beginPath(); ctx.arc(clamp(bhmmx,mx,mx+mw),clamp(bhmmy,my,my+mh),6,0,Math.PI*2); ctx.fill();
-  }
-  // Enemies
-  ctx.fillStyle='#ff4444';
-  for(const e of enemies){ if(e.dead) continue;
-    const ex2=mx+(e.x-mmOx)*mmScale, ey2=my+(e.y-mmOy)*mmScale;
-    if(ex2>mx&&ex2<mx+mw&&ey2>my&&ey2<my+mh){ ctx.beginPath(); ctx.arc(ex2,ey2,2,0,Math.PI*2); ctx.fill(); }
-  }
-  // Items
-  ctx.fillStyle='#00ccff';
-  for(const it of items){ if(it.collected) continue;
-    const imx=mx+(it.x-mmOx)*mmScale, imy=my+(it.y-mmOy)*mmScale;
-    if(imx>mx&&imx<mx+mw&&imy>my&&imy<my+mh){
-      ctx.fillStyle=it.type==='warpCore'?'#ffd700':'#00ccff';
-      ctx.beginPath(); ctx.arc(imx,imy,it.type==='warpCore'?4:2,0,Math.PI*2); ctx.fill();
+  // Top center: Warp cores
+  const cx2=W/2;
+  ctx.fillStyle='rgba(0,5,20,0.75)';
+  ctx.fillRect(cx2-120,10,240,36);
+  ctx.strokeStyle='rgba(50,100,200,0.5)'; ctx.lineWidth=1;
+  ctx.strokeRect(cx2-120,10,240,36);
+  ctx.fillStyle='#aaaaaa'; ctx.font='11px Courier New'; ctx.textAlign='center';
+  ctx.fillText('翹曲核心',cx2,24);
+  for (let i=0;i<5;i++) {
+    const sx=cx2-90+i*38;
+    const collected=i<player.warpCores;
+    if (collected) {
+      const pulse=0.7+0.3*Math.sin(t*0.001*4+i);
+      ctx.fillStyle=`rgba(255,220,0,${pulse})`;
+      ctx.shadowColor='#ffdd00'; ctx.shadowBlur=8;
+    } else {
+      ctx.fillStyle='#333333';
+      ctx.shadowBlur=0;
+    }
+    ctx.beginPath(); ctx.arc(sx,34,8,0,Math.PI*2); ctx.fill();
+    ctx.shadowBlur=0;
+    if (!collected) {
+      ctx.strokeStyle='#555555'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(sx,34,8,0,Math.PI*2); ctx.stroke();
     }
   }
-  // Portal on minimap
-  if(escapePortal){
-    const pmx=mx+(escapePortal.x-mmOx)*mmScale, pmy=my+(escapePortal.y-mmOy)*mmScale;
-    if(pmx>mx-6&&pmx<mx+mw+6&&pmy>my-6&&pmy<my+mh+6){
-      ctx.fillStyle='#00ffaa'; ctx.beginPath(); ctx.arc(clamp(pmx,mx,mx+mw),clamp(pmy,my,my+mh),5,0,Math.PI*2); ctx.fill();
-    }
-  }
-  // Player dot
-  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(mx+mw/2,my+mh/2,4,0,Math.PI*2); ctx.fill();
-  ctx.strokeStyle='#4af'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(mx+mw/2,my+mh/2,4,0,Math.PI*2); ctx.stroke();
-  // Minimap label
-  ctx.fillStyle='#446'; ctx.font='10px monospace'; ctx.textAlign='left'; ctx.textBaseline='top';
-  ctx.fillText('RADAR',mx+4,my+4);
-  // Score
-  ctx.fillStyle='#888'; ctx.font='11px monospace'; ctx.textAlign='right'; ctx.textBaseline='top';
-  ctx.fillText(`分數 ${gs.score}`,mx+mw-4,my+mh-14);
 
-  // Near station prompt
-  if(gs.nearStation && !gs.nearStation.isPortal && !gs.shopOpen){
-    ctx.fillStyle='rgba(0,30,60,0.85)'; ctx.fillRect(W/2-120,H-60,240,36);
-    ctx.strokeStyle='#4af'; ctx.lineWidth=1; ctx.strokeRect(W/2-120,H-60,240,36);
-    ctx.fillStyle='#adf'; ctx.font='bold 13px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('[E] 進入太空站補給',W/2,H-42);
-  }
-  if(gs.nearStation && gs.nearStation.isPortal){
-    ctx.fillStyle='rgba(0,60,30,0.85)'; ctx.fillRect(W/2-140,H-60,280,36);
-    ctx.strokeStyle='#0fa'; ctx.lineWidth=1; ctx.strokeRect(W/2-140,H-60,280,36);
-    ctx.fillStyle='#afffdd'; ctx.font='bold 13px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('⭐ 接近門戶以逃脫！',W/2,H-42);
-  }
+  // Minimap (top right)
+  drawMinimap(t);
 
-  // Status message
-  if(gs.statusTimer>0){
-    ctx.globalAlpha=Math.min(1,gs.statusTimer);
-    ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(W/2-160,H/2-10+60,320,28);
-    ctx.fillStyle='#fff'; ctx.font='bold 14px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(gs.statusMsg,W/2,H/2+4+60);
+  // Status message (bottom center)
+  if (statusTimer>0&&statusMsg) {
+    const alpha=Math.min(1,statusTimer);
+    ctx.globalAlpha=alpha;
+    ctx.fillStyle='rgba(0,5,20,0.8)';
+    ctx.fillRect(W/2-180,H-60,360,32);
+    ctx.fillStyle='#88ffcc';
+    ctx.font='14px Courier New'; ctx.textAlign='center';
+    ctx.fillText(statusMsg,W/2,H-38);
     ctx.globalAlpha=1;
   }
 
-  // Gravity warning
-  if(gs.gravity>3){
-    const d=dist(player,{x:0,y:0});
-    if(d<2000){
-      ctx.globalAlpha=0.6+0.3*Math.sin(gs.playTime*4);
-      ctx.fillStyle='#ff4444'; ctx.font='bold 13px monospace'; ctx.textAlign='center'; ctx.textBaseline='top';
-      ctx.fillText('⚠ 黑洞引力增強，請遠離中心！',W/2,58);
-      ctx.globalAlpha=1;
+  // Warp core location hints (when none collected)
+  if (player.warpCores===0 && Math.floor(t*0.001)%8<4) {
+    ctx.fillStyle='rgba(255,220,0,0.5)';
+    ctx.font='10px Courier New'; ctx.textAlign='center';
+    ctx.fillText('翹曲核心分佈在銀河各處 — 向遠方探索！',W/2,H-70);
+  }
+}
+
+function drawMinimap(t) {
+  const mx=W-210, my=10, mw=200, mh=200;
+  const mapRange=2000;
+  const scale=mw/mapRange;
+
+  ctx.fillStyle='rgba(0,5,20,0.85)';
+  ctx.fillRect(mx,my,mw,mh);
+  ctx.strokeStyle='rgba(50,100,200,0.6)'; ctx.lineWidth=1;
+  ctx.strokeRect(mx,my,mw,mh);
+
+  ctx.save();
+  ctx.beginPath(); ctx.rect(mx,my,mw,mh); ctx.clip();
+
+  const toMapX=(wx)=>mx+mw/2+(wx-player.x)*scale;
+  const toMapY=(wy)=>my+mh/2+(wy-player.y)*scale;
+
+  // Black hole
+  const bx=toMapX(0), by=toMapY(0);
+  ctx.beginPath(); ctx.arc(bx,by,8,0,Math.PI*2);
+  ctx.fillStyle='rgba(100,0,150,0.8)'; ctx.fill();
+  ctx.strokeStyle='#660099'; ctx.lineWidth=1; ctx.stroke();
+
+  // Asteroids (small dots)
+  for (const [,chunk] of chunks) {
+    for (const ast of chunk.asteroids) {
+      const ax=toMapX(ast.x), ay=toMapY(ast.y);
+      if (ax<mx||ax>mx+mw||ay<my||ay>my+mh) continue;
+      ctx.fillStyle='rgba(100,80,60,0.5)';
+      ctx.fillRect(ax-1,ay-1,2,2);
     }
   }
+
+  // Space stations (green squares)
+  for (const [,chunk] of chunks) {
+    if (!chunk.station||!chunk.station.alive) continue;
+    const sx=toMapX(chunk.station.x), sy=toMapY(chunk.station.y);
+    if (sx<mx||sx>mx+mw||sy<my||sy>my+mh) continue;
+    ctx.fillStyle='#00cc66';
+    ctx.fillRect(sx-3,sy-3,6,6);
+  }
+
+  // Enemies (red dots)
+  for (const [,chunk] of chunks) {
+    for (const en of chunk.enemies) {
+      if (!en.alive) continue;
+      const ex=toMapX(en.x), ey=toMapY(en.y);
+      if (ex<mx||ex>mx+mw||ey<my||ey>my+mh) continue;
+      ctx.fillStyle='#ff3333';
+      ctx.beginPath(); ctx.arc(ex,ey,2,0,Math.PI*2); ctx.fill();
+    }
+  }
+
+  // Items (cyan dots)
+  for (const [,chunk] of chunks) {
+    for (const item of chunk.items) {
+      if (!item.alive) continue;
+      const ix=toMapX(item.x), iy=toMapY(item.y);
+      if (ix<mx||ix>mx+mw||iy<my||iy>my+mh) continue;
+      if (item.type==='warpcore') {
+        const pulse=0.5+0.5*Math.sin(t*0.001*4);
+        ctx.fillStyle=`rgba(255,220,0,${pulse})`;
+        ctx.beginPath(); ctx.arc(ix,iy,4,0,Math.PI*2); ctx.fill();
+      } else {
+        ctx.fillStyle='rgba(0,200,200,0.6)';
+        ctx.beginPath(); ctx.arc(ix,iy,2,0,Math.PI*2); ctx.fill();
+      }
+    }
+  }
+
+  // Warp core arrows (if outside minimap range)
+  for (const wcp of WARP_CORE_POSITIONS) {
+    const id=`${wcp.x},${wcp.y}`;
+    if (player.warpCoreSet.has(id)) continue;
+    const dx=wcp.x-player.x, dy=wcp.y-player.y;
+    const d2=Math.sqrt(dx*dx+dy*dy);
+    if (d2>mapRange/2) {
+      // Arrow at minimap edge
+      const ang=Math.atan2(dy,dx);
+      const ex=mx+mw/2+Math.cos(ang)*(mw/2-8);
+      const ey=my+mh/2+Math.sin(ang)*(mh/2-8);
+      ctx.save(); ctx.translate(ex,ey); ctx.rotate(ang);
+      ctx.fillStyle='#ffdd00';
+      ctx.beginPath(); ctx.moveTo(8,0); ctx.lineTo(-4,4); ctx.lineTo(-4,-4); ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // Portal arrow
+  if (player.warpCores>=5) {
+    const pdx=ESCAPE_PORTAL_POS.x-player.x, pdy=ESCAPE_PORTAL_POS.y-player.y;
+    const pd=Math.sqrt(pdx*pdx+pdy*pdy);
+    if (pd>mapRange/2) {
+      const ang=Math.atan2(pdy,pdx);
+      const ex=mx+mw/2+Math.cos(ang)*(mw/2-8);
+      const ey=my+mh/2+Math.sin(ang)*(mh/2-8);
+      ctx.save(); ctx.translate(ex,ey); ctx.rotate(ang);
+      ctx.fillStyle='#00ffff';
+      ctx.beginPath(); ctx.moveTo(10,0); ctx.lineTo(-5,5); ctx.lineTo(-5,-5); ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // Player dot (center)
+  ctx.fillStyle='#ffffff';
+  ctx.beginPath(); ctx.arc(mx+mw/2,my+mh/2,4,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#aaaaff'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(mx+mw/2,my+mh/2,6,0,Math.PI*2); ctx.stroke();
+
+  ctx.restore();
+
+  // Coordinates
+  ctx.fillStyle='rgba(100,120,160,0.7)'; ctx.font='10px Courier New'; ctx.textAlign='right';
+  ctx.fillText(`${Math.floor(player.x)}, ${Math.floor(player.y)}`,mx+mw-2,my+mh+12);
+}
+
+// ─── SCREENS ──────────────────────────────────────────────────────────────────
+function renderTitle() {
+  // Starfield on title
+  for (const s of stars) {
+    const px=(s.x*3%W+W)%W, py=(s.y*3%H+H)%H;
+    ctx.globalAlpha=s.brightness*0.6;
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(px,py,s.sz,s.sz);
+  }
+  ctx.globalAlpha=1;
+
+  // Title glow
+  const t=performance.now();
+  const pulse=0.8+0.2*Math.sin(t*0.001);
+
+  ctx.save();
+  ctx.textAlign='center';
+
+  // Big title
+  ctx.font=`bold 56px 'Courier New', monospace`;
+  ctx.shadowColor='#4488ff'; ctx.shadowBlur=30*pulse;
+  ctx.fillStyle=`rgba(100,170,255,${pulse})`;
+  ctx.fillText('虛空領航員',W/2,H/2-120);
+
+  ctx.font='24px Courier New';
+  ctx.fillStyle='#6699cc';
+  ctx.shadowBlur=10;
+  ctx.fillText('Void Navigator',W/2,H/2-75);
+
+  ctx.shadowBlur=0;
+
+  // Story
+  ctx.font='14px Courier New';
+  ctx.fillStyle='#8899aa';
+  const lines=['領航員陳，你被黑洞吸入了未知的銀河！','駕駛你的太空艇，蒐集5個翹曲核心，逃離這裡！'];
+  lines.forEach((l,i)=>ctx.fillText(l,W/2,H/2+i*22));
+
+  // Controls
+  ctx.font='12px Courier New';
+  ctx.fillStyle='#556677';
+  const controls=['WASD / 方向鍵: 推進   滑鼠: 瞄準   左鍵 / 空白鍵: 射擊','E: 進入太空站   ESC: 暫停'];
+  controls.forEach((l,i)=>ctx.fillText(l,W/2,H/2+80+i*20));
+
+  // Start prompt
+  const blinkAlpha=0.5+0.5*Math.sin(t*0.002);
+  ctx.globalAlpha=blinkAlpha;
+  ctx.font='18px Courier New';
+  ctx.fillStyle='#aaddff';
+  ctx.fillText('按 ENTER 或點擊開始',W/2,H/2+148);
+  ctx.globalAlpha=1;
 
   ctx.restore();
 }
 
-// ── Screen overlays ──
-function drawTitle(){
-  ctx.fillStyle='rgba(0,0,10,0.85)'; ctx.fillRect(0,0,W,H);
-  // Title
-  ctx.shadowBlur=30; ctx.shadowColor='#4af';
-  ctx.fillStyle='#aaddff'; ctx.font=`bold ${clamp(W/15,32,56)}px monospace`;
-  ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText('虛空領航員',W/2,H/2-120);
-  ctx.shadowBlur=10; ctx.fillStyle='#446688'; ctx.font=`${clamp(W/30,16,22)}px monospace`;
-  ctx.fillText('VOID NAVIGATOR',W/2,H/2-78);
+function drawPaused() {
+  ctx.fillStyle='rgba(0,0,0,0.5)';
+  ctx.fillRect(0,0,W,H);
+  ctx.textAlign='center';
+  ctx.font='bold 48px Courier New';
+  ctx.fillStyle='#aaddff';
+  ctx.shadowColor='#4488ff'; ctx.shadowBlur=20;
+  ctx.fillText('PAUSED',W/2,H/2);
   ctx.shadowBlur=0;
-  // Story
-  ctx.fillStyle='#8899aa'; ctx.font='14px monospace';
-  const lines=['領航員陳，你被黑洞吸入了未知的銀河！','駕駛你的太空艇，蒐集5個翹曲核心，逃離這裡！','','操作：WASD移動  滑鼠瞄準  左鍵射擊  E進入太空站'];
-  lines.forEach((l,i)=>ctx.fillText(l,W/2,H/2-20+i*26));
-  // Start prompt (pulsing)
-  ctx.globalAlpha=0.6+0.4*Math.sin(gs.time*3);
-  ctx.fillStyle='#4af'; ctx.font='bold 16px monospace';
-  ctx.fillText('按 ENTER 或點擊開始遊戲',W/2,H/2+120);
-  ctx.globalAlpha=1;
+  ctx.font='16px Courier New';
+  ctx.fillStyle='#7799aa';
+  ctx.fillText('按 ESC 繼續',W/2,H/2+40);
 }
 
-function drawPaused(){
-  ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(0,0,W,H);
-  ctx.fillStyle='#fff'; ctx.font='bold 36px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText('⏸ 暫停',W/2,H/2-20);
-  ctx.fillStyle='#678'; ctx.font='16px monospace';
-  ctx.fillText('按 ESC 繼續',W/2,H/2+24);
-}
-
-function drawDead(){
-  ctx.fillStyle='rgba(20,0,0,0.88)'; ctx.fillRect(0,0,W,H);
-  ctx.fillStyle='#ff4444'; ctx.font='bold 40px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText('太空艇毀滅',W/2,H/2-80);
-  ctx.fillStyle='#aa6666'; ctx.font='18px monospace';
-  ctx.fillText('任務失敗',W/2,H/2-30);
-  ctx.fillStyle='#888'; ctx.font='14px monospace';
-  ctx.fillText(`翹曲核心: ${player.warpCores}/5   分數: ${gs.score}`,W/2,H/2+10);
-  ctx.fillText(`探索時間: ${Math.floor(gs.playTime/60)}分${Math.floor(gs.playTime%60)}秒`,W/2,H/2+36);
-  ctx.globalAlpha=0.6+0.4*Math.sin(gs.time*3);
-  ctx.fillStyle='#aaa'; ctx.font='bold 16px monospace';
-  ctx.fillText('按 ENTER 重新開始',W/2,H/2+80);
-  ctx.globalAlpha=1;
-}
-
-function drawWin(){
-  ctx.fillStyle='rgba(0,20,10,0.88)'; ctx.fillRect(0,0,W,H);
-  ctx.shadowBlur=40; ctx.shadowColor='#00ffaa';
-  ctx.fillStyle='#00ffaa'; ctx.font='bold 40px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText('你逃出去了！',W/2,H/2-80);
+function drawGameOver() {
+  ctx.fillStyle='rgba(0,0,0,0.7)';
+  ctx.fillRect(0,0,W,H);
+  ctx.textAlign='center';
+  ctx.font='bold 44px Courier New';
+  ctx.fillStyle='#ff4422';
+  ctx.shadowColor='#ff2200'; ctx.shadowBlur=20;
+  ctx.fillText('太空艇毀滅，任務失敗',W/2,H/2-60);
   ctx.shadowBlur=0;
-  ctx.fillStyle='#aaffdd'; ctx.font='22px monospace';
-  ctx.fillText('成功返回地球！',W/2,H/2-30);
-  ctx.fillStyle='#88aa99'; ctx.font='15px monospace';
-  ctx.fillText(`探索時間: ${Math.floor(gs.playTime/60)}分${Math.floor(gs.playTime%60)}秒   最終分數: ${gs.score}`,W/2,H/2+20);
-  ctx.globalAlpha=0.6+0.4*Math.sin(gs.time*2);
-  ctx.fillStyle='#afffdd'; ctx.font='bold 16px monospace';
-  ctx.fillText('按 ENTER 再玩一次',W/2,H/2+80);
+  ctx.font='16px Courier New';
+  ctx.fillStyle='#aa8877';
+  ctx.fillText(`礦石: ${player.ore}  晶體: ${player.crystal}  翹曲核心: ${player.warpCores}/5`,W/2,H/2-10);
+  ctx.fillText(`存活時間: ${Math.floor(playTime)}秒`,W/2,H/2+20);
+  ctx.font='18px Courier New';
+  ctx.fillStyle='#aaddff';
+  const blinkAlpha=0.5+0.5*Math.sin(performance.now()*0.002);
+  ctx.globalAlpha=blinkAlpha;
+  ctx.fillText('按 ENTER 重新開始',W/2,H/2+70);
   ctx.globalAlpha=1;
 }
 
-
-// ── Game init ──
-function startGame(){
-  player=makePlayer();
-  chunks.clear(); bullets=[]; particles=[]; boughtUpgrades.clear();
-  warpCoreItems=WARP_POSITIONS.map((p,i)=>({x:p.x,y:p.y,type:'warpCore',radius:18,id:i,collected:false,bobT:Math.random()*Math.PI*2}));
-  escapePortal=null;
-  gs.state='playing'; gs.playTime=0; gs.score=0; gs.gravity=0; gs.gravTimer=0;
-  gs.statusMsg=''; gs.statusTimer=0; gs.shopOpen=false;
-  document.getElementById('shopModal').style.display='none';
-  setStatus('找到5個翹曲核心，逃離黑洞！');
-}
-
-// ── Main loop ──
-let lastT=0;
-function loop(t){
-  const dt=Math.min((t-lastT)/1000,0.05);
-  lastT=t;
-  gs.time+=dt;
-
-  ctx.fillStyle='#000010'; ctx.fillRect(0,0,W,H);
-  drawStars();
-  drawBlackHole();
-
-  if(gs.state==='title'){
-    drawTitle();
-  } else {
-    if(gs.state==='playing' && !gs.shopOpen){
-      gs.playTime+=dt;
-      updateGravity(dt);
-      const stationsList=updateChunks();
-      updatePlayer(dt,stationsList);
-      updateEnemies(dt);
-      updateBullets(dt);
-      updateParticles(dt);
-      checkEscape();
-      if(gs.statusTimer>0) gs.statusTimer-=dt;
-      updateCam();
-    } else if(gs.state==='playing' && gs.shopOpen){
-      // Camera still updates when shop open
-      updateCam();
-    }
-
-    // Draw world
-    drawAsteroids();
-    const stList2=updateChunks();
-    drawStations(stList2);
-    drawItems();
-    drawEnemies();
-    drawBullets();
-    drawParticles();
-    drawPlayer();
-    drawHUD();
-
-    if(gs.state==='paused') drawPaused();
-    if(gs.state==='dead')   drawDead();
-    if(gs.state==='win')    drawWin();
-
-    // Win particles
-    if(gs.state==='win' && Math.random()<0.3){
-      spawnParticle(Math.random()*W+cam.x,Math.random()*H+cam.y,'#00ffaa',3,8,1);
-    }
+function drawVictory(t) {
+  // Victory particles
+  if (Math.random()<0.3) {
+    const px=Math.random()*W, py=Math.random()*H;
+    spawnParticle(px-player.x+W/2,py-player.y+H/2,
+      (Math.random()-0.5)*100,(Math.random()-0.5)*100,1,
+      `hsl(${Math.random()*360},100%,70%)`,3);
   }
 
+  ctx.fillStyle='rgba(0,0,20,0.7)';
+  ctx.fillRect(0,0,W,H);
+
+  ctx.textAlign='center';
+  const pulse=0.8+0.2*Math.sin(t*0.002);
+  ctx.font='bold 42px Courier New';
+  ctx.fillStyle=`rgba(0,255,200,${pulse})`;
+  ctx.shadowColor='#00ffcc'; ctx.shadowBlur=25*pulse;
+  ctx.fillText('你逃出去了！成功返回地球！',W/2,H/2-70);
+  ctx.shadowBlur=0;
+
+  ctx.font='18px Courier New';
+  ctx.fillStyle='#88ccff';
+  ctx.fillText(`飛行時間: ${Math.floor(playTime)}秒`,W/2,H/2-20);
+  ctx.fillText(`礦石: ${player.ore}  晶體: ${player.crystal}  異星科技: ${player.alienTech}`,W/2,H/2+15);
+
+  const blinkAlpha=0.5+0.5*Math.sin(t*0.003);
+  ctx.globalAlpha=blinkAlpha;
+  ctx.font='18px Courier New';
+  ctx.fillStyle='#ffee88';
+  ctx.fillText('按 ENTER 再次挑戰',W/2,H/2+70);
+  ctx.globalAlpha=1;
+}
+
+// ─── MAIN LOOP ────────────────────────────────────────────────────────────────
+function loop(timestamp) {
+  const dt=Math.min((timestamp-lastTime)/1000,0.05);
+  lastTime=timestamp;
+  update(dt);
+  render(timestamp);
   requestAnimationFrame(loop);
 }
 
-requestAnimationFrame(t=>{ lastT=t; loop(t); });
+// ─── BOOT ─────────────────────────────────────────────────────────────────────
+player = createPlayer();
+// Pre-generate origin chunk
+generateChunk(0,0);
+generateChunk(1,0);
+generateChunk(-1,0);
+generateChunk(0,1);
+generateChunk(0,-1);
+
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
