@@ -707,6 +707,7 @@ function tick() {
   renderHdr();
   renderCenter();
   renderZombies();
+  renderZombieField();
 }
 
 // ══════════════════════════════════════════════
@@ -714,8 +715,7 @@ function tick() {
 // ══════════════════════════════════════════════
 
 function onClickBrain(e) {
-  startBGM(); // start audio on first interaction
-  sfxClick();
+  try { startBGM(); sfxClick(); } catch(e) {}
   const cp = Math.max(1, Math.floor(clickPow()));
   G.b += cp; G.tb += cp; G.tc++;
   const x = e.clientX || 400, y = e.clientY || 300;
@@ -734,15 +734,15 @@ function setBuy(m) {
 
 function buyZ(zid) {
   const amt = G.bm === -1 ? maxBuy(zid) : G.bm;
-  if (amt <= 0) { sfxDeny(); return; }
+  if (amt <= 0) { try { sfxDeny(); } catch(e){} return; }
   const cost = zCost(zid, amt);
-  if (G.b < cost) { sfxDeny(); return; }
+  if (G.b < cost) { try { sfxDeny(); } catch(e){} return; }
   G.b -= cost; G.z[zid].n += amt;
-  sfxBuy();
+  // 先更新畫面，再播音效（避免音效例外阻斷渲染）
   renderZombies(); renderZombieField(); renderUpg();
-  // flash the row after re-render
   const row = document.getElementById('zr-' + zid);
   if (row) { row.classList.add('flash'); setTimeout(() => row && row.classList.remove('flash'), 460); }
+  try { sfxBuy(); } catch(e) {}
 }
 
 function buyUpg(id) {
