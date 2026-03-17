@@ -156,12 +156,11 @@ window.addEventListener('resize', () => {
 const KENNEY_BASE = 'https://pub-16bdb26b7be84d50975581dfc3c970a5.r2.dev/kenney_sci-fi-sounds/Audio/';
 const MUS_BASE = 'assets/Space Music Pack/Space Music Pack/';
 const audio = {
-  ctx: null, buffers: {}, music: null, musicTrack: '',
+  buffers: {}, music: null, musicTrack: '',
   muted: false, _inited: false, _battleTimer: 0,
   init() {
     if (this._inited) return;
     this._inited = true;
-    try { this.ctx = new (window.AudioContext||window.webkitAudioContext)(); } catch(e) { return; }
     const sfx = {
       shoot:      KENNEY_BASE + 'laser1.ogg',
       explode:    KENNEY_BASE + 'explosionCrunch_000.ogg',
@@ -176,19 +175,16 @@ const audio = {
     for (const [id, url] of Object.entries(sfx)) this._load(id, url);
   },
   _load(id, url) {
-    fetch(url).then(r=>r.arrayBuffer()).then(ab=>this.ctx.decodeAudioData(ab))
-      .then(buf=>{ this.buffers[id]=buf; }).catch(()=>{});
+    const el = new Audio(url);
+    el.preload = 'auto';
+    this.buffers[id] = el;
   },
   play(id, vol=1, rate=1) {
-    if (this.muted||!this.ctx||!this.buffers[id]) return;
-    if (this.ctx.state==='suspended') this.ctx.resume();
-    const src=this.ctx.createBufferSource();
-    src.buffer=this.buffers[id];
-    src.playbackRate.value=rate;
-    const gain=this.ctx.createGain();
-    gain.gain.value=vol*0.6;
-    src.connect(gain); gain.connect(this.ctx.destination);
-    src.start();
+    if (this.muted || !this.buffers[id]) return;
+    const el = this.buffers[id].cloneNode();
+    el.volume = Math.min(1, vol * 0.6);
+    el.playbackRate = rate;
+    el.play().catch(()=>{});
   },
   playMusic(track) {
     if (track===this.musicTrack) return;
