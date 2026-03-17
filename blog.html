@@ -7,31 +7,67 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Blog - CapyWorlds</title>
   <style>
+    :root {
+      --bg: #13100c; --bg-hero: #2d1e0e; --bg2: #1e1812;
+      --border: #3d3020; --accent: #c8a456;
+      --text: #e8ddd0; --text2: #907a60; --text3: #7a6a58; --text5: #604830;
+      --h1: #ffffff;
+    }
+    [data-theme="light"] {
+      --bg: #f5f0e8; --bg-hero: #e0d0a8; --bg2: #ffffff;
+      --border: #d4c4a0; --accent: #9a6e1e;
+      --text: #2a1e0e; --text2: #7a6a50; --text3: #6a5a48; --text5: #8a7a68;
+      --h1: #1a0e06;
+    }
+    [data-theme="pink"] {
+      --bg: #1a0810; --bg-hero: #3d0a22; --bg2: #260a18;
+      --border: #6a2050; --accent: #e060a8;
+      --text: #f8d8ec; --text2: #c06898; --text3: #a05880; --text5: #884868;
+      --h1: #fff0f8;
+    }
+    .theme-switcher {
+      position: fixed; top: 14px; right: 14px; z-index: 200;
+      display: flex; align-items: center; gap: 6px;
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 28px; padding: 6px 12px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.35);
+      transition: background 0.3s, border-color 0.3s;
+    }
+    .theme-switcher-label { font-size: 11px; color: var(--text3); letter-spacing: 0.5px; margin-right: 2px; user-select: none; }
+    .theme-dot { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; outline: none; transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s; }
+    .theme-dot:hover { transform: scale(1.2); }
+    .theme-dot.active { border-color: var(--text); box-shadow: 0 0 0 1px var(--bg2); transform: scale(1.1); }
+    .theme-dot[data-t="dark"]  { background: radial-gradient(circle at 35% 35%, #c8a456, #5a3c10); }
+    .theme-dot[data-t="light"] { background: radial-gradient(circle at 35% 35%, #f5f0d8, #c8b480); }
+    .theme-dot[data-t="pink"]  { background: radial-gradient(circle at 35% 35%, #f880c0, #8a1858); }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-      background: #13100c;
-      color: #e8ddd0;
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
+      transition: background 0.3s, color 0.3s;
     }
 
     .page-header {
       width: 100%;
       text-align: center;
       padding: 48px 24px 36px;
-      background: radial-gradient(ellipse at 50% -10%, #2d1e0e 0%, #13100c 68%);
+      background: radial-gradient(ellipse at 50% -10%, var(--bg-hero) 0%, var(--bg) 68%);
       position: relative;
+      transition: background 0.3s;
     }
     .page-header::after {
       content: '';
       position: absolute;
       bottom: 0; left: 15%; right: 15%;
       height: 1px;
-      background: linear-gradient(90deg, transparent, #c8a456 40%, #c8a456 60%, transparent);
+      background: linear-gradient(90deg, transparent, var(--accent) 40%, var(--accent) 60%, transparent);
     }
 
     .capy-art {
@@ -45,10 +81,10 @@
     .page-header h1 {
       font-size: 36px;
       font-weight: 900;
-      color: #fff;
+      color: var(--h1);
       letter-spacing: 3px;
     }
-    .page-header h1 .accent { color: #c8a456; }
+    .page-header h1 .accent { color: var(--accent); }
 
     .content {
       max-width: 600px;
@@ -57,8 +93,8 @@
     }
 
     .placeholder-card {
-      background: #1e1812;
-      border: 1px dashed #3d3020;
+      background: var(--bg2);
+      border: 1px dashed var(--border);
       border-radius: 18px;
       padding: 40px 28px;
       text-align: center;
@@ -66,16 +102,17 @@
       flex-direction: column;
       align-items: center;
       gap: 14px;
+      transition: background 0.3s;
     }
     .placeholder-card .pl-icon { font-size: 36px; opacity: 0.5; }
     .placeholder-card .pl-title {
       font-size: 16px;
       font-weight: 700;
-      color: #7a6a58;
+      color: var(--text3);
     }
     .placeholder-card .pl-desc {
       font-size: 13px;
-      color: #604830;
+      color: var(--text5);
       line-height: 1.7;
     }
 
@@ -83,7 +120,7 @@
       display: block;
       text-align: center;
       margin-top: 36px;
-      color: #c8a456;
+      color: var(--accent);
       text-decoration: none;
       font-size: 14px;
       letter-spacing: 1px;
@@ -94,6 +131,13 @@
   </style>
 </head>
 <body>
+
+  <div class="theme-switcher">
+    <span class="theme-switcher-label">主題</span>
+    <button class="theme-dot" data-t="dark"  title="深色" onclick="setTheme('dark')"></button>
+    <button class="theme-dot" data-t="light" title="明亮" onclick="setTheme('light')"></button>
+    <button class="theme-dot" data-t="pink"  title="粉色" onclick="setTheme('pink')"></button>
+  </div>
 
   <header class="page-header">
     <!-- Capybara writing SVG -->
@@ -162,5 +206,20 @@
     <a class="back-link" href="/">← 回到首頁 &nbsp; Back Home</a>
   </main>
 
+<script>
+(function() {
+  const saved = localStorage.getItem('capyTheme') || 'dark';
+  function setTheme(t) {
+    if (t === 'dark') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('capyTheme', t);
+    document.querySelectorAll('.theme-dot').forEach(d => {
+      d.classList.toggle('active', d.dataset.t === t);
+    });
+  }
+  window.setTheme = setTheme;
+  setTheme(saved);
+})();
+</script>
 </body>
 </html>
