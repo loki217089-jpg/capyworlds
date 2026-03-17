@@ -1185,9 +1185,10 @@ function init() {
 
   render();
 
-  // Event delegation for zombie rows — fixes race condition where tick()
-  // clears innerHTML every 50ms, destroying onclick handlers mid-click.
-  document.getElementById('zlist').addEventListener('click', e => {
+  // Use mousedown (not click) so the purchase fires before tick() can clear
+  // innerHTML and detach the element, which would swallow the click event.
+  document.getElementById('zlist').addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
     const row = e.target.closest('.zrow');
     if (!row || row.classList.contains('dim')) return;
     const zid = parseInt(row.id.replace('zr-', ''), 10);
