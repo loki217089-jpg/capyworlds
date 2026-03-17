@@ -153,7 +153,7 @@ window.addEventListener('resize', () => {
 });
 
 // ─── AUDIO ───────────────────────────────────────────────────────────────────
-const SFX_BASE = 'assets/200 FreeSFX/FreeSFX/GameSFX/';
+const KENNEY_BASE = 'https://pub-16bdb26b7be84d50975581dfc3c970a5.r2.dev/kenney_sci-fi-sounds/Audio/';
 const MUS_BASE = 'assets/Space Music Pack/Space Music Pack/';
 const audio = {
   ctx: null, buffers: {}, music: null, musicTrack: '',
@@ -163,14 +163,14 @@ const audio = {
     this._inited = true;
     try { this.ctx = new (window.AudioContext||window.webkitAudioContext)(); } catch(e) { return; }
     const sfx = {
-      shoot:      SFX_BASE + 'Weapon/laser/Retro Gun Laser SingleShot 01.wav',
-      explode:    SFX_BASE + 'Explosion/Retro Explosion Short 01.wav',
-      explodeBig: SFX_BASE + 'Explosion/Retro Explosion Long 02.wav',
-      hit:        SFX_BASE + 'Alarms Blip Beeps/Retro Alarm 02.wav',
-      pickup:     SFX_BASE + 'PickUp/Retro PickUp Coin 04.wav',
-      warpcore:   SFX_BASE + 'PowerUp/Retro PowerUP 09.wav',
-      heal:       SFX_BASE + 'PickUp/Retro PickUp 10.wav',
-      buy:        SFX_BASE + 'HiTech/Retro HiTech 08.wav',
+      shoot:      KENNEY_BASE + 'laser1.ogg',
+      explode:    KENNEY_BASE + 'explosionCrunch_000.ogg',
+      explodeBig: KENNEY_BASE + 'explosionCrunch_004.ogg',
+      hit:        KENNEY_BASE + 'forceField_000.ogg',
+      pickup:     KENNEY_BASE + 'tone1.ogg',
+      warpcore:   KENNEY_BASE + 'phaseJump1.ogg',
+      heal:       KENNEY_BASE + 'powerUp3.ogg',
+      buy:        KENNEY_BASE + 'upgrade1.ogg',
       startLevel: MUS_BASE + 'fx/start-level.wav',
     };
     for (const [id, url] of Object.entries(sfx)) this._load(id, url);
