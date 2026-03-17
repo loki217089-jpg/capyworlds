@@ -149,13 +149,16 @@ window.addEventListener('resize', () => {
 
 // ─── AUDIO ───────────────────────────────────────────────────────────────────
 const KENNEY_BASE = 'https://pub-16bdb26b7be84d50975581dfc3c970a5.r2.dev/kenney_sci-fi-sounds/Audio/';
+// 背景音樂路徑 — 把音樂檔案放進 audio/ 資料夾後填入檔名
+const MUS_TRAVEL = 'audio/travel.ogg';   // 巡航音樂
+const MUS_BATTLE = 'audio/battle.ogg';  // 戰鬥音樂
 const audio = {
-  urls: {}, muted: false, _inited: false, _battleTimer: 0,
-  _actx: null, _musicNodes: [], _musicMode: '',
+  buffers: {}, music: null, musicSrc: '',
+  muted: false, _inited: false, _battleTimer: 0,
   init() {
     if (this._inited) return;
     this._inited = true;
-    this.urls = {
+    const sfx = {
       shoot:      KENNEY_BASE + 'laser1.ogg',
       explode:    KENNEY_BASE + 'explosionCrunch_000.ogg',
       explodeBig: KENNEY_BASE + 'explosionCrunch_004.ogg',
@@ -165,116 +168,57 @@ const audio = {
       heal:       KENNEY_BASE + 'powerUp3.ogg',
       buy:        KENNEY_BASE + 'upgrade1.ogg',
     };
-    // Create WebAudio context for music
-    this._actx = new (window.AudioContext || window.webkitAudioContext)();
+    for (const [id, url] of Object.entries(sfx)) {
+      const el = new Audio(url); el.preload = 'auto';
+      this.buffers[id] = el;
+    }
   },
   play(id, vol=1, rate=1) {
-    if (this.muted || !this.urls[id]) return;
-    const el = new Audio(this.urls[id]);
+    if (this.muted || !this.buffers[id]) return;
+    const el = new Audio(this.buffers[id].src);
     el.volume = Math.min(1, vol * 0.6);
     el.playbackRate = rate;
     el.play().catch(()=>{});
   },
-  _getCtx() {
-    if (!this._actx) this._actx = new (window.AudioContext || window.webkitAudioContext)();
-    if (this._actx.state === 'suspended') this._actx.resume();
-    return this._actx;
-  },
-  _stopMusic() {
-    this._musicNodes.forEach(n => { try { n.stop ? n.stop() : (n.gain.value=0); } catch(e){} });
-    this._musicNodes = [];
-  },
-  _startTravel() {
-    const ctx = this._getCtx();
-    // Filtered noise pad — slow space drift
-    const buf = ctx.createBuffer(1, ctx.sampleRate * 4, ctx.sampleRate);
-    const d = buf.getChannelData(0);
-    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    const ns = ctx.createBufferSource(); ns.buffer = buf; ns.loop = true;
-    const flt = ctx.createBiquadFilter(); flt.type = 'lowpass'; flt.frequency.value = 180;
-    const ng = ctx.createGain(); ng.gain.value = this.muted ? 0 : 0.03;
-    ns.connect(flt); flt.connect(ng); ng.connect(ctx.destination);
-    ns.start(); this._musicNodes.push(ns, ng);
-    // Drone tones
-    [[55,0.04],[82.4,0.025],[165,0.012]].forEach(([f,v]) => {
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = 'sine'; o.frequency.value = f; g.gain.value = this.muted ? 0 : v;
-      const lfo = ctx.createOscillator(), lg = ctx.createGain();
-      lfo.frequency.value = 0.08 + Math.random()*0.15; lg.gain.value = v*0.4;
-      lfo.connect(lg); lg.connect(g.gain); lfo.start();
-      o.connect(g); g.connect(ctx.destination); o.start();
-      this._musicNodes.push(o, lfo, g);
-    });
-  },
-  _startBattle() {
-    const ctx = this._getCtx();
-    // Pulsing saw bass
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = 'sawtooth'; o.frequency.value = 55; g.gain.value = this.muted ? 0 : 0.04;
-    const lfo = ctx.createOscillator(), lg = ctx.createGain();
-    lfo.frequency.value = 4; lg.gain.value = 0.03;
-    lfo.connect(lg); lg.connect(g.gain); lfo.start();
-    o.connect(g); g.connect(ctx.destination); o.start();
-    this._musicNodes.push(o, lfo, g);
-    // High tension tone
-    [[220,0.018],[330,0.01]].forEach(([f,v]) => {
-      const o2 = ctx.createOscillator(), g2 = ctx.createGain();
-      o2.type = 'square'; o2.frequency.value = f; g2.gain.value = this.muted ? 0 : v;
-      o2.connect(g2); g2.connect(ctx.destination); o2.start();
-      this._musicNodes.push(o2, g2);
-    });
-    // Noise hit accent
-    const buf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
-    const d = buf.getChannelData(0);
-    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    const ns = ctx.createBufferSource(); ns.buffer = buf; ns.loop = true;
-    const flt = ctx.createBiquadFilter(); flt.type = 'bandpass'; flt.frequency.value = 800;
-    const ng = ctx.createGain(); ng.gain.value = this.muted ? 0 : 0.015;
-    ns.connect(flt); flt.connect(ng); ng.connect(ctx.destination);
-    ns.start(); this._musicNodes.push(ns, ng);
-  },
-  _playMode(mode) {
-    if (mode === this._musicMode) return;
-    this._musicMode = mode;
-    this._stopMusic();
-    if (this.muted || !mode) return;
-    if (mode === 'travel') this._startTravel();
-    else if (mode === 'battle') this._startBattle();
+  playMusic(src) {
+    if (src === this.musicSrc) return;
+    this.musicSrc = src;
+    if (this.music) { this.music.pause(); this.music = null; }
+    if (!src || this.muted) return;
+    const el = new Audio(src);
+    el.loop = true; el.volume = 0.3;
+    el.play().catch(()=>{});
+    this.music = el;
   },
   toggleMute() {
     this.muted = !this.muted;
-    // Mute/unmute running music nodes
-    this._musicNodes.forEach(n => { if (n.gain) { try { n.gain.value = this.muted ? 0 : n.gain._vol||n.gain.value; } catch(e){} } });
-    if (!this.muted && this._musicMode) {
-      // Restart music since we can't easily un-mute WebAudio nodes
-      const m = this._musicMode; this._musicMode = '';
-      this._playMode(m);
-    } else if (this.muted) {
-      this._stopMusic();
+    if (this.music) {
+      if (this.muted) this.music.pause();
+      else this.music.play().catch(()=>{});
     }
     document.getElementById('mute-btn').textContent = (this.muted ? '🔇 靜音' : '🔊 音效');
     return this.muted;
   },
   tickMusic(dt) {
     if (!this._inited) return;
-    if (state === 'title') { this._playMode('travel'); return; }
-    if (state === 'gameover' || state === 'victory') { this._playMode(''); return; }
-    if (state !== 'playing' && state !== 'shop') return;
+    if (state === 'title' || state === 'shop') { this.playMusic(MUS_TRAVEL); return; }
+    if (state === 'gameover' || state === 'victory') { this.playMusic(''); return; }
+    if (state !== 'playing') return;
     let enemyNear = false;
     for (const en of dynamicEnemies) {
-      if (en.alive && dist2(player.x,player.y,en.x,en.y) < 600**2) { enemyNear = true; break; }
+      if (en.alive && dist2(player.x,player.y,en.x,en.y) < 600**2) { enemyNear=true; break; }
     }
     if (!enemyNear) {
       for (const [,chunk] of chunks) {
         for (const en of chunk.enemies) {
-          if (en.alive && dist2(player.x,player.y,en.x,en.y) < 500**2) { enemyNear = true; break; }
+          if (en.alive && dist2(player.x,player.y,en.x,en.y) < 500**2) { enemyNear=true; break; }
         }
         if (enemyNear) break;
       }
     }
     if (enemyNear) this._battleTimer = 4;
     else if (this._battleTimer > 0) this._battleTimer -= dt;
-    this._playMode(this._battleTimer > 0 ? 'battle' : 'travel');
+    this.playMusic(this._battleTimer > 0 ? MUS_BATTLE : MUS_TRAVEL);
   }
 };
 document.getElementById('mute-btn').addEventListener('click', ()=>audio.toggleMute());
