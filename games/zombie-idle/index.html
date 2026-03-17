@@ -834,6 +834,7 @@ function renderZombies() {
     const div    = document.createElement('div');
     div.id        = 'zr-' + zd.id;
     div.className = 'zrow' + (afford ? ' ok' : '');
+    div.onclick   = () => buyZ(zd.id);
     div.innerHTML = `
       <div class="zem">${zd.em}</div>
       <div class="zi">
