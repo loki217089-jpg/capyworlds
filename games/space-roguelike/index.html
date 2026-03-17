@@ -141,6 +141,83 @@ window.addEventListener('resize', () => {
   H = canvas.height = window.innerHeight;
 });
 
+// ─── AUDIO ───────────────────────────────────────────────────────────────────
+const KENNEY_BASE = 'https://pub-16bdb26b7be84d50975581dfc3c970a5.r2.dev/kenney_sci-fi-sounds/Audio/';
+const MUS_BASE = 'assets/Space Music Pack/Space Music Pack/';
+const audio = {
+  buffers: {}, music: null, musicTrack: '',
+  muted: false, _inited: false, _battleTimer: 0,
+  init() {
+    if (this._inited) return;
+    this._inited = true;
+    const sfx = {
+      shoot:      KENNEY_BASE + 'laser1.ogg',
+      explode:    KENNEY_BASE + 'explosionCrunch_000.ogg',
+      explodeBig: KENNEY_BASE + 'explosionCrunch_004.ogg',
+      hit:        KENNEY_BASE + 'forceField_000.ogg',
+      pickup:     KENNEY_BASE + 'tone1.ogg',
+      warpcore:   KENNEY_BASE + 'phaseJump1.ogg',
+      heal:       KENNEY_BASE + 'powerUp3.ogg',
+      buy:        KENNEY_BASE + 'upgrade1.ogg',
+      startLevel: MUS_BASE + 'fx/start-level.wav',
+    };
+    for (const [id, url] of Object.entries(sfx)) this._load(id, url);
+  },
+  _load(id, url) {
+    const el = new Audio(url);
+    el.preload = 'auto';
+    this.buffers[id] = el;
+  },
+  play(id, vol=1, rate=1) {
+    if (this.muted || !this.buffers[id]) return;
+    const el = this.buffers[id].cloneNode();
+    el.volume = Math.min(1, vol * 0.6);
+    el.playbackRate = rate;
+    el.play().catch(()=>{});
+  },
+  playMusic(track) {
+    if (track===this.musicTrack) return;
+    this.musicTrack=track;
+    if (this.music) { this.music.pause(); this.music=null; }
+    if (this.muted||!track) return;
+    const el=new Audio(MUS_BASE+track);
+    el.loop=true; el.volume=0.32;
+    el.play().catch(()=>{});
+    this.music=el;
+  },
+  toggleMute() {
+    this.muted=!this.muted;
+    if (this.music) { if(this.muted) this.music.pause(); else this.music.play().catch(()=>{}); }
+    document.getElementById('mute-btn').textContent=(this.muted?'🔇 靜音':'🔊 音效');
+    return this.muted;
+  },
+  // Call each frame with dt; switches between battle/travel music
+  tickMusic(dt) {
+    if (state==='title') { this.playMusic('menu.wav'); return; }
+    if (state==='victory') { this.playMusic('meet-the-princess.wav'); return; }
+    if (state==='gameover') { this.playMusic(''); return; }
+    if (state!=='playing'&&state!=='shop') return;
+    // Check if enemies nearby
+    let enemyNear=false;
+    for (const en of dynamicEnemies) {
+      if (en.alive && dist2(player.x,player.y,en.x,en.y)<600**2) { enemyNear=true; break; }
+    }
+    if (!enemyNear) {
+      for (const [,chunk] of chunks) {
+        for (const en of chunk.enemies) {
+          if (en.alive && dist2(player.x,player.y,en.x,en.y)<500**2) { enemyNear=true; break; }
+        }
+        if (enemyNear) break;
+      }
+    }
+    if (enemyNear) this._battleTimer=4;
+    else if (this._battleTimer>0) this._battleTimer-=dt;
+    this.playMusic(this._battleTimer>0?'battle.wav':'slow-travel.wav');
+  }
+};
+document.getElementById('mute-btn').addEventListener('click', ()=>audio.toggleMute());
+window.addEventListener('keydown', e=>{ if(e.code==='KeyM') audio.toggleMute(); });
+
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const CHUNK = 1800;
 const DRAG = 0.93;
