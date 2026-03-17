@@ -92,16 +92,6 @@ canvas { display: block; }
   cursor: pointer; font-size: 15px; font-weight: bold; letter-spacing: 2px;
 }
 #meta-close:hover { background: linear-gradient(90deg,#774400,#663300); }
-
-/* MUTE BUTTON */
-#mute-btn {
-  position: absolute; top: 12px; right: 12px; z-index: 300;
-  background: rgba(0,5,20,0.75); border: 1px solid rgba(50,100,200,0.5);
-  color: #88ccff; font-family: 'Courier New', monospace; font-size: 13px;
-  padding: 5px 10px; border-radius: 6px; cursor: pointer; pointer-events: all;
-  transition: background 0.1s;
-}
-#mute-btn:hover { background: rgba(20,40,80,0.9); }
 </style>
 </head>
 <body>
@@ -128,7 +118,6 @@ canvas { display: block; }
     <div id="shop-perks"></div>
     <button id="shop-close">離開 (E)</button>
   </div>
-  <button id="mute-btn" title="切換音效 (M)">🔊 音效</button>
 </div>
 <button id="earth-btn" style="
   display:none; position:absolute; bottom:100px; left:50%; transform:translateX(-50%);
@@ -614,7 +603,6 @@ const keys = {};
 const mouse = {x:W/2,y:H/2,down:false};
 
 window.addEventListener('keydown', e => {
-  audio.init();
   keys[e.code] = true;
   if (e.code==='Escape') {
     if (state==='playing') state='paused';
@@ -670,7 +658,7 @@ window.addEventListener('keyup', e => {
   if (e.code==='Space') mouse.down = false;
 });
 canvas.addEventListener('mousemove', e => { mouse.x=e.clientX; mouse.y=e.clientY; });
-canvas.addEventListener('mousedown', e => { if(e.button===0) { mouse.down=true; audio.init(); } });
+canvas.addEventListener('mousedown', e => { if(e.button===0) mouse.down=true; });
 canvas.addEventListener('mouseup', e => { if(e.button===0) mouse.down=false; });
 canvas.addEventListener('click', e => {
   if (state==='title') startGame();
@@ -795,7 +783,6 @@ function spendResources(cost) {
   if (cost.ore) player.ore-=cost.ore;
   if (cost.crystal) player.crystal-=cost.crystal;
   if (cost.alienTech) player.alienTech-=cost.alienTech;
-  audio.play('buy', 0.8);
 }
 
 // ─── GAME INIT ────────────────────────────────────────────────────────────────
@@ -809,10 +796,6 @@ function startGame() {
   statusMsg = ''; statusTimer = 0;
   milestones = { firstKill:false, firstMine:false, firstStation:false };
   state = 'playing';
-  audio.init();
-  audio.play('startLevel', 0.8);
-  audio._battleTimer = 0;
-  audio.playMusic('slow-travel.wav');
   // Pre-generate boot chunks
   for(let dx=-1;dx<=2;dx++) for(let dy=-1;dy<=1;dy++) generateChunk(dx,dy);
   generateChunk(2,0);
@@ -860,8 +843,6 @@ function update(dt) {
 
   // Status timer
   if (statusTimer>0) statusTimer-=dt;
-
-  audio.tickMusic(dt);
 }
 
 function getPlayerDmg() {
@@ -957,7 +938,6 @@ function updatePlayer(dt) {
   if (mouse.down && player.fireTimer<=0) {
     player.fireTimer = getPlayerFireRate();
     spawnBullet(player.x,player.y,player.angle,BULLET_SPEED,getPlayerDmg(),'player');
-    audio.play('shoot', 0.4, 0.9+Math.random()*0.2);
     // Muzzle flash
     spawnParticle(player.x+Math.cos(player.angle)*25,player.y+Math.sin(player.angle)*25,
       Math.cos(player.angle)*80,Math.sin(player.angle)*80,0.08,'#ffffaa',6);
@@ -990,12 +970,10 @@ function damagePlayer(dmg) {
   if (dmg>0) player.hull-=dmg;
   player.shieldCooldown=SHIELD_REGEN_DELAY;
   player.invulTimer=0.5;
-  audio.play('hit', 0.7);
   if (player.hull<=0) {
     player.hull=0;
     explosion(player.x,player.y,30,'#ff4400');
     explosion(player.x,player.y,20,'#ffaa00');
-    audio.play('explodeBig', 1.0);
     state='gameover';
     setTimeout(()=>openMetaShop('death'),1200);
   }
@@ -1048,7 +1026,6 @@ function updateBullets(dt) {
             en.alive=false;
             explosion(en.x,en.y,20,en.color);
             explosion(en.x,en.y,10,'#ffffff');
-            audio.play('explode', 0.6, 0.85+Math.random()*0.3);
             dropLoot(en.x,en.y,chunk);
           }
           bullets.splice(i,1); hitEnemy=true; break;
@@ -1067,7 +1044,6 @@ function updateBullets(dt) {
           en.alive=false;
           explosion(en.x,en.y,20,en.color);
           explosion(en.x,en.y,10,'#ffffff');
-          audio.play('explode', 0.6, 0.85+Math.random()*0.3);
           // Drop loot at nearest chunk
           const ncx=Math.floor(en.x/CHUNK), ncy=Math.floor(en.y/CHUNK);
           const nc=chunks.get(chunkKey(ncx,ncy));
@@ -1324,18 +1300,15 @@ function collectItem(item) {
     case 'energy':
       player.shield=Math.min(player.maxShield,player.shield+30*lootMult);
       setStatus('護盾充能 +30');
-      audio.play('heal', 0.6);
       break;
     case 'hull':
       player.hull=Math.min(player.maxHull,player.hull+30*lootMult);
       setStatus('船殼修復 +30');
-      audio.play('heal', 0.6, 0.8);
       break;
     case 'ore':
       const metaOreMult = 1 + metaLevel('oreBonus')*0.20;
       const oreAmt=Math.floor((2+Math.random()*3)*lootMult*metaOreMult);
       player.ore+=oreAmt;
-      audio.play('pickup', 0.5, 0.9+Math.random()*0.2);
       if (!milestones.firstMine) {
         milestones.firstMine = true;
         setStatus(`首次採礦！礦石 +${oreAmt} — 找到太空站可升級太空艇`);
@@ -1347,18 +1320,15 @@ function collectItem(item) {
       const cryAmt=Math.floor((1+Math.random()*2)*lootMult);
       player.crystal+=cryAmt;
       setStatus(`晶體 +${cryAmt}`);
-      audio.play('pickup', 0.6, 1.2);
       break;
     case 'alientech':
       player.alienTech+=1;
       setStatus('異星科技 +1');
-      audio.play('warpcore', 0.7, 0.8);
       break;
     case 'fuel':
       const fuelAmt = Math.floor((30 + Math.random()*25)*lootMult);
       player.boostFuel = Math.min(player.maxBoostFuel, player.boostFuel + fuelAmt);
       setStatus(`燃料電池 +${fuelAmt}`);
-      audio.play('pickup', 0.5);
       break;
     case 'warpcore':
       if (!player.warpCoreSet.has(item.id)) {
@@ -1368,7 +1338,6 @@ function collectItem(item) {
         setStatus(`翹曲核心 ${player.warpCores}/5 已蒐集！[R] 可回到原點`);
         explosion(item.x,item.y,30,'#ffdd00');
         explosion(item.x,item.y,20,'#ffffff');
-        audio.play('warpcore', 1.0);
         if (player.warpCores>=5) setStatus('所有翹曲核心已蒐集！前往逃脫傳送門！');
       }
       break;
@@ -2395,8 +2364,6 @@ generateChunk(0,-1);
 generateChunk(2,0);  // guaranteed station here
 
 requestAnimationFrame(loop);
-
-// Title music starts after first interaction (handled in tickMusic)
 </script>
 </body>
 </html>
