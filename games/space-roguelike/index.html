@@ -176,12 +176,13 @@ const audio = {
       this.buffers[id] = el;
     }
   },
-  play(id, vol=1, rate=1) {
+  play(id, vol=1, rate=1, maxMs=0) {
     if (this.muted || !this.buffers[id]) return;
     const el = new Audio(this.buffers[id].src);
     el.volume = Math.min(1, vol * 0.6);
     el.playbackRate = rate;
     el.play().catch(()=>{});
+    if (maxMs > 0) setTimeout(() => { el.pause(); el.src = ''; }, maxMs);
   },
   playMusic(src) {
     if (src === this.musicSrc) return;
@@ -954,7 +955,7 @@ function updatePlayer(dt) {
   if (mouse.down && player.fireTimer<=0) {
     player.fireTimer = getPlayerFireRate();
     spawnBullet(player.x,player.y,player.angle,BULLET_SPEED,getPlayerDmg(),'player');
-    audio.play('shoot', 0.4);
+    audio.play('shoot', 0.22);
     // Muzzle flash
     spawnParticle(player.x+Math.cos(player.angle)*25,player.y+Math.sin(player.angle)*25,
       Math.cos(player.angle)*80,Math.sin(player.angle)*80,0.08,'#ffffaa',6);
@@ -1316,7 +1317,7 @@ function updateItems(dt) {
 
 function collectItem(item) {
   const lootMult = player.lootFinder ? 1.3 : 1;
-  audio.play('pickup', 0.6);
+  audio.play('pickup', 0.7, 1, 220);
   switch(item.type) {
     case 'energy':
       player.shield=Math.min(player.maxShield,player.shield+30*lootMult);
