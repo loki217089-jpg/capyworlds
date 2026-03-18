@@ -275,7 +275,7 @@ body {
 
 /* ── ZOMBIE FIELD ─────────────────────────────── */
 #zombie-field {
-  width: 100%; height: 160px;
+  width: 100%; height: 220px;
   position: relative; overflow: hidden;
   margin: 10px 0 4px;
   background: rgba(0,15,0,0.5);
@@ -284,14 +284,19 @@ body {
   cursor: crosshair;
 }
 #zf-canvas { position: absolute; top:0; left:0; width:100%; height:100%; }
-.zf-empty {
-  position: absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-  color: var(--dim); font-size: 12px;
-  letter-spacing: 1px; pointer-events: none; white-space: nowrap;
+#wave-banner {
+  position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.65); border: 1px solid rgba(100,100,100,0.3);
+  padding: 2px 10px; font-size: 11px; color: var(--dim);
+  border-radius: 3px; white-space: nowrap; z-index: 5; pointer-events: none;
 }
-.zf-hint {
-  position: absolute; bottom: 4px; right: 6px;
-  color: var(--dim); font-size: 10px; pointer-events: none;
+#zf-left-label {
+  position: absolute; top: 6px; left: 6px;
+  font-size: 10px; color: rgba(61,220,88,0.5); pointer-events: none; z-index: 4;
+}
+#zf-right-label {
+  position: absolute; top: 6px; right: 6px;
+  font-size: 10px; color: rgba(239,68,68,0.5); pointer-events: none; z-index: 4;
 }
 /* Purchase flash */
 @keyframes buyFlash {
@@ -424,7 +429,12 @@ body {
       </svg>
       <div id="clabel">點擊獲取腦髓</div>
     </div>
-    <div id="zombie-field"><canvas id="zf-canvas"></canvas><div class="zf-empty" id="zf-empty">尚無殭屍...</div></div>
+    <div id="zombie-field">
+    <canvas id="zf-canvas"></canvas>
+    <div id="wave-banner">準備中...</div>
+    <div id="zf-left-label"></div>
+    <div id="zf-right-label"></div>
+  </div>
     <div id="stats">
       <div id="bl">🧠 腦髓</div>
       <div id="bd">0</div>
@@ -557,6 +567,34 @@ const ACHD = [
   { id:'a13', ic:'🧬', nm:'初次進化',     ds:'完成第一次 DNA 進化',       c: s => s.tp >= 1            },
   { id:'a14', ic:'🧪', nm:'進化大師',     ds:'完成 5 次 DNA 進化',        c: s => s.tp >= 5            },
   { id:'a15', ic:'🔬', nm:'多樣感染',     ds:'擁有所有種類的殭屍',        c: s => s.z.every(z=>z.n>0) },
+];
+
+// ── ZOMBIE BATTLE STATS (per type, for visual field) ──
+const ZOMBIE_BATTLE = [
+  /* 0 普通殭屍 */ { spd:38,  range:30,  rof:1.0, atkType:'melee',  hp:20  },
+  /* 1 殭屍跑者 */ { spd:75,  range:28,  rof:1.5, atkType:'melee',  hp:16  },
+  /* 2 殭屍犬   */ { spd:95,  range:24,  rof:2.0, atkType:'melee',  hp:22  },
+  /* 3 感染者   */ { spd:28,  range:150, rof:0.8, atkType:'ranged', hp:14  },
+  /* 4 腦髓獵人 */ { spd:18,  range:240, rof:0.4, atkType:'ranged', hp:18  },
+  /* 5 死靈法師 */ { spd:18,  range:130, rof:0.3, atkType:'aoe',    hp:28  },
+  /* 6 變種殭屍 */ { spd:22,  range:35,  rof:0.6, atkType:'melee',  hp:90  },
+  /* 7 殭屍巢穴 */ { spd:5,   range:200, rof:0.2, atkType:'summon', hp:120 },
+  /* 8 淪陷都市 */ { spd:8,   range:190, rof:0.15,atkType:'aoe',    hp:200 },
+  /* 9 Z型病毒  */ { spd:28,  range:80,  rof:0.6, atkType:'poison', hp:12  },
+];
+
+// ── ENEMY DATA (10 types, unlock per wave) ──
+const ENEMY_DATA = [
+  { id:0, nm:'倖存者',   em:'🧑',  hp:25,  spd:30, atk:3,  range:28,  rof:0.8, atkType:'melee'  },
+  { id:1, nm:'武裝警衛', em:'👮',  hp:45,  spd:28, atk:6,  range:130, rof:1.2, atkType:'ranged' },
+  { id:2, nm:'防暴隊',   em:'🦺',  hp:120, spd:20, atk:10, range:32,  rof:0.7, atkType:'melee'  },
+  { id:3, nm:'狙擊手',   em:'🎯',  hp:35,  spd:18, atk:28, range:260, rof:0.3, atkType:'ranged' },
+  { id:4, nm:'科學家',   em:'🔬',  hp:30,  spd:22, atk:5,  range:110, rof:1.0, atkType:'ranged' },
+  { id:5, nm:'特種部隊', em:'⚔️',  hp:70,  spd:58, atk:15, range:30,  rof:1.8, atkType:'melee'  },
+  { id:6, nm:'機器人',   em:'🤖',  hp:180, spd:26, atk:18, range:45,  rof:1.2, atkType:'melee'  },
+  { id:7, nm:'直升機',   em:'🚁',  hp:100, spd:62, atk:22, range:90,  rof:1.5, atkType:'ranged' },
+  { id:8, nm:'戰鬥坦克', em:'🚀',  hp:450, spd:14, atk:45, range:70,  rof:0.4, atkType:'melee'  },
+  { id:9, nm:'核武部隊', em:'☢️',  hp:280, spd:16, atk:90, range:160, rof:0.2, atkType:'aoe'    },
 ];
 
 const EVTS = [
@@ -1006,194 +1044,422 @@ function rotateTicker() {
 }
 
 // ══════════════════════════════════════════════
-//  ZOMBIE FIELD
+//  BATTLEFIELD (對抗戰場)
 // ══════════════════════════════════════════════
 
-// ══════════════════════════════════════════════
-//  INTERACTIVE ZOMBIE FIELD
-// ══════════════════════════════════════════════
+const MAX_DISPLAY = 50; // 每方最多顯示數量
 
 let zfCanvas, zfCtx, zfW = 0, zfH = 0;
-let zfZombies = [];   // {x,y,vx,vy,em,zdId,selected,target,sz}
-let zfHumans  = [];   // {x,y,vx,alive,em,convertTimer,converter}
-let zfSelected = null;
-let zfHumanTimer = 0;
-let zfLastTs = 0;
-let zfKnownCounts = {};   // zdId -> spawned count in field
+let zfZombies    = []; // 我方: {x,y,zdId,hp,maxHp,atkTimer,target,sz,em,facing,atkType,range,rof,spd}
+let zfEnemies    = []; // 敵方: {x,y,typeId,hp,maxHp,atkTimer,target,sz,em,facing,atkType,range,rof,spd}
+let zfProjectiles= []; // 飛行物: {x,y,vx,vy,col,dmg,sz,src,type,life}
+let zfEffects    = []; // 視覺效果: {x,y,r,maxR,col,life}
+let zfLastTs     = 0;
+let zfKnownCounts= {};
 
+// 波次狀態
+let waveNum   = 0;
+let waveTimer = 20;   // 倒數秒數到下一波
+let waveActive= false;
+let waveCooldown = 0;
+let waveSpawnQueue = [];
+
+// ── 初始化 ────────────────────────────────────
 function zfInit() {
   zfCanvas = document.getElementById('zf-canvas');
   if (!zfCanvas) return;
   zfCtx = zfCanvas.getContext('2d');
   zfResize();
   zfCanvas.addEventListener('mousedown', zfClick);
-  // Hint element
-  const field = document.getElementById('zombie-field');
-  const hint = document.createElement('div');
-  hint.className = 'zf-hint'; hint.textContent = '點擊殭屍選取→點擊人類攻擊';
-  field.appendChild(hint);
   requestAnimationFrame(zfLoop);
 }
 
 function zfResize() {
   const rect = zfCanvas.parentElement.getBoundingClientRect();
   zfW = zfCanvas.width  = rect.width  || 400;
-  zfH = zfCanvas.height = rect.height || 160;
+  zfH = zfCanvas.height = rect.height || 220;
 }
 
+// ── 生成單位 ──────────────────────────────────
 function zfSpawnZombie(zdId) {
+  if (zfZombies.length >= MAX_DISPLAY) return;
   const zd = ZD[zdId];
+  const bt = ZOMBIE_BATTLE[zdId];
   zfZombies.push({
-    x: Math.random() * zfW, y: zfH * 0.3 + Math.random() * zfH * 0.55,
-    vx: (Math.random() > 0.5 ? 1 : -1) * (12 + Math.random() * 18),
-    vy: 0, em: zd.em, zdId, selected: false, target: null,
-    sz: 18 + Math.random() * 10
+    x: 15 + Math.random() * (zfW * 0.37),
+    y: zfH * 0.28 + Math.random() * zfH * 0.58,
+    zdId, hp: bt.hp, maxHp: bt.hp,
+    atkTimer: Math.random() / bt.rof,
+    target: null, sz: 17 + Math.random() * 8,
+    em: zd.em, facing: 1,
+    atkType: bt.atkType, range: bt.range, rof: bt.rof, spd: bt.spd
   });
 }
 
-// Sync zombie count in field with G.z
+function zfSpawnEnemy(typeId) {
+  if (zfEnemies.length >= MAX_DISPLAY) return;
+  const scale = 1 + waveNum * 0.2;
+  const ed = ENEMY_DATA[typeId];
+  zfEnemies.push({
+    x: zfW - 15 - Math.random() * (zfW * 0.18),
+    y: zfH * 0.28 + Math.random() * zfH * 0.58,
+    typeId, hp: Math.ceil(ed.hp * scale), maxHp: Math.ceil(ed.hp * scale),
+    atkTimer: Math.random() / ed.rof,
+    target: null, sz: 17 + Math.random() * 8,
+    em: ed.em, facing: -1,
+    atkType: ed.atkType, range: ed.range, rof: ed.rof,
+    spd: ed.spd * (1 + waveNum * 0.05)
+  });
+}
+
+// ── 波次系統 ──────────────────────────────────
+function zfBuildWave(n) {
+  const count = 3 + n * 2;
+  const queue = [];
+  const maxType = Math.min(n - 1, ENEMY_DATA.length - 1);
+  for (let i = 0; i < count; i++) {
+    // 越高波次越容易出現高階敵人
+    const roll = Math.random();
+    const tier = roll < 0.4 ? 0 : Math.min(Math.floor(roll * (maxType + 1)), maxType);
+    queue.push({ typeId: tier, delay: 0.8 + i * 1.1, spawned: false });
+  }
+  return queue;
+}
+
+function zfUpdateWave(dt) {
+  if (waveActive) {
+    for (const e of waveSpawnQueue) {
+      e.delay -= dt;
+      if (e.delay <= 0 && !e.spawned) { e.spawned = true; zfSpawnEnemy(e.typeId); }
+    }
+    const allSpawned = waveSpawnQueue.every(e => e.spawned);
+    if (allSpawned && zfEnemies.length === 0) {
+      waveActive = false;
+      waveCooldown = 6;
+      const bonus = Math.floor(bps() * 4 * (1 + waveNum * 0.5));
+      G.b += bonus; G.tb += bonus;
+      spawnPt(window.innerWidth / 2, 200, '+' + fmt(bonus) + ' 🧠');
+      toast('⚔️ 波次擊退！', `第 ${waveNum} 波全滅！獲得 ${fmt(bonus)} 腦髓`, '#3ddc58');
+      waveNum++;
+      waveTimer = Math.max(15, 35 - waveNum * 0.8);
+    }
+  } else {
+    if (waveCooldown > 0) { waveCooldown -= dt; return; }
+    waveTimer -= dt;
+    if (waveTimer <= 0 && totZ(G) > 0) {
+      waveActive = true;
+      waveSpawnQueue = zfBuildWave(waveNum + 1);
+    }
+  }
+}
+
+// ── 同步我方殭屍顯示數量 ──────────────────────
 function zfSyncCounts() {
+  let totalOwned = 0;
+  ZD.forEach(zd => { totalOwned += G.z[zd.id].n; });
+  if (totalOwned === 0) return;
   ZD.forEach(zd => {
-    const have = zfKnownCounts[zd.id] || 0;
-    const need = Math.min(G.z[zd.id].n, have + 8); // spawn up to 8 at once
-    for (let i = have; i < need; i++) zfSpawnZombie(zd.id);
-    if (need > have) zfKnownCounts[zd.id] = need;
+    const owned = G.z[zd.id].n;
+    if (owned === 0) return;
+    const share = owned / totalOwned;
+    const target = Math.max(1, Math.round(MAX_DISPLAY * share));
+    const have   = zfZombies.filter(z => z.zdId === zd.id).length;
+    const canAdd = Math.min(target - have, 6);
+    for (let i = 0; i < canAdd; i++) zfSpawnZombie(zd.id);
+    // 如果顯示數已超出，移除多餘的（從尾端）
+    if (have > target) {
+      let removed = 0;
+      for (let i = zfZombies.length - 1; i >= 0 && removed < have - target; i--) {
+        if (zfZombies[i].zdId === zd.id) { zfZombies.splice(i, 1); removed++; }
+      }
+    }
+    zfKnownCounts[zd.id] = zfZombies.filter(z => z.zdId === zd.id).length;
   });
 }
 
-function zfClick(e) {
-  const rect = zfCanvas.getBoundingClientRect();
-  const mx = (e.clientX - rect.left) * (zfW / rect.width);
-  const my = (e.clientY - rect.top)  * (zfH / rect.height);
-  // Try select a zombie
-  for (const z of zfZombies) {
-    if (Math.hypot(mx - z.x, my - z.y) < z.sz * 0.9) {
-      if (zfSelected) zfSelected.selected = false;
-      z.selected = true; zfSelected = z; return;
-    }
+// ── 戰鬥輔助 ──────────────────────────────────
+function zfFindTarget(unit, list) {
+  let best = null, bd = Infinity;
+  for (const t of list) {
+    const d = Math.hypot(t.x - unit.x, t.y - unit.y);
+    if (d < bd) { bd = d; best = t; }
   }
-  if (!zfSelected) return;
-  // Try target a human
-  for (const h of zfHumans) {
-    if (h.alive && Math.hypot(mx - h.x, my - h.y) < 22) {
-      zfSelected.target = h; zfSelected.selected = false; zfSelected = null; return;
-    }
-  }
-  // Move to position
-  zfSelected.target = { x: mx, y: my, type: 'pos' };
-  zfSelected.selected = false; zfSelected = null;
+  return (best && bd < unit.range * 2.5 + 100) ? best : null;
 }
 
-function zfLoop(ts) {
-  requestAnimationFrame(zfLoop);
-  const dt = Math.min((ts - zfLastTs) / 1000, 0.05); zfLastTs = ts;
-  if (zfW === 0) zfResize();
+function zfSpawnProj(sx, sy, tx, ty, col, dmg, sz, src, type) {
+  const dx = tx - sx, dy = ty - sy, d = Math.hypot(dx, dy) || 1;
+  const spd = type === 'ranged' ? 230 : 160;
+  zfProjectiles.push({ x:sx, y:sy, vx:(dx/d)*spd, vy:(dy/d)*spd, col, dmg, sz, src, type, life:2.0 });
+}
 
-  zfSyncCounts();
+function zfSpawnFx(x, y, r, col) {
+  zfEffects.push({ x, y, r:0, maxR:r, col, life:1 });
+}
 
-  // Spawn humans periodically when zombies exist
-  zfHumanTimer -= dt;
-  if (zfHumanTimer <= 0 && zfZombies.length > 0) {
-    zfHumanTimer = 3.5 + Math.random() * 3;
-    const em = ['🧑','👩','👨','🧓','👧'][Math.floor(Math.random()*5)];
-    zfHumans.push({ x: zfW + 20, y: zfH*0.3 + Math.random()*zfH*0.55,
-      vx: -(18 + Math.random()*14), alive: true, em, convertTimer: 0, converter: null });
-  }
-
-  // Update zombies
+// ── 更新我方殭屍 ──────────────────────────────
+function zfUpdateZombies(dt) {
+  const dead = [];
   for (const z of zfZombies) {
+    if (z.hp <= 0) { dead.push(z); continue; }
+    z.atkTimer -= dt;
+    if (z.target && z.target.hp <= 0) z.target = null;
+    z.target = z.target || zfFindTarget(z, zfEnemies);
+
     if (z.target) {
-      const tx = z.target.x, ty = z.target.y;
-      const dx = tx - z.x, dy = ty - z.y, d = Math.hypot(dx, dy);
-      if (d < 8) { z.target = null; }
-      else {
-        const sp = 50 + z.sz; z.vx = (dx/d)*sp; z.vy = (dy/d)*sp;
-        z.x += z.vx*dt; z.y += z.vy*dt;
+      const dx = z.target.x - z.x, dy = z.target.y - z.y, d = Math.hypot(dx, dy);
+      z.facing = dx > 0 ? 1 : -1;
+      if (d > z.range) {
+        z.x += (dx/d) * z.spd * dt;
+        z.y += (dy/d) * z.spd * dt;
+      } else if (z.atkTimer <= 0) {
+        z.atkTimer = 1 / z.rof;
+        const atk = (ZD[z.zdId].bp * 0.5 + 3) * zMult(z.zdId) * 0.1;
+        if (z.atkType === 'melee') {
+          z.target.hp -= atk; zfSpawnFx(z.target.x, z.target.y, 18, '#3ddc58');
+        } else if (z.atkType === 'ranged') {
+          zfSpawnProj(z.x, z.y, z.target.x, z.target.y, '#3ddc88', atk, 4, 'z', 'ranged');
+        } else if (z.atkType === 'aoe') {
+          zfSpawnProj(z.x, z.y, z.target.x, z.target.y, '#a78bfa', atk * 1.5, 7, 'z', 'aoe');
+        } else if (z.atkType === 'poison') {
+          for (const e of zfEnemies) {
+            if (Math.hypot(e.x - z.x, e.y - z.y) < z.range) e.hp -= atk * 0.6;
+          }
+          zfSpawnFx(z.x, z.y, z.range * 0.6, '#7fff00');
+        } else if (z.atkType === 'summon') {
+          z.target.hp -= atk * 0.4;
+          if (Math.random() < 0.25 && zfZombies.length < MAX_DISPLAY) {
+            const bt = ZOMBIE_BATTLE[0];
+            zfZombies.push({ x:z.x+(Math.random()-0.5)*40, y:z.y+(Math.random()-0.5)*20,
+              zdId:0, hp:bt.hp, maxHp:bt.hp, atkTimer:0.5, target:null,
+              sz:14, em:'🧟', facing:1, atkType:'melee', range:bt.range, rof:bt.rof, spd:bt.spd });
+          }
+        }
       }
     } else {
-      z.x += z.vx * dt;
-      if (z.x < -20) { z.x = -20; z.vx *= -1; }
-      if (z.x > zfW + 20) { z.x = zfW + 20; z.vx *= -1; }
+      z.x += z.spd * 0.18 * dt; z.facing = 1;
+      if (z.x > zfW * 0.78) z.x -= z.spd * 0.36 * dt;
     }
-    z.y = Math.max(zfH*0.28, Math.min(zfH*0.92, z.y));
-    // Auto-detect nearby humans
-    if (!z.target) {
-      for (const h of zfHumans) {
-        if (h.alive && Math.hypot(z.x-h.x, z.y-h.y) < 90) { z.target = h; break; }
+    z.y = Math.max(zfH*0.27, Math.min(zfH*0.9, z.y));
+  }
+  for (const d of dead) { const i = zfZombies.indexOf(d); if(i>=0) zfZombies.splice(i,1); }
+}
+
+// ── 更新敵方 ──────────────────────────────────
+function zfUpdateEnemies(dt) {
+  const dead = [];
+  for (const e of zfEnemies) {
+    if (e.hp <= 0) {
+      dead.push(e);
+      const scale = 1 + waveNum * 0.2;
+      const bonus = Math.ceil(ENEMY_DATA[e.typeId].hp * scale * 0.8 + bps() * 0.05);
+      G.b += bonus; G.tb += bonus;
+      zfSpawnFx(e.x, e.y, 32, '#ef4444');
+      continue;
+    }
+    e.atkTimer -= dt;
+    if (e.target && e.target.hp <= 0) e.target = null;
+    e.target = e.target || zfFindTarget(e, zfZombies);
+
+    if (e.target) {
+      const dx = e.target.x - e.x, dy = e.target.y - e.y, d = Math.hypot(dx, dy);
+      e.facing = dx > 0 ? 1 : -1;
+      if (d > e.range) {
+        e.x += (dx/d) * e.spd * dt; e.y += (dy/d) * e.spd * dt;
+      } else if (e.atkTimer <= 0) {
+        e.atkTimer = 1 / e.rof;
+        const scale = 1 + waveNum * 0.2;
+        const atk = ENEMY_DATA[e.typeId].atk * scale;
+        if (e.atkType === 'melee') {
+          e.target.hp -= atk; zfSpawnFx(e.target.x, e.target.y, 16, '#ef4444');
+        } else if (e.atkType === 'ranged') {
+          zfSpawnProj(e.x, e.y, e.target.x, e.target.y, '#ff6666', atk, 4, 'e', 'ranged');
+        } else if (e.atkType === 'aoe') {
+          zfSpawnProj(e.x, e.y, e.target.x, e.target.y, '#fbbf24', atk * 1.5, 8, 'e', 'aoe');
+        }
+      }
+    } else {
+      e.x -= e.spd * dt; e.facing = -1;
+      if (e.x < -35) {
+        dead.push(e);
+        G.em = Math.max((Date.now() < G.ee ? G.em : 1) * 0.6, 0.4);
+        G.ee = Date.now() + 10000;
+        toast('💀 防線突破！', '敵人衝破了我方陣線！生產力暫時下降', '#ef4444');
+      }
+    }
+    e.y = Math.max(zfH*0.27, Math.min(zfH*0.9, e.y));
+  }
+  for (const d of dead) { const i = zfEnemies.indexOf(d); if(i>=0) zfEnemies.splice(i,1); }
+}
+
+// ── 更新飛行物 & 效果 ────────────────────────
+function zfUpdateProjectiles(dt) {
+  const dead = [];
+  for (const p of zfProjectiles) {
+    p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
+    if (p.life <= 0) { dead.push(p); continue; }
+    const targets = p.src === 'z' ? zfEnemies : zfZombies;
+    for (const t of targets) {
+      if (Math.hypot(p.x - t.x, p.y - t.y) < t.sz * 0.75) {
+        t.hp -= p.dmg;
+        if (p.type === 'aoe') {
+          zfSpawnFx(t.x, t.y, 55, p.col);
+          for (const t2 of targets) {
+            if (Math.hypot(p.x - t2.x, p.y - t2.y) < 55) t2.hp -= p.dmg * 0.5;
+          }
+        }
+        dead.push(p); break;
       }
     }
   }
+  for (const d of dead) { const i = zfProjectiles.indexOf(d); if(i>=0) zfProjectiles.splice(i,1); }
+  for (const ef of zfEffects) { ef.r += (ef.maxR - ef.r) * 0.25; ef.life -= dt * 3; }
+  zfEffects = zfEffects.filter(ef => ef.life > 0);
+}
 
-  // Update humans
-  for (const h of zfHumans) {
-    if (!h.alive) continue;
-    h.x += h.vx * dt;
-    if (h.x < -30) { h.alive = false; continue; }
-    // Check contact with zombies
-    let touching = false;
-    for (const z of zfZombies) {
-      if (Math.hypot(z.x-h.x, z.y-h.y) < 26) { touching = true; h.converter = z; break; }
-    }
-    if (touching) {
-      h.convertTimer += dt;
-      if (h.convertTimer >= 1.5) {
-        h.alive = false;
-        // Convert: add to army + bonus brains
-        G.z[0].n += 1; G.b += 8; G.tb += 8;
-        zfKnownCounts[0] = (zfKnownCounts[0]||0) + 1;
-        zfSpawnZombie(0);
-        sfxBuy();
-        renderZombies();
-      }
-    } else { h.convertTimer = 0; }
-  }
-  zfHumans = zfHumans.filter(h => h.alive);
-
-  // Draw
+// ── 渲染戰場 ──────────────────────────────────
+function zfDraw() {
   zfCtx.clearRect(0, 0, zfW, zfH);
-  // Ground line
-  zfCtx.strokeStyle = 'rgba(61,220,88,0.12)';
-  zfCtx.lineWidth = 1;
-  zfCtx.beginPath(); zfCtx.moveTo(0, zfH*0.95); zfCtx.lineTo(zfW, zfH*0.95); zfCtx.stroke();
 
-  // Draw humans
-  for (const h of zfHumans) {
-    if (!h.alive) continue;
-    zfCtx.save(); zfCtx.globalAlpha = 0.9;
-    zfCtx.font = '22px serif';
-    zfCtx.textAlign = 'center'; zfCtx.textBaseline = 'middle';
-    if (h.converter) {
-      // Conversion progress arc
-      const pct = h.convertTimer / 1.5;
-      zfCtx.strokeStyle = '#3ddc58'; zfCtx.lineWidth = 2.5;
-      zfCtx.beginPath(); zfCtx.arc(h.x, h.y-14, 14, -Math.PI/2, -Math.PI/2 + pct*Math.PI*2); zfCtx.stroke();
-    }
-    zfCtx.fillText(h.em, h.x, h.y); zfCtx.restore();
+  // 領地背景
+  const gL = zfCtx.createLinearGradient(0, 0, zfW * 0.46, 0);
+  gL.addColorStop(0, 'rgba(20,70,20,0.28)'); gL.addColorStop(1, 'rgba(0,0,0,0)');
+  zfCtx.fillStyle = gL; zfCtx.fillRect(0, 0, zfW * 0.46, zfH);
+
+  const gR = zfCtx.createLinearGradient(zfW, 0, zfW * 0.54, 0);
+  gR.addColorStop(0, 'rgba(80,15,15,0.28)'); gR.addColorStop(1, 'rgba(0,0,0,0)');
+  zfCtx.fillStyle = gR; zfCtx.fillRect(zfW * 0.54, 0, zfW * 0.46, zfH);
+
+  // 中線
+  const frontX = zfEnemies.length > 0
+    ? Math.max(zfW*0.28, Math.min(...zfEnemies.map(e=>e.x)) - 20)
+    : zfW * 0.52;
+  zfCtx.strokeStyle = 'rgba(255,80,80,0.25)';
+  zfCtx.lineWidth = 1; zfCtx.setLineDash([4,6]);
+  zfCtx.beginPath(); zfCtx.moveTo(frontX,0); zfCtx.lineTo(frontX,zfH); zfCtx.stroke();
+  zfCtx.setLineDash([]);
+
+  // 地面線
+  zfCtx.strokeStyle = 'rgba(61,220,88,0.1)'; zfCtx.lineWidth = 1;
+  zfCtx.beginPath(); zfCtx.moveTo(0,zfH*0.94); zfCtx.lineTo(zfW,zfH*0.94); zfCtx.stroke();
+
+  // 爆炸/效果圓
+  for (const ef of zfEffects) {
+    zfCtx.save();
+    zfCtx.globalAlpha = ef.life * 0.4;
+    zfCtx.strokeStyle = ef.col; zfCtx.lineWidth = 2;
+    zfCtx.shadowBlur = 8; zfCtx.shadowColor = ef.col;
+    zfCtx.beginPath(); zfCtx.arc(ef.x, ef.y, ef.r, 0, Math.PI*2); zfCtx.stroke();
+    zfCtx.restore();
   }
 
-  // Draw zombies
+  // 繪製我方殭屍
   for (const z of zfZombies) {
     zfCtx.save();
-    zfCtx.font = z.sz + 'px serif';
-    zfCtx.textAlign = 'center'; zfCtx.textBaseline = 'middle';
-    if (z.selected) {
-      zfCtx.strokeStyle = '#3ddc58'; zfCtx.lineWidth = 2;
-      zfCtx.beginPath(); zfCtx.arc(z.x, z.y, z.sz*0.7, 0, Math.PI*2); zfCtx.stroke();
+    zfCtx.globalAlpha = z.hp/z.maxHp < 0.3 ? 0.45 : 0.9;
+    // HP條
+    if (z.hp < z.maxHp) {
+      const bw=22, bh=3, bx=z.x-bw/2, by=z.y-z.sz*0.65-5;
+      zfCtx.fillStyle='#111'; zfCtx.fillRect(bx,by,bw,bh);
+      const pct=Math.max(0,z.hp/z.maxHp);
+      zfCtx.fillStyle=pct>0.5?'#3ddc58':pct>0.25?'#fbbf24':'#ef4444';
+      zfCtx.fillRect(bx,by,bw*pct,bh);
     }
-    zfCtx.globalAlpha = 0.9;
-    if (z.vx < 0) { zfCtx.scale(-1,1); zfCtx.fillText(z.em, -z.x, z.y); }
+    zfCtx.font = z.sz+'px serif'; zfCtx.textAlign='center'; zfCtx.textBaseline='middle';
+    if (z.facing < 0) { zfCtx.scale(-1,1); zfCtx.fillText(z.em,-z.x,z.y); }
     else { zfCtx.fillText(z.em, z.x, z.y); }
     zfCtx.restore();
   }
 
-  // Empty hint
-  const emptyEl = document.getElementById('zf-empty');
-  if (emptyEl) emptyEl.style.display = zfZombies.length === 0 ? '' : 'none';
+  // 繪製敵方
+  for (const e of zfEnemies) {
+    zfCtx.save();
+    zfCtx.globalAlpha = e.hp/e.maxHp < 0.3 ? 0.45 : 0.9;
+    // HP條
+    if (e.hp < e.maxHp) {
+      const bw=22, bh=3, bx=e.x-bw/2, by=e.y-e.sz*0.65-5;
+      zfCtx.fillStyle='#111'; zfCtx.fillRect(bx,by,bw,bh);
+      const pct=Math.max(0,e.hp/e.maxHp);
+      zfCtx.fillStyle=pct>0.5?'#ef4444':pct>0.25?'#fbbf24':'#888';
+      zfCtx.fillRect(bx,by,bw*pct,bh);
+    }
+    zfCtx.font = e.sz+'px serif'; zfCtx.textAlign='center'; zfCtx.textBaseline='middle';
+    zfCtx.shadowBlur=6; zfCtx.shadowColor='rgba(239,68,68,0.4)';
+    if (e.facing > 0) { zfCtx.fillText(e.em, e.x, e.y); }
+    else { zfCtx.scale(-1,1); zfCtx.fillText(e.em,-e.x,e.y); }
+    zfCtx.restore();
+  }
+
+  // 繪製飛行物
+  for (const p of zfProjectiles) {
+    zfCtx.save();
+    zfCtx.globalAlpha = 0.88;
+    zfCtx.fillStyle = p.col; zfCtx.shadowBlur=8; zfCtx.shadowColor=p.col;
+    zfCtx.beginPath(); zfCtx.arc(p.x, p.y, p.sz, 0, Math.PI*2); zfCtx.fill();
+    zfCtx.restore();
+  }
+
+  // 更新標籤
+  const wBanner = document.getElementById('wave-banner');
+  if (wBanner) {
+    if (totZ(G) === 0) {
+      wBanner.textContent = '尚無殭屍... 召喚部隊開始戰鬥！';
+      wBanner.style.color = 'var(--dim)';
+    } else if (waveActive) {
+      const rem = zfEnemies.length + waveSpawnQueue.filter(e=>!e.spawned).length;
+      wBanner.textContent = `⚔️ 第 ${waveNum+1} 波來襲 — 剩餘: ${rem} 敵`;
+      wBanner.style.color = '#ef4444';
+    } else if (waveCooldown > 0) {
+      wBanner.textContent = `✅ 第 ${waveNum} 波擊退！下波準備中...`;
+      wBanner.style.color = '#3ddc58';
+    } else {
+      const sec = Math.ceil(Math.max(0, waveTimer));
+      wBanner.textContent = `🌊 第 ${waveNum+1} 波倒計時: ${sec}s`;
+      wBanner.style.color = sec <= 5 ? '#fbbf24' : 'var(--dim)';
+    }
+  }
+  const leftLbl  = document.getElementById('zf-left-label');
+  const rightLbl = document.getElementById('zf-right-label');
+  if (leftLbl)  leftLbl.textContent  = `🟢 我方 ${zfZombies.length}`;
+  if (rightLbl) rightLbl.textContent = `🔴 敵方 ${zfEnemies.length}`;
+}
+
+// ── 點擊戰場 ──────────────────────────────────
+function zfClick(e) {
+  const rect = zfCanvas.getBoundingClientRect();
+  const mx = (e.clientX-rect.left)*(zfW/rect.width);
+  const my = (e.clientY-rect.top)*(zfH/rect.height);
+  for (const en of zfEnemies) {
+    if (Math.hypot(mx-en.x, my-en.y) < en.sz) {
+      en.hp -= bps()*0.25 + 8;
+      zfSpawnFx(en.x, en.y, 28, '#fbbf24');
+      sfxClick();
+      return;
+    }
+  }
+}
+
+// ── 主迴圈 ────────────────────────────────────
+function zfLoop(ts) {
+  requestAnimationFrame(zfLoop);
+  const dt = Math.min((ts - zfLastTs) / 1000, 0.05);
+  zfLastTs = ts;
+  if (zfW === 0) zfResize();
+  if (totZ(G) > 0 || waveActive) {
+    zfSyncCounts();
+    zfUpdateWave(dt);
+    zfUpdateZombies(dt);
+    zfUpdateEnemies(dt);
+    zfUpdateProjectiles(dt);
+  }
+  zfDraw();
 }
 
 function renderZombieField() {
   zfSyncCounts();
 }
+
+
 
 // ══════════════════════════════════════════════
 //  AUDIO

@@ -592,6 +592,7 @@ function placeBuilding(bldgId,tileX){
   // special
   if(b.special==='win'){gs.winTimer=30;gs.launchTile=tileX;setStatus('火箭發射倒數中！',true);}
   spawnNotif(`+${b.name}`,tileX*TILE_W+TILE_W/2,terrainY(tileX)-60,'#aaffaa');
+  sfx('build');
   updateBuildPanel();
   updateRightPanel(bldgId);
   return true;
@@ -623,7 +624,7 @@ function updateResources(dt){
   // win timer
   if(gs.winTimer>0){
     gs.winTimer-=dt;
-    if(gs.winTimer<=0){gs.winTimer=0;gs.won=true;setStatus('🚀 文明重建完成！火箭升空！',true);}
+    if(gs.winTimer<=0){gs.winTimer=0;gs.won=true;setStatus('🚀 文明重建完成！火箭升空！',true);sfx('win');}
   }
 }
 
@@ -646,6 +647,7 @@ function checkEraAdvance(){
       gs.era=e;
       spawnNotif(`★ 進入${ERAS[e].name}！`,worldPxW/2,H/2,'#ffee44');
       setStatus(`★ 文明進入：${ERAS[e].name}`,true);
+      sfx('era');
       updateBuildPanel();
       break;
     }
@@ -848,6 +850,25 @@ function loop(timestamp){
 loadSpaceData();
 showStory();
 requestAnimationFrame(loop);
+
+// ── SFX ──
+const _SFX = {};
+function _preload(name, path, vol, maxMs) {
+  const a = new Audio(path); a.volume = vol; a.preload = 'auto';
+  _SFX[name] = { audio: a, maxMs: maxMs || null };
+}
+function sfx(name) {
+  const s = _SFX[name]; if (!s) return;
+  try {
+    const a = s.audio.cloneNode(); a.volume = s.audio.volume;
+    if (s.maxMs) setTimeout(() => { a.pause(); a.currentTime = 0; }, s.maxMs);
+    a.play().catch(() => {});
+  } catch(e) {}
+}
+const _BASE = '../../assets/sfx/';
+_preload('build', _BASE+'GameSFX1/Events/Retro Event UI 01.wav',        0.45, 250);
+_preload('era',   _BASE+'GameSFX0/Ascending/Retro Ascending Short 20.wav', 0.55, 280);
+_preload('win',   _BASE+'GameSFX2/Music/Success/Retro Success Melody 01 - sawtooth lead 1.wav', 0.5);
 </script>
 </body>
 </html>

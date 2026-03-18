@@ -161,15 +161,16 @@ const audio = {
   init() {
     if (this._inited) return;
     this._inited = true;
+    const _S = '../../assets/sfx/';
     const sfx = {
-      shoot:      'Audio/laserRetro_000.ogg',
-      explode:    'Audio/explosionCrunch_000.ogg',
-      explodeBig: 'Audio/explosionCrunch_004.ogg',
-      hit:        'Audio/forceField_000.ogg',
-      pickup:     'Audio/computerNoise_000.ogg',
-      warpcore:   'Audio/lowFrequency_explosion_000.ogg',
-      heal:       'Audio/computerNoise_002.ogg',
-      buy:        'Audio/computerNoise_001.ogg',
+      shoot:      _S+'GameSFX3/Weapon/laser/Retro Gun Laser SingleShot 01.wav',
+      explode:    _S+'GameSFX1/Explosion/Retro Explosion Short 01.wav',
+      explodeBig: _S+'GameSFX1/Explosion/Retro Explosion Long 02.wav',
+      hit:        _S+'GameSFX2/Impact/Retro Impact 20.wav',
+      pickup:     _S+'GameSFX3/PickUp/Retro PickUp 10.wav',
+      warpcore:   _S+'GameSFX3/PowerUp/Retro PowerUP 09.wav',
+      heal:       _S+'GameSFX3/PickUp/Retro PickUp 18.wav',
+      buy:        _S+'GameSFX1/Events/Retro Event UI 01.wav',
     };
     for (const [id, url] of Object.entries(sfx)) {
       const el = new Audio(url); el.preload = 'auto';
@@ -452,18 +453,18 @@ function createPlayer() {
     shieldLevel: 1,
     hullLevel: 1,
     weaponLevel: 1,
-    // perks
-    deepScanner: false,
-    lootFinder: false,
-    combatExpert: false,
-    evasion: false,
-    autoRepair: false,
+    // perks (0 = not yet bought; each level adds bonus)
+    deepScanner: 0,
+    lootFinder: 0,
+    combatExpert: 0,
+    evasion: 0,
+    autoRepair: 0,
     thrustForce: 380,
     boostFuel: 100, maxBoostFuel: 100,
     boosting: false,
     escaped: false,
-    boostRegenLevel: 1,  // 1-3: regen speed upgrade
-    boostUseLevel: 1,    // 1-3: fuel consumption reduction
+    boostRegenLevel: 1,  // 1-12: regen speed upgrade
+    boostUseLevel: 1,    // 1-12: fuel consumption reduction
     returnCharges: 0,
     warpFlash: 0   // countdown timer for warp flash effect
   };
@@ -717,48 +718,58 @@ function closeShop() {
 function renderShop() {
   shopResources.textContent=`礦石: ${player.ore} | 晶體: ${player.crystal} | 異星科技: ${player.alienTech}`;
 
-  const upgrades = [
-    {name:'引擎 Mk2 (速度+25%)',cost:{ore:10},req:()=>player.engineLevel<2,
-      buy:()=>{player.engineLevel=2;player.thrustForce=350;}},
-    {name:'引擎 Mk3 (速度+55%)',cost:{ore:20,crystal:5},req:()=>player.engineLevel<3,
-      buy:()=>{player.engineLevel=3;player.thrustForce=434;}},
-    {name:'護盾產生器 Mk2 (+40護盾)',cost:{ore:8},req:()=>player.shieldLevel<2,
-      buy:()=>{player.shieldLevel=2;player.maxShield+=40;player.shield=Math.min(player.shield+40,player.maxShield);}},
-    {name:'護盾產生器 Mk3 (+80護盾)',cost:{ore:15,crystal:3},req:()=>player.shieldLevel<3,
-      buy:()=>{player.shieldLevel=3;player.maxShield+=40;player.shield=Math.min(player.shield+40,player.maxShield);}},
-    {name:'船殼加固 Mk2 (+40船殼)',cost:{ore:10},req:()=>player.hullLevel<2,
-      buy:()=>{player.hullLevel=2;player.maxHull+=40;player.hull=Math.min(player.hull+40,player.maxHull);}},
-    {name:'船殼加固 Mk3 (+80船殼)',cost:{ore:18},req:()=>player.hullLevel<3,
-      buy:()=>{player.hullLevel=3;player.maxHull+=40;player.hull=Math.min(player.hull+40,player.maxHull);}},
-    {name:'武器系統 Mk2 (傷害+35%)',cost:{ore:12},req:()=>player.weaponLevel<2,
-      buy:()=>{player.weaponLevel=2;}},
-    {name:'武器系統 Mk3 (傷害+75%)',cost:{ore:22,crystal:5},req:()=>player.weaponLevel<3,
-      buy:()=>{player.weaponLevel=3;}},
-    {name:'加速器回復 Mk2 (回復+65%)',cost:{ore:8,crystal:3},req:()=>player.boostRegenLevel<2,
-      buy:()=>{player.boostRegenLevel=2;}},
-    {name:'加速器回復 Mk3 (回復+155%)',cost:{ore:16,crystal:8},req:()=>player.boostRegenLevel<3,
-      buy:()=>{player.boostRegenLevel=3;}},
-    {name:'衝刺節能 Mk2 (消耗-26%)',cost:{ore:7},req:()=>player.boostUseLevel<2,
-      buy:()=>{player.boostUseLevel=2;}},
-    {name:'衝刺節能 Mk3 (消耗-48%)',cost:{ore:15,crystal:5},req:()=>player.boostUseLevel<3,
-      buy:()=>{player.boostUseLevel=3;}},
-    {name:'緊急維修 (船殼恢復)',cost:{ore:15},req:()=>player.hull<player.maxHull,
-      buy:()=>{player.hull=player.maxHull;}},
-    {name:'護盾充能 (護盾恢復)',cost:{ore:8},req:()=>player.shield<player.maxShield,
-      buy:()=>{player.shield=player.maxShield;}},
-  ];
-  const perks = [
-    {name:'深度掃描器 (掃描範圍x2)',cost:{crystal:10},req:()=>!player.deepScanner,
-      buy:()=>{player.deepScanner=true;}},
-    {name:'戰利品探測 (物品品質+30%)',cost:{crystal:8},req:()=>!player.lootFinder,
-      buy:()=>{player.lootFinder=true;}},
-    {name:'戰鬥專家 (射速+30%)',cost:{ore:10,crystal:5},req:()=>!player.combatExpert,
-      buy:()=>{player.combatExpert=true;}},
-    {name:'迴避訓練 (20%閃避)',cost:{crystal:15},req:()=>!player.evasion,
-      buy:()=>{player.evasion=true;}},
-    {name:'自動修復 (船殼緩慢回復)',cost:{crystal:20,ore:10},req:()=>!player.autoRepair,
-      buy:()=>{player.autoRepair=true;}},
-  ];
+  // ── Cost helpers ──────────────────────────────────────────────────────────
+  // Each successive level costs ~1.5× more ore; crystal unlocks at lv5; alienTech at lv9
+  function upgCost(base, nextLv) {
+    const o = Math.round(base * Math.pow(1.5, nextLv-2));
+    const c = nextLv>=5 ? Math.round(base*0.35*Math.pow(1.4,nextLv-5)) : 0;
+    const a = nextLv>=9 ? Math.round(base*0.15*Math.pow(1.3,nextLv-9)) : 0;
+    const cost={ore:o}; if(c) cost.crystal=c; if(a) cost.alienTech=a; return cost;
+  }
+  function perkCost(base, nextLv) {
+    const c = Math.round(base * Math.pow(1.5, nextLv-2));
+    const o = nextLv>=4 ? Math.round(base*0.5*Math.pow(1.4,nextLv-4)) : 0;
+    const a = nextLv>=8 ? Math.round(base*0.2*Math.pow(1.3,nextLv-8)) : 0;
+    const cost={crystal:c}; if(o) cost.ore=o; if(a) cost.alienTech=a; return cost;
+  }
+
+  // ── Ship upgrades (Mk1 → Mk12) ───────────────────────────────────────────
+  const UPG_MAX = 12;
+  const upgrades = [];
+  function addUpg(key, label, baseCost, descFn, buyFn) {
+    const cur = player[key]; if (cur >= UPG_MAX) return;
+    const next = cur+1;
+    upgrades.push({ name:`${label} Mk${next} (${descFn(next)})`,
+      cost: upgCost(baseCost, next), req:()=>true,
+      buy:()=>{ player[key]=next; if(buyFn) buyFn(next); } });
+  }
+  addUpg('engineLevel',     '引擎',     10, lv=>`速度+${Math.round(lv*15-15)}%`);
+  addUpg('shieldLevel',     '護盾產生器', 8, lv=>`護盾+50`,
+    ()=>{ player.maxShield+=50; player.shield=Math.min(player.shield+50,player.maxShield); });
+  addUpg('hullLevel',       '船殼加固',  9, lv=>`船殼+50`,
+    ()=>{ player.maxHull+=50; player.hull=Math.min(player.hull+50,player.maxHull); });
+  addUpg('weaponLevel',     '武器系統', 12, lv=>`傷害+${Math.round((lv-1)*25)}%`);
+  addUpg('boostRegenLevel', '加速器回復', 8, lv=>`回復+${Math.round((lv-1)*30)}%`);
+  addUpg('boostUseLevel',   '衝刺節能',  7, lv=>`消耗-${Math.round((1-Math.pow(0.9,lv-1))*100)}%`);
+  // Consumables (always visible if needed)
+  if (player.hull<player.maxHull) upgrades.push({name:'緊急維修 (船殼恢復)',cost:{ore:15},req:()=>true,buy:()=>{player.hull=player.maxHull;}});
+  if (player.shield<player.maxShield) upgrades.push({name:'護盾充能 (護盾恢復)',cost:{ore:8},req:()=>true,buy:()=>{player.shield=player.maxShield;}});
+
+  // ── Navigator talents (Lv.1 → Lv.10) ────────────────────────────────────
+  const PERK_MAX = 10;
+  const perks = [];
+  function addPerk(key, label, baseCost, descFn) {
+    const cur = player[key]; if (cur >= PERK_MAX) return;
+    const next = cur+1;
+    perks.push({ name:`${label} Lv.${next} (${descFn(next)})`,
+      cost: perkCost(baseCost, next), req:()=>true,
+      buy:()=>{ player[key]=next; } });
+  }
+  addPerk('deepScanner',  '深度掃描器', 10, lv=>`掃描+${lv*30}%`);
+  addPerk('lootFinder',   '戰利品探測',  8, lv=>`物品+${lv*15}%`);
+  addPerk('combatExpert', '戰鬥專家',    8, lv=>`射速+${lv*7}%`);
+  addPerk('evasion',      '迴避訓練',   12, lv=>`閃避${lv*5}%`);
+  addPerk('autoRepair',   '自動修復',   15, lv=>`回復${(lv*0.5).toFixed(1)}/s`);
 
   function renderItems(container, list) {
     container.innerHTML='';
@@ -778,7 +789,7 @@ function renderShop() {
         if (canBuy(item.cost)) {
           spendResources(item.cost);
           item.buy();
-          audio.play('buy');
+          audio.play('buy', 1, 1, 280);
           setStatus('購買成功！');
           renderShop();
         }
@@ -845,7 +856,7 @@ function update(dt) {
   if (state==='playing') playTime+=dt;
 
   // Load chunks
-  const scanRange = player.deepScanner ? 2 : 1;
+  const scanRange = 1 + player.deepScanner*0.3;
   const nearChunks = getChunksAround(player.x,player.y,CHUNK*(scanRange+1));
   for (const {cx,cy} of nearChunks) generateChunk(cx,cy);
 
@@ -863,30 +874,27 @@ function update(dt) {
 }
 
 function getPlayerDmg() {
-  const base = BULLET_DMG;
-  if (player.weaponLevel===2) return Math.floor(base*1.35);
-  if (player.weaponLevel===3) return Math.floor(base*1.75);
-  return base;
+  // +25% per weapon level above 1
+  return Math.floor(BULLET_DMG * (1 + 0.25*(player.weaponLevel-1)));
 }
 function getPlayerFireRate() {
   let fr = FIRE_RATE;
-  if (player.combatExpert) fr*=0.7;
+  if (player.combatExpert > 0) fr *= (1 - player.combatExpert*0.07);
   fr *= (1 - metaLevel('fireBonus')*0.15);
   return Math.max(fr, 0.08);
 }
 
 function updatePlayer(dt) {
-  const thrust = player.thrustForce;
+  // Engine level scales thrust (+15% per level above 1)
+  const thrust = player.thrustForce * (1 + 0.15*(player.engineLevel-1));
   const up = keys['KeyW']||keys['ArrowUp'];
   const down = keys['KeyS']||keys['ArrowDown'];
   const left = keys['KeyA']||keys['ArrowLeft'];
   const right = keys['KeyD']||keys['ArrowRight'];
 
-  // Level-based boost fuel rates
-  const FUEL_REGEN_RATES = [18, 30, 46];
-  const FUEL_USE_RATES   = [35, 26, 18];
-  const curFuelRegen = FUEL_REGEN_RATES[player.boostRegenLevel-1];
-  const curFuelUse   = FUEL_USE_RATES[player.boostUseLevel-1];
+  // Boost fuel rates — scale dynamically with level (+30% regen / -10% use per level above 1)
+  const curFuelRegen = 18 * (1 + 0.30*(player.boostRegenLevel-1));
+  const curFuelUse   = 35 * Math.pow(0.90, player.boostUseLevel-1);
 
   // Boost (Shift key)
   const wantBoost = (keys['ShiftLeft']||keys['ShiftRight']) && (up||down||left||right);
@@ -925,7 +933,8 @@ function updatePlayer(dt) {
 
   // Clamp max speed
   const spd = Math.sqrt(player.vx**2+player.vy**2);
-  const maxSpd = player.boosting ? BOOST_MAX_SPD : 500 + (player.engineLevel-1)*80;
+  const normalMaxSpd = 500 + (player.engineLevel-1)*80;
+  const maxSpd = player.boosting ? Math.max(BOOST_MAX_SPD, normalMaxSpd*1.5) : normalMaxSpd;
   if (spd>maxSpd) { player.vx*=maxSpd/spd; player.vy*=maxSpd/spd; }
 
   player.x += player.vx*dt;
@@ -973,14 +982,14 @@ function updatePlayer(dt) {
   }
 
   // Auto repair
-  if (player.autoRepair && player.hull<player.maxHull) {
-    player.hull=Math.min(player.maxHull,player.hull+2*dt);
+  if (player.autoRepair > 0 && player.hull<player.maxHull) {
+    player.hull=Math.min(player.maxHull, player.hull + player.autoRepair*0.5*dt);
   }
 }
 
 function damagePlayer(dmg) {
   if (player.invulTimer>0) return;
-  if (player.evasion && Math.random()<0.2) { setStatus('閃避！'); return; }
+  if (player.evasion > 0 && Math.random() < player.evasion*0.05) { setStatus('閃避！'); return; }
   audio.play('hit', 0.7);
   if (player.shield>0) {
     const sd = Math.min(player.shield,dmg);
@@ -1018,7 +1027,7 @@ function updateBullets(dt) {
             explosion(ast.x,ast.y,8,'#ffcc66');
             // Drop ore
             const oreCount = ast.ore || 3;
-            const lootMult = player.lootFinder ? 1.4 : 1;
+            const lootMult = 1 + player.lootFinder*0.15;
             for (let k=0; k<Math.ceil(oreCount*lootMult); k++) {
               chunk.items.push({x:ast.x+(Math.random()-0.5)*60,y:ast.y+(Math.random()-0.5)*60,
                 type:'ore',r:12,bobOffset:Math.random()*Math.PI*2,alive:true});
@@ -1316,7 +1325,7 @@ function updateItems(dt) {
 }
 
 function collectItem(item) {
-  const lootMult = player.lootFinder ? 1.3 : 1;
+  const lootMult = 1 + player.lootFinder*0.15;
   audio.play('pickup', 0.7, 1, 220);
   switch(item.type) {
     case 'energy':

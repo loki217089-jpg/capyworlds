@@ -83,6 +83,31 @@ canvas { position:absolute; top:0; left:0; display:block; }
 #startBtn:hover { background:linear-gradient(135deg,#6611ee,#aa22ff); box-shadow:0 0 30px #8844cc; transform:scale(1.03); }
 
 .hint { font-size:13px; color:#554477; margin-top:8px; letter-spacing:1px; }
+
+/* ===== 玩家行動按鈕 ===== */
+#battleBtns {
+  position:absolute; bottom:12px; left:50%; transform:translateX(-50%);
+  display:none; gap:10px; z-index:5;
+}
+.bbt {
+  padding:8px 18px; font-size:14px; font-weight:bold; letter-spacing:1px;
+  border-radius:8px; cursor:pointer; border:2px solid; transition:all 0.15s;
+  font-family:inherit;
+}
+.bbt:active { transform:scale(0.94); }
+.bbt.cd { opacity:0.4; cursor:default; }
+#btn-dash { background:#1a0030; border-color:#ff4488; color:#ff88bb; }
+#btn-dash:not(.cd):hover { background:#2a0040; box-shadow:0 0 12px #ff4488; }
+#btn-spin { background:#001030; border-color:#44aaff; color:#88ccff; }
+#btn-spin:not(.cd):hover { background:#001840; box-shadow:0 0 12px #44aaff; }
+#btn-guard { background:#102010; border-color:#44ff88; color:#88ffaa; }
+#btn-guard:not(.cd):hover { background:#182818; box-shadow:0 0 12px #44ff88; }
+#envMsg {
+  position:absolute; top:36px; left:50%; transform:translateX(-50%);
+  font-size:15px; font-weight:bold; color:#fbbf24;
+  text-shadow:0 0 10px #f59e0b; pointer-events:none; z-index:6;
+  transition:opacity 0.5s; letter-spacing:1px;
+}
 </style>
 </head>
 <body>
@@ -149,14 +174,22 @@ canvas { position:absolute; top:0; left:0; display:block; }
     </div>
 
     <button id="startBtn" onclick="startBattle()">⚡ 開始戰鬥！</button>
-    <div class="hint">全自動對戰 — 選好配件按開始即可！</div>
+    <div class="hint">選好配件按開始 — 戰鬥中可主動出招！</div>
   </div>
+
+  <!-- 玩家行動按鈕 -->
+  <div id="battleBtns" style="display:flex">
+    <button class="bbt" id="btn-dash" onclick="playerDash()">⚡ 衝刺攻擊</button>
+    <button class="bbt" id="btn-spin" onclick="playerBoostSpin()">🌀 加速旋轉</button>
+    <button class="bbt" id="btn-guard" onclick="playerGuard()">🛡️ 防禦姿態</button>
+  </div>
+  <div id="envMsg"></div>
 </div>
 
 <script>
 // ===================================================
 //  戰鬥陀螺 BURST ARENA — by CapyWorlds
-//  Auto-battle edition with Web Audio sound effects
+//  Interactive battle — player action buttons + env effects
 // ===================================================
 
 const canvas = document.getElementById('gameCanvas');
@@ -164,124 +197,18 @@ const ctx = canvas.getContext('2d');
 const W = 800, H = 600;
 const AX = W/2, AY = H/2, AR = 215;
 
-// ==================== WEB AUDIO ====================
-const AudioCtx = window.AudioContext || window.webkitAudioContext;
-let audioCtx = null;
+// ==================== 玩家操作 ====================
+let playerCooldowns = { dash: 0, spin: 0, guard: 0 };
+let playerGuardTimer = 0;
 
-function ensureAudio(){
-  if(!audioCtx) audioCtx = new AudioCtx();
-}
+// 環境事件
+let envTimer = 18;
+let envActive = null; // { type, timer, label }
+let envMsgTimer = 0;
+let envMsgText = '';
 
-function playCollision(force){
-  ensureAudio();
-  const g = audioCtx.createGain();
-  g.gain.setValueAtTime(Math.min(1, force * 0.25), audioCtx.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.18);
-  g.connect(audioCtx.destination);
-
-  // Low thud
-  const osc = audioCtx.createOscillator();
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(180 + force * 30, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.15);
-  osc.connect(g);
-  osc.start(); osc.stop(audioCtx.currentTime + 0.18);
-
-  // Metallic click
-  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.05, audioCtx.sampleRate);
-  const data = buf.getChannelData(0);
-  for(let i=0;i<data.length;i++) data[i]=(Math.random()*2-1)*Math.exp(-i/(audioCtx.sampleRate*0.008));
-  const src = audioCtx.createBufferSource();
-  src.buffer = buf;
-  const g2 = audioCtx.createGain();
-  g2.gain.setValueAtTime(Math.min(0.6, force * 0.12), audioCtx.currentTime);
-  src.connect(g2); g2.connect(audioCtx.destination);
-  src.start();
-}
-
-function playWallBounce(){
-  ensureAudio();
-  const g = audioCtx.createGain();
-  g.gain.setValueAtTime(0.25, audioCtx.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
-  g.connect(audioCtx.destination);
-  const osc = audioCtx.createOscillator();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(320, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.1);
-  osc.connect(g); osc.start(); osc.stop(audioCtx.currentTime + 0.12);
-}
-
-function playBurst(color){
-  ensureAudio();
-  // Rising power chord
-  [0, 5, 9, 14].forEach((semi, i) => {
-    const freq = 110 * Math.pow(2, semi/12);
-    const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0, audioCtx.currentTime + i*0.04);
-    g.gain.linearRampToValueAtTime(0.35, audioCtx.currentTime + i*0.04 + 0.06);
-    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i*0.04 + 0.45);
-    g.connect(audioCtx.destination);
-    const osc = audioCtx.createOscillator();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i*0.04);
-    osc.frequency.linearRampToValueAtTime(freq*2.1, audioCtx.currentTime + i*0.04 + 0.4);
-    osc.connect(g); osc.start(audioCtx.currentTime + i*0.04);
-    osc.stop(audioCtx.currentTime + i*0.04 + 0.5);
-  });
-}
-
-function playRoundEnd(win){
-  ensureAudio();
-  const notes = win ? [523,659,784,1047] : [392,330,262,220];
-  notes.forEach((freq,i)=>{
-    const g = audioCtx.createGain();
-    g.gain.setValueAtTime(0.3, audioCtx.currentTime + i*0.18);
-    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i*0.18 + 0.3);
-    g.connect(audioCtx.destination);
-    const osc = audioCtx.createOscillator();
-    osc.type = 'triangle';
-    osc.frequency.value = freq;
-    osc.connect(g); osc.start(audioCtx.currentTime + i*0.18);
-    osc.stop(audioCtx.currentTime + i*0.18 + 0.35);
-  });
-}
-
-function playCountdownBeep(final){
-  ensureAudio();
-  const g = audioCtx.createGain();
-  g.gain.setValueAtTime(0.4, audioCtx.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (final?0.4:0.18));
-  g.connect(audioCtx.destination);
-  const osc = audioCtx.createOscillator();
-  osc.type = 'sine';
-  osc.frequency.value = final ? 880 : 440;
-  osc.connect(g); osc.start(); osc.stop(audioCtx.currentTime + (final?0.4:0.2));
-}
-
-// spin hum (looping)
-let spinHumNode = null;
-function startSpinHum(){
-  ensureAudio();
-  if(spinHumNode) return;
-  const g = audioCtx.createGain();
-  g.gain.value = 0.06;
-  g.connect(audioCtx.destination);
-  const osc = audioCtx.createOscillator();
-  osc.type = 'sawtooth';
-  osc.frequency.value = 80;
-  osc.connect(g); osc.start();
-  spinHumNode = {osc, g};
-}
-function stopSpinHum(){
-  if(spinHumNode){ try{ spinHumNode.osc.stop(); }catch(e){} spinHumNode=null; }
-}
-function updateSpinHum(p, c){
-  if(!spinHumNode) return;
-  const avgSpin = ((p?p.spinRatio:0)+(c?c.spinRatio:0))/2;
-  spinHumNode.g.gain.value = avgSpin * 0.07;
-  spinHumNode.osc.frequency.value = 55 + avgSpin * 120;
-}
+// 每秒指向對方的計時器
+let dirTimer = 1.0;
 
 // ==================== PARTS DATA ====================
 const BLADES = [
@@ -319,9 +246,103 @@ let lastBeepN = -1;
 const keys={};
 document.addEventListener('keydown', e=>{
   keys[e.code]=true;
-  if(e.code==='Enter'||e.code==='KeyR') ensureAudio();
+  if(e.code==='KeyZ') playerDash();
+  if(e.code==='KeyX') playerBoostSpin();
+  if(e.code==='KeyC') playerGuard();
 });
 document.addEventListener('keyup', e=>{ keys[e.code]=false; });
+
+// ==================== 玩家技能 ====================
+function playerDash(){
+  if(gameState!=='battle'||!playerTop||!cpuTop) return;
+  if(playerCooldowns.dash>0) return;
+  const dx=cpuTop.x-playerTop.x, dy=cpuTop.y-playerTop.y, d=Math.hypot(dx,dy)||1;
+  playerTop.vx+=(dx/d)*9; playerTop.vy+=(dy/d)*9;
+  playerCooldowns.dash=4;
+  spawnBurst(playerTop.x,playerTop.y,playerTop.color);
+  updateBtnCooldown('dash',4);
+}
+function playerBoostSpin(){
+  if(gameState!=='battle'||!playerTop) return;
+  if(playerCooldowns.spin>0) return;
+  playerTop.spin=Math.min(3200, playerTop.spin*1.18+120);
+  playerCooldowns.spin=7;
+  spawnSparks(playerTop.x,playerTop.y,playerTop.color,'#ffffff',10);
+  updateBtnCooldown('spin',7);
+}
+function playerGuard(){
+  if(gameState!=='battle'||!playerTop) return;
+  if(playerCooldowns.guard>0) return;
+  playerGuardTimer=3.5;
+  playerTop.flashTimer=0;
+  playerCooldowns.guard=9;
+  spawnSparks(playerTop.x,playerTop.y,playerTop.glow,'#44ff88',8);
+  updateBtnCooldown('guard',9);
+}
+function updateBtnCooldown(type, secs){
+  const btn=document.getElementById('btn-'+type);
+  if(!btn) return;
+  btn.classList.add('cd');
+  setTimeout(()=>{ btn.classList.remove('cd'); },secs*1000);
+}
+function updateCooldowns(dt){
+  for(const k in playerCooldowns){ if(playerCooldowns[k]>0) playerCooldowns[k]-=dt; }
+  if(playerGuardTimer>0){ playerGuardTimer-=dt; if(playerGuardTimer<0) playerGuardTimer=0; }
+}
+
+// ==================== 環境事件 ====================
+const ENV_EVENTS = [
+  { type:'magnetic', label:'⚡ 磁場異常！陀螺被吸向中心！', col:'#44aaff' },
+  { type:'vibration', label:'🌋 地面震動！旋轉不穩定！',   col:'#fbbf24' },
+  { type:'storm',    label:'⛈️ 能量風暴！競技場縮小！',   col:'#cc44ff' },
+  { type:'ice',      label:'❄️ 冰場效應！加速滑行！',      col:'#88ccff' },
+];
+function triggerEnvEvent(){
+  const ev=ENV_EVENTS[Math.floor(Math.random()*ENV_EVENTS.length)];
+  envActive={ type:ev.type, timer:5 };
+  showEnvMsg(ev.label, ev.col);
+}
+function showEnvMsg(txt, col){
+  const el=document.getElementById('envMsg');
+  if(el){ el.textContent=txt; el.style.color=col||'#fbbf24'; el.style.opacity='1'; }
+  setTimeout(()=>{ const e=document.getElementById('envMsg'); if(e) e.style.opacity='0'; },2800);
+}
+function updateEnv(dt){
+  if(gameState!=='battle') return;
+  envTimer-=dt;
+  if(envTimer<=0){ envTimer=12+Math.random()*10; triggerEnvEvent(); }
+  if(!envActive) return;
+  envActive.timer-=dt;
+  if(envActive.timer<=0){ envActive=null; return; }
+  if(!playerTop||!cpuTop) return;
+  const t=envActive.type;
+  if(t==='magnetic'){
+    // 吸向中心
+    [playerTop,cpuTop].forEach(top=>{
+      const dx=AX-top.x, dy=AY-top.y, d=Math.hypot(dx,dy)||1;
+      top.vx+=(dx/d)*0.35; top.vy+=(dy/d)*0.35;
+    });
+  } else if(t==='vibration'){
+    // 旋轉損耗加快
+    playerTop.spin*=0.9985; cpuTop.spin*=0.9985;
+    if(Math.random()<0.04){ shakeX=(Math.random()-0.5)*6; shakeY=(Math.random()-0.5)*6; }
+  } else if(t==='storm'){
+    // 場地縮小效果：壁彈提前觸發
+    [playerTop,cpuTop].forEach(top=>{
+      const dx=top.x-AX, dy=top.y-AY, d=Math.hypot(dx,dy);
+      if(d+top.r>AR*0.82){
+        const nx=dx/d, ny=dy/d;
+        top.x=AX+nx*(AR*0.82-top.r); top.y=AY+ny*(AR*0.82-top.r);
+        const dot=top.vx*nx+top.vy*ny;
+        top.vx-=2*dot*nx*0.75; top.vy-=2*dot*ny*0.75;
+      }
+    });
+  } else if(t==='ice'){
+    // 摩擦力降低 (velocity保留更多)
+    playerTop.vx*=1.003; playerTop.vy*=1.003;
+    cpuTop.vx*=1.003;    cpuTop.vy*=1.003;
+  }
+}
 
 // ==================== TOP CLASS ====================
 class BeyTop {
@@ -366,7 +387,6 @@ class BeyTop {
       this.vx-=2*dot*nx*0.82; this.vy-=2*dot*ny*0.82;
       this.spin*=0.994;
       spawnSparks(this.x,this.y,this.color,'#ffffff',4);
-      playWallBounce();
     }
 
     this.trail.push({x:this.x,y:this.y,t:1});
@@ -382,7 +402,7 @@ class BeyTop {
 
   activateBurst(){
     if(this.burst>=100&&!this.burstActive){
-      this.burstActive=true; this.burstTimer=380; this.burst=0;
+      this.burstActive=true; this.burstTimer=380; this.burst=0; sfx('burst');
       const mag=3.5+this.atk*0.25, a=Math.random()*Math.PI*2;
       this.vx+=Math.cos(a)*mag; this.vy+=Math.sin(a)*mag;
       return true;
@@ -591,10 +611,10 @@ function checkCollision(a,b){
     spawnSparks((a.x+b.x)/2,(a.y+b.y)/2,a.color,b.color,14);
     const si=Math.min(15,force*4);
     shakeX=(Math.random()-0.5)*si; shakeY=(Math.random()-0.5)*si;
+    sfx('collision');
     if(a.driver.type==='ball'){a.vx*=1.12;a.vy*=1.12;}
     if(b.driver.type==='ball'){b.vx*=1.12;b.vy*=1.12;}
 
-    playCollision(force);
   }
 }
 
@@ -626,7 +646,7 @@ function updateAI(top, opponent){
       if(td>0){top.vx+=(tdx/td)*f*0.6;top.vy+=(tdy/td)*f*0.6;}
     }
   }
-  if(top.burst>=100){ const ok=top.activateBurst(); if(ok){ spawnBurst(top.x,top.y,top.color); playBurst(top.color); } }
+  if(top.burst>=100){ const ok=top.activateBurst(); if(ok){ spawnBurst(top.x,top.y,top.color); } }
   const spd=Math.sqrt(top.vx*top.vx+top.vy*top.vy);
   if(spd>5.5){ top.vx=(top.vx/spd)*5.5; top.vy=(top.vy/spd)*5.5; }
 }
@@ -670,6 +690,35 @@ function drawBattleHUD(){
   }
 }
 
+// ==================== 玩家行動 HUD ====================
+function drawPlayerActions(){
+  // 技能冷卻條 (canvas 上方顯示)
+  const skills=[
+    {id:'dash', label:'Z:衝刺', col:'#ff4488', cd:4},
+    {id:'spin', label:'X:加速', col:'#44aaff', cd:7},
+    {id:'guard',label:'C:防禦', col:'#44ff88', cd:9},
+  ];
+  skills.forEach((s,i)=>{
+    const bx=16+i*105, by=H-32, bw=95, bh=18;
+    const rem=Math.max(0,playerCooldowns[s.id]);
+    const pct=rem>0?1-rem/s.cd:1;
+    ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(bx,by,bw,bh);
+    ctx.fillStyle=pct>=1?s.col:s.col+'55';
+    ctx.fillRect(bx,by,bw*pct,bh);
+    ctx.strokeStyle=s.col+'66'; ctx.lineWidth=1; ctx.strokeRect(bx,by,bw,bh);
+    ctx.textAlign='center'; ctx.font='bold 11px Arial';
+    ctx.fillStyle=pct>=1?'#fff':'#888';
+    ctx.fillText(rem>0?s.label+' '+rem.toFixed(1)+'s':s.label+' ✓',bx+bw/2,by+13);
+  });
+  // 防禦中提示
+  if(playerGuardTimer>0){
+    ctx.textAlign='left'; ctx.font='bold 13px Arial'; ctx.fillStyle='#44ff88';
+    ctx.shadowBlur=10; ctx.shadowColor='#44ff88';
+    ctx.fillText('🛡️ 防禦中', 16, H-52);
+    ctx.shadowBlur=0;
+  }
+}
+
 // ==================== GAME OVER SCREEN ====================
 function drawGameEnd(){
   ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.fillRect(0,0,W,H);
@@ -697,9 +746,10 @@ function drawGameEnd(){
   if(keys['Enter']||keys['KeyR']){
     keys['Enter']=false; keys['KeyR']=false;
     playerScore=0; cpuScore=0; currentRound=1;
-    stopSpinHum();
+    envTimer=18; envActive=null; dirTimer=1;
     gameState='select';
     document.getElementById('selectOverlay').style.display='flex';
+    document.getElementById('battleBtns').style.display='none';
     updateSelectUI();
   }
 }
@@ -723,7 +773,6 @@ function gameLoop(ts){
 
     // Countdown beeps
     if(n !== lastBeepN && n>=1 && n<=3 && countdownTimer>0){
-      playCountdownBeep(false); lastBeepN=n;
     }
 
     if(countdownTimer>0){
@@ -734,7 +783,6 @@ function gameLoop(ts){
       ctx.fillText(n, AX, AY+40);
       ctx.shadowBlur=0;
     } else {
-      if(lastBeepN!==0){ playCountdownBeep(true); lastBeepN=0; startSpinHum(); }
       ctx.textAlign='center'; ctx.font='bold 86px Arial';
       ctx.fillStyle='#ffffff'; ctx.shadowBlur=28; ctx.shadowColor='#ff4400';
       ctx.fillText('GO!', AX, AY+32);
@@ -743,16 +791,33 @@ function gameLoop(ts){
     if(countdownTimer<=-30) gameState='battle';
 
   } else if(gameState==='battle'){
+    const dtSec = 1/60;
     drawArena();
 
-    // Both tops are AI-controlled
-    updateAI(playerTop, cpuTop);
+    // 環境效果
+    updateEnv(dtSec);
+    updateCooldowns(dtSec);
+
+    // CPU AI控制
     updateAI(cpuTop, playerTop);
+
+    // 每1秒：雙方互相指向對方 (增加對抗感)
+    dirTimer -= dtSec;
+    if(dirTimer <= 0){
+      dirTimer = 1.0;
+      if(playerTop && cpuTop){
+        const dx=cpuTop.x-playerTop.x, dy=cpuTop.y-playerTop.y, d=Math.hypot(dx,dy)||1;
+        playerTop.vx+=(dx/d)*1.2; playerTop.vy+=(dy/d)*1.2;
+        cpuTop.vx-=(dx/d)*1.2;    cpuTop.vy-=(dy/d)*1.2;
+      }
+    }
+
+    // 防禦加成：被命中時減少傷害
+    if(playerGuardTimer>0 && playerTop) playerTop.iframes=Math.max(playerTop.iframes,3);
 
     playerTop.update(); cpuTop.update();
     checkCollision(playerTop,cpuTop);
     updateParticles();
-    updateSpinHum(playerTop, cpuTop);
 
     // Ambient spin particles
     if(playerTop.spinPTimer%3===0&&playerTop.spinRatio>0.35){
@@ -764,19 +829,26 @@ function gameLoop(ts){
       particles.push({x:cpuTop.x+Math.cos(a)*cpuTop.r*0.85,y:cpuTop.y+Math.sin(a)*cpuTop.r*0.85,vx:Math.cos(a)*0.6,vy:Math.sin(a)*0.6,color:cpuTop.color,life:0.45,size:1.2,type:'spin'});
     }
 
+    // 環境效果視覺（風暴縮圈）
+    if(envActive && envActive.type==='storm'){
+      ctx.strokeStyle='rgba(180,80,255,0.25)'; ctx.lineWidth=8;
+      ctx.beginPath(); ctx.arc(AX,AY,AR*0.82,0,Math.PI*2); ctx.stroke();
+    }
+
     playerTop.draw(ctx); cpuTop.draw(ctx);
     drawParticles(ctx);
     drawBattleHUD();
+    drawPlayerActions();
 
     if(!playerTop.alive||!cpuTop.alive){
       let winner;
       if(!playerTop.alive&&!cpuTop.alive){ roundEndMsg='平局！'; winner='draw'; }
       else if(!playerTop.alive){ roundEndMsg='CPU 獲勝！'; winner='cpu'; cpuScore++; }
       else { roundEndMsg='你獲勝了！'; winner='player'; playerScore++; }
+      sfx(winner==='player'?'win':winner==='cpu'?'lose':'draw');
       roundEndTimer=220;
       gameState='roundEnd';
-      stopSpinHum();
-      playRoundEnd(winner==='player');
+      document.getElementById('battleBtns').style.display='none';
       if(winner==='player') spawnBurst(playerTop.x,playerTop.y,playerTop.color);
       if(winner==='cpu') spawnBurst(cpuTop.x,cpuTop.y,cpuTop.color);
     }
@@ -818,11 +890,13 @@ function gameLoop(ts){
 
 // ==================== START BATTLE ====================
 function startBattle(){
-  ensureAudio();
   document.getElementById('selectOverlay').style.display='none';
+  document.getElementById('battleBtns').style.display='flex';
   const cpuIdx=Math.floor(Math.random()*CPU_BUILDS.length);
   window._cpuIdx=cpuIdx;
   playerScore=0; cpuScore=0; currentRound=1;
+  envTimer=18; envActive=null;
+  dirTimer=1;
   startRound();
   if(!loopStarted){ loopStarted=true; requestAnimationFrame(gameLoop); }
 }
@@ -840,7 +914,10 @@ function startRound(){
   shakeX=shakeY=0;
   countdownTimer=195;
   lastBeepN=-1;
+  playerCooldowns={dash:0,spin:0,guard:0};
+  playerGuardTimer=0;
   gameState='countdown';
+  document.getElementById('battleBtns').style.display='flex';
 }
 
 // ==================== SELECT SCREEN BG ====================
@@ -946,6 +1023,27 @@ function changePart(type,dir){
 // ==================== INIT ====================
 updateSelectUI();
 (function bgLoop(){ requestAnimationFrame(bgLoop); if(gameState==='select') drawSelectBG(); })();
+
+// ==================== SFX ====================
+const _SFX = {};
+function _preload(name, path, vol, maxMs) {
+  const a = new Audio(path); a.volume = vol; a.preload = 'auto';
+  _SFX[name] = { audio: a, maxMs: maxMs || null };
+}
+function sfx(name) {
+  const s = _SFX[name]; if (!s) return;
+  try {
+    const a = s.audio.cloneNode(); a.volume = s.audio.volume;
+    if (s.maxMs) setTimeout(() => { a.pause(); a.currentTime = 0; }, s.maxMs);
+    a.play().catch(() => {});
+  } catch(e) {}
+}
+const _BASE = '../../assets/sfx/';
+_preload('collision', _BASE+'GameSFX2/Impact/Retro Impact Metal 05.wav',  0.45, 200);
+_preload('burst',     _BASE+'GameSFX1/Explosion/Retro Explosion Short 01.wav', 0.55, 280);
+_preload('win',       _BASE+'GameSFX2/Music/Success/Retro Success Melody 01 - sawtooth lead 1.wav', 0.5);
+_preload('lose',      _BASE+'GameSFX1/Events/Negative/Retro Negative Short 07.wav', 0.5, 300);
+_preload('draw',      _BASE+'GameSFX1/Events/Retro Event 19.wav', 0.4, 280);
 </script>
 </body>
 </html>
