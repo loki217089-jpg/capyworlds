@@ -161,15 +161,16 @@ const audio = {
   init() {
     if (this._inited) return;
     this._inited = true;
+    const _S = '../../assets/sfx/';
     const sfx = {
-      shoot:      'Audio/laserRetro_000.ogg',
-      explode:    'Audio/explosionCrunch_000.ogg',
-      explodeBig: 'Audio/explosionCrunch_004.ogg',
-      hit:        'Audio/forceField_000.ogg',
-      pickup:     'Audio/computerNoise_000.ogg',
-      warpcore:   'Audio/lowFrequency_explosion_000.ogg',
-      heal:       'Audio/computerNoise_002.ogg',
-      buy:        'Audio/computerNoise_001.ogg',
+      shoot:      _S+'GameSFX3/Weapon/laser/Retro Gun Laser SingleShot 01.wav',
+      explode:    _S+'GameSFX1/Explosion/Retro Explosion Short 01.wav',
+      explodeBig: _S+'GameSFX1/Explosion/Retro Explosion Long 02.wav',
+      hit:        _S+'GameSFX2/Impact/Retro Impact 20.wav',
+      pickup:     _S+'GameSFX3/PickUp/Retro PickUp 10.wav',
+      warpcore:   _S+'GameSFX3/PowerUp/Retro PowerUP 09.wav',
+      heal:       _S+'GameSFX3/PickUp/Retro PickUp 18.wav',
+      buy:        _S+'GameSFX1/Events/Retro Event UI 01.wav',
     };
     for (const [id, url] of Object.entries(sfx)) {
       const el = new Audio(url); el.preload = 'auto';

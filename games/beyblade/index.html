@@ -402,7 +402,7 @@ class BeyTop {
 
   activateBurst(){
     if(this.burst>=100&&!this.burstActive){
-      this.burstActive=true; this.burstTimer=380; this.burst=0;
+      this.burstActive=true; this.burstTimer=380; this.burst=0; sfx('burst');
       const mag=3.5+this.atk*0.25, a=Math.random()*Math.PI*2;
       this.vx+=Math.cos(a)*mag; this.vy+=Math.sin(a)*mag;
       return true;
@@ -611,6 +611,7 @@ function checkCollision(a,b){
     spawnSparks((a.x+b.x)/2,(a.y+b.y)/2,a.color,b.color,14);
     const si=Math.min(15,force*4);
     shakeX=(Math.random()-0.5)*si; shakeY=(Math.random()-0.5)*si;
+    sfx('collision');
     if(a.driver.type==='ball'){a.vx*=1.12;a.vy*=1.12;}
     if(b.driver.type==='ball'){b.vx*=1.12;b.vy*=1.12;}
 
@@ -844,6 +845,7 @@ function gameLoop(ts){
       if(!playerTop.alive&&!cpuTop.alive){ roundEndMsg='平局！'; winner='draw'; }
       else if(!playerTop.alive){ roundEndMsg='CPU 獲勝！'; winner='cpu'; cpuScore++; }
       else { roundEndMsg='你獲勝了！'; winner='player'; playerScore++; }
+      sfx(winner==='player'?'win':winner==='cpu'?'lose':'draw');
       roundEndTimer=220;
       gameState='roundEnd';
       document.getElementById('battleBtns').style.display='none';
@@ -1021,6 +1023,27 @@ function changePart(type,dir){
 // ==================== INIT ====================
 updateSelectUI();
 (function bgLoop(){ requestAnimationFrame(bgLoop); if(gameState==='select') drawSelectBG(); })();
+
+// ==================== SFX ====================
+const _SFX = {};
+function _preload(name, path, vol, maxMs) {
+  const a = new Audio(path); a.volume = vol; a.preload = 'auto';
+  _SFX[name] = { audio: a, maxMs: maxMs || null };
+}
+function sfx(name) {
+  const s = _SFX[name]; if (!s) return;
+  try {
+    const a = s.audio.cloneNode(); a.volume = s.audio.volume;
+    if (s.maxMs) setTimeout(() => { a.pause(); a.currentTime = 0; }, s.maxMs);
+    a.play().catch(() => {});
+  } catch(e) {}
+}
+const _BASE = '../../assets/sfx/';
+_preload('collision', _BASE+'GameSFX2/Impact/Retro Impact Metal 05.wav',  0.45, 200);
+_preload('burst',     _BASE+'GameSFX1/Explosion/Retro Explosion Short 01.wav', 0.55, 280);
+_preload('win',       _BASE+'GameSFX2/Music/Success/Retro Success Melody 01 - sawtooth lead 1.wav', 0.5);
+_preload('lose',      _BASE+'GameSFX1/Events/Negative/Retro Negative Short 07.wav', 0.5, 300);
+_preload('draw',      _BASE+'GameSFX1/Events/Retro Event 19.wav', 0.4, 280);
 </script>
 </body>
 </html>

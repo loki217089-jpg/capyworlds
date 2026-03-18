@@ -760,6 +760,7 @@ function newSeason() {
     ['❄️','冬日暖爐！', `冬天來了，大家更常聚在一起。\n毛球的麵包坊成了最受歡迎的地方。\n小藍的魚塘結了薄冰——\n他說這是最美的冬天。`],
   ];
   const [ic, title, text] = msgs[G.seasonIdx];
+  sfx('season');
   setTimeout(() => showFest(ic, title, text), 800);
 }
 
@@ -1167,6 +1168,7 @@ function talkMore(id) {
   const pool = [...d.dialogues, ...(v.friendship>=20?d.friendDialogue:[])];
   const line = sub(pool[Math.floor(Math.random()*pool.length)]);
   swapDialogue(line);
+  sfx('chat');
 
   if (!sameDay) addLog(`${G.playerName}跟${d.name}聊了聊天。`);
   renderVlgrRow();
@@ -1228,6 +1230,7 @@ function giveGift(vlId, giftId) {
   const resp = sub(d.giftResp);
   addLog(`${G.playerName}送了${g.ic}${g.name}給${d.name}。`, 'event');
   addDiary(`送了${g.name}給${d.name}。他/她看起來非常開心。`);
+  sfx('gift');
 
   document.getElementById('modal-body').innerHTML = `
     <div class="modal-vlgr-hdr">
@@ -1475,6 +1478,7 @@ function showFest(ic, title, text) {
     <div class="fest-text">${text.replace(/\n/g,'<br>')}</div>
   `;
   document.getElementById('festival').classList.add('open');
+  sfx('fest');
 }
 
 function closeFest() {
@@ -1500,6 +1504,27 @@ window.addEventListener('load', () => {
     document.getElementById('inp-village').value = saved.villageName || '';
   }
 });
+
+// ── SFX ──
+const _SFX = {};
+function _preload(name, path, vol, maxMs) {
+  const a = new Audio(path); a.volume = vol; a.preload = 'auto';
+  _SFX[name] = { audio: a, maxMs: maxMs || null };
+}
+function sfx(name) {
+  const s = _SFX[name]; if (!s) return;
+  try {
+    const a = s.audio.cloneNode(); a.volume = s.audio.volume;
+    if (s.maxMs) setTimeout(() => { a.pause(); a.currentTime = 0; }, s.maxMs);
+    a.play().catch(() => {});
+  } catch(e) {}
+}
+const _BASE = '../../assets/sfx/';
+_preload('season', _BASE+'GameSFX0/Ascending/Retro Ascending Short 20.wav',     0.45, 280);
+_preload('event',  _BASE+'GameSFX1/Events/Retro Event 49.wav',                  0.4,  300);
+_preload('chat',   _BASE+'GameSFX3/PickUp/Retro PickUp 10.wav',                 0.35, 200);
+_preload('gift',   _BASE+'GameSFX3/PickUp/Retro PickUp Coin 04.wav',            0.45, 220);
+_preload('fest',   _BASE+'GameSFX2/Music/Success/Retro Success Melody 02 - choir soprano.wav', 0.5);
 </script>
 </body>
 </html>
