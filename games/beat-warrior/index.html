@@ -263,40 +263,52 @@ class Char {
     }
   }
 }
-// ── BLOCK 5: Audio System (WebAudio) ─────────────────────
+// ── BLOCK 5: Audio System (WebAudio + Asset SFX) ─────────
 let actx = null;
+const sfxBufs = {};
+
+// [path, maxSec, vol]  maxSec truncates playback for instant-action sounds
+const SFX_DEFS = {
+  perfect:  ['../../assets/sfx/GameSFX3/PickUp/Retro%20PickUp%20Coin%2007.wav',          0.20, 0.8],
+  good:     ['../../assets/sfx/GameSFX3/PickUp/Retro%20PickUp%2010.wav',                  0.15, 0.65],
+  miss:     ['../../assets/sfx/GameSFX1/Events/Negative/Retro%20Negative%20Short%2007.wav',0.25, 0.7],
+  enemyAtk: ['../../assets/sfx/GameSFX2/Impact/Retro%20Impact%20Punch%20Hurt%2001.wav',   0.20, 0.65],
+  special:  ['../../assets/sfx/GameSFX3/PowerUp/Retro%20PowerUP%2023.wav',                0.50, 0.8],
+  win:      ['../../assets/sfx/GameSFX2/Music/Success/Retro%20Success%20Melody%2001%20-%20sawtooth%20lead%201.wav', 4.0, 0.7],
+  lose:     ['../../assets/sfx/GameSFX2/Music/Negative/Retro%20Negative%20Melody%2001%20-%20aCustom1.wav',          4.0, 0.65],
+};
 
 function initAudio() {
   if (actx) return;
   actx = new (window.AudioContext || window.webkitAudioContext)();
+  // Preload all sfx
+  for (const [key, [url]] of Object.entries(SFX_DEFS)) {
+    fetch(url).then(r=>r.arrayBuffer()).then(ab=>actx.decodeAudioData(ab)).then(buf=>{sfxBufs[key]=buf;}).catch(()=>{});
+  }
 }
 
-function playTone(freq, dur, vol=0.4, type='sine', decay=0.8) {
+function playSfx(key) {
   if (!actx) return;
-  const o = actx.createOscillator();
-  const g = actx.createGain();
-  o.connect(g); g.connect(actx.destination);
-  o.type = type;
-  o.frequency.setValueAtTime(freq, actx.currentTime);
-  g.gain.setValueAtTime(vol, actx.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + dur * decay);
-  o.start(actx.currentTime);
-  o.stop(actx.currentTime + dur);
+  const def = SFX_DEFS[key];
+  const buf = sfxBufs[key];
+  if (!buf) return;
+  const [, maxSec, vol] = def;
+  const src = actx.createBufferSource();
+  const gain = actx.createGain();
+  src.buffer = buf;
+  src.connect(gain); gain.connect(actx.destination);
+  gain.gain.value = vol;
+  src.start(actx.currentTime);
+  src.stop(actx.currentTime + maxSec);
 }
 
-function sfxPerfect() { playTone(880,0.12,0.5,'square',0.9); playTone(1100,0.08,0.3,'sine',0.9); }
-function sfxGood()    { playTone(550,0.12,0.35,'square',0.8); }
-function sfxMiss()    { playTone(120,0.25,0.4,'sawtooth',0.5); }
-function sfxEnemyAtk(){ playTone(200,0.2,0.5,'sawtooth',0.6); }
-function sfxSpecial() {
-  [440,550,660,880].forEach((f,i)=>setTimeout(()=>playTone(f,0.15,0.4,'square',0.9),i*60));
-}
-function sfxWin()  {
-  [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone(f,0.2,0.4,'square',0.8),i*120));
-}
-function sfxLose() {
-  [300,250,200,150].forEach((f,i)=>setTimeout(()=>playTone(f,0.2,0.4,'sawtooth',0.7),i*120));
-}
+function sfxPerfect()  { playSfx('perfect'); }
+function sfxGood()     { playSfx('good'); }
+function sfxMiss()     { playSfx('miss'); }
+function sfxEnemyAtk() { playSfx('enemyAtk'); }
+function sfxSpecial()  { playSfx('special'); }
+function sfxWin()      { playSfx('win'); }
+function sfxLose()     { playSfx('lose'); }
 
 // BGM via HTMLAudio
 let bgm = null;
@@ -482,7 +494,7 @@ function showOverlay(title, desc, btn, cb) {
   const ol=document.getElementById('overlay');
   ol.innerHTML=`<h1>${title}</h1><p>${desc}</p><button class="obtn" id="obtn">${btn}</button>`;
   ol.style.display='flex';
-  document.getElementById('obtn').onclick=cb;
+  document.getElementById('obtn').onclick=()=>{ ol.style.display='none'; cb(); };
 }
 
 function resetAll() {
