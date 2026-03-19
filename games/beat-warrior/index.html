@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>節拍戰士</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:#0a0812;
+  color:#d0c8ff;
+  font-family:'Segoe UI',monospace;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  height:100vh; overflow:hidden; user-select:none;
+}
+#wrap { position:relative; width:900px; }
+
+/* top bar */
+#topbar {
+  display:flex; justify-content:space-between; align-items:center;
+  background:#0c0a1a; border:1px solid #2a1a5a; border-bottom:none;
+  padding:5px 16px; height:40px; font-size:12px;
+}
+.tb-grp { display:flex; gap:16px; align-items:center; }
+.tl { color:#4a3a7a; font-size:10px; }
+.tv { font-weight:bold; font-size:14px; }
+.tv-hp   { color:#4f8; }
+.tv-gold { color:#fc8; }
+.tv-combo{ color:#f8f; }
+
+/* Canvas */
+#canvas { display:block; border:1px solid #2a1a5a; cursor:default; image-rendering:pixelated; }
+
+/* Key hints bar */
+#keybar {
+  background:#0c0a1a; border:1px solid #2a1a5a; border-top:none;
+  display:flex; justify-content:center; align-items:center; gap:6px;
+  height:36px; font-size:12px; color:#4a3a6a;
+}
+.kbtn {
+  background:#140f28; border:1px solid #3a2a6a; border-radius:4px;
+  padding:2px 12px; font-size:13px; font-weight:bold; color:#9a8adf;
+}
+.kbtn span { color:#4a3a6a; font-size:10px; margin-left:4px; }
+
+/* Overlay */
+#overlay {
+  position:absolute; top:0; left:0; right:0; bottom:0;
+  background:rgba(4,2,12,.9);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:18px; z-index:10;
+}
+#overlay h1 { color:#c8a0ff; font-size:28px; text-shadow:0 0 30px #8040ff; }
+#overlay p  { color:#7a6a9a; font-size:13px; text-align:center; line-height:1.8; }
+#overlay .keys { display:flex; gap:10px; }
+#overlay .key-demo {
+  width:50px; height:50px; background:#1a1030; border:2px solid #6040c0;
+  border-radius:8px; display:flex; align-items:center; justify-content:center;
+  font-size:18px; font-weight:bold; color:#c0a0ff;
+}
+.obtn {
+  background:#1a1030; border:1px solid #8040ff; color:#c0a0ff;
+  padding:10px 40px; font-size:16px; border-radius:8px; cursor:pointer;
+  transition:background .15s;
+}
+.obtn:hover { background:#28206a; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="topbar">
+    <div class="tb-grp">
+      <span class="tl">我方血量</span>
+      <span class="tv tv-hp" id="t-hp">100</span>
+      <span class="tl">連擊</span>
+      <span class="tv tv-combo" id="t-combo">0</span>
+    </div>
+    <div class="tb-grp">
+      <span class="tl">分數</span>
+      <span class="tv tv-gold" id="t-score">0</span>
+      <span class="tl">第</span>
+      <span class="tv" id="t-stage">1</span>
+      <span class="tl">關</span>
+    </div>
+  </div>
+  <canvas id="canvas" width="900" height="500"></canvas>
+  <div id="keybar">
+    <span style="margin-right:8px;">按鍵</span>
+    <div class="kbtn">D<span>第1軌</span></div>
+    <div class="kbtn">F<span>第2軌</span></div>
+    <div class="kbtn">J<span>第3軌</span></div>
+    <div class="kbtn">K<span>第4軌</span></div>
+  </div>
+  <div id="overlay">
+    <h1>⚔ 節拍戰士</h1>
+    <p>跟著節拍出擊，擊退獸人大軍！<br>準時按下對應按鍵造成傷害<br>Perfect ★ 滿分 ／ Good ✓ 半傷 ／ Miss ✗ 受到反擊</p>
+    <div class="keys">
+      <div class="key-demo">D</div>
+      <div class="key-demo">F</div>
+      <div class="key-demo">J</div>
+      <div class="key-demo">K</div>
+    </div>
+    <button class="obtn" id="start-btn">開始戰鬥</button>
+  </div>
+</div>
+<script>
+'use strict';
+// roundRect polyfill for older browsers
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r){
+    r=Math.min(r,w/2,h/2);
+    this.beginPath();
+    this.moveTo(x+r,y); this.lineTo(x+w-r,y);
+    this.arc(x+w-r,y+r,r,-Math.PI/2,0);
+    this.lineTo(x+w,y+h-r); this.arc(x+w-r,y+h-r,r,0,Math.PI/2);
+    this.lineTo(x+r,y+h); this.arc(x+r,y+h-r,r,Math.PI/2,Math.PI);
+    this.lineTo(x,y+r); this.arc(x+r,y+r,r,Math.PI,-Math.PI/2);
+    this.closePath();
+  };
+}
+// ── BLOCK 2: Constants & Sprite Config ───────────────────
+const SBASE = '../../assets/Tiny%20RPG%20Character%20Asset%20Pack%20v1.02%20-Free%20Soldier%26Orc/Tiny%20RPG%20Character%20Asset%20Pack%20v1.02%20-Free%20Soldier%26Orc/';
+
+// fw=100, fh=100 for ALL sprites in this pack
+const SPRS = {
+  sIdle:    {src:SBASE+'Soldier/Soldier/Soldier-Idle.png',    frames:6},
+  sAtk1:    {src:SBASE+'Soldier/Soldier/Soldier-Attack01.png',frames:6},
+  sAtk2:    {src:SBASE+'Soldier/Soldier/Soldier-Attack02.png',frames:6},
+  sAtk3:    {src:SBASE+'Soldier/Soldier/Soldier-Attack03.png',frames:9},
+  sHurt:    {src:SBASE+'Soldier/Soldier/Soldier-Hurt.png',    frames:4},
+  sDeath:   {src:SBASE+'Soldier/Soldier/Soldier-Death.png',   frames:4},
+  oIdle:    {src:SBASE+'Orc/Orc/Orc-Idle.png',               frames:6},
+  oAtk1:    {src:SBASE+'Orc/Orc/Orc-Attack01.png',           frames:6},
+  oAtk2:    {src:SBASE+'Orc/Orc/Orc-Attack02.png',           frames:6},
+  oHurt:    {src:SBASE+'Orc/Orc/Orc-Hurt.png',               frames:4},
+  oDeath:   {src:SBASE+'Orc/Orc/Orc-Death.png',              frames:4},
+};
+const FRAME_W = 100, FRAME_H = 100, DISP = 2; // display scale
+
+// Note highway
+const CW=900, CH=500;
+const BATTLE_H = 220;      // top area for characters
+const HIT_Y    = 462;      // y of hit zone in canvas
+const NOTE_Y0  = BATTLE_H; // notes spawn at this y
+const FALL_MS  = 1500;     // time to fall from spawn to hit zone
+const NOTE_SPD = (HIT_Y - NOTE_Y0) / FALL_MS; // px/ms
+
+const LANE_X   = [200, 320, 580, 700]; // center x of each lane
+const KEY_MAP  = {d:0, f:1, j:2, k:3};
+
+const WINDOW_PERFECT = 55;  // ms
+const WINDOW_GOOD    = 130; // ms
+
+// Enemy defs
+const ENEMIES = [
+  {name:'獸人草兵', hp:120, atk:18, bpm:95,  col:'#8a4', phases:3},
+  {name:'獸人武士', hp:180, atk:26, bpm:115, col:'#c60', phases:4},
+  {name:'獸人狂戰士',hp:260,atk:36, bpm:135, col:'#f22', phases:5},
+];
+
+// Note patterns (8th-note ticks, 8 ticks = 1 bar)
+// Each sub-array = one bar, values are [tick, lane]
+const BASE_PATS = [
+  [[0,0],[2,1],[4,2],[6,3]],                   // simple 4-hit
+  [[0,0],[1,1],[4,2],[5,3]],                   // syncopated
+  [[0,0],[2,0],[4,1],[6,1]],                   // repeat left
+  [[0,2],[2,3],[4,2],[6,3]],                   // repeat right
+  [[0,0],[2,2],[4,1],[6,3]],                   // cross
+  [[0,0],[1,1],[2,2],[3,3]],                   // quick run
+  [[0,0],[4,1],[0+8,2],[4+8,3]],              // sparse
+  [[0,0],[2,1],[3,2],[5,3],[6,0],[7,1]],       // dense
+];
+const HARD_PATS = [
+  [[0,0],[1,2],[2,1],[3,3],[4,0],[5,2],[6,1],[7,3]], // 8 notes
+  [[0,0],[0,3],[4,1],[4,2]],                          // chords
+  [[0,0],[1,1],[2,2],[3,3],[5,0],[6,1],[7,2]],
+];
+// ── BLOCK 3: Image Loader ────────────────────────────────
+const imgs = {};
+let loadN = 0;
+const loadTotal = Object.keys(SPRS).length;
+
+function loadImages(cb) {
+  for (const [k, s] of Object.entries(SPRS)) {
+    const img = new Image();
+    img.onload = img.onerror = () => { if (++loadN >= loadTotal) cb(); };
+    img.src = s.src;
+    imgs[k] = img;
+  }
+}
+
+// ── BLOCK 4: Sprite Animator ─────────────────────────────
+class Anim {
+  constructor(key, fps, loop=true, onDone=null) {
+    this.key=key; this.fps=fps; this.loop=loop; this.onDone=onDone;
+    this.t=0; this.fi=0; this.done=false;
+  }
+  update(dt) {
+    if (this.done && !this.loop) return;
+    this.t += dt;
+    const dur = 1000/this.fps;
+    if (this.t >= dur) {
+      this.t -= dur;
+      this.fi++;
+      const maxF = SPRS[this.key].frames;
+      if (this.fi >= maxF) {
+        if (this.loop) { this.fi=0; }
+        else { this.fi=maxF-1; this.done=true; this.onDone&&this.onDone(); }
+      }
+    }
+  }
+  // Draw frame at cx,cy (center), flip=true mirrors horizontally
+  draw(ctx, cx, cy, flip=false, alpha=1) {
+    const img = imgs[this.key];
+    if (!img||!img.complete||!img.naturalWidth) return;
+    const dw=FRAME_W*DISP, dh=FRAME_H*DISP;
+    ctx.save();
+    ctx.globalAlpha=alpha;
+    if (flip) {
+      ctx.translate(cx, cy-dh/2);
+      ctx.scale(-1,1);
+      ctx.drawImage(img, this.fi*FRAME_W, 0, FRAME_W,FRAME_H, -dw/2, 0, dw,dh);
+    } else {
+      ctx.drawImage(img, this.fi*FRAME_W, 0, FRAME_W,FRAME_H, cx-dw/2, cy-dh/2, dw,dh);
+    }
+    ctx.restore();
+  }
+}
+
+class Char {
+  constructor(isPlayer) {
+    this.isPlayer = isPlayer;
+    this.anim = new Anim(isPlayer?'sIdle':'oIdle', 8);
+    this.shakeX = 0; this.shakeT = 0;
+    this.flashT = 0;
+  }
+  play(key, fps=10, loop=false, onDone=null) {
+    this.anim = new Anim(key, fps, loop, onDone || (()=>this.playIdle()));
+  }
+  playIdle() {
+    this.anim = new Anim(this.isPlayer?'sIdle':'oIdle', 8, true);
+  }
+  shake() { this.shakeX=8; this.shakeT=200; }
+  flash() { this.flashT=300; }
+  update(dt) {
+    this.anim.update(dt);
+    if (this.shakeT>0) {
+      this.shakeT-=dt;
+      this.shakeX = this.shakeT>0 ? Math.sin(this.shakeT*0.05)*7 : 0;
+    }
+    if (this.flashT>0) this.flashT-=dt;
+  }
+  draw(ctx, cx, cy, flip=false) {
+    const ox = this.isPlayer ? this.shakeX : -this.shakeX;
+    if (this.flashT>0) {
+      ctx.save(); ctx.globalCompositeOperation='source-over';
+      this.anim.draw(ctx, cx+ox, cy, flip, 1);
+      ctx.fillStyle=`rgba(255,80,80,${Math.min(.7,this.flashT/200)})`;
+      ctx.fillRect(cx+ox-FRAME_W*DISP/2, cy-FRAME_H*DISP/2, FRAME_W*DISP, FRAME_H*DISP);
+      ctx.restore();
+    } else {
+      this.anim.draw(ctx, cx+ox, cy, flip, 1);
+    }
+  }
+}
+// ── BLOCK 5: Audio System (WebAudio) ─────────────────────
+let actx = null;
+
+function initAudio() {
+  if (actx) return;
+  actx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function playTone(freq, dur, vol=0.4, type='sine', decay=0.8) {
+  if (!actx) return;
+  const o = actx.createOscillator();
+  const g = actx.createGain();
+  o.connect(g); g.connect(actx.destination);
+  o.type = type;
+  o.frequency.setValueAtTime(freq, actx.currentTime);
+  g.gain.setValueAtTime(vol, actx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + dur * decay);
+  o.start(actx.currentTime);
+  o.stop(actx.currentTime + dur);
+}
+
+function sfxPerfect() { playTone(880,0.12,0.5,'square',0.9); playTone(1100,0.08,0.3,'sine',0.9); }
+function sfxGood()    { playTone(550,0.12,0.35,'square',0.8); }
+function sfxMiss()    { playTone(120,0.25,0.4,'sawtooth',0.5); }
+function sfxEnemyAtk(){ playTone(200,0.2,0.5,'sawtooth',0.6); }
+function sfxSpecial() {
+  [440,550,660,880].forEach((f,i)=>setTimeout(()=>playTone(f,0.15,0.4,'square',0.9),i*60));
+}
+function sfxWin()  {
+  [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone(f,0.2,0.4,'square',0.8),i*120));
+}
+function sfxLose() {
+  [300,250,200,150].forEach((f,i)=>setTimeout(()=>playTone(f,0.2,0.4,'sawtooth',0.7),i*120));
+}
+
+// BGM via HTMLAudio
+let bgm = null;
+function playBgm(src) {
+  if (bgm) { bgm.pause(); bgm.currentTime=0; }
+  bgm = new Audio(src);
+  bgm.loop = true; bgm.volume = 0.35;
+  bgm.play().catch(()=>{});
+}
+function stopBgm() { if (bgm) { bgm.pause(); bgm=null; } }
+
+// ── BLOCK 6: Note Chart Generator ────────────────────────
+// Returns array of {lane, time (audioCtx seconds)}
+function buildChart(bpm, phases, startTime) {
+  const beatSec = 60/bpm;
+  const tickSec = beatSec/2; // eighth note
+  const notes = [];
+  const pats = phases>=4 ? [...BASE_PATS, ...HARD_PATS] : BASE_PATS;
+
+  let t = startTime + 0.5; // brief delay before first note
+  let bar = 0;
+  const totalBars = phases * 4;
+
+  for (let b=0; b<totalBars; b++) {
+    // Pick pattern (harder patterns more likely in later bars)
+    const patIdx = phases>=4
+      ? Math.floor(Math.random()*(pats.length))
+      : Math.floor(Math.random()*BASE_PATS.length);
+    const pat = pats[patIdx];
+    const barLen = 8 * tickSec;
+
+    // Some patterns span 2 bars (tick >= 8)
+    for (const [tick, lane] of pat) {
+      notes.push({ lane, time: t + tick * tickSec });
+    }
+    t += barLen;
+    bar++;
+  }
+  notes.sort((a,b)=>a.time-b.time);
+  return notes;
+}
+// ── BLOCK 7: Game State & Battle Logic ───────────────────
+const gs = {
+  phase: 'menu', // menu | playing | stageclear | gameover | victory
+  stage: 0,      // enemy index in ENEMIES
+  playerHp: 100,
+  enemyHp: 0, enemyMaxHp: 0,
+  combo: 0, maxCombo: 0,
+  score: 0,
+  special: 0,    // 0-100, triggers special attack at 100
+};
+
+let player, enemy;
+let activeNotes = [];  // {lane, time(actx), y, hit, miss}
+let chartQueue  = [];  // remaining {lane, time} from chart
+let popups = [];       // [{text, x, y, t, col}] hit judgement popups
+let lastJudge = ['','','',''];
+
+function hudUpdate() {
+  document.getElementById('t-hp').textContent    = Math.max(0,Math.floor(gs.playerHp));
+  document.getElementById('t-combo').textContent = gs.combo;
+  document.getElementById('t-score').textContent = gs.score;
+  document.getElementById('t-stage').textContent = gs.stage+1;
+}
+
+function startStage(idx) {
+  const edef = ENEMIES[idx];
+  gs.stage=idx; gs.enemyHp=edef.hp; gs.enemyMaxHp=edef.hp;
+  gs.combo=0; gs.special=0;
+  player = new Char(true);
+  enemy  = new Char(false);
+  activeNotes=[]; chartQueue=[]; popups=[]; lastJudge=['','','',''];
+  hudUpdate();
+
+  // Build chart: start notes FALL_MS in future so they appear at top of highway
+  const startT = actx.currentTime + FALL_MS/1000 + 0.5;
+  chartQueue = buildChart(edef.bpm, edef.phases, startT);
+
+  const bgmFiles = [
+    '../../assets/JDSherbert%20-%20Minigame%20Music%20Pack%20%5BFREE%5D/JDSherbert%20-%20Minigame%20Music%20Pack%20-%20Corrupted%20Circuitry.ogg',
+    '../../assets/JDSherbert%20-%20Minigame%20Music%20Pack%20%5BFREE%5D/JDSherbert%20-%20Minigame%20Music%20Pack%20-%20Digital%20Waves.ogg',
+    '../../assets/JDSherbert%20-%20Minigame%20Music%20Pack%20%5BFREE%5D/JDSherbert%20-%20Minigame%20Music%20Pack%20-%20Streetlights.ogg',
+  ];
+  playBgm(bgmFiles[idx % bgmFiles.length]);
+}
+
+function judgeHit(lane) {
+  if (!actx) return;
+  const now = actx.currentTime;
+  let best = null, bestDiff = Infinity;
+
+  for (const n of activeNotes) {
+    if (n.lane !== lane || n.hit || n.miss) continue;
+    const diff = Math.abs((n.time - now) * 1000);
+    if (diff < bestDiff) { bestDiff=diff; best=n; }
+  }
+
+  if (!best || bestDiff > WINDOW_GOOD) {
+    // No note nearby → empty hit
+    return;
+  }
+
+  best.hit = true;
+  if (bestDiff <= WINDOW_PERFECT) {
+    // Perfect
+    gs.combo++; gs.special = Math.min(100, gs.special+12);
+    const dmg = Math.floor(15 * (1 + gs.combo*0.05));
+    gs.enemyHp -= dmg; gs.score += 100 * Math.ceil(gs.combo/5);
+    lastJudge[lane]='perfect';
+    sfxPerfect();
+    addPopup('PERFECT!', LANE_X[lane], HIT_Y-60, '#ff0', 900);
+    player.play('sAtk1', 12, false);
+    enemy.shake(); enemy.flash();
+    if (gs.special>=100) triggerSpecial();
+    else enemy.play('oHurt', 10, false);
+  } else {
+    // Good
+    gs.combo = Math.max(0, gs.combo-1);
+    const dmg = Math.floor(8);
+    gs.enemyHp -= dmg; gs.score += 30;
+    lastJudge[lane]='good';
+    sfxGood();
+    addPopup('Good', LANE_X[lane], HIT_Y-60, '#aef', 600);
+    player.play('sAtk2', 10, false);
+    enemy.shake();
+  }
+  hudUpdate();
+  if (gs.enemyHp <= 0) setTimeout(()=>stageClear(), 400);
+}
+
+function triggerSpecial() {
+  gs.special=0;
+  sfxSpecial();
+  const dmg = 40;
+  gs.enemyHp -= dmg;
+  player.play('sAtk3', 10, false);
+  enemy.shake(); enemy.flash();
+  addPopup('必殺技！', 450, BATTLE_H/2, '#ffc000', 1200);
+}
+
+function handleMiss(note) {
+  note.miss=true;
+  lastJudge[note.lane]='miss';
+  gs.combo=0;
+  sfxMiss();
+  addPopup('Miss', LANE_X[note.lane], HIT_Y-60, '#f44', 500);
+  // Enemy counter attack
+  const atk = ENEMIES[gs.stage].atk;
+  gs.playerHp -= atk;
+  player.shake(); player.flash();
+  enemy.play('oAtk1', 10, false);
+  hudUpdate();
+  if (gs.playerHp <= 0) setTimeout(()=>endGame(false), 500);
+}
+
+function addPopup(text, x, y, col, dur) {
+  popups.push({text, x, y, t:0, dur, col});
+}
+
+function stageClear() {
+  stopBgm();
+  gs.combo=0;
+  if (gs.stage >= ENEMIES.length-1) { endGame(true); return; }
+  gs.phase='stageclear';
+  sfxWin();
+  // Show clear overlay then next stage
+  showOverlay(`第${gs.stage+1}關清除！`, `+${gs.score}分`, '繼續', ()=>{
+    gs.phase='playing';
+    gs.playerHp = Math.min(100, gs.playerHp+30); // heal
+    startStage(gs.stage+1);
+  });
+}
+
+function endGame(win) {
+  stopBgm();
+  gs.phase = win ? 'victory' : 'gameover';
+  win ? sfxWin() : sfxLose();
+  if (win) showOverlay('🎉 全員擊退！', `最終分數：${gs.score}　最高連擊：${gs.maxCombo}`, '再玩', resetAll);
+  else    showOverlay('💀 陣亡！', `最終分數：${gs.score}`, '重試', resetAll);
+}
+
+function showOverlay(title, desc, btn, cb) {
+  const ol=document.getElementById('overlay');
+  ol.innerHTML=`<h1>${title}</h1><p>${desc}</p><button class="obtn" id="obtn">${btn}</button>`;
+  ol.style.display='flex';
+  document.getElementById('obtn').onclick=cb;
+}
+
+function resetAll() {
+  document.getElementById('overlay').style.display='none';
+  Object.assign(gs,{phase:'playing',stage:0,playerHp:100,enemyHp:0,combo:0,maxCombo:0,score:0,special:0});
+  hudUpdate();
+  startStage(0);
+}
+// ── BLOCK 8: Rendering ───────────────────────────────────
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+
+function drawBattle() {
+  // Background
+  ctx.fillStyle='#0e0820'; ctx.fillRect(0,0,CW,BATTLE_H);
+
+  // Ground line
+  ctx.strokeStyle='#2a1a5a'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,BATTLE_H-1); ctx.lineTo(CW,BATTLE_H-1); ctx.stroke();
+
+  // Stage name
+  const edef = ENEMIES[gs.stage];
+  ctx.fillStyle='#3a2a6a'; ctx.font='11px monospace';
+  ctx.textAlign='center'; ctx.fillText(edef.name, CW/2, 16); ctx.textAlign='left';
+
+  // Player HP bar
+  ctx.fillStyle='#111'; ctx.fillRect(20, 24, 240, 10);
+  const php = gs.playerHp/100;
+  ctx.fillStyle = php>.5 ? '#4f8' : php>.25 ? '#fa4' : '#f44';
+  ctx.fillRect(20, 24, 240*php, 10);
+  ctx.fillStyle='#7a6a9a'; ctx.font='9px monospace';
+  ctx.fillText(`士兵 ${Math.max(0,Math.floor(gs.playerHp))}`, 20, 22);
+
+  // Enemy HP bar
+  const ehp = Math.max(0,gs.enemyHp)/gs.enemyMaxHp;
+  ctx.fillStyle='#111'; ctx.fillRect(640, 24, 240, 10);
+  ctx.fillStyle='#f44'; ctx.fillRect(640, 24, 240*ehp, 10);
+  ctx.fillStyle='#7a6a9a'; ctx.font='9px monospace';
+  ctx.textAlign='right';
+  ctx.fillText(`${edef.name} ${Math.max(0,Math.floor(gs.enemyHp))}`, 880, 22);
+  ctx.textAlign='left';
+
+  // Special gauge
+  ctx.fillStyle='#1a1030'; ctx.fillRect(350, 20, 200, 8);
+  ctx.fillStyle='#ffc000'; ctx.fillRect(350, 20, 200*(gs.special/100), 8);
+  ctx.fillStyle='#7a6060'; ctx.font='9px monospace'; ctx.textAlign='center';
+  ctx.fillText('必殺', CW/2, 19); ctx.textAlign='left';
+
+  // Draw characters
+  if (player) player.draw(ctx, 170, BATTLE_H-20, false);
+  if (enemy)  enemy.draw(ctx,  730, BATTLE_H-20, true);
+
+  // Popups
+  for (const p of popups) {
+    const alpha = 1 - p.t/p.dur;
+    ctx.globalAlpha=alpha;
+    ctx.fillStyle=p.col; ctx.font='bold 16px monospace';
+    ctx.textAlign='center';
+    ctx.fillText(p.text, p.x, p.y - p.t*0.04);
+  }
+  ctx.globalAlpha=1; ctx.textAlign='left';
+}
+
+function drawHighway() {
+  const hy = BATTLE_H;
+  // Background
+  ctx.fillStyle='#06041a'; ctx.fillRect(0, hy, CW, CH-hy);
+
+  // Lane dividers
+  for (let i=0; i<4; i++) {
+    const lx = LANE_X[i];
+    ctx.strokeStyle='#1a1240'; ctx.lineWidth=1;
+    ctx.setLineDash([4,12]);
+    ctx.beginPath(); ctx.moveTo(lx, hy); ctx.lineTo(lx, HIT_Y-20); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Hit zone line
+  ctx.strokeStyle='#3a2a7a'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(60, HIT_Y); ctx.lineTo(CW-60, HIT_Y); ctx.stroke();
+
+  // Key buttons at hit zone
+  const keys = ['D','F','J','K'];
+  for (let i=0; i<4; i++) {
+    const lx=LANE_X[i], ly=HIT_Y;
+    const pressed = gs._pressed && gs._pressed[i];
+    ctx.fillStyle = pressed ? '#4a2a9a' : '#1a1040';
+    ctx.strokeStyle = pressed ? '#a080ff' : '#3a2a7a';
+    ctx.lineWidth=2;
+    ctx.beginPath(); ctx.roundRect(lx-22, ly-22, 44, 44, 6); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = lastJudge[i]==='perfect' ? '#ff0' : lastJudge[i]==='good' ? '#4af' : lastJudge[i]==='miss' ? '#f44' : '#6a5aaa';
+    ctx.font='bold 16px monospace'; ctx.textAlign='center';
+    ctx.fillText(keys[i], lx, ly+6);
+  }
+  ctx.textAlign='left';
+
+  // Active notes
+  for (const n of activeNotes) {
+    if (n.hit || n.miss) continue;
+    const lx = LANE_X[n.lane];
+    // Color by lane
+    const cols = ['#c080ff','#80c0ff','#80ffbf','#ffc060'];
+    ctx.fillStyle=cols[n.lane];
+    ctx.strokeStyle='#ffffff44'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.roundRect(lx-20, n.y-12, 40, 24, 8); ctx.fill(); ctx.stroke();
+    // Center dot
+    ctx.fillStyle='#fff8'; ctx.beginPath(); ctx.arc(lx, n.y, 4, 0, Math.PI*2); ctx.fill();
+  }
+}
+
+function render() {
+  ctx.clearRect(0,0,CW,CH);
+  drawBattle();
+  drawHighway();
+}
+// ── BLOCK 9: Main Loop + Input + Init ────────────────────
+let lastT=0;
+gs._pressed = [false,false,false,false];
+let judgeFlash = [0,0,0,0]; // timer for judge color
+
+function loop(now) {
+  const dt = Math.min(now-lastT, 50);
+  lastT=now;
+
+  if (gs.phase==='playing') {
+    // Spawn notes from queue when close enough
+    if (actx) {
+      const spawnAhead = FALL_MS/1000 + 0.05; // spawn just before note reaches top
+      const nowSec = actx.currentTime;
+      while (chartQueue.length && chartQueue[0].time <= nowSec + spawnAhead) {
+        const cn = chartQueue.shift();
+        activeNotes.push({
+          lane: cn.lane,
+          time: cn.time,
+          y: NOTE_Y0,
+          hit: false, miss: false,
+        });
+      }
+
+      // Update note positions
+      for (const n of activeNotes) {
+        if (n.hit || n.miss) continue;
+        // y = lerp based on how far the note is from hit time
+        const timeLeft = (n.time - nowSec) * 1000; // ms
+        n.y = HIT_Y - timeLeft * NOTE_SPD;
+      }
+
+      // Auto-miss notes that passed beyond window
+      for (const n of activeNotes) {
+        if (!n.hit && !n.miss && (n.time - nowSec)*1000 < -WINDOW_GOOD) {
+          handleMiss(n);
+        }
+      }
+
+      // Cleanup old notes
+      for (let i=activeNotes.length-1; i>=0; i--) {
+        const n=activeNotes[i];
+        if ((n.hit||n.miss) && n.y > CH+20) activeNotes.splice(i,1);
+      }
+
+      // Track max combo
+      if (gs.combo > gs.maxCombo) gs.maxCombo=gs.combo;
+    }
+
+    // Update characters
+    if (player) player.update(dt);
+    if (enemy)  enemy.update(dt);
+
+    // Update popups
+    for (const p of popups) p.t+=dt;
+    for (let i=popups.length-1; i>=0; i--) if(popups[i].t>=popups[i].dur) popups.splice(i,1);
+
+    // Clear judge indicators
+    for (let i=0; i<4; i++) {
+      judgeFlash[i]-=dt;
+      if (judgeFlash[i]<=0) lastJudge[i]='';
+    }
+
+    // Chart ended? (all notes done and queue empty)
+    if (!chartQueue.length && activeNotes.every(n=>n.hit||n.miss)) {
+      // If enemy still alive, small amount of time damage
+      if (gs.enemyHp > 0 && gs.phase==='playing') {
+        gs.enemyHp = Math.max(0, gs.enemyHp-1);
+        if (gs.enemyHp<=0) setTimeout(()=>stageClear(), 300);
+      }
+    }
+  }
+
+  render();
+  requestAnimationFrame(loop);
+}
+
+// Keyboard input
+document.addEventListener('keydown', e => {
+  if (gs.phase!=='playing') return;
+  const key = e.key.toLowerCase();
+  const lane = KEY_MAP[key];
+  if (lane !== undefined && !e.repeat) {
+    gs._pressed[lane]=true;
+    judgeFlash[lane]=400;
+    judgeHit(lane);
+  }
+});
+document.addEventListener('keyup', e => {
+  const key = e.key.toLowerCase();
+  const lane = KEY_MAP[key];
+  if (lane !== undefined) gs._pressed[lane]=false;
+});
+
+// Start button
+document.getElementById('start-btn').addEventListener('click', () => {
+  initAudio();
+  document.getElementById('overlay').style.display='none';
+  loadImages(() => {
+    Object.assign(gs,{phase:'playing',stage:0,playerHp:100,score:0,combo:0,maxCombo:0,special:0});
+    hudUpdate();
+    startStage(0);
+  });
+});
+
+// Start loop
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
