@@ -364,6 +364,80 @@
       color: var(--text); font-size: 13px; padding: 5px 14px; cursor: pointer;
     }
     .comment-msg { color: var(--text3); font-size: 13px; text-align: center; padding: 20px 0; }
+
+    /* ── Danmaku & Points ── */
+    #danmaku-layer {
+      position:fixed; top:0; left:0; right:0; bottom:0;
+      pointer-events:none; overflow:hidden; z-index:200;
+    }
+    .dm {
+      position:absolute; white-space:nowrap;
+      font-size:17px; font-weight:700;
+      text-shadow: 0 1px 5px rgba(0,0,0,.98), 0 0 12px rgba(0,0,0,.7);
+      animation: dm-fly linear forwards;
+    }
+    @keyframes dm-fly {
+      from { transform: translateX(105vw); }
+      to   { transform: translateX(calc(-100% - 40px)); }
+    }
+    .pts-badge {
+      position:fixed; bottom:72px; right:16px; z-index:300;
+      background:rgba(0,0,0,.55); backdrop-filter:blur(10px);
+      border:1px solid rgba(var(--accent-rgb),.35); border-radius:20px;
+      padding:5px 14px; font-size:13px; color:var(--accent);
+      display:flex; align-items:center; gap:5px; user-select:none;
+    }
+    #dm-toggle {
+      position:fixed; bottom:28px; right:16px; z-index:300;
+      background:rgba(0,0,0,.55); backdrop-filter:blur(10px);
+      border:1px solid rgba(255,255,255,.12); border-radius:20px;
+      padding:5px 14px; font-size:12px; color:var(--text3);
+      cursor:pointer; transition:all .2s;
+    }
+    #dm-toggle:hover  { border-color:rgba(var(--accent-rgb),.4); color:var(--text2); }
+    #dm-toggle.on     { border-color:rgba(var(--accent-rgb),.6); color:var(--accent); }
+    #danmaku-bar {
+      position:fixed; bottom:0; left:0; right:0; z-index:301;
+      background:rgba(8,5,18,.85); backdrop-filter:blur(14px);
+      border-top:1px solid rgba(255,255,255,.07);
+      padding:8px 16px; display:none; align-items:center; gap:10px;
+    }
+    #danmaku-bar.open { display:flex; }
+    .dm-pts  { font-size:12px; color:var(--accent); white-space:nowrap; flex-shrink:0; }
+    .dm-input {
+      flex:1; min-width:0; background:rgba(255,255,255,.07);
+      border:1px solid rgba(255,255,255,.13); border-radius:20px;
+      padding:7px 16px; font-size:14px; color:#fff; outline:none; transition:border-color .2s;
+    }
+    .dm-input:focus { border-color:rgba(var(--accent-rgb),.5); }
+    .dm-input::placeholder { color:rgba(255,255,255,.25); }
+    .dm-colors { display:flex; gap:7px; align-items:center; flex-shrink:0; }
+    .dm-dot {
+      width:18px; height:18px; border-radius:50%; cursor:pointer;
+      border:2px solid transparent; transition:transform .15s, border-color .15s;
+    }
+    .dm-dot.sel { border-color:#fff; transform:scale(1.25); }
+    .dm-send {
+      background:rgba(var(--accent-rgb),.12); border:1px solid rgba(var(--accent-rgb),.4);
+      color:var(--accent); border-radius:20px; padding:7px 20px;
+      font-size:13px; cursor:pointer; white-space:nowrap; flex-shrink:0;
+      transition:background .15s;
+    }
+    .dm-send:hover   { background:rgba(var(--accent-rgb),.28); }
+    .dm-send:disabled { opacity:.4; cursor:not-allowed; }
+    .pts-popup {
+      position:fixed; right:16px; bottom:110px; z-index:500;
+      background:rgba(10,6,22,.85); border:1px solid rgba(var(--accent-rgb),.5);
+      border-radius:8px; padding:6px 16px; font-size:13px; color:var(--accent);
+      pointer-events:none; white-space:nowrap;
+      animation: pts-up 2.2s ease forwards;
+    }
+    @keyframes pts-up {
+      0%   { opacity:0; transform:translateY(10px); }
+      12%  { opacity:1; transform:translateY(0); }
+      75%  { opacity:1; }
+      100% { opacity:0; transform:translateY(-20px); }
+    }
   </style>
 </head>
 <body>
@@ -626,8 +700,11 @@
           body: JSON.stringify({ name, content }),
         });
         const data = await res.json();
-        if (data.ok) { document.getElementById('commentContent').value = ''; await loadComments(); }
-        else { alert(data.error || '送出失敗'); }
+        if (data.ok) {
+          document.getElementById('commentContent').value = '';
+          await loadComments();
+          if (typeof awardPoints === 'function') awardPoints(10, '留言獎勵 💬');
+        } else { alert(data.error || '送出失敗'); }
       } catch { alert('網路錯誤，請稍後再試'); }
       btn.disabled = false; btn.textContent = '送出留言';
     });
@@ -662,6 +739,179 @@
   <footer>
     © 2025 <span>CapyWorlds</span> &nbsp;·&nbsp; Made with 🦫 &amp; ❤️
   </footer>
+
+  <!-- ── Danmaku Layer ── -->
+  <div id="danmaku-layer"></div>
+
+  <!-- ── Points Badge ── -->
+  <div class="pts-badge" title="積分：玩遊戲 +5 / 留言 +10 / 發彈幕 -8">
+    ✦ <span class="pts-val">0</span> 積分
+  </div>
+
+  <!-- ── Danmaku Toggle ── -->
+  <button id="dm-toggle" title="開啟彈幕">💬 彈幕</button>
+
+  <!-- ── Danmaku Input Bar ── -->
+  <div id="danmaku-bar">
+    <span class="dm-pts">✦ <span class="pts-val">0</span> 積分</span>
+    <input class="dm-input" id="dm-input" placeholder="輸入彈幕（-8 積分）" maxlength="30" autocomplete="off">
+    <div class="dm-colors">
+      <div class="dm-dot sel" data-c="#ffffff" style="background:#fff"></div>
+      <div class="dm-dot"    data-c="#ffd700" style="background:#ffd700"></div>
+      <div class="dm-dot"    data-c="#00ffff" style="background:#0ff"></div>
+      <div class="dm-dot"    data-c="#ff69b4" style="background:#ff69b4"></div>
+      <div class="dm-dot"    data-c="#7fff00" style="background:#7fff00"></div>
+      <div class="dm-dot"    data-c="#ff6347" style="background:#ff6347"></div>
+    </div>
+    <button class="dm-send" id="dm-send">發送</button>
+  </div>
+
+  <script>
+  // ── Points System ──────────────────────────────────────────
+  const PTS_KEY = 'capyPoints';
+  const DM_COST = 8;
+
+  function getPoints() { return parseInt(localStorage.getItem(PTS_KEY) || '0'); }
+  function setPoints(n) {
+    const v = Math.max(0, n);
+    localStorage.setItem(PTS_KEY, v);
+    document.querySelectorAll('.pts-val').forEach(el => el.textContent = v);
+    return v;
+  }
+  function awardPoints(n, label) {
+    setPoints(getPoints() + n);
+    showPtsPopup('+' + n + ' ' + label);
+  }
+  function spendPoints(n) {
+    if (getPoints() < n) return false;
+    setPoints(getPoints() - n);
+    return true;
+  }
+  function showPtsPopup(msg) {
+    const el = document.createElement('div');
+    el.className = 'pts-popup';
+    el.textContent = msg;
+    document.body.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
+  }
+
+  // 回主頁時領取遊戲獎勵
+  (function checkGameReward() {
+    if (localStorage.getItem('capyPendingReward') === 'game') {
+      localStorage.removeItem('capyPendingReward');
+      setTimeout(() => awardPoints(5, '玩遊戲 🎮'), 1200);
+    }
+  })();
+
+  // 初始化顯示
+  setPoints(getPoints());
+
+  // ── Danmaku System ─────────────────────────────────────────
+  let dmOn = false, dmLastId = 0, dmPollTimer = null, dmColor = '#ffffff';
+
+  const dmLayer  = document.getElementById('danmaku-layer');
+  const dmToggle = document.getElementById('dm-toggle');
+  const dmBar    = document.getElementById('danmaku-bar');
+  const dmInput  = document.getElementById('dm-input');
+  const dmSend   = document.getElementById('dm-send');
+
+  dmToggle.addEventListener('click', () => {
+    dmOn = !dmOn;
+    dmToggle.classList.toggle('on', dmOn);
+    dmToggle.textContent = dmOn ? '💬 彈幕 ON' : '💬 彈幕';
+    dmBar.classList.toggle('open', dmOn);
+    if (dmOn) {
+      fetchDanmaku(true);
+      dmPollTimer = setInterval(() => fetchDanmaku(false), 15000);
+    } else {
+      clearInterval(dmPollTimer);
+      dmLayer.innerHTML = '';
+    }
+  });
+
+  // 顏色選擇
+  document.querySelectorAll('.dm-dot').forEach(dot => {
+    dot.addEventListener('click', () => {
+      document.querySelectorAll('.dm-dot').forEach(d => d.classList.remove('sel'));
+      dot.classList.add('sel');
+      dmColor = dot.dataset.c;
+    });
+  });
+
+  async function fetchDanmaku(initial) {
+    try {
+      const res  = await fetch(API + '/danmaku?since=' + (initial ? 0 : dmLastId));
+      const list = await res.json();
+      if (!list.length) return;
+      dmLastId = Math.max(dmLastId, ...list.map(d => d.id));
+      const show = initial ? list.slice(-12) : list;
+      show.forEach((d, i) => setTimeout(() => dmShow(d.text, d.color), i * 700));
+    } catch {}
+  }
+
+  function dmShow(text, color) {
+    if (!dmOn) return;
+    const el    = document.createElement('div');
+    el.className = 'dm';
+    el.textContent = text;
+    el.style.color = color || '#fff';
+    el.style.top   = (5 + Math.random() * 83) + 'vh';
+    const dur = (9 + Math.random() * 5).toFixed(1);
+    el.style.animationDuration = dur + 's';
+    dmLayer.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
+  }
+
+  // 管理員模式：點 "✦ X 積分" 徽章 5 下可輸入管理員密碼，解鎖免費彈幕
+  let dmAdminMode = false;
+  let dmBadgeClicks = 0, dmBadgeTimer = null;
+  document.querySelector('.pts-badge').addEventListener('click', () => {
+    dmBadgeClicks++;
+    clearTimeout(dmBadgeTimer);
+    dmBadgeTimer = setTimeout(() => { dmBadgeClicks = 0; }, 1800);
+    if (dmBadgeClicks >= 5) {
+      dmBadgeClicks = 0;
+      if (dmAdminMode) {
+        dmAdminMode = false;
+        showPtsPopup('已退出管理員模式');
+      } else {
+        const pw = prompt('輸入管理員密碼：');
+        if (pw && pw === adminKey) {
+          dmAdminMode = true;
+          showPtsPopup('管理員模式：彈幕免費 ✓');
+        } else if (pw !== null) {
+          showPtsPopup('密碼錯誤');
+        }
+      }
+    }
+  });
+
+  async function doSendDanmaku() {
+    const text = dmInput.value.trim();
+    if (!text) return;
+    if (!dmAdminMode && getPoints() < DM_COST) { showPtsPopup('積分不足（需 ' + DM_COST + ' 積分）'); return; }
+    dmSend.disabled = true;
+    try {
+      const res  = await fetch(API + '/danmaku', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, color: dmColor }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        if (!dmAdminMode) spendPoints(DM_COST);
+        dmInput.value = '';
+        dmShow(text, dmColor);
+      } else {
+        showPtsPopup(data.error || '發送失敗');
+      }
+    } catch { showPtsPopup('網路錯誤'); }
+    dmSend.disabled = false;
+  }
+
+  dmSend.addEventListener('click', doSendDanmaku);
+  dmInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSendDanmaku(); });
+  </script>
 
 </body>
 </html>

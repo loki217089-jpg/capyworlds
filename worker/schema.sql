@@ -13,4 +13,12 @@ CREATE TABLE IF NOT EXISTS scores (
   created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS danmaku (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  text TEXT NOT NULL,
+  color TEXT NOT NULL DEFAULT '#ffffff',
+  created_at TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_scores_game ON scores(game, score DESC);
+CREATE INDEX IF NOT EXISTS idx_danmaku_id  ON danmaku(id DESC);

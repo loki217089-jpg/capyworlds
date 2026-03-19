@@ -624,6 +624,19 @@
   </main>
 
 <script>
+// 點擊遊戲卡片時記錄「待領積分」，回主頁後自動發放
+(function() {
+  const today = new Date().toDateString();
+  document.querySelectorAll('.game-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const lastReward = localStorage.getItem('capyLastGameReward');
+      if (lastReward !== today) {
+        localStorage.setItem('capyPendingReward', 'game');
+        localStorage.setItem('capyLastGameReward', today);
+      }
+    });
+  });
+})();
 (function() {
   const saved = localStorage.getItem('capyTheme') || 'dark';
   function setTheme(t) {

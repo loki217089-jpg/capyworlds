@@ -1,4 +1,4 @@
-// v1.0.1
+// v1.1.0
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -79,6 +79,31 @@ export default {
       await env.DB.prepare(
         'INSERT INTO scores (game, name, score, created_at) VALUES (?, ?, ?, ?)'
       ).bind(game, name, score, new Date().toISOString()).run();
+      return Response.json({ ok: true }, { headers: cors });
+    }
+
+    // GET /danmaku?since=ID — 取最近 60 條彈幕（since 為 0 時取全部近 60 條）
+    if (url.pathname === '/danmaku' && request.method === 'GET') {
+      const since = parseInt(url.searchParams.get('since') || '0');
+      const { results } = await env.DB.prepare(
+        'SELECT id, text, color, created_at FROM danmaku WHERE id > ? ORDER BY id ASC LIMIT 60'
+      ).bind(since).all();
+      return Response.json(results, { headers: cors });
+    }
+
+    // POST /danmaku — 發送彈幕 { text, color }
+    if (url.pathname === '/danmaku' && request.method === 'POST') {
+      let body;
+      try { body = await request.json(); } catch {
+        return Response.json({ error: '格式錯誤' }, { status: 400, headers: cors });
+      }
+      const text = (body.text || '').trim().slice(0, 40);
+      const allowed = ['#ffffff','#ffd700','#00ffff','#ff69b4','#7fff00','#ff6347'];
+      const color = allowed.includes(body.color) ? body.color : '#ffffff';
+      if (!text) return Response.json({ error: '彈幕不能為空' }, { status: 400, headers: cors });
+      await env.DB.prepare(
+        'INSERT INTO danmaku (text, color, created_at) VALUES (?, ?, ?)'
+      ).bind(text, color, new Date().toISOString()).run();
       return Response.json({ ok: true }, { headers: cors });
     }
 
