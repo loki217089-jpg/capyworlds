@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>機甲蟲蟲危機</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:#060c18;
+  color:#c8d8ff;
+  font-family:'Segoe UI',monospace;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  height:100vh; overflow:hidden; user-select:none;
+}
+#wrapper { position:relative; width:900px; }
+
+/* HUD */
+#hud {
+  display:flex; justify-content:space-between; align-items:center;
+  background:#0a1428; border:1px solid #1a3a6e; border-bottom:none;
+  padding:6px 16px; font-size:12px; height:44px;
+}
+.hud-grp { display:flex; gap:18px; align-items:center; }
+.hl { color:#3a5a8a; font-size:10px; }
+.hv { font-weight:bold; font-size:14px; }
+.hv-hp  { color:#4f8; }
+.hv-gold{ color:#fc8; }
+.hv-wave{ color:#f8a; }
+.hv-base{ color:#f44; }
+
+/* Canvas */
+#canvas {
+  display:block; border:1px solid #1a3a6e;
+  cursor:crosshair; image-rendering:pixelated;
+}
+
+/* Bottom panel */
+#panel {
+  background:#0a1428; border:1px solid #1a3a6e; border-top:1px solid #233a6e;
+  padding:8px 14px; display:flex; align-items:center; gap:7px; height:64px;
+}
+.pl { color:#3a5a8a; font-size:11px; white-space:nowrap; margin-right:2px; }
+.ubtn {
+  background:#0d1c3a; border:2px solid #243c6e; border-radius:6px;
+  padding:4px 10px; cursor:pointer; color:#b8d0ff;
+  display:flex; flex-direction:column; align-items:center; gap:1px;
+  min-width:68px; transition:all .12s; font-size:11px;
+}
+.ubtn:hover { border-color:#4a8ef0; background:#162c52; }
+.ubtn.sel   { border-color:#7af; background:#1a3a6a; box-shadow:0 0 10px rgba(80,160,255,.4); }
+.ubtn.nogas { opacity:.4; cursor:not-allowed; }
+.ucost { color:#fc8; font-size:10px; }
+.uhint { margin-left:auto; color:#2a4060; font-size:10px; text-align:right; line-height:1.5; }
+
+/* Overlay */
+#overlay {
+  position:absolute; top:0; left:0; right:0; bottom:0;
+  background:rgba(4,8,18,.88);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:18px; z-index:10;
+}
+#overlay h1 { color:#7af; font-size:26px; text-shadow:0 0 24px #4af; }
+#overlay p  { color:#7a9ab8; font-size:13px; text-align:center; line-height:1.7; }
+.obtn {
+  background:#142a52; border:1px solid #4a8ef0; color:#7af;
+  padding:10px 36px; font-size:15px; border-radius:8px; cursor:pointer;
+  transition:background .15s;
+}
+.obtn:hover { background:#1e3e6e; }
+</style>
+</head>
+<body>
+<div id="wrapper">
+  <div id="hud">
+    <div class="hud-grp">
+      <span class="hl">基地血量</span>
+      <span class="hv hv-hp"  id="h-hp">200</span>
+      <span class="hl">金幣</span>
+      <span class="hv hv-gold" id="h-gold">200</span>
+    </div>
+    <div class="hud-grp">
+      <span class="hl">波次</span>
+      <span class="hv hv-wave" id="h-wave">— / 10</span>
+    </div>
+  </div>
+  <canvas id="canvas" width="900" height="420"></canvas>
+  <div id="panel">
+    <span class="pl">選單位：</span>
+    <button class="ubtn sel" data-type="assault">突擊兵<span class="ucost">💰50</span></button>
+    <button class="ubtn"     data-type="machinegun">機槍手<span class="ucost">💰80</span></button>
+    <button class="ubtn"     data-type="sniper">狙擊手<span class="ucost">💰100</span></button>
+    <button class="ubtn"     data-type="antitank">反坦克<span class="ucost">💰120</span></button>
+    <button class="ubtn"     data-type="grenadier">擲彈兵<span class="ucost">💰90</span></button>
+    <span class="uhint">選單位<br>點戰場排 部署</span>
+  </div>
+  <div id="overlay">
+    <h1>🐛 機甲蟲蟲危機</h1>
+    <p>蟲族機甲從右側入侵，保衛左側基地<br>選擇兵種 → 點擊戰場任一排 即可部署</p>
+    <button class="obtn" id="start-btn">開始作戰</button>
+  </div>
+</div>
+<script>
+'use strict';
+// ── BLOCK 2: Constants & Config ────────────────────────────
+const BASE = '../../assets/Robot%20Warfare%20Asset%20Pack%2024-11-21/Robot%20Warfare%20Asset%20Pack%2022-11-24/';
+
+// Sprite sheet config  fw/fh = frame size in pixels, cols/rows = grid
+const SCFG = {
+  assault:    {src:BASE+'Soldiers/Assault-Class.png',       fw:16,fh:16,cols:5,rows:7,sc:2.8},
+  machinegun: {src:BASE+'Soldiers/MachineGunner-Class.png', fw:16,fh:16,cols:5,rows:7,sc:2.8},
+  sniper:     {src:BASE+'Soldiers/Sniper-Class.png',        fw:16,fh:16,cols:5,rows:7,sc:2.8},
+  antitank:   {src:BASE+'Soldiers/AntiTank-Class.png',      fw:16,fh:16,cols:5,rows:7,sc:2.8},
+  grenadier:  {src:BASE+'Soldiers/Grenadier-Class.png',     fw:16,fh:16,cols:5,rows:7,sc:2.8},
+  wasp:       {src:BASE+'Robots/Wasp.png',                  fw:16,fh:16,cols:8,rows:1,sc:2.4},
+  spider:     {src:BASE+'Robots/Spider.png',                fw:16,fh:16,cols:5,rows:5,sc:2.8},
+  scarab:     {src:BASE+'Robots/Scarab.png',                fw:16,fh:16,cols:5,rows:5,sc:2.8},
+  hornet:     {src:BASE+'Robots/Hornet.png',                fw:16,fh:16,cols:12,rows:3,sc:2.4},
+  centipede:  {src:BASE+'Robots/Centipede.png',             fw:16,fh:16,cols:8,rows:18,sc:3.5},
+  bigExpl:    {src:BASE+'Effects/big-explosion.png',        fw:32,fh:32,cols:11,rows:1,sc:2.0},
+  smlExpl:    {src:BASE+'Effects/small-explosion.png',      fw:24,fh:24,cols:9, rows:1,sc:1.5},
+};
+
+// Unit configs
+const UCFG = {
+  assault:   {name:'突擊兵',cost:50, hp:120,dmg:20,spd:1.2,rng:44, aps:1.2,spr:'assault',   col:'#4af'},
+  machinegun:{name:'機槍手',cost:80, hp:90, dmg:10,spd:1.0,rng:90, aps:3.0,spr:'machinegun',col:'#fa4'},
+  sniper:    {name:'狙擊手',cost:100,hp:70, dmg:65,spd:1.0,rng:180,aps:0.5,spr:'sniper',    col:'#4f8'},
+  antitank:  {name:'反坦克',cost:120,hp:100,dmg:90,spd:0.8,rng:110,aps:0.4,spr:'antitank',  col:'#f84',aoe:45},
+  grenadier: {name:'擲彈兵',cost:90, hp:80, dmg:55,spd:1.0,rng:130,aps:0.5,spr:'grenadier', col:'#a4f',aoe:40},
+};
+
+// Enemy configs
+const ECFG = {
+  wasp:     {name:'黃蜂機甲',  hp:55,  dmg:15,spd:2.8,rng:22, aps:1.5,rew:12,spr:'wasp',     col:'#ff4'},
+  scarab:   {name:'甲蟲機甲',  hp:140, dmg:22,spd:1.6,rng:28, aps:1.0,rew:22,spr:'scarab',   col:'#f84'},
+  spider:   {name:'蜘蛛機甲',  hp:220, dmg:32,spd:1.2,rng:32, aps:0.8,rew:32,spr:'spider',   col:'#f44'},
+  hornet:   {name:'大黃蜂機甲',hp:95,  dmg:28,spd:2.0,rng:110,aps:0.8,rew:28,spr:'hornet',   col:'#f80'},
+  centipede:{name:'蜈蚣BOSS',  hp:1800,dmg:70,spd:0.6,rng:55, aps:0.5,rew:200,spr:'centipede',col:'#f22'},
+};
+
+// Wave definitions: each wave = array of {type, count, gap(ms between spawns)}
+const WAVES = [
+  [{type:'wasp',    count:6,  gap:1400}],
+  [{type:'wasp',    count:5,  gap:1200},{type:'scarab', count:3, gap:2400}],
+  [{type:'scarab',  count:5,  gap:1500},{type:'wasp',   count:4, gap:900}],
+  [{type:'spider',  count:3,  gap:3000},{type:'wasp',   count:6, gap:800}],
+  [{type:'hornet',  count:5,  gap:1800},{type:'scarab', count:4, gap:1400}],
+  [{type:'spider',  count:4,  gap:2200},{type:'hornet', count:4, gap:1600}],
+  [{type:'scarab',  count:6,  gap:1100},{type:'spider', count:3, gap:2200},{type:'wasp',count:8,gap:700}],
+  [{type:'hornet',  count:7,  gap:1400},{type:'spider', count:5, gap:1800}],
+  [{type:'wasp',    count:12, gap:500}, {type:'hornet', count:6, gap:1100},{type:'spider',count:4,gap:1800}],
+  [{type:'centipede',count:1, gap:6000},{type:'hornet', count:8, gap:900},{type:'spider',count:6,gap:1500}],
+];
+
+const CW=900, CH=420;
+const LANE_N=3;
+const LANE_Y=[70, 210, 350];
+const LANE_H=112;
+const PBX=60;   // player base x
+const EBX=840;  // enemy base x
+const GOLD_TICK=5;        // gold/sec
+const BASE_HP=200;
+const WAVE_DELAY=18000;   // ms between waves
+// ── BLOCK 3: Image Loader + Sprite Renderer ───────────────
+const imgs = {};
+let loadedCount = 0;
+const totalImages = Object.keys(SCFG).length;
+
+function loadImages(cb) {
+  for (const [k, c] of Object.entries(SCFG)) {
+    const img = new Image();
+    img.onload = img.onerror = () => { if (++loadedCount >= totalImages) cb(); };
+    img.src = c.src;
+    imgs[k] = img;
+  }
+}
+
+// Draw one frame from a sprite sheet
+// x,y = center position; fi = frame index; row = sheet row; flip = mirror X
+function drawSpr(ctx, key, x, y, fi=0, row=0, flip=false, alpha=1) {
+  const img = imgs[key];
+  if (!img || !img.complete || !img.naturalWidth) return;
+  const c = SCFG[key];
+  const fw=c.fw, fh=c.fh, sc=c.sc||2;
+  const dw=fw*sc, dh=fh*sc;
+  const sx=(fi%c.cols)*fw, sy=row*fh;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  if (flip) {
+    ctx.translate(x, y);
+    ctx.scale(-1,1);
+    ctx.drawImage(img, sx,sy, fw,fh, -dw/2,-dh/2, dw,dh);
+  } else {
+    ctx.drawImage(img, sx,sy, fw,fh, x-dw/2, y-dh/2, dw,dh);
+  }
+  ctx.restore();
+}
+
+// Health bar
+function drawBar(ctx, x, y, hp, max, w=36) {
+  const p=Math.max(0,hp/max);
+  ctx.fillStyle='#111';  ctx.fillRect(x-w/2, y, w, 4);
+  ctx.fillStyle = p>.5?'#4f8':p>.25?'#fa4':'#f44';
+  ctx.fillRect(x-w/2, y, w*p, 4);
+}
+
+// ── BLOCK 4: Particle System ──────────────────────────────
+const parts = [];
+
+function spawnExpl(x, y, big=false) {
+  parts.push({x, y, t:0, dur: big?900:500, big});
+}
+
+function updateParts(dt) {
+  for (let i=parts.length-1; i>=0; i--) {
+    parts[i].t += dt;
+    if (parts[i].t >= parts[i].dur) parts.splice(i,1);
+  }
+}
+
+function drawParts(ctx) {
+  for (const p of parts) {
+    const key = p.big ? 'bigExpl' : 'smlExpl';
+    const c = SCFG[key];
+    const pct = p.t/p.dur;
+    const fi = Math.min(Math.floor(pct*(c.cols-1)), c.cols-1);
+    drawSpr(ctx, key, p.x, p.y, fi, 0, false, 1-pct*.3);
+  }
+}
+// ── BLOCK 5: Unit Base Class ──────────────────────────────
+let uid=0;
+const projs=[];
+
+class Unit {
+  constructor(cfg, x, lane, isEnemy) {
+    this.id = uid++;
+    this.cfg = cfg;
+    this.x = x;
+    this.lane = lane;
+    this.y = LANE_Y[lane];
+    this.hp = cfg.hp; this.maxHp = cfg.hp;
+    this.isEnemy = isEnemy;
+    this.dead = false;
+    this.dieT = 0;
+    this.frame = 0;
+    this.frameT = 0;
+    this.atkT = 0;
+    this.state = 'walk';  // walk | fight
+  }
+
+  update(dt, allies, foes) {
+    if (this.dead) { this.dieT += dt; return; }
+
+    // Animate
+    this.frameT += dt;
+    if (this.frameT > 180) { this.frame = (this.frame+1)%5; this.frameT=0; }
+
+    // Find closest foe in same lane
+    let best=null, bestD=Infinity;
+    for (const u of foes) {
+      if (u.dead || u.lane!==this.lane) continue;
+      const d=Math.abs(u.x-this.x);
+      if (d<bestD) { bestD=d; best=u; }
+    }
+
+    if (best && bestD <= this.cfg.rng) {
+      this.state = 'fight';
+      this.atkT += dt/1000;
+      if (this.atkT >= 1/this.cfg.aps) {
+        this.atkT = 0;
+        this._attack(best, foes);
+      }
+    } else {
+      this.state = 'walk';
+      const dir = this.isEnemy ? -1 : 1;
+      this.x += dir * this.cfg.spd * (dt/16);
+    }
+  }
+
+  _attack(target, foes) {
+    if (this.cfg.rng <= 36) {
+      // Melee
+      target.hp -= this.cfg.dmg;
+      if (target.hp <= 0) { target.hp=0; target.dead=true; target._onDie && target._onDie(); spawnExpl(target.x,target.y,false); }
+    } else {
+      projs.push(new Proj(this.x, this.y, target, this.cfg.dmg, this.cfg.aoe||0, this.isEnemy, foes));
+    }
+  }
+
+  draw(ctx) {
+    if (this.dead && this.dieT>700) return;
+    const alpha = this.dead ? Math.max(0, 1-this.dieT/700) : 1;
+    const flip = this.isEnemy;
+    // row 2 = typically a side-facing row for most 7-row sheets
+    const row = this.state==='fight' ? 3 : 2;
+    drawSpr(ctx, this.cfg.spr, this.x, this.y, this.frame, row, flip, alpha);
+    if (!this.dead) drawBar(ctx, this.x, this.y-32, this.hp, this.maxHp);
+  }
+}
+
+// ── BLOCK 6: Projectile ──────────────────────────────────
+class Proj {
+  constructor(x, y, target, dmg, aoe, fromEnemy, foesRef) {
+    this.x=x; this.y=y;
+    this.target=target; this.dmg=dmg; this.aoe=aoe;
+    this.fromEnemy=fromEnemy; this.foesRef=foesRef;
+    this.spd = fromEnemy ? 4 : 6;
+    this.dead=false;
+    this.col = fromEnemy ? '#f84' : '#4af';
+  }
+  update(dt) {
+    if (this.dead) return;
+    if (this.target.dead && !this.aoe) { this.dead=true; return; }
+    const tx = this.target.dead ? this.target.x : this.target.x;
+    const ty = this.target.dead ? this.target.y : this.target.y;
+    const dx=tx-this.x, dy=ty-this.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if (dist < 7) {
+      this._hit();
+    } else {
+      const s=this.spd*dt/16;
+      this.x+=dx/dist*s; this.y+=dy/dist*s;
+    }
+  }
+  _hit() {
+    if (this.aoe > 0) {
+      for (const u of this.foesRef) {
+        if (u.dead || u.lane!==this.target.lane) continue;
+        if (Math.abs(u.x-this.x)<=this.aoe) {
+          u.hp-=this.dmg;
+          if (u.hp<=0) { u.hp=0; u.dead=true; u._onDie&&u._onDie(); }
+        }
+      }
+      spawnExpl(this.x, this.y, true);
+    } else {
+      this.target.hp -= this.dmg;
+      if (this.target.hp<=0) { this.target.hp=0; this.target.dead=true; this.target._onDie&&this.target._onDie(); }
+      spawnExpl(this.x, this.y, false);
+    }
+    this.dead=true;
+  }
+  draw(ctx) {
+    if (this.dead) return;
+    ctx.fillStyle=this.col;
+    ctx.beginPath(); ctx.arc(this.x,this.y,3,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=this.col+'44';
+    ctx.beginPath(); ctx.arc(this.x,this.y,6,0,Math.PI*2); ctx.fill();
+  }
+}
+// ── BLOCK 7: Enemy Class ──────────────────────────────────
+class Enemy extends Unit {
+  constructor(type, lane) {
+    super(ECFG[type], EBX+10, lane, true);
+    this.type=type;
+    this.reward=ECFG[type].rew;
+  }
+  _onDie() {
+    gs.gold += this.reward;
+    hud('gold');
+    spawnExpl(this.x, this.y, this.type==='centipede');
+  }
+  update(dt, soldiers, enemies) {
+    super.update(dt, enemies, soldiers); // enemy foes = soldiers
+    // Reached player base
+    if (!this.dead && this.x <= PBX+18) {
+      gs.baseHp -= this.cfg.dmg * 0.12;
+      hud('hp');
+      this.dead = true;
+      if (gs.baseHp <= 0) endGame(false);
+    }
+    // HP depleted via direct hit
+    if (!this.dead && this.hp <= 0) {
+      this.dead=true;
+      this._onDie();
+    }
+  }
+}
+
+// ── BLOCK 8: Game State + Wave System ────────────────────
+const gs = {
+  phase: 'menu',
+  gold: 200, baseHp: BASE_HP,
+  wave: 0, waveActive: false,
+  nextWaveIn: 0, selUnit: 'assault', hoverLane: -1,
+};
+const soldiers=[], enemies=[];
+let spawnQ=[], spawnT=0;
+
+function hud(what) {
+  if (what==='hp'  || what==='all') document.getElementById('h-hp').textContent   = Math.max(0,Math.floor(gs.baseHp));
+  if (what==='gold'|| what==='all') document.getElementById('h-gold').textContent = Math.floor(gs.gold);
+  if (what==='wave'|| what==='all') document.getElementById('h-wave').textContent = `${gs.wave} / ${WAVES.length}`;
+}
+
+function startWave(idx) {
+  if (idx >= WAVES.length) { setTimeout(()=>endGame(true), 2000); return; }
+  gs.wave = idx+1; gs.waveActive=true;
+  hud('wave');
+  spawnQ=[]; spawnT=0;
+  let t=0;
+  for (const grp of WAVES[idx]) {
+    for (let i=0; i<grp.count; i++) {
+      const lane = Math.floor(Math.random()*LANE_N);
+      spawnQ.push({type:grp.type, lane, time:t});
+      t += grp.gap;
+    }
+  }
+  spawnQ.sort((a,b)=>a.time-b.time);
+}
+
+function updateWave(dt) {
+  if (!gs.waveActive) {
+    gs.nextWaveIn -= dt;
+    if (gs.nextWaveIn <= 0) startWave(gs.wave);
+    return;
+  }
+  spawnT += dt;
+  while (spawnQ.length && spawnT >= spawnQ[0].time) {
+    const s=spawnQ.shift();
+    enemies.push(new Enemy(s.type, s.lane));
+  }
+  // Wave ends when queue empty and all enemies dead
+  if (!spawnQ.length && enemies.every(e=>e.dead)) {
+    gs.waveActive=false;
+    gs.nextWaveIn = WAVE_DELAY;
+    if (gs.wave >= WAVES.length) setTimeout(()=>endGame(true), 2000);
+  }
+}
+
+function deploySoldier(type, lane) {
+  const c=UCFG[type];
+  if (!c || gs.gold < c.cost) return;
+  gs.gold -= c.cost; hud('gold');
+  soldiers.push(new Unit(c, PBX+22, lane, false));
+}
+
+function endGame(win) {
+  gs.phase = win ? 'victory' : 'gameover';
+  const ol=document.getElementById('overlay');
+  ol.innerHTML = win
+    ? `<h1>🎉 作戰勝利！</h1><p>所有蟲族波次清除完畢</p><button class="obtn" id="r-btn">再戰一次</button>`
+    : `<h1>💀 基地淪陷</h1><p>蟲族機甲突破防線，任務失敗</p><button class="obtn" id="r-btn">重新作戰</button>`;
+  ol.style.display='flex';
+  document.getElementById('r-btn').onclick=resetGame;
+}
+
+function resetGame() {
+  document.getElementById('overlay').style.display='none';
+  soldiers.length=0; enemies.length=0; projs.length=0; parts.length=0; spawnQ=[];
+  Object.assign(gs,{phase:'playing',gold:200,baseHp:BASE_HP,wave:0,waveActive:false,nextWaveIn:4000,selUnit:'assault'});
+  hud('all');
+  // Reset button selection
+  document.querySelectorAll('.ubtn').forEach(b=>b.classList.toggle('sel', b.dataset.type==='assault'));
+}
+// ── BLOCK 9: Rendering ───────────────────────────────────
+const canvas=document.getElementById('canvas');
+const ctx=canvas.getContext('2d');
+
+function drawBg() {
+  ctx.fillStyle='#080e1c'; ctx.fillRect(0,0,CW,CH);
+
+  // Lane strips
+  for (let i=0; i<LANE_N; i++) {
+    const cy=LANE_Y[i];
+    ctx.fillStyle = i%2===0 ? '#0b1424' : '#090f1e';
+    ctx.fillRect(0, cy-LANE_H/2, CW, LANE_H);
+    // Dashed divider
+    ctx.strokeStyle='#162840'; ctx.lineWidth=1;
+    ctx.setLineDash([5,10]);
+    ctx.beginPath(); ctx.moveTo(0,cy+LANE_H/2); ctx.lineTo(CW,cy+LANE_H/2); ctx.stroke();
+    ctx.setLineDash([]);
+    // Hover highlight
+    if (gs.hoverLane===i && gs.phase==='playing') {
+      ctx.fillStyle='rgba(60,140,255,.06)';
+      ctx.fillRect(PBX, cy-LANE_H/2, EBX-PBX, LANE_H);
+    }
+    // Lane number
+    ctx.fillStyle='#1a3256'; ctx.font='10px monospace';
+    ctx.fillText(`排${i+1}`, 10, cy+4);
+  }
+
+  // Player base zone
+  ctx.fillStyle='#0c1e3a';
+  ctx.fillRect(0, 0, PBX, CH);
+  ctx.strokeStyle='#2a7aef'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(PBX,0); ctx.lineTo(PBX,CH); ctx.stroke();
+  ctx.save(); ctx.translate(PBX/2, CH/2); ctx.rotate(-Math.PI/2);
+  ctx.fillStyle='#3a8aff'; ctx.font='bold 11px monospace'; ctx.textAlign='center';
+  ctx.fillText('基地', 0, 4); ctx.restore();
+
+  // Enemy base zone
+  ctx.fillStyle='#1c0a0a';
+  ctx.fillRect(EBX, 0, CW-EBX, CH);
+  ctx.strokeStyle='#ef3a2a'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(EBX,0); ctx.lineTo(EBX,CH); ctx.stroke();
+  ctx.save(); ctx.translate(EBX+(CW-EBX)/2, CH/2); ctx.rotate(-Math.PI/2);
+  ctx.fillStyle='#ff4a3a'; ctx.font='bold 11px monospace'; ctx.textAlign='center';
+  ctx.fillText('蟲巢', 0, 4); ctx.restore();
+}
+
+function drawCountdown() {
+  if (gs.waveActive || gs.phase!=='playing') return;
+  const sec = Math.ceil(gs.nextWaveIn/1000);
+  if (sec<=0) return;
+  ctx.fillStyle='rgba(0,0,0,.55)';
+  ctx.fillRect(CW/2-90, 8, 180, 26);
+  ctx.fillStyle='#fc8'; ctx.font='bold 13px monospace';
+  ctx.textAlign='center';
+  if (gs.wave===0)
+    ctx.fillText(`作戰開始：${sec}秒`, CW/2, 26);
+  else
+    ctx.fillText(`下一波：${sec}秒`, CW/2, 26);
+  ctx.textAlign='left';
+}
+
+function render() {
+  ctx.clearRect(0,0,CW,CH);
+  drawBg();
+  for (const s of soldiers) s.draw(ctx);
+  for (const e of enemies)  e.draw(ctx);
+  for (const p of projs)    p.draw(ctx);
+  drawParts(ctx);
+  drawCountdown();
+}
+// ── BLOCK 10: Main Loop + Input + Init ───────────────────
+let lastT=0, goldT=0;
+
+function loop(now) {
+  const dt = Math.min(now-lastT, 50);
+  lastT=now;
+
+  if (gs.phase==='playing') {
+    // Gold income
+    goldT += dt;
+    if (goldT >= 1000) { goldT-=1000; gs.gold+=GOLD_TICK; hud('gold'); }
+
+    // Update
+    const aS=soldiers.filter(u=>!u.dead||u.dieT<700);
+    const aE=enemies.filter(u=>!u.dead||u.dieT<700);
+    for (const s of aS) s.update(dt, aS, aE);
+    for (const e of aE) e.update(dt, aS, aE);
+    for (let i=projs.length-1; i>=0; i--) {
+      projs[i].update(dt);
+      if (projs[i].dead) projs.splice(i,1);
+    }
+    updateParts(dt);
+    updateWave(dt);
+
+    // Cleanup
+    for (let i=soldiers.length-1;i>=0;i--) if(soldiers[i].dead&&soldiers[i].dieT>750) soldiers.splice(i,1);
+    for (let i=enemies.length-1; i>=0;i--) if(enemies[i].dead &&enemies[i].dieT>750)  enemies.splice(i,1);
+  }
+
+  render();
+  requestAnimationFrame(loop);
+}
+
+// Click on canvas → deploy unit to lane
+canvas.addEventListener('click', e => {
+  if (gs.phase!=='playing') return;
+  const r=canvas.getBoundingClientRect();
+  const mx=(e.clientX-r.left)*(CW/r.width);
+  const my=(e.clientY-r.top)*(CH/r.height);
+  for (let i=0; i<LANE_N; i++) {
+    if (my >= LANE_Y[i]-LANE_H/2 && my < LANE_Y[i]+LANE_H/2) {
+      if (mx >= PBX) deploySoldier(gs.selUnit, i);
+      break;
+    }
+  }
+});
+
+// Hover highlight lane
+canvas.addEventListener('mousemove', e => {
+  if (gs.phase!=='playing') return;
+  const r=canvas.getBoundingClientRect();
+  const my=(e.clientY-r.top)*(CH/r.height);
+  // Highlight handled in render via gs.hoverLane
+  for (let i=0; i<LANE_N; i++) {
+    if (my >= LANE_Y[i]-LANE_H/2 && my < LANE_Y[i]+LANE_H/2) {
+      gs.hoverLane=i; return;
+    }
+  }
+  gs.hoverLane=-1;
+});
+canvas.addEventListener('mouseleave', ()=>{ gs.hoverLane=-1; });
+
+// Unit button selection
+document.querySelectorAll('.ubtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.ubtn').forEach(b=>b.classList.remove('sel'));
+    btn.classList.add('sel');
+    gs.selUnit=btn.dataset.type;
+  });
+});
+
+// Start button
+document.getElementById('start-btn').addEventListener('click', () => {
+  document.getElementById('overlay').style.display='none';
+  loadImages(() => {
+    resetGame();
+    gs.nextWaveIn=4000;
+  });
+});
+
+// Single game loop
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
