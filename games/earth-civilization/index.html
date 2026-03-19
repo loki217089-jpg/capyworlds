@@ -28,6 +28,18 @@ canvas{display:block;cursor:crosshair}
 #stb strong{color:#ffdd88}
 #sts{margin-top:28px;background:rgba(20,55,20,.75);border:1px solid #33aa55;color:#88ff99;padding:10px 36px;border-radius:6px;cursor:pointer;font-size:14px;font-family:'Courier New';letter-spacing:2px}
 #sts:hover{box-shadow:0 0 28px rgba(60,200,80,.35);background:rgba(30,70,30,.8)}
+/* Panel toggle buttons */
+.ptog{position:fixed;top:50%;transform:translateY(-50%);width:22px;height:52px;background:rgba(0,18,4,.92);border:1px solid #2a5030;cursor:pointer;color:#44aa66;font-size:13px;display:flex;align-items:center;justify-content:center;z-index:50;user-select:none;transition:left .15s,right .15s}
+#lptog{left:182px;border-radius:0 6px 6px 0;border-left:none}
+#rptog{right:188px;border-radius:6px 0 0 6px;border-right:none}
+.ptog:hover{background:rgba(20,60,20,.95);color:#88ffaa}
+/* Mobile resource bar */
+@media(max-width:767px){
+  .rvl{font-size:10px;min-width:20px}
+  .rrt{display:none}
+  #rb{gap:4px;padding:0 4px;overflow-x:auto}
+  .ri{gap:2px}
+}
 </style>
 </head>
 <body>
@@ -42,6 +54,8 @@ canvas{display:block;cursor:crosshair}
   <span id="smsg"></span>
   <span id="sera" style="margin-left:auto;color:#44aa66;font-weight:bold"></span>
 </div>
+<div class="ptog" id="lptog" onclick="toggleLP()">◀</div>
+<div class="ptog" id="rptog" onclick="toggleRP()">▶</div>
 <div id="sto">
   <h1>地球再生</h1>
   <div id="stb"></div>
@@ -54,7 +68,8 @@ let W=canvas.width=window.innerWidth,H=canvas.height=window.innerHeight;
 window.addEventListener('resize',()=>{W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;});
 
 // ── LAYOUT ──
-const LP_W=182,RB_H=56,SB_H=30,RP_W=188;
+const LP_W0=182,RP_W0=188,RB_H=56,SB_H=30;
+let LP_W=LP_W0,RP_W=RP_W0;
 const TILE_W=92,TILE_H=108;
 const WORLD_TILES=22;
 const TERRAIN=['mountain','mountain','forest','forest','forest','forest',
@@ -164,6 +179,20 @@ function terrainY(tileX){
   if(t==='coast') return mid+TILE_H*0.1;
   if(t==='sea') return mid+TILE_H*0.3;
   return mid;
+}
+
+// ── PANEL TOGGLE ──
+function toggleLP(){
+  const lp=document.getElementById('lp');
+  const tog=document.getElementById('lptog');
+  if(LP_W>0){LP_W=0;lp.style.display='none';tog.style.left='0';tog.textContent='▶';}
+  else{LP_W=LP_W0;lp.style.display='block';tog.style.left=LP_W0+'px';tog.textContent='◀';}
+}
+function toggleRP(){
+  const rp=document.getElementById('rp');
+  const tog=document.getElementById('rptog');
+  if(RP_W>0){RP_W=0;rp.style.display='none';tog.style.right='0';tog.textContent='◀';}
+  else{RP_W=RP_W0;rp.style.display='block';tog.style.right=RP_W0+'px';tog.textContent='▶';}
 }
 
 // ── STARS for sky ──
@@ -639,6 +668,8 @@ function updatePopulation(dt){
     gs.res.pop=Math.max(1,gs.res.pop-0.02*dt);
   }
   gs.res.pop=Math.max(0,gs.res.pop);
+  const mile=Math.floor(gs.res.pop/10)*10;
+  if(mile>_lastPopMile&&mile>0){_lastPopMile=mile;sfx('pop');}
 }
 
 function checkEraAdvance(){
@@ -706,6 +737,7 @@ function updateBuildPanel(){
     btn.addEventListener('click',()=>{
       const id=btn.dataset.id;
       gs.selectedBldg=gs.selectedBldg===id?null:id;
+      sfx('select');
       updateBuildPanel();
       updateRightPanel(id);
       canvas.style.cursor=gs.selectedBldg?'cell':'crosshair';
@@ -794,7 +826,7 @@ canvas.addEventListener('mousedown',e=>{
   if(mouseX>LP_W&&mouseX<W-RP_W&&mouseY>RB_H&&mouseY<H-SB_H){
     if(gs.selectedBldg&&hoverTile>=0){
       const ok=placeBuilding(gs.selectedBldg,hoverTile);
-      if(!ok) setStatus('無法在此建造');
+      if(!ok){setStatus('無法在此建造');sfx('error');}
     } else if(!gs.selectedBldg&&hoverTile>=0&&gs.tiles[hoverTile]){
       // show info about existing building
       updateRightPanel(gs.tiles[hoverTile].id);
@@ -819,8 +851,42 @@ window.addEventListener('keydown',e=>{
   if(e.code==='KeyR'&&gs.won) window.location.href='../space-roguelike/index.html';
 });
 
+// ── TOUCH EVENTS ──
+let touchStartX=0,touchStartY=0,touchCamX0=0,touchMoved=false;
+canvas.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  const t=e.touches[0];
+  touchStartX=t.clientX;touchStartY=t.clientY;touchCamX0=camX;touchMoved=false;
+  isDragging=true;dragStartX=t.clientX;dragCamX=camX;
+},{passive:false});
+canvas.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  const t=e.touches[0];
+  if(Math.abs(t.clientX-touchStartX)>8||Math.abs(t.clientY-touchStartY)>8) touchMoved=true;
+  camX=Math.max(0,Math.min(camMax(),touchCamX0-(t.clientX-touchStartX)));
+},{passive:false});
+canvas.addEventListener('touchend',e=>{
+  e.preventDefault();
+  isDragging=false;
+  if(!touchMoved){
+    const cx=touchStartX,cy=touchStartY;
+    mouseX=cx;mouseY=cy;
+    if(cx>LP_W&&cx<W-RP_W&&cy>RB_H&&cy<H-SB_H){
+      hoverTile=screenToTile(cx);
+      if(hoverTile>=0&&hoverTile<WORLD_TILES){
+        if(gs.selectedBldg){
+          const ok=placeBuilding(gs.selectedBldg,hoverTile);
+          if(!ok){setStatus('無法在此建造');sfx('error');}
+        } else if(gs.tiles[hoverTile]){
+          updateRightPanel(gs.tiles[hoverTile].id);
+        }
+      }
+    }
+  }
+},{passive:false});
+
 // ── MAIN UPDATE ──
-let lastTime2=0,uiTimer=0,eraTimer=0;
+let lastTime2=0,uiTimer=0,eraTimer=0,_lastPopMile=0;
 function update(dt){
   if(gs.paused||document.getElementById('sto').style.display!=='none') return;
   gs.gameTime+=dt;
@@ -849,6 +915,7 @@ function loop(timestamp){
 // ── BOOT ──
 loadSpaceData();
 showStory();
+if(window.innerWidth<768){toggleLP();toggleRP();}
 requestAnimationFrame(loop);
 
 // ── SFX ──
@@ -866,9 +933,12 @@ function sfx(name) {
   } catch(e) {}
 }
 const _BASE = '../../assets/sfx/';
-_preload('build', _BASE+'GameSFX1/Events/Retro Event UI 01.wav',        0.45, 250);
-_preload('era',   _BASE+'GameSFX0/Ascending/Retro Ascending Short 20.wav', 0.55, 280);
-_preload('win',   _BASE+'GameSFX2/Music/Success/Retro Success Melody 01 - sawtooth lead 1.wav', 0.5);
+_preload('build',  _BASE+'GameSFX1/Events/Retro Event UI 01.wav',                          0.45, 250);
+_preload('era',    _BASE+'GameSFX0/Ascending/Retro Ascending Short 20.wav',                 0.55, 280);
+_preload('win',    _BASE+'GameSFX2/Music/Success/Retro Success Melody 01 - sawtooth lead 1.wav', 0.5);
+_preload('select', _BASE+'GameSFX1/Events/Retro Event UI 13.wav',                           0.3,  150);
+_preload('error',  _BASE+'GameSFX1/Events/Negative/Retro Negative Short 07.wav',            0.4,  200);
+_preload('pop',    _BASE+'GameSFX3/PowerUp/Retro PowerUP 09.wav',                           0.25, 180);
 </script>
 </body>
 </html>
