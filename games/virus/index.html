@@ -1044,7 +1044,7 @@ document.addEventListener('mousemove', e => {
   const c = document.getElementById('cursor');
   c.style.left = e.clientX + 'px';
   c.style.top  = e.clientY + 'px';
-  if (G && G.running) {
+  if (G && G.running && !G.paused) {
     // iframe 相容：座標轉換為相對 canvas 左上角
     const rect = G.canvas.getBoundingClientRect();
     const cx = e.clientX - rect.left;
@@ -1068,6 +1068,12 @@ document.addEventListener('keydown', e => {
   if (e.code === 'KeyT') {
     if (!G || !G.running || G.paused) return;
     openSummon();
+  }
+  // 爆發召喚選擇：鍵盤 1/2/3
+  if (e.code === 'Digit1' || e.code === 'Digit2' || e.code === 'Digit3') {
+    if (!document.getElementById('summon-pop').classList.contains('on')) return;
+    const idx = parseInt(e.code.replace('Digit','')) - 1;
+    if (_summonPicks[idx]) { e.preventDefault(); _pickSummon(_summonPicks[idx]); }
   }
 });
 
@@ -2378,8 +2384,22 @@ function render() {
   }
 }
 // ═══════════════════════════════════════════════
+let _summonPicks = []; // 供鍵盤 1/2/3 使用
+function _pickSummon(ev) {
+  ev.fx(G);
+  G.combo=Math.max(0,G.combo-2);
+  G.summonCD=G.summonCDMax;
+  // 恢復 paused 前記錄的玩家位置，避免位移到 UI 按鈕位置
+  if(G._preSummonPx !== undefined) { G.px=G._preSummonPx; G.py=G._preSummonPy; }
+  G.paused=false;
+  _summonPicks=[];
+  document.getElementById('summon-pop').classList.remove('on');
+  refreshComboPips(); updateSummonBtn();
+}
 function openSummon() {
   if(!G||!G.summonReady) return;
+  // 記錄現在的玩家位置（在 paused=true 之前）
+  G._preSummonPx = G.px; G._preSummonPy = G.py;
   G.paused=true;
   sfx('summon');
   const isMax = G.combo>=G.maxCombo;
@@ -2390,25 +2410,18 @@ function openSummon() {
   box.className = isMax?'maxpow':'';
   title.style.color = isMax?'var(--comboMax)':'var(--combo1)';
   title.textContent = isMax?`⚡ MAX COMBO 超級召喚！`:`⚡ 爆發召喚 ×${comboMul().toFixed(1)}`;
-  sub.textContent = '選擇一個效果觸發';
+  sub.textContent = '選擇一個效果觸發  [ 1 / 2 / 3 ]';
   let pool;
   if(isMax) pool=[...POOL_T2,...POOL_CHAOS];
   else if(G.combo>=3) pool=[...POOL_T1,...POOL_T2];
   else pool=[...POOL_T1];
-  const picks = pool.sort(()=>Math.random()-.5).slice(0,3);
+  _summonPicks = pool.sort(()=>Math.random()-.5).slice(0,3);
   ch.innerHTML='';
-  picks.forEach(ev=>{
+  _summonPicks.forEach((ev,i)=>{
     const d=document.createElement('div');
     d.className='schoice';
-    d.innerHTML=`<div class="schoice-icon">${ev.icon}</div><div style="flex:1"><div class="schoice-name">${ev.name}</div><div class="schoice-desc">${ev.desc}</div></div><div class="schoice-pow" style="color:${ev.col}">${ev.pow}</div>`;
-    d.onclick=()=>{
-      ev.fx(G);
-      G.combo=Math.max(0,G.combo-2);
-      G.summonCD=G.summonCDMax;
-      G.paused=false;
-      document.getElementById('summon-pop').classList.remove('on');
-      refreshComboPips(); updateSummonBtn();
-    };
+    d.innerHTML=`<div class="schoice-icon">${ev.icon}</div><div style="flex:1"><div class="schoice-name">${ev.name} <span style="font-size:.7em;opacity:.5">[${i+1}]</span></div><div class="schoice-desc">${ev.desc}</div></div><div class="schoice-pow" style="color:${ev.col}">${ev.pow}</div>`;
+    d.onclick=()=>_pickSummon(ev);
     ch.appendChild(d);
   });
   document.getElementById('summon-pop').classList.add('on');

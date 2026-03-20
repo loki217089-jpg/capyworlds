@@ -1366,7 +1366,7 @@ function statDiff(newSt, oldSt){
 function req(){
   const c=$('peq');
   // 已裝備槽
-  let eqHtml=`<button onclick="autoEquipBest()" style="width:100%;margin-bottom:10px;background:linear-gradient(90deg,rgba(240,192,64,.12),rgba(180,79,255,.12));border:1px solid rgba(240,192,64,.5);border-radius:8px;padding:8px;font-size:.74rem;font-weight:800;color:#f0c040;cursor:pointer;letter-spacing:1px;font-family:inherit">⚡ 一鍵最佳裝備</button>`;
+  let eqHtml=`<button data-action="autoequip" style="width:100%;margin-bottom:10px;background:linear-gradient(90deg,rgba(240,192,64,.12),rgba(180,79,255,.12));border:1px solid rgba(240,192,64,.5);border-radius:8px;padding:8px;font-size:.74rem;font-weight:800;color:#f0c040;cursor:pointer;letter-spacing:1px;font-family:inherit">⚡ 一鍵最佳裝備</button>`;
   eqHtml+='<div style="font-size:.72rem;color:var(--text2);margin-bottom:8px;font-weight:700">已裝備（點擊卸下）</div>';
   eqHtml+='<div class="eqgr" id="eqg">';
   SLT.forEach((sl,i)=>{
@@ -1456,6 +1456,8 @@ function req(){
   c.querySelectorAll('.eqs[data-unequip]').forEach(el => {
     el.addEventListener('click', () => unequip(parseInt(el.dataset.unequip)));
   });
+  const autoEquipBtn = c.querySelector('[data-action="autoequip"]');
+  if (autoEquipBtn) autoEquipBtn.addEventListener('click', autoEquipBest);
   const sellAllBtn = c.querySelector('[data-action="sellall"]');
   if (sellAllBtn) sellAllBtn.addEventListener('click', sellAll);
   c.querySelectorAll('[data-equip]').forEach(el => {
