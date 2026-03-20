@@ -243,6 +243,9 @@ let particles=[];
 let shakeX=0, shakeY=0;
 let countdownTimer=0, roundEndTimer=0, roundEndMsg='';
 let lastBeepN = -1;
+let cpuAggression = 1.0;   // escalates each round CPU loses
+let playerBurstChain = 0;  // consecutive burst activations in a match
+let screenFlash = 0;       // 0-1 white flash intensity
 const keys={};
 document.addEventListener('keydown', e=>{
   keys[e.code]=true;
@@ -402,8 +405,17 @@ class BeyTop {
 
   activateBurst(){
     if(this.burst>=100&&!this.burstActive){
-      this.burstActive=true; this.burstTimer=380; this.burst=0; sfx('burst');
-      const mag=3.5+this.atk*0.25, a=Math.random()*Math.PI*2;
+      this.burstActive=true; this.burst=0; sfx('burst');
+      if(this.team==='player'){
+        playerBurstChain++;
+        const chainBoost = playerBurstChain > 1 ? Math.min(1.6, 1 + playerBurstChain * 0.18) : 1;
+        this.burstTimer = Math.round(380 * chainBoost);
+        if(playerBurstChain > 1) spawnBurst(this.x, this.y, this.glow);
+      } else {
+        this.burstTimer = 380;
+      }
+      const mag=(3.5+this.atk*0.25)*(this.team==='player'&&playerBurstChain>1?1.2:1);
+      const a=Math.random()*Math.PI*2;
       this.vx+=Math.cos(a)*mag; this.vy+=Math.sin(a)*mag;
       return true;
     }
@@ -611,6 +623,7 @@ function checkCollision(a,b){
     spawnSparks((a.x+b.x)/2,(a.y+b.y)/2,a.color,b.color,14);
     const si=Math.min(15,force*4);
     shakeX=(Math.random()-0.5)*si; shakeY=(Math.random()-0.5)*si;
+    if(force>4) screenFlash=Math.min(0.55, force*0.1);
     sfx('collision');
     if(a.driver.type==='ball'){a.vx*=1.12;a.vy*=1.12;}
     if(b.driver.type==='ball'){b.vx*=1.12;b.vy*=1.12;}
@@ -622,7 +635,8 @@ function checkCollision(a,b){
 function updateAI(top, opponent){
   const dx=opponent.x-top.x, dy=opponent.y-top.y, d=Math.sqrt(dx*dx+dy*dy);
   const tdx=AX-top.x, tdy=AY-top.y, td=Math.sqrt(tdx*tdx+tdy*tdy);
-  const f=0.16+top.spinRatio*0.08;
+  const aggMult = top.team==='cpu' ? cpuAggression : 1.0;
+  const f=(0.16+top.spinRatio*0.08)*aggMult;
   const t=top.blade.type;
 
   if(t==='attack'){
@@ -676,6 +690,12 @@ function drawBattleHUD(){
     ctx.fillStyle=playerTop.color; ctx.shadowBlur=14; ctx.shadowColor=playerTop.color;
     ctx.fillText('⚡ BURST！', 16, 50);
     ctx.shadowBlur=0;
+    if(playerBurstChain>1){
+      ctx.font='bold 14px Arial'; ctx.fillStyle='#ffffaa';
+      ctx.shadowBlur=10; ctx.shadowColor='#ffcc00';
+      ctx.fillText(`連鎖爆裂 ×${playerBurstChain}！`, 16, 72);
+      ctx.shadowBlur=0;
+    }
   }
   if(cpuTop&&cpuTop.burstActive){
     ctx.font='bold 18px Arial'; ctx.textAlign='right';
@@ -800,6 +820,12 @@ function gameLoop(ts){
 
     // CPU AI控制
     updateAI(cpuTop, playerTop);
+    // CPU strategic rush: occasional high-speed charge scaled by aggression
+    if(cpuTop.spin>1200 && Math.random()<0.006*cpuAggression){
+      const dx=playerTop.x-cpuTop.x, dy=playerTop.y-cpuTop.y, d=Math.hypot(dx,dy)||1;
+      cpuTop.vx+=(dx/d)*(4+cpuAggression*2.5); cpuTop.vy+=(dy/d)*(4+cpuAggression*2.5);
+      spawnSparks(cpuTop.x,cpuTop.y,cpuTop.color,'#ffffff',5);
+    }
 
     // 每1秒：雙方互相指向對方 (增加對抗感)
     dirTimer -= dtSec;
@@ -846,6 +872,7 @@ function gameLoop(ts){
       else if(!playerTop.alive){ roundEndMsg='CPU 獲勝！'; winner='cpu'; cpuScore++; }
       else { roundEndMsg='你獲勝了！'; winner='player'; playerScore++; }
       sfx(winner==='player'?'win':winner==='cpu'?'lose':'draw');
+      if(winner==='player') cpuAggression=Math.min(2.2, cpuAggression+0.38);
       roundEndTimer=220;
       gameState='roundEnd';
       document.getElementById('battleBtns').style.display='none';
@@ -886,6 +913,13 @@ function gameLoop(ts){
   }
 
   ctx.restore();
+  // Screen flash overlay (outside shake transform)
+  if(screenFlash>0){
+    ctx.fillStyle=`rgba(255,255,255,${screenFlash.toFixed(2)})`;
+    ctx.fillRect(0,0,W,H);
+    screenFlash*=0.70;
+    if(screenFlash<0.01) screenFlash=0;
+  }
 }
 
 // ==================== START BATTLE ====================
@@ -896,7 +930,7 @@ function startBattle(){
   window._cpuIdx=cpuIdx;
   playerScore=0; cpuScore=0; currentRound=1;
   envTimer=18; envActive=null;
-  dirTimer=1;
+  dirTimer=1; cpuAggression=1.0; playerBurstChain=0; screenFlash=0;
   startRound();
   if(!loopStarted){ loopStarted=true; requestAnimationFrame(gameLoop); }
 }
@@ -911,7 +945,8 @@ function startRound(){
   playerTop.vx=2.8; playerTop.vy=(Math.random()-0.5)*1.5;
   cpuTop.vx=-2.8; cpuTop.vy=(Math.random()-0.5)*1.5;
   particles=[];
-  shakeX=shakeY=0;
+  shakeX=shakeY=0; screenFlash=0;
+  playerBurstChain=0;
   countdownTimer=195;
   lastBeepN=-1;
   playerCooldowns={dash:0,spin:0,guard:0};

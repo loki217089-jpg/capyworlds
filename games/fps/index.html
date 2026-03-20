@@ -81,6 +81,7 @@
         <span><span class="ctrl-key">1</span> 手槍</span>
         <span><span class="ctrl-key">2</span> 霰彈槍</span>
         <span><span class="ctrl-key">3</span> 衝鋒槍</span>
+        <span><span class="ctrl-key">G</span> 手榴彈</span>
         <span><span class="ctrl-key">ESC</span> 暫停</span>
       </div>
       <div class="ctrl-row" style="color:#666;font-size:12px;margin-top:5px">
@@ -134,6 +135,10 @@
     <div class="hud-item">
       <div class="hud-label">彈藥</div>
       <div id="ammoNum" class="hud-value" style="color:#fa0;font-size:14px">30/30</div>
+    </div>
+    <div class="hud-item">
+      <div class="hud-label">手榴彈</div>
+      <div id="grenadeNum" class="hud-value" style="color:#0f8;font-size:14px">3</div>
     </div>
   </div>
 </div><!-- /gameContainer -->
@@ -190,6 +195,9 @@ const SFX = {
   reload() { tone(480,'square',0.06,0.15); setTimeout(()=>tone(700,'square',0.06,0.15),110); },
   pickup() { tone(700,'sine',0.08,0.22); setTimeout(()=>tone(950,'sine',0.1,0.18),75); },
   wave()   { [220,330,494].forEach((f,i)=>setTimeout(()=>tone(f,'sawtooth',0.22,0.22),i*140)); },
+  grenade(){ tone(280,'square',0.08,0.18); noise(0.09,0.1,900,'bandpass'); },
+  explode(){ noise(0.38,0.55,260,'lowpass'); tone(65,'sawtooth',0.32,0.42,28); },
+  streak()  { [440,660,880].forEach((f,i)=>setTimeout(()=>tone(f,'sine',0.14,0.18),i*80)); },
 };
 
 // BGM
@@ -242,6 +250,12 @@ const WEAPONS=[
   {name:'衝鋒槍', maxAmmo:35, damage:1, spread:0.04, pellets:1, fireRate:4,  reloadTime:75,  speed:15, hsMult:2.5, color:'#0cf'},
 ];
 let curWep=0, wepCD=0, muzzle=0;
+let hitFlash=0;
+let grenadeCount=3, grenades=[];
+let killStreak=0, killStreakTimer=0;
+const crosshairLines=document.querySelectorAll('#crosshair line');
+const crosshairDot=document.querySelector('#crosshair circle');
+function setCrosshair(color){crosshairLines.forEach(l=>l.setAttribute('stroke',color));if(crosshairDot)crosshairDot.setAttribute('fill',color);}
 
 // ===== PLAYER =====
 const PITCH_MAX = H * 0.33;
@@ -259,9 +273,10 @@ const player = {
 let drops=[];
 function spawnDrop(x,y){
   const r=Math.random();
-  const t = r<0.5?{type:'health',color:'#0f0',icon:'🟩',label:'+25血'}
-           :r<0.78?{type:'armor',color:'#4af',icon:'🛡',label:'+30護甲'}
-           :{type:'ammo',color:'#fa0',icon:'🔋',label:'滿彈補充'};
+  const t = r<0.42?{type:'health',color:'#0f0',icon:'🟩',label:'+25血'}
+           :r<0.65?{type:'armor',color:'#4af',icon:'🛡',label:'+30護甲'}
+           :r<0.85?{type:'ammo',color:'#fa0',icon:'🔋',label:'滿彈補充'}
+           :{type:'grenade',color:'#0f8',icon:'💣',label:'手榴彈+1'};
   drops.push({x,y,...t,life:500,bob:Math.random()*Math.PI*2});
 }
 function updateDrops(){
@@ -269,9 +284,10 @@ function updateDrops(){
   drops.forEach(d=>{
     d.life--; d.bob+=0.06;
     if(Math.hypot(player.x-d.x,player.y-d.y)<32){
-      if(d.type==='health') { player.health=Math.min(100,player.health+25); hudHealth(); }
-      if(d.type==='armor')  { player.armor=Math.min(80,player.armor+30);   hudArmor(); }
-      if(d.type==='ammo')   { player.ammo=player.maxAmmo; hudAmmo(); }
+      if(d.type==='health')  { player.health=Math.min(100,player.health+25); hudHealth(); }
+      if(d.type==='armor')   { player.armor=Math.min(80,player.armor+30);   hudArmor(); }
+      if(d.type==='ammo')    { player.ammo=player.maxAmmo; hudAmmo(); }
+      if(d.type==='grenade') { grenadeCount=Math.min(9,grenadeCount+1); document.getElementById('grenadeNum').textContent=grenadeCount; }
       SFX.pickup(); msg(d.label,d.color); d.life=0;
     }
   });
@@ -366,6 +382,93 @@ function switchWep(i){
   hudAmmo(); hudWep();
 }
 
+// ===== GRENADE =====
+function throwGrenade(){
+  if(!gameActive||grenadeCount<=0)return;
+  grenadeCount--;
+  document.getElementById('grenadeNum').textContent=grenadeCount;
+  const spd=4;
+  grenades.push({x:player.x,y:player.y,dx:Math.cos(player.angle)*spd,dy:Math.sin(player.angle)*spd,life:90});
+  SFX.grenade();
+}
+function explodeGrenade(g){
+  SFX.explode();
+  const radius=110;
+  const toKill=[];
+  enemies.forEach(e=>{
+    const d=Math.hypot(e.x-g.x,e.y-g.y);
+    if(d<radius){
+      const dmg=Math.max(3,Math.floor(10*(1-d/radius)+4));
+      e.hp-=dmg; e.flash=14;
+      if(e.hp<=0) toKill.push(e);
+    }
+  });
+  toKill.forEach(e=>{
+    player.kills++; player.waveKills++;
+    const pts=e.score+player.wave*50;
+    player.score+=pts;
+    msg(`💥 爆炸擊殺！+${pts}分`,'#f80');
+    document.getElementById('killCount').textContent=player.kills;
+    document.getElementById('scoreNum').textContent=player.score;
+    if(Math.random()<0.5) spawnDrop(e.x,e.y);
+    SFX.die(); checkWave(); registerKillStreak();
+  });
+  enemies=enemies.filter(e=>e.hp>0);
+  for(let i=0;i<24;i++){
+    const a=Math.random()*Math.PI*2,spd=Math.random()*5+2;
+    particles.push({x:g.x,y:g.y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,life:24,color:Math.random()<0.5?'#f80':'#ff0',size:5+Math.random()*4});
+  }
+}
+function updateGrenades(){
+  for(let i=grenades.length-1;i>=0;i--){
+    const g=grenades[i];
+    g.life--;
+    const nx=g.x+g.dx,ny=g.y+g.dy;
+    if(isWall(nx,g.y)){g.dx*=-0.6;}else{g.x=nx;}
+    if(isWall(g.x,ny)){g.dy*=-0.6;}else{g.y=ny;}
+    g.dx*=0.96; g.dy*=0.96;
+    if(g.life<=0){explodeGrenade(g);grenades.splice(i,1);}
+  }
+}
+function drawGrenades(zb){
+  grenades.forEach(g=>{
+    const dx=g.x-player.x,dy=g.y-player.y;
+    const dist=Math.sqrt(dx*dx+dy*dy)||1;
+    let sa=Math.atan2(dy,dx)-player.angle;
+    while(sa>Math.PI)sa-=Math.PI*2;while(sa<-Math.PI)sa+=Math.PI*2;
+    if(Math.abs(sa)>FOV*0.65)return;
+    const sx=(0.5+sa/FOV)*W;
+    const sh=Math.min((TILE*0.35/dist)*(W*0.8),40);
+    let vis=false;
+    for(let c=Math.max(0,Math.floor(sx-sh));c<=Math.min(W-1,Math.floor(sx+sh));c+=3)
+      if(zb[c]>dist){vis=true;break;}
+    if(!vis)return;
+    const sy2=HALF_H+player.pitch;
+    const pulse=Math.sin(g.life*0.25)*2;
+    ctx.save();ctx.globalAlpha=0.9;
+    ctx.fillStyle='#0f8';
+    ctx.beginPath();ctx.arc(sx,sy2+pulse,Math.max(3,sh*0.5),0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='bold 11px Courier New';ctx.textAlign='center';
+    ctx.fillText(Math.ceil(g.life/30),sx,sy2+pulse+4);
+    ctx.restore();
+  });
+}
+
+// ===== KILL STREAK =====
+function registerKillStreak(){
+  killStreak++;
+  killStreakTimer=200;
+  const streakMsgs={3:'🔥 3 連殺！',5:'💥 5 連殺！',10:'⚡ 10 連殺！',15:'👑 大師殺手！'};
+  if(streakMsgs[killStreak]){
+    announceWave(streakMsgs[killStreak]);
+    SFX.streak();
+    const bonus=killStreak*120;
+    player.score+=bonus;
+    document.getElementById('scoreNum').textContent=player.score;
+    msg(`連殺獎勵 +${bonus}分`,'#ff0');
+  }
+}
+
 // ===== INPUT =====
 const keys={};
 let mouseDown=false;
@@ -376,6 +479,7 @@ document.addEventListener('keydown',e=>{
   if(e.code==='Digit1')switchWep(0);
   if(e.code==='Digit2')switchWep(1);
   if(e.code==='Digit3')switchWep(2);
+  if(e.code==='KeyG')throwGrenade();
 });
 document.addEventListener('keyup',e=>{keys[e.code]=false;});
 canvas.addEventListener('mousedown',e=>{if(e.button===0){mouseDown=true;shoot();}});
@@ -478,12 +582,6 @@ function drawEnemies(zb){
     // 存 sprite bounds 供暴頭判定
     e._sx=sxl; e._sy=sy; e._sw=sw; e._sh=sh;
 
-    // 畫頭部 hitbox 框（紅框 = 頭部範圍）
-    ctx.globalAlpha=0.85;
-    ctx.strokeStyle='#f00';
-    ctx.lineWidth=2;
-    ctx.strokeRect(sxl+sw*0.25, sy+sh*0.04, sw*0.5, sh*0.29);
-
     ctx.restore();
     if(e.flash>0)e.flash--;
   });
@@ -513,6 +611,7 @@ function updateBullets(){
 
       const dmg = hs ? e.hp : b.dmg;  // 爆頭直接秒殺
       e.hp -= dmg; e.flash = 7; b.life = 0;
+      hitFlash = hs ? 16 : 8;
       SFX.hit();
 
       // particles
@@ -542,6 +641,7 @@ function updateBullets(){
         if(Math.random()<0.55) spawnDrop(e.x,e.y);
         SFX.die();
         checkWave();
+        registerKillStreak();
       }
       break;
     }
@@ -657,6 +757,13 @@ function drawWeaponHUD(){
     ctx.save(); ctx.globalAlpha=muzzle/4*0.28;
     ctx.fillStyle=WEAPONS[curWep].color; ctx.fillRect(0,0,W,H);
     ctx.restore(); muzzle--;
+  }
+  // Crosshair hit flash
+  if(hitFlash>0){
+    setCrosshair(hitFlash>8?'#ff0':'#f80');
+    hitFlash--;
+  } else {
+    setCrosshair('rgba(255,255,255,0.8)');
   }
 }
 
@@ -779,6 +886,8 @@ function gameOver(){
 }
 function initGame(){
   curWep=0; wepCD=0; muzzle=0; paused=false; stuckCheckTimer=0;
+  hitFlash=0; grenadeCount=3; grenades=[]; killStreak=0; killStreakTimer=0;
+  document.getElementById('grenadeNum').textContent='3';
   document.getElementById('pauseMenu').style.display='none';
   const w=WEAPONS[0];
   Object.assign(player,{
@@ -807,9 +916,10 @@ function loop(){
     movePlayer();
     if(mouseDown) shoot();  // 按住滑鼠連發
     updateBullets(); updateEnemies();
-    updateDrops(); tickReload(); checkStuckEnemies();
+    updateDrops(); updateGrenades(); tickReload(); checkStuckEnemies();
+    if(killStreakTimer>0){killStreakTimer--;if(killStreakTimer===0)killStreak=0;}
     const zb=castRays();
-    drawDrops(zb); drawEnemies(zb); drawParticles();
+    drawDrops(zb); drawGrenades(zb); drawEnemies(zb); drawParticles();
     drawWeaponHUD(); drawMinimap();
   }
   requestAnimationFrame(loop);

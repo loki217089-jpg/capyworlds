@@ -251,12 +251,17 @@ body {
 #pres-btn:hover { background: #250c40; box-shadow: 0 0 16px #a78bfa30; }
 #pres-info { font-size: 13px; color: var(--dim); line-height: 1.7; }
 #dna-upg-list { display: flex; flex-direction: column; gap: 6px; }
+#pres-prog-wrap { margin: 6px 0; background: #1a0a2e; border-radius: 4px; overflow: hidden; height: 14px; position: relative; }
+#pres-prog-bar  { height: 100%; background: linear-gradient(90deg,#6d28d9,#a78bfa); transition: width .4s; width:0%; }
+#pres-prog-txt  { font-size: 11px; color: var(--dim); margin-top: 3px; text-align: center; }
+#pres-streak    { font-size: 12px; color: var(--purple); text-align: center; margin-top: 4px; }
 .du {
   background: var(--bg3); border: 1px solid #2a1a4a;
   border-radius: 4px; padding: 8px 9px; cursor: pointer; transition: all .15s;
 }
 .du:hover { border-color: var(--purple); }
 .du.got { opacity: .5; pointer-events: none; border-style: dashed; }
+.du.no  { opacity: .55; cursor: not-allowed; }
 .dun { font-size: 15px; color: var(--purple); font-weight: bold; }
 .duc { font-size: 13px; color: var(--dim); }
 .dud { font-size: 13px; color: var(--text); margin-top: 2px; }
@@ -460,13 +465,16 @@ body {
         <div id="dna-box">
           <div id="dna-num">0</div>
           <div id="dna-lbl">🧬 DNA 積分</div>
-          <div id="dna-gain">下次可獲得: <span id="dna-g" style="color:var(--purple)">0</span> DNA</div>
+          <div id="dna-gain">下次進化可獲得: <span id="dna-g" style="color:var(--purple)">0</span> DNA</div>
         </div>
+        <div id="pres-prog-wrap"><div id="pres-prog-bar"></div></div>
+        <div id="pres-prog-txt"></div>
         <button id="pres-btn" onclick="prestige()">🧬 觸發進化重置</button>
+        <div id="pres-streak"></div>
         <div id="pres-info">
           ⚠️ 進化重置清除所有腦髓與殭屍。<br>
           🧬 換取 DNA 積分，購買永久強化。<br>
-          📈 DNA = √(總腦髓 ÷ 1,000,000,000)<br>
+          📈 DNA = √(總腦髓 ÷ 10億)，每次進化 +8% 生產速度<br>
           💡 建議獲得至少 <b>1 DNA</b> 再進化。
         </div>
         <div id="dna-upg-list"></div>
@@ -544,11 +552,15 @@ const UD = [
 ];
 
 const DNAD = [
-  { id:'d1', nm:'原始感染',  ds:'所有生產 ×2 (永久)', co:1,   ml:2  },
-  { id:'d2', nm:'病毒擴散',  ds:'所有生產 ×2 (永久)', co:3,   ml:2  },
-  { id:'d3', nm:'變異加速',  ds:'所有生產 ×3 (永久)', co:10,  ml:3  },
-  { id:'d4', nm:'基因革命',  ds:'所有生產 ×5 (永久)', co:30,  ml:5  },
-  { id:'d5', nm:'殭屍神啟',  ds:'所有生產 ×10(永久)', co:100, ml:10 },
+  { id:'d1', nm:'原始感染',  ds:'所有生產 ×2 (永久)',  co:1,    ml:2,  tp:'g' },
+  { id:'d2', nm:'病毒擴散',  ds:'所有生產 ×2 (永久)',  co:3,    ml:2,  tp:'g' },
+  { id:'d3', nm:'變異加速',  ds:'所有生產 ×3 (永久)',  co:10,   ml:3,  tp:'g' },
+  { id:'d4', nm:'基因革命',  ds:'所有生產 ×5 (永久)',  co:30,   ml:5,  tp:'g' },
+  { id:'d5', nm:'殭屍神啟',  ds:'所有生產 ×10 (永久)', co:100,  ml:10, tp:'g' },
+  { id:'d6', nm:'末日病毒',  ds:'所有生產 ×20 (永久)', co:350,  ml:20, tp:'g' },
+  { id:'d7', nm:'究極感染',  ds:'所有生產 ×50 (永久)', co:1200, ml:50, tp:'g' },
+  { id:'d8', nm:'感染加速',  ds:'點擊力 ×5 (永久)',    co:5,    ml:5,  tp:'c' },
+  { id:'d9', nm:'腦髓掠奪',  ds:'點擊力 ×10 (永久)',   co:50,   ml:10, tp:'c' },
 ];
 
 const ACHD = [
@@ -695,21 +707,24 @@ function zMult(zid) {
     if (u.ty === 'z' && u.zi === zid) m *= u.ml;
     if (u.ty === 'g') m *= u.ml;
   }
-  for (const d of DNAD) { if (G.du[d.id]) m *= d.ml; }
+  for (const d of DNAD) { if (G.du[d.id] && d.tp==='g') m *= d.ml; }
   return m;
 }
 
 function bps() {
   let s = 0;
   for (const z of ZD) { if (G.z[z.id].n > 0) s += G.z[z.id].n * z.bp * zMult(z.id); }
-  return s * (Date.now() < G.ee ? G.em : 1);
+  const tpBonus = 1 + G.tp * 0.08; // +8% per prestige (permanent)
+  return s * (Date.now() < G.ee ? G.em : 1) * tpBonus;
 }
 
 function clickPow() {
   let cp = 1;
   for (const u of UD) { if (u.ty === 'c' && G.upg[u.id]) cp *= u.ml; }
+  for (const d of DNAD) { if (G.du[d.id] && d.tp==='c') cp *= d.ml; }
   const b = bps();
   if (b > 0) cp += b * 0.01; // BPS bonus
+  cp *= (1 + G.tp * 0.05); // +5% per prestige
   return Math.max(1, cp);
 }
 
@@ -799,7 +814,8 @@ function prestige() {
   G.b = 0; G.tb = 0;
   G.z = ZD.map(z => ({ id: z.id, n: 0 }));
   G.upg = {}; G.em = 1; G.ee = 0;
-  toast('🧬 進化成功！', `獲得 ${gain} DNA 積分`, '#a78bfa');
+  toast('🧬 進化成功！', `獲得 ${gain} DNA 積分 ／ 生產加成 +${G.tp*8}%`, '#a78bfa');
+  save();
   render();
 }
 
@@ -933,14 +949,31 @@ function renderAch() {
 
 function renderPres() {
   document.getElementById('dna-num').textContent = fmt(G.dna);
-  document.getElementById('dna-g').textContent   = fmt(dnaGain());
+  const gain = dnaGain();
+  document.getElementById('dna-g').textContent = fmt(gain);
+
+  // Progress bar toward next DNA threshold
+  const curThresh = gain * gain * 1e9;
+  const nextThresh = (gain + 1) * (gain + 1) * 1e9;
+  const pct = gain === 0
+    ? Math.min(100, (G.tb / 1e9) * 100)
+    : Math.min(100, ((G.tb - curThresh) / (nextThresh - curThresh)) * 100);
+  document.getElementById('pres-prog-bar').style.width = pct.toFixed(1) + '%';
+  document.getElementById('pres-prog-txt').textContent =
+    `總腦髓 ${fmt(G.tb)} / ${fmt(nextThresh)}　→ 下次 ${gain + 1} DNA`;
+
+  // Prestige streak info
+  const bonusPct = (G.tp * 8);
+  document.getElementById('pres-streak').textContent =
+    G.tp > 0 ? `已進化 ${G.tp} 次 ⟶ 生產 +${bonusPct}% ／ 點擊 +${G.tp*5}%` : '';
+
   const list = document.getElementById('dna-upg-list');
   list.innerHTML = '';
   for (const d of DNAD) {
     const bought = !!G.du[d.id];
     const ok     = G.dna >= d.co;
     const div    = document.createElement('div');
-    div.className = 'du' + (bought ? ' got' : '');
+    div.className = 'du' + (bought ? ' got' : ok ? '' : ' no');
     div.onclick = () => buyDNA(d.id);
     div.innerHTML = `
       <div style="display:flex;justify-content:space-between">

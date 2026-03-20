@@ -418,17 +418,39 @@ function applyMeta(p) {
 
 loadMeta();
 
-// ─── STARFIELD ────────────────────────────────────────────────────────────────
+// ─── STARFIELD + NEBULA ───────────────────────────────────────────────────────
+const nebulas = [];
+(function initNebulas() {
+  const rng = mulberry32(77);
+  const cols = ['rgba(40,0,80','rgba(0,30,80','rgba(80,10,0','rgba(0,60,40'];
+  for (let i = 0; i < 8; i++) {
+    nebulas.push({
+      x: (rng()-0.5)*8000, y: (rng()-0.5)*8000,
+      rx: 400+rng()*600, ry: 250+rng()*450,
+      angle: rng()*Math.PI,
+      color: cols[Math.floor(rng()*cols.length)],
+      alpha: 0.08+rng()*0.10,
+      speed: 0.04+rng()*0.06
+    });
+  }
+})();
+
 const stars = [];
 (function initStars() {
   const rng = mulberry32(42);
   const layers = [{n:200,speed:0.1,sz:1},{n:100,speed:0.25,sz:1.5},{n:50,speed:0.5,sz:2}];
   for (const l of layers) {
     for (let i = 0; i < l.n; i++) {
+      const rv = rng();
+      const color = rv < 0.07 ? `hsl(${200+Math.floor(rng()*40)},85%,82%)` // ice blue
+                  : rv < 0.12 ? `hsl(${Math.floor(rng()*25)},75%,78%)`       // red-orange
+                  : rv < 0.15 ? `hsl(55,90%,85%)`                             // yellow
+                  : '#ffffff';
       stars.push({
         x: rng()*4000-2000, y: rng()*4000-2000,
         speed: l.speed, sz: l.sz,
-        brightness: 0.4+rng()*0.6
+        brightness: 0.4+rng()*0.6,
+        color, twinkleOff: rng()*Math.PI*2
       });
     }
   }
@@ -466,7 +488,14 @@ function createPlayer() {
     boostRegenLevel: 1,  // 1-12: regen speed upgrade
     boostUseLevel: 1,    // 1-12: fuel consumption reduction
     returnCharges: 0,
-    warpFlash: 0   // countdown timer for warp flash effect
+    warpFlash: 0,   // countdown timer for warp flash effect
+    // Weapon system
+    weaponMode: 'laser',      // 'laser' | 'scatter' | 'heavy'
+    unlockedWeapons: ['laser'],
+    // Kill combo
+    killCombo: 0,
+    killComboTimer: 0,
+    killComboMult: 1,
   };
 }
 
@@ -647,6 +676,15 @@ window.addEventListener('keydown', e => {
     if (state==='playing') tryOpenShop();
     else if (state==='shop') { closeShop(); state='playing'; }
   }
+  if (e.code==='KeyQ' && state==='playing') {
+    const wl = player.unlockedWeapons;
+    if (wl.length > 1) {
+      const idx = wl.indexOf(player.weaponMode);
+      player.weaponMode = wl[(idx+1) % wl.length];
+      const names = {laser:'雷射砲', scatter:'散射炮', heavy:'重砲'};
+      setStatus(`切換武器：${names[player.weaponMode]}`);
+    }
+  }
   if (e.code==='Space' && state==='playing') {
     mouse.down = true;
   }
@@ -751,6 +789,21 @@ function renderShop() {
   addUpg('weaponLevel',     '武器系統', 12, lv=>`傷害+${Math.round((lv-1)*25)}%`);
   addUpg('boostRegenLevel', '加速器回復', 8, lv=>`回復+${Math.round((lv-1)*30)}%`);
   addUpg('boostUseLevel',   '衝刺節能',  7, lv=>`消耗-${Math.round((1-Math.pow(0.9,lv-1))*100)}%`);
+  // Weapon unlocks
+  if (!player.unlockedWeapons.includes('scatter')) {
+    upgrades.push({name:'散射炮 — 三叉擴散彈 (按Q切換)',cost:{ore:35},req:()=>true,buy:()=>{
+      player.unlockedWeapons.push('scatter');
+      player.weaponMode='scatter';
+      setStatus('散射炮解鎖！按 Q 切換武器');
+    }});
+  }
+  if (!player.unlockedWeapons.includes('heavy')) {
+    upgrades.push({name:'重砲 — 穿甲高傷害 慢速 (按Q切換)',cost:{ore:50,crystal:3},req:()=>true,buy:()=>{
+      player.unlockedWeapons.push('heavy');
+      player.weaponMode='heavy';
+      setStatus('重砲解鎖！按 Q 切換武器');
+    }});
+  }
   // Consumables (always visible if needed)
   if (player.hull<player.maxHull) upgrades.push({name:'緊急維修 (船殼恢復)',cost:{ore:15},req:()=>true,buy:()=>{player.hull=player.maxHull;}});
   if (player.shield<player.maxShield) upgrades.push({name:'護盾充能 (護盾恢復)',cost:{ore:8},req:()=>true,buy:()=>{player.shield=player.maxShield;}});
@@ -959,15 +1012,43 @@ function updatePlayer(dt) {
     }
   }
 
+  // Kill combo tick
+  if (player.killComboTimer > 0) {
+    player.killComboTimer -= dt;
+    if (player.killComboTimer <= 0) { player.killCombo = 0; player.killComboMult = 1; }
+  }
+
   // Fire
   if (player.fireTimer>0) player.fireTimer-=dt;
   if (mouse.down && player.fireTimer<=0) {
-    player.fireTimer = getPlayerFireRate();
-    spawnBullet(player.x,player.y,player.angle,BULLET_SPEED,getPlayerDmg(),'player');
-    audio.play('shoot', 0.22);
-    // Muzzle flash
-    spawnParticle(player.x+Math.cos(player.angle)*25,player.y+Math.sin(player.angle)*25,
-      Math.cos(player.angle)*80,Math.sin(player.angle)*80,0.08,'#ffffaa',6);
+    const dmg = getPlayerDmg();
+    const fr  = getPlayerFireRate();
+    const ang = player.angle;
+    const mx  = player.x + Math.cos(ang)*25;
+    const my  = player.y + Math.sin(ang)*25;
+    if (player.weaponMode === 'scatter') {
+      player.fireTimer = fr * 1.35;
+      for (let si = -1; si <= 1; si++) {
+        spawnBullet(player.x, player.y, ang + si*0.28, BULLET_SPEED*0.9, dmg*0.7, 'player');
+      }
+      audio.play('shoot', 0.28);
+      spawnParticle(mx, my, Math.cos(ang)*60, Math.sin(ang)*60, 0.1, '#ffff88', 7);
+    } else if (player.weaponMode === 'heavy') {
+      player.fireTimer = fr * 2.8;
+      // Big slow piercing bolt — store pierce flag
+      const b = {x:player.x, y:player.y,
+        vx:Math.cos(ang)*BULLET_SPEED*0.55, vy:Math.sin(ang)*BULLET_SPEED*0.55,
+        life:BULLET_LIFE*1.8, dmg:dmg*2.8, owner:'player', r:9, homing:false, pierce:true};
+      bullets.push(b);
+      audio.play('shoot', 0.45, 0.75);
+      spawnParticle(mx, my, Math.cos(ang)*100, Math.sin(ang)*100, 0.12, '#ff8800', 10);
+    } else {
+      // Default laser
+      player.fireTimer = fr;
+      spawnBullet(player.x, player.y, ang, BULLET_SPEED, dmg, 'player');
+      audio.play('shoot', 0.22);
+      spawnParticle(mx, my, Math.cos(ang)*80, Math.sin(ang)*80, 0.08, '#ffffaa', 6);
+    }
   }
 
   // Invul timer
@@ -1057,8 +1138,9 @@ function updateBullets(dt) {
             explosion(en.x,en.y,20,en.color);
             explosion(en.x,en.y,10,'#ffffff');
             dropLoot(en.x,en.y,chunk);
+            registerKill();
           }
-          bullets.splice(i,1); hitEnemy=true; break;
+          if (!b.pierce) { bullets.splice(i,1); hitEnemy=true; break; }
         }
       }
       if (hitEnemy) break;
@@ -1078,8 +1160,9 @@ function updateBullets(dt) {
           const ncx=Math.floor(en.x/CHUNK), ncy=Math.floor(en.y/CHUNK);
           const nc=chunks.get(chunkKey(ncx,ncy));
           if(nc) dropLoot(en.x,en.y,nc);
+          registerKill();
         }
-        bullets.splice(i,1); hitEnemy=true; break;
+        if (!b.pierce) { bullets.splice(i,1); hitEnemy=true; break; }
       }
     }
   }
@@ -1094,10 +1177,24 @@ function dropLoot(x,y,chunk) {
   else if (roll<0.9) type='crystal';
   else type='alientech';
   chunk.items.push({x,y,type,r:12,bobOffset:Math.random()*Math.PI*2,alive:true});
+  // Extra drop from kill combo
+  const mult = player ? player.killComboMult : 1;
+  if (mult >= 1.5 && Math.random() < (mult-1)) {
+    const bonus = Math.random()<0.5?'ore':'crystal';
+    chunk.items.push({x:x+(Math.random()-0.5)*40, y:y+(Math.random()-0.5)*40,
+      type:bonus, r:12, bobOffset:Math.random()*Math.PI*2, alive:true});
+  }
   if (!milestones.firstKill) {
     milestones.firstKill = true;
     setStatus('首次擊殺！繼續消滅敵人獲取補給');
   }
+}
+
+function registerKill() {
+  player.killCombo++;
+  player.killComboTimer = 3.5;
+  player.killComboMult = 1 + Math.floor((player.killCombo-1)/3) * 0.5;
+  if (player.killCombo >= 3) setStatus(`💥 ${player.killCombo}連殺！ 戰利品 ×${player.killComboMult.toFixed(1)}`);
 }
 
 function updateEnemyBullets(dt) {
@@ -1460,11 +1557,30 @@ function render(timestamp) {
 }
 
 function drawStars() {
+  const now = performance.now() * 0.001;
+  // Nebula clouds (parallax layer 0)
+  for (const nb of nebulas) {
+    const px = ((nb.x - player.x*nb.speed) % (W*3) + W*3) % (W*3) - W;
+    const py = ((nb.y - player.y*nb.speed) % (H*3) + H*3) % (H*3) - H;
+    const grad = ctx.createRadialGradient(px,py,0,px,py,nb.rx);
+    grad.addColorStop(0, nb.color+`,${nb.alpha})`);
+    grad.addColorStop(1, nb.color+',0)');
+    ctx.save();
+    ctx.translate(px,py);
+    ctx.rotate(nb.angle);
+    ctx.scale(1, nb.ry/nb.rx);
+    ctx.translate(-px,-py);
+    ctx.beginPath(); ctx.arc(px,py,nb.rx,0,Math.PI*2);
+    ctx.fillStyle=grad; ctx.fill();
+    ctx.restore();
+  }
+  // Stars with color twinkling
   for (const s of stars) {
     const px = ((s.x - player.x*s.speed) % W + W*2) % W;
     const py = ((s.y - player.y*s.speed) % H + H*2) % H;
-    ctx.globalAlpha = s.brightness;
-    ctx.fillStyle = '#ffffff';
+    const twinkle = s.sz > 1.3 ? 0.5+0.5*Math.sin(now*1.8+s.twinkleOff) : 1;
+    ctx.globalAlpha = s.brightness * twinkle;
+    ctx.fillStyle = s.color;
     ctx.fillRect(px,py,s.sz,s.sz);
   }
   ctx.globalAlpha=1;
@@ -1913,9 +2029,18 @@ function drawBullets(t) {
     ctx.save();
     ctx.translate(b.x,b.y);
     ctx.rotate(ang);
-    ctx.shadowColor='#88ffff'; ctx.shadowBlur=8;
-    ctx.fillStyle='#00ffff';
-    ctx.beginPath(); ctx.ellipse(0,0,8,3,0,0,Math.PI*2); ctx.fill();
+    if (b.pierce) {
+      // Heavy cannon — big orange glowing orb
+      ctx.shadowColor='#ff6600'; ctx.shadowBlur=18;
+      ctx.fillStyle='#ff8800';
+      ctx.beginPath(); ctx.arc(0,0,b.r,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#ffcc44'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(0,0,b.r,0,Math.PI*2); ctx.stroke();
+    } else {
+      ctx.shadowColor='#88ffff'; ctx.shadowBlur=8;
+      ctx.fillStyle='#00ffff';
+      ctx.beginPath(); ctx.ellipse(0,0,8,3,0,0,Math.PI*2); ctx.fill();
+    }
     ctx.restore();
   }
   ctx.shadowBlur=0;
@@ -2048,6 +2173,43 @@ function drawHUD(t) {
 
   // Minimap (top right)
   drawMinimap(t);
+
+  // Weapon indicator (bottom left)
+  if (state === 'playing') {
+    const wNames = {laser:'雷射砲 ●', scatter:'散射炮 ▲▲▲', heavy:'重砲 ◆'};
+    const wColors = {laser:'#00ffff', scatter:'#ffee44', heavy:'#ff8800'};
+    const wm = player.weaponMode;
+    ctx.fillStyle='rgba(0,5,20,0.7)';
+    ctx.fillRect(10, H-44, 160, 34);
+    ctx.strokeStyle=wColors[wm]+'55'; ctx.lineWidth=1;
+    ctx.strokeRect(10, H-44, 160, 34);
+    ctx.fillStyle=wColors[wm];
+    ctx.font='bold 13px Courier New'; ctx.textAlign='left';
+    ctx.fillText(wNames[wm]||wm, 18, H-24);
+    if (player.unlockedWeapons.length > 1) {
+      ctx.fillStyle='rgba(150,180,200,0.6)';
+      ctx.font='10px Courier New';
+      ctx.fillText('[Q] 切換武器', 18, H-12);
+    }
+  }
+
+  // Kill combo display (bottom right area)
+  if (player.killCombo >= 3 && player.killComboTimer > 0) {
+    const fade = Math.min(1, player.killComboTimer);
+    ctx.globalAlpha = fade;
+    ctx.textAlign = 'right';
+    ctx.font = 'bold 20px Courier New';
+    ctx.fillStyle = '#ff4444';
+    ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 12;
+    ctx.fillText(`${player.killCombo}連殺`, W-220, H-24);
+    ctx.shadowBlur=0;
+    if (player.killComboMult > 1) {
+      ctx.font = '13px Courier New';
+      ctx.fillStyle = '#ffaa44';
+      ctx.fillText(`戰利品 ×${player.killComboMult.toFixed(1)}`, W-220, H-8);
+    }
+    ctx.globalAlpha=1;
+  }
 
   // Status message (bottom center)
   if (statusTimer>0&&statusMsg) {
@@ -2289,7 +2451,8 @@ function renderTitle() {
   // Controls
   ctx.font='12px Courier New';
   ctx.fillStyle='#445566';
-  const controls=['WASD: 推進   Shift: 加速器   滑鼠: 瞄準   左鍵/空白: 射擊   R: 回到原點'];
+  const controls=['WASD: 推進   Shift: 加速器   滑鼠: 瞄準   左鍵/空白: 射擊',
+                  'R: 回到原點   Q: 切換武器（太空站購買散射炮/重砲）'];
   controls.forEach((l,i)=>ctx.fillText(l,W/2,selY+88+i*18));
 
   // Start prompt

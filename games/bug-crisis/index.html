@@ -50,6 +50,9 @@ body {
 .ubtn:hover { border-color:#4a8ef0; background:#162c52; }
 .ubtn.sel   { border-color:#7af; background:#1a3a6a; box-shadow:0 0 10px rgba(80,160,255,.4); }
 .ubtn.nogas { opacity:.4; cursor:not-allowed; }
+.ubtn.astr  { border-color:#7a2a1a; color:#f84; }
+.ubtn.astr:hover { border-color:#f84; background:#2a0a00; }
+.ubtn.astr.sel   { border-color:#f84; background:#3a0e00; box-shadow:0 0 12px rgba(255,80,0,.4); }
 .ucost { color:#fc8; font-size:10px; }
 .uhint { margin-left:auto; color:#2a4060; font-size:10px; text-align:right; line-height:1.5; }
 
@@ -92,7 +95,8 @@ body {
     <button class="ubtn"     data-type="sniper">狙擊手<span class="ucost">💰100</span></button>
     <button class="ubtn"     data-type="antitank">反坦克<span class="ucost">💰120</span></button>
     <button class="ubtn"     data-type="grenadier">擲彈兵<span class="ucost">💰90</span></button>
-    <span class="uhint">選單位<br>點戰場排 部署</span>
+    <button class="ubtn astr" data-type="__airstrike__">空 襲<span class="ucost">💰150</span></button>
+    <span class="uhint">選單位點排部署<br>右鍵點單位退售(60%)<br>空襲：選後點排</span>
   </div>
   <div id="overlay">
     <h1>🐛 機甲蟲蟲危機</h1>
@@ -221,6 +225,15 @@ function updateParts(dt) {
 
 function drawParts(ctx) {
   for (const p of parts) {
+    if (p.label) {
+      // Sell/info floating text
+      const pct=p.t/p.dur;
+      ctx.globalAlpha=Math.max(0,1-pct*1.2);
+      ctx.fillStyle='#fc8'; ctx.font='bold 12px monospace'; ctx.textAlign='center';
+      ctx.fillText(p.label, p.x, p.y - pct*24);
+      ctx.globalAlpha=1; ctx.textAlign='left';
+      continue;
+    }
     const key = p.big ? 'bigExpl' : 'smlExpl';
     const c = SCFG[key];
     const pct = p.t/p.dur;
@@ -460,6 +473,32 @@ const ctx=canvas.getContext('2d');
 function drawBg() {
   ctx.fillStyle='#080e1c'; ctx.fillRect(0,0,CW,CH);
 
+  // Ruined city silhouettes (background layer)
+  const RUINS=[
+    {x:130,w:28,h:82},{x:185,w:18,h:55},{x:240,w:32,h:96},{x:310,w:22,h:68},
+    {x:375,w:36,h:78},{x:450,w:20,h:52},{x:510,w:28,h:88},{x:580,w:24,h:60},
+    {x:640,w:34,h:74},{x:710,w:18,h:50},{x:760,w:28,h:82},{x:810,w:22,h:62},
+  ];
+  for (const r of RUINS) {
+    // building body
+    ctx.fillStyle='#0c1526';
+    ctx.fillRect(r.x-r.w/2, 0, r.w, r.h);
+    // cracked top
+    ctx.fillStyle='#0a1020';
+    ctx.fillRect(r.x-r.w/2, 0, r.w, 4);
+    // dim window lights
+    ctx.fillStyle='#111e36';
+    for (let wy=8; wy<r.h-10; wy+=14) {
+      ctx.fillRect(r.x-r.w/2+4, wy, 5, 5);
+      if (r.w>22) ctx.fillRect(r.x+2, wy, 5, 5);
+    }
+  }
+  // Ground crack lines
+  ctx.strokeStyle='#0d1528'; ctx.lineWidth=1;
+  for (const cy of [126,266]) {
+    ctx.beginPath(); ctx.moveTo(PBX,cy); ctx.lineTo(EBX,cy); ctx.stroke();
+  }
+
   // Lane strips
   for (let i=0; i<LANE_N; i++) {
     const cy=LANE_Y[i];
@@ -514,6 +553,28 @@ function drawCountdown() {
   ctx.textAlign='left';
 }
 
+function drawKeyHints() {
+  if (gs.phase!=='playing') return;
+  const hints=[
+    {key:'左鍵', desc:'部署'},
+    {key:'右鍵', desc:'退售60%'},
+    {key:'空襲鈕', desc:'選後點排清場'},
+    {key:'每秒', desc:`+${GOLD_TICK}💰`},
+  ];
+  ctx.fillStyle='rgba(0,0,0,0.52)';
+  ctx.fillRect(0, CH-20, CW, 20);
+  ctx.font='11px monospace'; ctx.textAlign='left';
+  let x=10;
+  for (const h of hints) {
+    ctx.fillStyle='#4a8ef0';
+    ctx.fillText(`[${h.key}]`, x, CH-5);
+    x += ctx.measureText(`[${h.key}]`).width+3;
+    ctx.fillStyle='#4a6a9a';
+    ctx.fillText(h.desc, x, CH-5);
+    x += ctx.measureText(h.desc).width+16;
+  }
+}
+
 function render() {
   ctx.clearRect(0,0,CW,CH);
   drawBg();
@@ -522,6 +583,7 @@ function render() {
   for (const p of projs)    p.draw(ctx);
   drawParts(ctx);
   drawCountdown();
+  drawKeyHints();
 }
 // ── BLOCK 10: Main Loop + Input + Init ───────────────────
 let lastT=0, goldT=0;
@@ -556,7 +618,7 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 
-// Click on canvas → deploy unit to lane
+// Click on canvas → deploy unit or airstrike
 canvas.addEventListener('click', e => {
   if (gs.phase!=='playing') return;
   const r=canvas.getBoundingClientRect();
@@ -564,9 +626,46 @@ canvas.addEventListener('click', e => {
   const my=(e.clientY-r.top)*(CH/r.height);
   for (let i=0; i<LANE_N; i++) {
     if (my >= LANE_Y[i]-LANE_H/2 && my < LANE_Y[i]+LANE_H/2) {
-      if (mx >= PBX) deploySoldier(gs.selUnit, i);
+      if (mx < PBX) break;
+      if (gs.selUnit==='__airstrike__') {
+        if (gs.gold < 150) break;
+        gs.gold -= 150; hud('gold');
+        for (const en of [...enemies]) {
+          if (en.dead || en.lane!==i) continue;
+          en.hp -= 300;
+          spawnExpl(en.x, en.y, true);
+          if (en.hp<=0) { en.hp=0; en.dead=true; en._onDie&&en._onDie(); }
+        }
+        // Return to assault selection after use
+        gs.selUnit='assault';
+        document.querySelectorAll('.ubtn').forEach(b=>b.classList.toggle('sel', b.dataset.type==='assault'));
+      } else {
+        deploySoldier(gs.selUnit, i);
+      }
       break;
     }
+  }
+});
+
+// Right-click on soldier → sell for 60% cost
+canvas.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  if (gs.phase!=='playing') return;
+  const r=canvas.getBoundingClientRect();
+  const mx=(e.clientX-r.left)*(CW/r.width);
+  const my=(e.clientY-r.top)*(CH/r.height);
+  let best=null, bestD=Infinity;
+  for (const s of soldiers) {
+    if (s.dead) continue;
+    const d=Math.hypot(mx-s.x, my-s.y);
+    if (d<36 && d<bestD) { bestD=d; best=s; }
+  }
+  if (best) {
+    const refund=Math.floor(best.cfg.cost*0.6);
+    best.dead=true; best.dieT=0;
+    gs.gold+=refund; hud('gold');
+    spawnExpl(best.x, best.y, false);
+    parts.push({x:best.x, y:best.y-28, t:0, dur:1200, big:false, label:`退售 +${refund}💰`});
   }
 });
 

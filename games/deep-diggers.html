@@ -250,7 +250,7 @@ let ST={
   drillPow:1,scanR:0,phase:'idle',
   upgLv:{fuel:0,inv:0,drill:0,eff:0,scan:0,armor:0,dash:0},
   mods:[],magnet:false,bombs:0,shielded:false,dashCD:1.8,dashDur:.22,scanFuel:false,refine:0,
-  luckyMult:1,runs:0,maxD:0,lastEarned:0,eventFired:false,
+  luckyMult:1,runs:0,maxD:0,bestDepth:0,lastEarned:0,eventFired:false,
 };
 
 // WORLD
@@ -363,22 +363,37 @@ function spawnEnemy(){
   const def=el[Math.floor(Math.random()*el.length)];
   const c=1+Math.floor(Math.random()*(COLS-2));
   const sr=Math.floor(drill.y/TILE)+8+Math.floor(Math.random()*5);
-  enemies.push({...def,x:c*TILE,y:sr*TILE,vx:(Math.random()>.5?1:-1)*def.spd,hc:0});
+  const hp=Math.floor(def.dmg*(4+Math.random()*3));
+  enemies.push({...def,x:c*TILE,y:sr*TILE,vx:(Math.random()>.5?1:-1)*def.spd,hc:0,hp,maxHp:hp});
 }
 function updEnemies(dt){
   etimer-=dt;
   if(etimer<=0){etimer=Math.max(3,10-Math.floor(drill.y/TILE)*.015);if(Math.floor(drill.y/TILE)>30&&Math.random()<.42)spawnEnemy();}
+  const toRemove=[];
   enemies.forEach(e=>{
     e.x+=e.vx*dt;if(e.x<TILE||e.x>(COLS-2)*TILE)e.vx*=-1;
     if(e.hc>0)e.hc-=dt;
-    if(Math.abs(e.x-drill.x)<TILE*.8&&Math.abs(e.y-drill.y)<TILE*.8&&!e.hc){ST.dur=Math.max(0,ST.dur-e.dmg);e.hc=1.2;SFX.hit();log('⚠ '+e.emoji+' '+e.name+'撞上！-'+e.dmg);}
+    if(Math.abs(e.x-drill.x)<TILE*.8&&Math.abs(e.y-drill.y)<TILE*.8&&!e.hc){
+      ST.dur=Math.max(0,ST.dur-e.dmg);
+      const drillDmg=Math.floor(25*(1+ST.drillPow*0.5));
+      e.hp-=drillDmg;
+      e.hc=0.8;
+      if(e.hp<=0){
+        const reward=Math.floor(e.dmg*3);ST.money+=reward;
+        spawnPt(e.x+TILE/2,e.y+TILE/2,'#f5a623',8);
+        log('💀 '+e.emoji+' '+e.name+' +$'+reward);SFX.sell();
+        toRemove.push(e);return;
+      }
+      SFX.hit();log('⚔ '+e.emoji+' '+e.name+' hp:'+e.hp+' -'+e.dmg+'dur');
+    }
   });
+  if(toRemove.length)enemies=enemies.filter(e=>!toRemove.includes(e));
   enemies=enemies.filter(e=>Math.abs(e.y-drill.y)<700);
 }
 
 // RUN
 function startRun(){
-  ST.fuel=ST.fuelMax;ST.dur=ST.durMax;ST.inv=[];ST.luckyMult=1;ST.eventFired=false;ST.runs++;
+  ST.fuel=ST.fuelMax;ST.dur=ST.durMax;ST.inv=[];ST.luckyMult=1;ST.eventFired=false;ST.runs++;ST.maxD=0;
   drill.x=7*TILE;drill.y=TILE*.6;camY=0;returning=false;retSpd=0;
   dash={active:false,timer:0,cd:0};particles=[];enemies=[];etimer=6;lastBiome='';
   wowDone.clear();
@@ -439,7 +454,7 @@ function update(dt){
   for(const[id,rm] of Object.entries(ROOMS_META)){if(!wowDone.has(id)&&Math.abs(row-rm.r)<8){wowDone.add(id);showWow(rm);return;}}
   if(!ST.eventFired&&row>20&&Math.random()<.0018*dt*60){ST.eventFired=true;triggerEvent();}
   const drain=dash.active?0:(boost?3:1);ST.fuel=Math.max(0,ST.fuel-drain*ST.fuelEff*dt);ST.fuel=Math.round(ST.fuel*100)/100;
-  if(row>ST.maxD)ST.maxD=row;
+  if(row>ST.maxD){ST.maxD=row;if(row>ST.bestDepth){const prev=ST.bestDepth;ST.bestDepth=row;if(row%20===0||(prev<10&&row>=10)){const bn=document.getElementById('bb');bn.textContent='🏆 新紀錄！'+row+'m';bn.style.color='#f5a623';bn.style.border='1px solid #f5a623';bn.style.opacity='1';clearTimeout(bn._t);bn._t=setTimeout(()=>bn.style.opacity='0',2200);}}};
   if(ST.fuel<=0||ST.dur<=0||ST.inv.length>=ST.invMax){const reason=ST.fuel<=0?'燃料耗盡':ST.dur<=0?'鑿頭損毀':'背包已滿';askReturn(reason);}
   updEnemies(dt);
   particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.life-=dt;});particles=particles.filter(p=>p.life>0);
@@ -559,7 +574,9 @@ function draw(){
   if(biome.fogA>0){ctx.fillStyle='rgba('+biome.fogR+','+biome.fogG+','+biome.fogB+','+biome.fogA+')';ctx.fillRect(0,0,480,600);}
   if(biome.id!==lastBiome){lastBiome=biome.id;const bn=document.getElementById('bb');bn.textContent=biome.name;bn.style.color=biome.col;bn.style.border='1px solid '+biome.col;bn.style.opacity='1';clearTimeout(bn._t);bn._t=setTimeout(()=>bn.style.opacity='0',2700);}
   particles.forEach(p=>{ctx.globalAlpha=Math.max(0,p.life/p.maxLife);ctx.fillStyle=p.col;ctx.beginPath();ctx.arc(p.x,p.y-camY,p.size*(p.life/p.maxLife),0,Math.PI*2);ctx.fill();});ctx.globalAlpha=1;
-  enemies.forEach(e=>{const ey=e.y-camY;if(ey<-TILE||ey>620)return;ctx.font='20px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.shadowColor='#ff4444';ctx.shadowBlur=6;ctx.fillText(e.emoji,e.x+TILE/2,ey+TILE/2);ctx.shadowBlur=0;});
+  enemies.forEach(e=>{const ey=e.y-camY;if(ey<-TILE||ey>620)return;ctx.font='20px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.shadowColor='#ff4444';ctx.shadowBlur=6;ctx.fillText(e.emoji,e.x+TILE/2,ey+TILE/2);ctx.shadowBlur=0;
+    if(e.hp!==undefined&&e.maxHp){const bw=TILE-4,bx2=e.x+2,by2=ey-5;ctx.fillStyle='#330000';ctx.fillRect(bx2,by2,bw,4);const hf=e.hp/e.maxHp;ctx.fillStyle=hf>.5?'#ff4444':hf>.25?'#ff8800':'#ff0000';ctx.fillRect(bx2,by2,bw*hf,4);}
+  });
   const dx=drill.x,dy=drill.y-camY;
   if(dy>-TILE&&dy<622){
     ctx.fillStyle='#222';ctx.fillRect(dx+2,dy+6,4,TILE-8);ctx.fillRect(dx+TILE-6,dy+6,4,TILE-8);

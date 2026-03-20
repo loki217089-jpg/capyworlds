@@ -1132,7 +1132,7 @@ function drawHUD(){
     if(zReady){ctx.shadowColor=C.zap;ctx.shadowBlur=8;}
     ctx.fillStyle=zReady?C.zap:'#2a5a6a';ctx.font=`bold 15px 'Share Tech Mono'`;ctx.textAlign='center';
     ctx.fillText('⚡',btnX-27,20);ctx.shadowBlur=0;ctx.font=`10px 'Share Tech Mono'`;
-    ctx.fillText(zReady?'[E]':`${Math.ceil(upgrades.zap.cooldown/1000)}s`,btnX-27,34);
+    ctx.fillText(zReady?'[SP]':`${Math.ceil(upgrades.zap.cooldown/1000)}s`,btnX-27,34);
     btnX-=60;
   }
   // 驅蚊液按鈕
@@ -1518,7 +1518,7 @@ function quitGame(){
 // ── 動態縮放（canvas CSS 尺寸，保持內部解析度）──
 function applyScale(){
   const vw=window.innerWidth, vh=window.innerHeight;
-  const uiH=105; // titleBar + statsBar + legend 合計高度
+  const uiH=130; // titleBar + statsBar + legend 合計高度
   const totalH=660+uiH;
   const scaleX=vw/960;
   const scaleY=vh/totalH;

@@ -930,12 +930,14 @@ function renderMap() {
   // Floating clouds (day only)
   if (isDay) {
     const cloudData = [
-      {top:6,  delay:0,   dur:28, ic:'☁️'},
-      {top:14, delay:10,  dur:22, ic:'🌤️'},
-      {top:8,  delay:17,  dur:35, ic:'☁️'},
+      {top:6,  phase:0,   dur:28, ic:'☁️'},
+      {top:14, phase:10,  dur:22, ic:'🌤️'},
+      {top:8,  phase:17,  dur:35, ic:'☁️'},
     ];
+    const nowSec = Date.now() / 1000;
     cloudData.forEach(cl => {
-      h += `<div class="cloud" style="top:${cl.top}%;animation-duration:${cl.dur}s;animation-delay:-${cl.delay}s">${cl.ic}</div>`;
+      const delay = -(((nowSec + cl.phase) % cl.dur)).toFixed(2);
+      h += `<div class="cloud" style="top:${cl.top}%;animation-duration:${cl.dur}s;animation-delay:${delay}s">${cl.ic}</div>`;
     });
   }
 

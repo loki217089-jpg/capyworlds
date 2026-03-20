@@ -1902,17 +1902,38 @@ function render() {
   ctx.strokeStyle='rgba(0,40,0,.35)'; ctx.lineWidth=0.5;
   for(let x=0;x<cv.width;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,cv.height);ctx.stroke();}
   for(let y=0;y<cv.height;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(cv.width,y);ctx.stroke();}
+  // 電路板節點（每隔200px的格子交叉點）
+  const now2 = Date.now()*0.001;
+  ctx.shadowBlur=0;
+  for(let x=0;x<cv.width;x+=200){for(let y=0;y<cv.height;y+=200){
+    const pulse=0.18+0.14*Math.sin(now2*0.7+x*0.007+y*0.009);
+    ctx.fillStyle=`rgba(0,255,65,${pulse})`;
+    ctx.beginPath();ctx.arc(x,y,2.5,0,Math.PI*2);ctx.fill();
+  }}
 
   // Wave 提示
   if(!G.wActive && G.wDelay>0 && !G.bossWave){
     const isFinalWave = (G.wave === G.totalWaves - 1); // 下一波是BOSS
+    const wPulse = 0.55 + 0.45*Math.sin(now2*3.5);
     ctx.textAlign='center';
     if (isFinalWave) {
-      ctx.font='18px VT323,monospace'; ctx.fillStyle='rgba(255,34,68,.6)';
-      ctx.fillText(`WAVE ${G.wave} / ${G.totalWaves}  ⚠ 下一波: BOSS`, cv.width/2, cv.height/2);
+      ctx.font='bold 20px VT323,monospace';
+      ctx.fillStyle=`rgba(255,34,68,${wPulse})`;
+      ctx.shadowColor='#ff2244'; ctx.shadowBlur=16;
+      ctx.fillText(`WAVE ${G.wave} / ${G.totalWaves}  ⚠ 下一波: BOSS`, cv.width/2, cv.height/2 - 10);
+      ctx.shadowBlur=0;
+      ctx.font='14px VT323,monospace'; ctx.fillStyle='rgba(255,68,68,.55)';
+      ctx.fillText('準備面對最終威脅', cv.width/2, cv.height/2 + 14);
     } else {
-      ctx.font='22px VT323,monospace'; ctx.fillStyle='rgba(0,255,65,.45)';
-      ctx.fillText(`WAVE ${G.wave} / ${G.totalWaves}`, cv.width/2, cv.height/2);
+      ctx.font='24px VT323,monospace';
+      ctx.fillStyle=`rgba(0,255,65,${wPulse})`;
+      ctx.shadowColor='#00ff41'; ctx.shadowBlur=12;
+      ctx.fillText(`WAVE ${G.wave} / ${G.totalWaves}`, cv.width/2, cv.height/2 - 8);
+      ctx.shadowBlur=0;
+      // 進度條
+      const pw = 200, ph = 4, px = cv.width/2 - pw/2, py2 = cv.height/2 + 8;
+      ctx.fillStyle='rgba(0,40,0,0.7)'; ctx.fillRect(px,py2,pw,ph);
+      ctx.fillStyle='rgba(0,255,65,0.5)'; ctx.fillRect(px,py2,pw*(G.wave/G.totalWaves),ph);
     }
     ctx.textAlign='left';
   }
@@ -2197,6 +2218,28 @@ function render() {
     if(e.t==='B'){ctx.font='14px VT323,monospace';ctx.fillStyle=e.col;ctx.fillText(e.bd.name,e.x,e.y+e.sz+18);}
     ctx.textAlign='left'; ctx.textBaseline='alphabetic';
   });
+
+  // ── Boss 血條（畫面下方大血條）──
+  if (G.bossWave) {
+    const boss = G.ents.find(e=>e.t==='B');
+    if (boss) {
+      const bw = Math.min(cv.width*0.72, 520), bh = 18;
+      const bx = cv.width/2 - bw/2, by = cv.height - 46;
+      ctx.fillStyle='rgba(0,0,0,0.82)'; ctx.fillRect(bx-4,by-18,bw+8,bh+24);
+      ctx.strokeStyle='#ff2244'; ctx.lineWidth=1;
+      ctx.strokeRect(bx-4,by-18,bw+8,bh+24);
+      ctx.fillStyle='#220000'; ctx.fillRect(bx,by,bw,bh);
+      const bfrac=boss.hp/boss.maxHp;
+      ctx.fillStyle=bfrac>0.5?'#ff2244':bfrac>0.25?'#ff6600':'#ff0000';
+      ctx.shadowColor='#ff2244'; ctx.shadowBlur=10;
+      ctx.fillRect(bx,by,bw*bfrac,bh);
+      ctx.shadowBlur=0;
+      ctx.strokeStyle='#ff4466'; ctx.lineWidth=1; ctx.strokeRect(bx,by,bw,bh);
+      ctx.font='13px VT323,monospace'; ctx.fillStyle='#ffaaaa'; ctx.textAlign='center';
+      ctx.fillText(`⚡ ${boss.bd.name} — ${Math.ceil(boss.hp)} / ${boss.maxHp}`, cv.width/2, by-3);
+      ctx.textAlign='left';
+    }
+  }
 
   // 受擊閃紅效果
   if (G.hitFlash > 0) {
