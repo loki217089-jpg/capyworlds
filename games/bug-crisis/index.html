@@ -553,6 +553,28 @@ function drawCountdown() {
   ctx.textAlign='left';
 }
 
+function drawKeyHints() {
+  if (gs.phase!=='playing') return;
+  const hints=[
+    {key:'左鍵', desc:'部署'},
+    {key:'右鍵', desc:'退售60%'},
+    {key:'空襲鈕', desc:'選後點排清場'},
+    {key:'每秒', desc:`+${GOLD_TICK}💰`},
+  ];
+  ctx.fillStyle='rgba(0,0,0,0.52)';
+  ctx.fillRect(0, CH-20, CW, 20);
+  ctx.font='11px monospace'; ctx.textAlign='left';
+  let x=10;
+  for (const h of hints) {
+    ctx.fillStyle='#4a8ef0';
+    ctx.fillText(`[${h.key}]`, x, CH-5);
+    x += ctx.measureText(`[${h.key}]`).width+3;
+    ctx.fillStyle='#4a6a9a';
+    ctx.fillText(h.desc, x, CH-5);
+    x += ctx.measureText(h.desc).width+16;
+  }
+}
+
 function render() {
   ctx.clearRect(0,0,CW,CH);
   drawBg();
@@ -561,6 +583,7 @@ function render() {
   for (const p of projs)    p.draw(ctx);
   drawParts(ctx);
   drawCountdown();
+  drawKeyHints();
 }
 // ── BLOCK 10: Main Loop + Input + Init ───────────────────
 let lastT=0, goldT=0;
