@@ -1245,6 +1245,31 @@ function buyUpgrade(id, cost) {
 let G = null;
 let rafId = null;
 
+const _GLITCH_CHARS = '!@#$%^&*<>?/\\|[]{}01█▓▒░';
+function _glitchResolve(el, finalText, cb) {
+  let tick = 0;
+  const total = 6;
+  const t = setInterval(() => {
+    tick++;
+    if (tick >= total) { clearInterval(t); el.textContent = finalText; if (cb) cb(); return; }
+    el.textContent = finalText.split('').map((c, j) =>
+      (j < tick * Math.ceil(finalText.length / total)) ? c :
+      (Math.random() < 0.5 ? _GLITCH_CHARS[Math.floor(Math.random()*_GLITCH_CHARS.length)] : c)
+    ).join('');
+  }, 45);
+}
+function _diBeep(urgent) {
+  if (!AC || !sfxOn) return;
+  try {
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.connect(g); g.connect(AC.destination);
+    o.type = 'square';
+    o.frequency.value = urgent ? 880 : 440;
+    g.gain.setValueAtTime(0.06, AC.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + 0.08);
+    o.start(); o.stop(AC.currentTime + 0.08);
+  } catch(e) {}
+}
 function showDriveBoot(drv, done) {
   let ov = document.getElementById('driveIntro');
   if (!ov) { ov = document.createElement('div'); ov.id = 'driveIntro'; document.body.appendChild(ov); }
@@ -1252,6 +1277,7 @@ function showDriveBoot(drv, done) {
   const threatCol = drv.id >= 3 ? 'var(--red)' : drv.id >= 2 ? 'var(--yellow)' : drv.id >= 1 ? 'var(--blue)' : 'var(--green)';
   ov.innerHTML = `<div class="di-scanline"></div><div class="di-title">${drv.icon} ${drv.name}</div><div class="di-sub" style="color:${threatCol}">威脅等級：${threatLv}</div><div class="di-log" id="di-log"></div><div class="di-scanbar"><div class="di-scanfill" id="di-fill"></div></div><div class="di-pct" id="di-pct">掃描中... 0%</div><div class="di-hint">[ 點擊跳過 ]</div>`;
   ov.classList.remove('hide'); ov.classList.add('show');
+  sfx('boss_enter'); // 登場音效
   const lines = [
     drv.desc,
     '載入病毒特徵碼庫.......... [OK]',
@@ -1279,15 +1305,22 @@ function showDriveBoot(drv, done) {
         p = Math.min(100, p + 2);
         fillEl.style.width = p + '%';
         pctEl.textContent = '掃描中... ' + p + '%';
-        if (p >= 100) { clearInterval(bar); pctEl.textContent = '掃描完成 — 進入磁碟'; setTimeout(dismiss, 500); }
+        if (p % 20 === 0) _diBeep(false);
+        if (p >= 100) { clearInterval(bar); pctEl.textContent = '掃描完成 — 進入磁碟'; _diBeep(true); setTimeout(dismiss, 500); }
       }, 20);
       return;
     }
-    const div = document.createElement('div'); div.textContent = lines[i++];
+    const lineText = lines[i++];
+    const isUrgent = lineText.startsWith('警告');
+    const div = document.createElement('div');
+    div.textContent = lineText; // 先放真實文字佔位
     logEl.appendChild(div);
+    _diBeep(isUrgent);
+    if (isUrgent) div.style.color = 'var(--red)';
+    _glitchResolve(div, lineText); // 亂碼 → resolve 動畫
     fillEl.style.width = (i / lines.length * 55) + '%';
     pctEl.textContent = '掃描中... ' + Math.round(i / lines.length * 55) + '%';
-    setTimeout(addLine, 200 + Math.random() * 160);
+    setTimeout(addLine, 240 + Math.random() * 180);
   };
   setTimeout(addLine, 280);
 }

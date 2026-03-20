@@ -134,6 +134,8 @@ body{background:var(--dark);color:var(--text);font-family:'Noto Serif TC',serif;
 .bi-hint{font-size:.72rem;color:var(--text2);margin-top:18px;animation:biUp .4s 1.6s both;}
 @keyframes biUp{from{opacity:0;transform:translateY(28px) scale(.82)}to{opacity:1;transform:none}}
 @keyframes biLine{from{opacity:0;width:0}to{opacity:1;width:180px}}
+@keyframes biShake{0%,100%{transform:translate(0,0)}10%{transform:translate(-8px,4px)}20%{transform:translate(8px,-4px)}30%{transform:translate(-6px,6px)}40%{transform:translate(6px,-6px)}50%{transform:translate(-4px,2px)}60%{transform:translate(4px,-2px)}70%{transform:translate(-2px,4px)}80%{transform:translate(2px,-4px)}90%{transform:translate(-3px,1px)}}
+.bi-shake{animation:biShake 0.55s ease;}
 
 /* COMBO 閃爍動畫 */
 #comboNum { animation: none; }
@@ -1257,9 +1259,22 @@ function showBossIntro(nm,fl){
   const isAbssal=fl%100===0,isElite=fl%50===0;
   const tier=isAbssal?'💀 深淵BOSS 降臨':isElite?'⭐ 精英BOSS 登場':'⚠ BOSS 關卡 ⚠';
   const tc=isAbssal?'#ff4040':isElite?'#f0c040':'var(--red2)';
-  ov.innerHTML=`<div class="bi-flash"></div><div class="bi-scan"></div><div class="bi-floor">— F L O O R &nbsp; ${fl} —</div><div class="bi-alert" style="color:${tc}">${tier}</div><div class="bi-line" style="color:${tc};width:180px"></div><div class="bi-name">${nm}</div><div class="bi-line" style="color:${tc};width:180px"></div><div class="bi-hint">點擊任意處繼續</div>`;
+  ov.innerHTML=`<div class="bi-flash"></div><div class="bi-scan"></div><div class="bi-floor">— F L O O R &nbsp; ${fl} —</div><div class="bi-alert" style="color:${tc}">${tier}</div><div class="bi-line" style="color:${tc};width:180px"></div><div class="bi-name" id="biName">${nm}</div><div class="bi-line" style="color:${tc};width:180px"></div><div class="bi-hint">點擊任意處繼續</div>`;
   ov.classList.remove('hide');ov.classList.add('show');
-  const dismiss=()=>{ov.classList.remove('show');ov.classList.add('hide');setTimeout(()=>ov.classList.remove('hide'),700);ov.removeEventListener('click',dismiss);};
+  // 暫停自動戰鬥，避免過場中被打
+  const prevAuto=G.auto;G.auto=false;
+  // 登場音效
+  playSound('bossRoar');
+  // Boss 名字出現時螢幕震動 (850ms = bi-name 的 animation delay)
+  setTimeout(()=>{
+    const nameEl=$('biName');if(nameEl){nameEl.classList.add('bi-shake');setTimeout(()=>nameEl.classList.remove('bi-shake'),560);}
+  },880);
+  const dismiss=()=>{
+    ov.classList.remove('show');ov.classList.add('hide');
+    setTimeout(()=>ov.classList.remove('hide'),700);
+    ov.removeEventListener('click',dismiss);
+    G.auto=prevAuto; // 恢復戰鬥狀態
+  };
   ov.addEventListener('click',dismiss);setTimeout(dismiss,3200);
 }
 function mkEnemy(){
@@ -2077,6 +2092,31 @@ function playSound(type) {
       g.gain.setValueAtTime(0.25, AC.currentTime);
       g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + 0.5);
       o.start(); o.stop(AC.currentTime + 0.5);
+    } else if (type === 'bossRoar') {
+      // 低頻轟鳴
+      const o1 = AC.createOscillator(); o1.connect(g); o1.type = 'sawtooth';
+      o1.frequency.setValueAtTime(55, AC.currentTime);
+      o1.frequency.exponentialRampToValueAtTime(35, AC.currentTime + 0.9);
+      g.gain.setValueAtTime(0.28, AC.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + 0.9);
+      o1.start(); o1.stop(AC.currentTime + 0.9);
+      // 金屬衝擊
+      const g2 = AC.createGain(); g2.connect(AC.destination);
+      const o2 = AC.createOscillator(); o2.connect(g2); o2.type = 'square';
+      o2.frequency.setValueAtTime(220, AC.currentTime + 0.05);
+      o2.frequency.exponentialRampToValueAtTime(80, AC.currentTime + 0.4);
+      g2.gain.setValueAtTime(0.18, AC.currentTime + 0.05);
+      g2.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + 0.4);
+      o2.start(AC.currentTime + 0.05); o2.stop(AC.currentTime + 0.4);
+      // Noise burst
+      const len = Math.floor(AC.sampleRate * 0.25);
+      const buf = AC.createBuffer(1, len, AC.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.max(0, 1-i/len);
+      const src = AC.createBufferSource(); src.buffer = buf;
+      const gn = AC.createGain(); gn.gain.value = 0.2;
+      src.connect(gn); gn.connect(AC.destination);
+      src.start(AC.currentTime); src.stop(AC.currentTime + 0.25);
     }
   } catch(e) {}
 }
