@@ -485,6 +485,20 @@ body::after {
   pointer-events:none; z-index:200; animation:fltup .85s ease forwards;
 }
 @keyframes fltup { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(-52px)} }
+/* Drive Intro Cutscene */
+#driveIntro{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'VT323',monospace;pointer-events:none;opacity:0;transition:opacity .3s;}
+#driveIntro.show{opacity:1;pointer-events:all;}
+#driveIntro.hide{animation:diOut .5s ease forwards;}
+@keyframes diOut{to{opacity:0}}
+.di-title{font-size:2rem;color:var(--green);margin-bottom:6px;text-shadow:0 0 20px var(--green);letter-spacing:.05em;}
+.di-sub{font-size:1rem;color:var(--dim);margin-bottom:18px;letter-spacing:.2em;}
+.di-log{width:380px;min-height:110px;text-align:left;color:var(--green3);font-size:15px;line-height:1.75;}
+.di-log div::before{content:'> ';color:var(--dim);}
+.di-scanbar{width:380px;height:3px;background:rgba(0,255,65,.12);margin:14px 0 6px;overflow:hidden;}
+.di-scanfill{height:100%;width:0;background:var(--green);box-shadow:0 0 8px var(--green);transition:width .05s linear;}
+.di-pct{font-size:14px;color:var(--dim);margin-bottom:18px;}
+.di-hint{font-size:13px;color:rgba(0,255,65,.3);animation:flt 1.2s ease-in-out infinite;}
+.di-scanline{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,var(--scanline) 2px,var(--scanline) 4px);pointer-events:none;}
 </style>
 </head>
 <body>
@@ -1231,8 +1245,58 @@ function buyUpgrade(id, cost) {
 let G = null;
 let rafId = null;
 
+function showDriveBoot(drv, done) {
+  let ov = document.getElementById('driveIntro');
+  if (!ov) { ov = document.createElement('div'); ov.id = 'driveIntro'; document.body.appendChild(ov); }
+  const threatLv = drv.id >= 3 ? '極危 ██████' : drv.id >= 2 ? '高危 ████░░' : drv.id >= 1 ? '中等 ███░░░' : '低危 ██░░░░';
+  const threatCol = drv.id >= 3 ? 'var(--red)' : drv.id >= 2 ? 'var(--yellow)' : drv.id >= 1 ? 'var(--blue)' : 'var(--green)';
+  ov.innerHTML = `<div class="di-scanline"></div><div class="di-title">${drv.icon} ${drv.name}</div><div class="di-sub" style="color:${threatCol}">威脅等級：${threatLv}</div><div class="di-log" id="di-log"></div><div class="di-scanbar"><div class="di-scanfill" id="di-fill"></div></div><div class="di-pct" id="di-pct">掃描中... 0%</div><div class="di-hint">[ 點擊跳過 ]</div>`;
+  ov.classList.remove('hide'); ov.classList.add('show');
+  const lines = [
+    drv.desc,
+    '載入病毒特徵碼庫.......... [OK]',
+    '分析磁碟扇區結構........... [完成]',
+    '偵測到惡意進程 — 防禦矩陣啟動',
+    '警告: 入侵已開始 — 系統緊急告急',
+  ];
+  const logEl = document.getElementById('di-log');
+  const fillEl = document.getElementById('di-fill');
+  const pctEl  = document.getElementById('di-pct');
+  let i = 0, dismissed = false;
+  const dismiss = () => {
+    if (dismissed) return; dismissed = true;
+    ov.removeEventListener('click', dismiss);
+    ov.classList.remove('show'); ov.classList.add('hide');
+    setTimeout(done, 520);
+  };
+  ov.addEventListener('click', dismiss);
+  const addLine = () => {
+    if (dismissed) return;
+    if (i >= lines.length) {
+      let p = 0;
+      const bar = setInterval(() => {
+        if (dismissed) { clearInterval(bar); return; }
+        p = Math.min(100, p + 2);
+        fillEl.style.width = p + '%';
+        pctEl.textContent = '掃描中... ' + p + '%';
+        if (p >= 100) { clearInterval(bar); pctEl.textContent = '掃描完成 — 進入磁碟'; setTimeout(dismiss, 500); }
+      }, 20);
+      return;
+    }
+    const div = document.createElement('div'); div.textContent = lines[i++];
+    logEl.appendChild(div);
+    fillEl.style.width = (i / lines.length * 55) + '%';
+    pctEl.textContent = '掃描中... ' + Math.round(i / lines.length * 55) + '%';
+    setTimeout(addLine, 200 + Math.random() * 160);
+  };
+  setTimeout(addLine, 280);
+}
 function startGame() {
   sfx('click');
+  const drv = DRIVES[selDrive];
+  showDriveBoot(drv, _doStartGame);
+}
+function _doStartGame() {
   showScreen('game');
   const canvas = document.getElementById('game-canvas');
   resizeCanvas(canvas);
