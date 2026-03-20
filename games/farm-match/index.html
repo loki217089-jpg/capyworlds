@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>農場三消 · CapyWorlds</title>
+<title>寶石三消 · CapyWorlds</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -105,11 +105,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.9rem;
+  font-size: 0;
   cursor: pointer;
   transition: transform 0.12s, filter 0.12s, background 0.12s;
   background: rgba(255,255,255,0.04);
   position: relative;
+  overflow: hidden;
 }
 .cell:hover { transform: scale(1.09); filter: brightness(1.25); }
 .cell.selected {
@@ -125,6 +126,23 @@ body {
   pointer-events: none;
   filter: brightness(0.5);
 }
+@keyframes gemAnim {
+  from { background-position: 0 0; }
+  to   { background-position: -348px 0; }
+}
+.cell[class*="gem-"] {
+  background-size: 348px 58px;
+  background-repeat: no-repeat;
+  background-color: transparent;
+  image-rendering: pixelated;
+  animation: gemAnim 0.72s steps(6) infinite;
+}
+.gem-gold    { background-image: url('../../assets/Pixel Art Gem Pack - Animated/GEM 1/GEM 1 - GOLD - Spritesheet.png'); }
+.gem-blue    { background-image: url('../../assets/Pixel Art Gem Pack - Animated/GEM 2/GEM 2 - BLUE - Spritesheet.png'); }
+.gem-red     { background-image: url('../../assets/Pixel Art Gem Pack - Animated/GEM 3/GEM 3 - RED - Spritesheet.png'); }
+.gem-green   { background-image: url('../../assets/Pixel Art Gem Pack - Animated/GEM 4/GEM 4 - LIGHT GREEN - Spritesheet.png'); }
+.gem-purple  { background-image: url('../../assets/Pixel Art Gem Pack - Animated/GEM 5/GEM 5 - PURPLE - Spritesheet.png'); }
+.gem-teal    { background-image: url('../../assets/Pixel Art Gem Pack - Animated/GEM 6/GEM 6 - TURQUOISE - Spritesheet.png'); }
 </style>
 /* ---- Right Panel ---- */
 #panel {
@@ -316,11 +334,11 @@ body {
 <body>
 <!-- ========== Start Screen ========== -->
 <div id="startScreen">
-  <h1>🌾 農場三消</h1>
-  <p class="subtitle">消除農作物・抽卡增強・衝高分！</p>
+  <h1>💎 寶石三消</h1>
+  <p class="subtitle">消除寶石・抽卡增強・衝高分！</p>
   <div class="rules-box">
     <b>遊玩方式</b><br>
-    點選兩個相鄰格子交換位置，消除 3 個以上相同農作物。<br>
+    點選兩個相鄰格子交換位置，消除 3 個以上相同寶石。<br>
     連段越多，分數倍率越高！<br><br>
     <b>卡片系統</b><br>
     消除格子賺取農幣 🪙，用農幣抽卡。<br>
@@ -381,7 +399,7 @@ body {
 
 <!-- ========== Game Over Overlay ========== -->
 <div id="overlay">
-  <h2>🌾 遊戲結束</h2>
+  <h2>💎 遊戲結束</h2>
   <div class="final-score" id="finalScore"></div>
   <button class="btn" onclick="startGame()">再玩一局</button>
   <button class="btn-sm" onclick="goHome()">回首頁</button>
@@ -391,8 +409,8 @@ body {
 // ============================================================
 // CONSTANTS & CARD DEFINITIONS
 // ============================================================
-const TILES = ['🥕','🥔','🎃','🌾','🥬','🍄'];
-const TILE_COLORS = ['#cc4400','#8a6a30','#cc7700','#aaaa00','#228822','#882288'];
+const TILES = ['gem-gold','gem-blue','gem-red','gem-green','gem-purple','gem-teal'];
+const TILE_COLORS = ['#ffd700','#4488ff','#ff3333','#44cc44','#aa44ff','#00cccc'];
 const COLS = 8, ROWS = 8;
 const MOVES_INIT = 30;
 const PULL1_COST = 30, PULL10_COST = 250;
@@ -400,24 +418,24 @@ const COMBO_DECAY_MS = 3000; // combo resets after 3s no match
 
 const CARD_POOL = [
   // N cards
-  { id:'n1', rarity:'N', icon:'🌱', name:'豐收之芽', desc:'消除時額外+2🪙', effect:'coins+2' },
-  { id:'n2', rarity:'N', icon:'💧', name:'澆水壺',   desc:'本局步數+3',    effect:'moves+3' },
-  { id:'n3', rarity:'N', icon:'🐛', name:'土裡蟲',   desc:'分數x1.2（20步）',effect:'score*1.2', duration:20 },
+  { id:'n1', rarity:'N', icon:'✨', name:'碎片光輝', desc:'消除時額外+2🪙', effect:'coins+2' },
+  { id:'n2', rarity:'N', icon:'🔵', name:'藍晶補充', desc:'本局步數+3',    effect:'moves+3' },
+  { id:'n3', rarity:'N', icon:'💠', name:'魔法折射', desc:'分數x1.2（20步）',effect:'score*1.2', duration:20 },
   // R cards
-  { id:'r1', rarity:'R', icon:'⚡', name:'閃電鋤',   desc:'點擊消除整行',  effect:'row_clear', uses:1 },
-  { id:'r2', rarity:'R', icon:'💥', name:'炸彈肥料', desc:'點擊炸3x3範圍', effect:'bomb_3x3',  uses:1 },
-  { id:'r3', rarity:'R', icon:'🔄', name:'旋風播種', desc:'盤面洗牌',      effect:'shuffle',   uses:1 },
-  { id:'r4', rarity:'R', icon:'🌈', name:'彩虹蔬菜', desc:'下次消除+雙倍分數', effect:'next_x2', uses:1 },
+  { id:'r1', rarity:'R', icon:'⚡', name:'雷擊寶石', desc:'點擊消除整行',  effect:'row_clear', uses:1 },
+  { id:'r2', rarity:'R', icon:'💥', name:'爆裂晶核', desc:'點擊炸3x3範圍', effect:'bomb_3x3',  uses:1 },
+  { id:'r3', rarity:'R', icon:'🔄', name:'晶石亂流', desc:'盤面洗牌',      effect:'shuffle',   uses:1 },
+  { id:'r4', rarity:'R', icon:'🌈', name:'彩虹折射', desc:'下次消除+雙倍分數', effect:'next_x2', uses:1 },
   // SR cards
-  { id:'sr1', rarity:'SR', icon:'🌩️', name:'暴風犁',  desc:'消除整行+整列', effect:'cross_clear', uses:1 },
-  { id:'sr2', rarity:'SR', icon:'🎯', name:'精準農夫', desc:'分數x2（15步）', effect:'score*2', duration:15 },
-  { id:'sr3', rarity:'SR', icon:'🌀', name:'龍捲風',  desc:'消除場上最多的農作物全部清除', effect:'clear_most', uses:1 },
-  { id:'sr4', rarity:'SR', icon:'⏰', name:'時光倒流', desc:'步數+8',        effect:'moves+8' },
+  { id:'sr1', rarity:'SR', icon:'🌩️', name:'十字爆破', desc:'消除整行+整列', effect:'cross_clear', uses:1 },
+  { id:'sr2', rarity:'SR', icon:'🎯', name:'精準切割', desc:'分數x2（15步）', effect:'score*2', duration:15 },
+  { id:'sr3', rarity:'SR', icon:'🌀', name:'晶石龍捲', desc:'消除場上最多的同色寶石', effect:'clear_most', uses:1 },
+  { id:'sr4', rarity:'SR', icon:'⏰', name:'時間寶石', desc:'步數+8',        effect:'moves+8' },
   // SSR cards
-  { id:'ssr1', rarity:'SSR', icon:'👑', name:'豐收王',   desc:'分數x3（20步）', effect:'score*3', duration:20 },
-  { id:'ssr2', rarity:'SSR', icon:'🌟', name:'星光種子', desc:'每次消除額外爆炸周圍格子', effect:'auto_bomb', duration:15 },
-  { id:'ssr3', rarity:'SSR', icon:'🔮', name:'水晶球',   desc:'自動找最佳三消並執行（5次）', effect:'auto_match', uses:5 },
-  { id:'ssr4', rarity:'SSR', icon:'🐉', name:'神農龍',   desc:'全場清除+分數x5', effect:'nuke', uses:1 },
+  { id:'ssr1', rarity:'SSR', icon:'👑', name:'寶石之王', desc:'分數x3（20步）', effect:'score*3', duration:20 },
+  { id:'ssr2', rarity:'SSR', icon:'🌟', name:'星辰碎裂', desc:'每次消除額外爆炸周圍格子', effect:'auto_bomb', duration:15 },
+  { id:'ssr3', rarity:'SSR', icon:'🔮', name:'先知水晶', desc:'自動找最佳三消並執行（5次）', effect:'auto_match', uses:5 },
+  { id:'ssr4', rarity:'SSR', icon:'🐉', name:'龍息毀滅', desc:'全場清除+分數x5', effect:'nuke', uses:1 },
 ];
 const RARITY_WEIGHTS = { N:55, R:30, SR:12, SSR:3 };
 const RARITY_LABELS  = { N:'普通', R:'稀有', SR:'超稀有', SSR:'傳說' };
@@ -913,7 +931,7 @@ function renderBoard(dropping=false) {
       const el = document.createElement('div');
       el.className = 'cell' + (dropping && t>=0 ? ' dropping' : '');
       if (window._pendingEffect) el.classList.add('hint-glow');
-      el.textContent = t>=0 ? TILES[t] : '';
+      if (t >= 0) el.classList.add(TILES[t]);
       el.dataset.r = r; el.dataset.c = c;
       el.addEventListener('click', onCellClick);
       boardEl.appendChild(el);
