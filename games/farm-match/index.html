@@ -126,16 +126,14 @@ body {
   pointer-events: none;
   filter: brightness(0.5);
 }
-@keyframes gemAnim {
-  from { background-position: 0 0; }
-  to   { background-position: -348px 0; }
-}
 .cell[class*="gem-"] {
-  background-size: 348px 58px;
+  /* show first frame only at 40×40, centered in the 58×58 cell */
+  background-size: 240px 40px;   /* 6 frames × 40px = 240px */
+  background-position: 9px 9px; /* (58-40)/2 = 9px offset to center */
   background-repeat: no-repeat;
   background-color: transparent;
   image-rendering: pixelated;
-  animation: gemAnim 0.72s steps(6) infinite;
+  /* no animation — static gem */
 }
 .gem-gold   { background-image: url('../../assets/Pixel Art Gem Pack - Animated/GEM 1/GEM 1 - GOLD - Spritesheet.png');        box-shadow: inset 0 0 10px rgba(255,215,0,0.45),  0 0 6px rgba(255,215,0,0.25);  background-color:#1a1500; }
 .gem-blue   { background-image: url('../../assets/Pixel Art Gem Pack - Animated/GEM 2/GEM 2 - BLUE - Spritesheet.png');        box-shadow: inset 0 0 10px rgba(68,136,255,0.45), 0 0 6px rgba(68,136,255,0.25); background-color:#00081a; }
@@ -144,6 +142,7 @@ body {
 .gem-purple { background-image: url('../../assets/Pixel Art Gem Pack - Animated/GEM 5/GEM 5 - PURPLE - Spritesheet.png');      box-shadow: inset 0 0 10px rgba(170,68,255,0.45), 0 0 6px rgba(170,68,255,0.25); background-color:#0d0019; }
 .gem-teal   { background-image: url('../../assets/Pixel Art Gem Pack - Animated/GEM 6/GEM 6 - TURQUOISE - Spritesheet.png');   box-shadow: inset 0 0 10px rgba(0,204,204,0.45),  0 0 6px rgba(0,204,204,0.25);  background-color:#001a1a; }
 </style>
+<style>
 /* ---- Right Panel ---- */
 #panel {
   flex: 1;
