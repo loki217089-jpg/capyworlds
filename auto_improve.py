@@ -30,7 +30,7 @@ if not GEMINI_API_KEY:
     sys.exit(1)
 
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-2.0-flash')
+model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
 REPO_ROOT = Path(__file__).parent
 GAMES_DIR = REPO_ROOT / 'games'
@@ -63,7 +63,9 @@ def get_available_games():
 
 def ask_gemini(prompt, label=''):
     """呼叫 Gemini，附帶簡單錯誤處理"""
+    import time
     print(f"  → 呼叫 Gemini{f' ({label})' if label else ''}...")
+    time.sleep(3)  # 避免 rate limit
     response = model.generate_content(prompt)
     return response.text.strip()
 
