@@ -284,18 +284,33 @@ const sfxBufs = {};
 
 // [path, maxSec, vol]  maxSec truncates playback for instant-action sounds
 const SFX_DEFS = {
-  perfect:  ['../../assets/sfx/GameSFX3/PickUp/Retro%20PickUp%20Coin%2007.wav',          0.20, 0.8],
-  good:     ['../../assets/sfx/GameSFX3/PickUp/Retro%20PickUp%2010.wav',                  0.15, 0.65],
-  miss:     ['../../assets/sfx/GameSFX1/Events/Negative/Retro%20Negative%20Short%2007.wav',0.25, 0.7],
-  enemyAtk: ['../../assets/sfx/GameSFX2/Impact/Retro%20Impact%20Punch%20Hurt%2001.wav',   0.20, 0.65],
-  special:  ['../../assets/sfx/GameSFX3/PowerUp/Retro%20PowerUP%2023.wav',                0.50, 0.8],
-  win:      ['../../assets/sfx/GameSFX2/Music/Success/Retro%20Success%20Melody%2001%20-%20sawtooth%20lead%201.wav', 4.0, 0.7],
-  lose:     ['../../assets/sfx/GameSFX2/Music/Negative/Retro%20Negative%20Melody%2001%20-%20aCustom1.wav',          4.0, 0.65],
+  perfect:  ['../../assets/sfx/GameSFX3/PickUp/Retro%20PickUp%20Coin%2007.wav',          0.20, 0.6],
+  good:     ['../../assets/sfx/GameSFX3/PickUp/Retro%20PickUp%2010.wav',                  0.15, 0.5],
+  miss:     ['../../assets/sfx/GameSFX1/Events/Negative/Retro%20Negative%20Short%2007.wav',0.25, 0.5],
+  enemyAtk: ['../../assets/sfx/GameSFX2/Impact/Retro%20Impact%20Punch%20Hurt%2001.wav',   0.20, 0.5],
+  special:  ['../../assets/sfx/GameSFX3/PowerUp/Retro%20PowerUP%2023.wav',                0.50, 0.6],
+  win:      ['../../assets/sfx/GameSFX2/Music/Success/Retro%20Success%20Melody%2001%20-%20sawtooth%20lead%201.wav', 4.0, 0.5],
+  lose:     ['../../assets/sfx/GameSFX2/Music/Negative/Retro%20Negative%20Melody%2001%20-%20aCustom1.wav',          4.0, 0.5],
 };
+
+let masterBus = null; // lowpass + compressor chain
 
 function initAudio() {
   if (actx) return;
   actx = new (window.AudioContext || window.webkitAudioContext)();
+  // Master bus: lowpass filter (soften harsh highs) → compressor → destination
+  const lpf = actx.createBiquadFilter();
+  lpf.type = 'lowpass';
+  lpf.frequency.value = 5500; // cut harsh high frequencies
+  lpf.Q.value = 0.5;
+  const comp = actx.createDynamicsCompressor();
+  comp.threshold.value = -18;
+  comp.knee.value = 10;
+  comp.ratio.value = 4;
+  comp.attack.value = 0.003;
+  comp.release.value = 0.15;
+  lpf.connect(comp); comp.connect(actx.destination);
+  masterBus = lpf;
   // Preload all sfx
   for (const [key, [url]] of Object.entries(SFX_DEFS)) {
     fetch(url).then(r=>r.arrayBuffer()).then(ab=>actx.decodeAudioData(ab)).then(buf=>{sfxBufs[key]=buf;}).catch(()=>{});
@@ -303,7 +318,7 @@ function initAudio() {
 }
 
 function playSfx(key) {
-  if (!actx) return;
+  if (!actx || !masterBus) return;
   const def = SFX_DEFS[key];
   const buf = sfxBufs[key];
   if (!buf) return;
@@ -311,7 +326,7 @@ function playSfx(key) {
   const src = actx.createBufferSource();
   const gain = actx.createGain();
   src.buffer = buf;
-  src.connect(gain); gain.connect(actx.destination);
+  src.connect(gain); gain.connect(masterBus);
   gain.gain.value = vol;
   src.start(actx.currentTime);
   src.stop(actx.currentTime + maxSec);

@@ -76,7 +76,7 @@ BLOCK2
    - 有適合素材 → 直接使用（用 `<audio>` 或 fetch Blob 載入）
    - 沒有適合素材 → **告訴使用者需要哪種類型的素材包，請他去下載上傳**，不要自行用 WebAudio 合成替代（除非是臨時示意）
 
-### 現有素材包總覽（2026/3/21）
+### 現有素材包總覽（2026/3/21 更新）
 
 #### 🎵 音效 `assets/sfx/`
 
@@ -86,39 +86,78 @@ BLOCK2
 | `assets/sfx/GameSFX1/` | Electric, Electronic Burst, Events/Negative, Explosion, Impact |
 | `assets/sfx/GameSFX2/` | FootStep, HiTech, Impact, Interferences, Magic, Music/Events/Success/Negative |
 | `assets/sfx/GameSFX3/` | PickUp, PowerUp, Roar, Swoosh, Vehicles, Water, Weapon（Gun/Laser/Reload/Grenade/Missile/Arrow/Bomb/Plasma）, Weird, z_Various |
+| `assets/sfx/400 Sounds Pack/` | 400音效全套：Combat/Gore, Environment（**ambient_wind.wav✅、water_babbling_loop.wav✅**、door/clock/fire等）, Footsteps, Human, Items, Machines, Match Three, Materials, Musical Effects, Retro, UI, Weapons |
+| `assets/sfx/JDSherbert - Ultimate UI SFX Pack (FREE)/` | **UI音效✅**：Cancel×2、Cursor×5、Error、PopupClose、PopupOpen、Select×2、Swipe×2（OGG，`Stereo/ogg/` 子目錄） |
+
+⚠️ **注意**：`assets/images/Weather Elements Freebie/` 實際上是 WAV 音效（**雨聲✅、風聲✅、雷聲✅**），路徑放錯但可直接使用：
+- `WE Heavy/Light Inside/Outside Rain 1.wav` — 室內/外雨聲（輕/重）
+- `WE Heavy/Light Wind Whistle 1.wav` — 風聲
+- `WE Thunder 1/26/29.wav` — 雷聲
 
 #### 🎶 背景音樂 `assets/music/`
 
-| 路徑 | 內容 |
-|------|------|
-| `assets/music/JDSherbert - Minigame Music Pack [FREE]/` | 10 首 OGG BGM（輕鬆/休閒風：Streetlights、Blackjack、Smooth Driving 等） |
-| `assets/music/instruments/` | Retro Instrument：choir bass、crystal 等多種音色（C00–C12） |
+| 路徑 | 內容 | 適用情境 |
+|------|------|---------|
+| `assets/music/JDSherbert - Minigame Music Pack [FREE]/` | 10首OGG（Streetlights、Blackjack、Smooth Driving等） | 輕鬆休閒 |
+| `assets/music/retroindiejosh_mp06-horror_ogg/` | 5首OGG：as-the-light-fades、eyes-piercing-shadow、monster、smallheart、toybox | **恐怖/黑暗氣氛✅** |
+| `assets/music/10 Ambient RPG Tracks/ogg/` | 10首OGG（Ambient 1–10） | RPG環境/探索 |
+| `assets/music/Fantasy RPG Music Pack Vol.3/Loops/ogg/` | **Action Loop×5✅**（戰鬥）+ Ambient Loop×10（探索），均可循環 | **戰鬥BGM✅ / RPG探索** |
+| `assets/music/Fantasy RPG Music Vol. 2/ogg/` | Action Loop×5、Ambient×多首、Night Ambient×5、Victory、Death、Complete、Strange | RPG全場景 |
+| `assets/music/Medieval Vol. 2/ogg/` | 8首OGG（Medieval Vol.2 1–8） | 中世紀/奇幻 |
+| `assets/music/Game Piano Music/ogg/` | 8首OGG（Piano 1–8） | 鋼琴/情感場景 |
+| `assets/music/Urban Modern/` | 4首MP3：alexgrohl-urban、digisignreport-urban-light-bed-loop、nastelbom-modern、turtlebeats-modern-electronic-waves | **都市/現代✅** |
+| `assets/music/instruments/` | Retro Instrument：choir bass、crystal、drumset 等多種音色（C00–C12） | 程式生成音樂 |
 
 #### 🖼️ 圖片素材 `assets/images/`
 
 | 路徑 | 內容 |
 |------|------|
-| `assets/images/Free Pixel Effects Pack/` | 20 張特效 spritesheet（魔法/火焰/渦旋/冰凍等） |
-| `assets/images/Icons_Essential/Icons/` | 60+ 像素圖示 PNG（Coin、Key、Chest、Gamepad 等） |
-| `assets/images/Pixel Crawler - Free Pack 2.0.4/` | 地下城爬行：環境 Tileset（地板/牆/水）、角色 |
-| `assets/images/Sunnyside World/` | 明亮農場/世界風格素材 |
-| `assets/images/Tiny RPG Character Asset Pack v1.03b -Free Soldier&Orc/` | 小型 RPG v1.03b：Soldier & Orc sprite（最新版） |
+| `assets/images/Free Pixel Effects Pack/` | 20張特效spritesheet（魔法/火焰/渦旋/冰凍等） |
+| `assets/images/Icons_Essential/Icons/` | 60+像素圖示PNG（Coin、Key、Chest、Gamepad等） |
+| `assets/images/Pixel Crawler - Free Pack 2.0.4/` | 地下城爬行：Tileset（地板/牆/水）+ **英雄NPC**（Knight/Rogue/Wizzard，各有Idle/Run/Death）+ **怪物Mobs**（Orc×4種、Skeleton×4種，各有Idle/Run/Death） |
+| `assets/images/Sunnyside World/` | 明亮農場/世界風格 + **Goblin**（哥布林，有Attack/Death等多種動畫）+ 主角人物（耕作動畫為主） |
+| `assets/images/Tiny RPG Character Asset Pack v1.03b -Free Soldier&Orc/` | 小型RPG v1.03b：Soldier & Orc sprite（最新版） |
+| `assets/images/32rogues-1/` | Roguelike精靈圖集（基本版）：monsters.png、rogues.png、animals.png、items.png、tiles.png |
+| `assets/images/32rogues-2/` | Roguelike精靈圖集（擴充版）：同上 + animated-tiles、autotiles、items-palette-swaps（多色板） |
+| `assets/images/critters/` | **野生動物✅**：badger（獾）、boar（野豬）、stag（鹿）、wolf（狼）；等角視角4方向（NE/NW/SE/SW），各有Idle/Walk/Run |
+| `assets/images/isometric tileset/` | 等角地板磚集（100+張 tile_001.png 等獨立圖塊） |
+| `assets/images/Mana Seed Farmer Sprite Free Sample/` | 農夫角色（分層換裝系統）：body/feet/lower/shirt/hair/head 各層 spritesheet |
+| `assets/images/mystic_woods_free_2.1/` | 神秘森林 v2.1：角色（player/skeleton/slime）+ Tileset（草地/水/圍牆/裝飾）+ 物件/粒子 |
+| `assets/images/mystic_woods_free_2.2/` | 神秘森林 v2.2（更新版）：同上 + skeleton_swordless 變體 |
 
 #### 📦 混合遊戲素材包（含圖片+音效） `assets/packs/`
 
 | 路徑 | 內容 |
 |------|------|
-| `assets/packs/PostApocalypse_AssetPack_v1.1.2/` | 末日風格：角色/敵人/物件/Tile/音效/音樂 |
-| `assets/packs/Robot Warfare Asset Pack 24-11-21/` | 機甲戰爭：Soldiers、Robots、Effects、Projectiles、Tileset、UI |
+| `assets/packs/PostApocalypse_AssetPack_v1.1.2/` | 末日風格：主角（Idle/Run/Death/Punch）、殭屍3種（Zombie_Axe/Big/Small）、物件/Tile/音效/音樂 |
+| `assets/packs/Robot Warfare Asset Pack 24-11-21/` | 機甲戰爭：Soldiers×7種（Assault/Sniper/Grenadier等）、Robots×5種（Centipede/Hornet/Scarab/Spider/Wasp）、Effects、Projectiles、Tileset、UI |
+
+### RPG/奇幻角色 sprite 總整理（跨素材包）
+
+| 角色類型 | 路徑 | 動畫 |
+|---------|------|------|
+| **英雄 - 騎士** | `Pixel Crawler.../Entities/Npc's/Knight/` | Idle / Run / Death |
+| **英雄 - 盜賊** | `Pixel Crawler.../Entities/Npc's/Rogue/` | Idle / Run / Death |
+| **英雄 - 巫師** | `Pixel Crawler.../Entities/Npc's/Wizzard/` | Idle / Run / Death |
+| **英雄 - 農夫** | `Mana Seed Farmer Sprite Free Sample/` | 分層換裝，多種農耕動畫 |
+| **英雄 - 森林勇者** | `mystic_woods.../sprites/characters/player.png` | 含攻擊動畫✅ |
+| **怪物 - 獸人** | `Pixel Crawler.../Mobs/Orc Crew/Orc/` | Idle / Run / Death |
+| **怪物 - 獸人盜賊/薩滿/戰士** | `Pixel Crawler.../Mobs/Orc Crew/` | Idle / Run / Death |
+| **怪物 - 骷髏×4種** | `Pixel Crawler.../Mobs/Skeleton Crew/` | Idle / Run / Death |
+| **怪物 - 骷髏（森林）** | `mystic_woods.../sprites/characters/skeleton.png` | 含攻擊動畫✅ |
+| **怪物 - 史萊姆** | `mystic_woods.../sprites/characters/slime.png` | 含攻擊動畫✅ |
+| **怪物 - 哥布林** | `Sunnyside World.../GOBLIN/` | Idle/Attack/Death/Carry等多種 |
+| **野生動物×4種** | `critters/critters/` | Idle/Walk/Run × 4方向 |
+| **士兵×7種** | `Robot Warfare.../Soldiers/` | 見 Soldier Animation Info.txt |
+| **機器人×5種** | `Robot Warfare.../Robots/` | 見 Robot animation info.txt |
+| **殭屍×3種** | `PostApocalypse.../Enemies/` | Zombie_Axe / Zombie_Big / Zombie_Small |
+
+⚠️ 注意：Pixel Crawler 英雄（Knight/Rogue/Wizzard）**只有 Idle/Run/Death，沒有攻擊動畫**；mystic_woods 的 player/skeleton/slime **有攻擊動畫✅**。
 
 ### 缺乏的素材類型（建議下載）
 
-- ❌ **戰鬥/動作 BGM**（節奏激烈的戰鬥音樂，現有僅有輕鬆休閒類）
-- ❌ **都市/現代風格 BGM**（現有以 Retro/末日/休閒為主）
-- ❌ **恐怖/殭屍氣氛 BGM**（殭屍類遊戲適用的黑暗氛圍音樂）
-- ❌ **UI 音效包**（按鈕點擊、開關、滑動等細緻 UI 音效）
-- ❌ **自然環境音**（風聲、雨聲、海浪等背景環境音）
-- ❌ **奇幻/RPG 風格角色 sprite**（多樣英雄/怪物類型）
+- ❌ **海浪聲**（現有雨聲/風聲/雷聲，但缺海浪）
+- ❌ **英雄攻擊動畫（像素RPG風）**（mystic_woods 有但風格固定；Pixel Crawler 英雄無攻擊）
 
 ---
 
