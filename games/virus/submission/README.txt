@@ -1,33 +1,39 @@
-VIRUS.EXE — 系統清除  上傳包說明
-======================================
+VIRUS.EXE — System Purge  Submission Package
+=============================================
 
-【檔案清單】
-  virus-exe.zip        → 遊戲本體（itch.io 上傳用）
-  make-cover.html      → 封面產生器（630×500 PNG）
-  make-screenshot.html → 截圖產生器（1280×720，3種場景）
-  README.txt           → 本說明
+[FILES]
+  virus-exe.zip        → Game bundle (upload to CrazyGames / itch.io)
+  make-cover.html      → Cover image generator (630×500 PNG)
+  make-screenshot.html → Screenshot generator (1280×720, 3 scenes)
+  README.txt           → This file
 
-【使用步驟】
+[HOW TO USE]
 
-1. 封面圖 (Cover Image)
-   - 用瀏覽器開啟 make-cover.html
-   - 點「下載封面 PNG」→ 儲存 virus-exe-cover.png
-   - itch.io 上傳尺寸：630×500（符合）
+1. Cover Image
+   - Open make-cover.html in browser
+   - Click "Download Cover PNG" → save virus-exe-cover.png
+   - Size: 630×500 (fits CrazyGames & itch.io)
 
-2. 截圖 (Screenshots)
-   - 用瀏覽器開啟 make-screenshot.html
-   - 點「截圖1/2/3」切換場景，再點「下載此截圖」
-   - 建議上傳 3 張（選磁碟、戰鬥中、升級選擇）
+2. Screenshots
+   - Open make-screenshot.html in browser
+   - Click Scene 1 / 2 / 3 to switch, then "Download Screenshot"
+   - Upload 3 screenshots (Drive Select, Battle, Upgrade)
 
-3. 上傳 itch.io
-   - Kind of project：HTML
-   - 上傳 virus-exe.zip → 勾選「This file will be played in the browser」
-   - 封面圖：virus-exe-cover.png
-   - 截圖：3 張場景截圖
+3. Upload to CrazyGames
+   - Go to developers.crazygames.com → Submit a Game
+   - Upload virus-exe.zip → select "HTML" type
+   - Cover image: virus-exe-cover.png
+   - Screenshots: 3 scene screenshots
 
-【遊戲資訊】
-  標題：VIRUS.EXE — 系統清除
-  語言：繁體中文
-  平台：HTML5（單一檔案，無外部依賴）
-  引擎：純 JavaScript + Canvas
-  類型：Tower Defense / Hacking Action
+4. Upload to itch.io
+   - Kind of project: HTML
+   - Upload virus-exe.zip → check "played in the browser"
+   - Cover + screenshots as above
+
+[GAME INFO]
+  Title:    VIRUS.EXE — System Purge
+  Language: English (+ 中文 toggle button in-game)
+  Platform: HTML5 (single file, no dependencies)
+  Engine:   Pure JavaScript + Canvas + WebAudio
+  Type:     Hacking Action / Tower Defense
+  Size:     33KB (compressed)

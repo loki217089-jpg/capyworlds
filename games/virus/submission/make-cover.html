@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>VIRUS.EXE 封面產生器</title>
+<title>VIRUS.EXE Cover Generator</title>
 <style>
 body { background:#111; display:flex; flex-direction:column; align-items:center; padding:20px; font-family:monospace; color:#0f0; }
 canvas { border:2px solid #1a3a1a; }
@@ -13,8 +13,8 @@ p { color:#336633; margin-top:10px; font-size:12px; }
 </head>
 <body>
 <canvas id="cv" width="630" height="500"></canvas>
-<button onclick="download()">⬇ 下載封面 PNG</button>
-<p>itch.io 封面尺寸：630×500</p>
+<button onclick="download()">⬇ Download Cover PNG</button>
+<p>itch.io / CrazyGames cover size: 630×500</p>
 
 <script>
 const cv = document.getElementById('cv');
@@ -125,9 +125,9 @@ function draw() {
   ctx.strokeStyle = '#1a3a1a'; ctx.lineWidth = 1;
   ctx.strokeRect(0, 0, W, 44);
   ctx.font = '14px monospace'; ctx.fillStyle = '#336633';
-  ctx.fillText('SYS://清除.exe  VER_2.0  [運行中]', 12, 27);
+  ctx.fillText('SYS://PURGE.exe  VER_2.0  [RUNNING]', 12, 27);
   ctx.fillStyle = '#ff2244';
-  ctx.fillText('⚠ 威脅等級: 極危', W - 200, 27);
+  ctx.fillText('⚠ THREAT LEVEL: CRITICAL', W - 220, 27);
 
   // Main title
   ctx.save();
@@ -157,7 +157,7 @@ function draw() {
   ctx.font = 'bold 36px VT323, monospace';
   ctx.fillStyle = '#00ff41';
   ctx.textAlign = 'center';
-  ctx.fillText('系統清除  ─  SYSTEM PURGE', W/2, 220);
+  ctx.fillText('SYSTEM PURGE  ─  HTML5 HACKING GAME', W/2, 220);
   ctx.restore();
 
   // Divider line
@@ -173,7 +173,7 @@ function draw() {
   ctx.font = '16px monospace';
   ctx.fillStyle = '#336633';
   ctx.textAlign = 'center';
-  ctx.fillText('消滅入侵病毒  ◆  保衛系統核心  ◆  Hack Back', W/2, 272);
+  ctx.fillText('Eliminate Viruses  ◆  Defend the Core  ◆  Hack Back', W/2, 272);
 
   // Progress bar (fake scan)
   ctx.fillStyle = '#090f09';
@@ -183,7 +183,7 @@ function draw() {
   ctx.fillStyle = '#00ff41';
   ctx.fillRect(41, 283, (W-82)*0.67, 12);
   ctx.font = '11px monospace'; ctx.fillStyle = '#00ff41'; ctx.textAlign = 'left';
-  ctx.fillText('掃描中... 67%  ██████████████░░░░░░░', 44, 293);
+  ctx.fillText('Scanning... 67%  ██████████████░░░░░░░', 44, 293);
 
   // Fake UI
   drawFakeUI();
@@ -202,7 +202,7 @@ function draw() {
   ctx.font = '13px monospace'; ctx.fillStyle = '#336633'; ctx.textAlign = 'left';
   ctx.fillText('capyworlds.com/games/virus/', 12, H-14);
   ctx.fillStyle = '#00ff41'; ctx.textAlign = 'right';
-  ctx.fillText('[ HTML5 · 繁體中文 · FREE ]', W-12, H-14);
+  ctx.fillText('[ HTML5 · English · FREE ]', W-12, H-14);
 
   // Corner markers
   ctx.strokeStyle = '#00ff41'; ctx.lineWidth = 2;
