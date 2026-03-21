@@ -64,6 +64,102 @@ BLOCK2
 2. 在 `games/index.html` 加入遊戲卡片（參考現有格式）
 3. commit → push 到指定 `claude/` 分支
 
+## 素材使用規則（配置音效 / 音樂 / 圖片前必讀）
+
+### 強制流程：先查素材包，再決定做法
+
+每次要為遊戲加入**音效、背景音樂、圖片**時，必須先執行以下步驟：
+
+1. **掃描素材包**：用 `find /home/user/capyworlds/assets -type f` 列出所有素材
+2. **比對需求**：確認素材包內有無符合情境的檔案（例如：爆炸音→ `Explosion/`、腳步→ `FootStep/`、BGM→ `JDSherbert - Minigame Music Pack/`）
+3. **決策**：
+   - 有適合素材 → 直接使用（用 `<audio>` 或 fetch Blob 載入）
+   - 沒有適合素材 → **告訴使用者需要哪種類型的素材包，請他去下載上傳**，不要自行用 WebAudio 合成替代（除非是臨時示意）
+
+### 現有素材包總覽（2026/3/21）
+
+#### 🎵 音效 `assets/sfx/`
+
+| 路徑 | 內容 |
+|------|------|
+| `assets/sfx/GameSFX0/` | Alarms, Animal, Ascending, Blops, Bounce, Charge, Cinematic, Descending, Electric, Explosion |
+| `assets/sfx/GameSFX1/` | Electric, Electronic Burst, Events/Negative, Explosion, Impact |
+| `assets/sfx/GameSFX2/` | FootStep, HiTech, Impact, Interferences, Magic, Music/Events/Success/Negative |
+| `assets/sfx/GameSFX3/` | PickUp, PowerUp, Roar, Swoosh, Vehicles, Water, Weapon（Gun/Laser/Reload/Grenade/Missile/Arrow/Bomb/Plasma）, Weird, z_Various |
+
+#### 🎶 背景音樂 `assets/music/`
+
+| 路徑 | 內容 |
+|------|------|
+| `assets/music/JDSherbert - Minigame Music Pack [FREE]/` | 10 首 OGG BGM（輕鬆/休閒風：Streetlights、Blackjack、Smooth Driving 等） |
+| `assets/music/instruments/` | Retro Instrument：choir bass、crystal 等多種音色（C00–C12） |
+
+#### 🖼️ 圖片素材 `assets/images/`
+
+| 路徑 | 內容 |
+|------|------|
+| `assets/images/Free Pixel Effects Pack/` | 20 張特效 spritesheet（魔法/火焰/渦旋/冰凍等） |
+| `assets/images/Icons_Essential/Icons/` | 60+ 像素圖示 PNG（Coin、Key、Chest、Gamepad 等） |
+| `assets/images/Pixel Crawler - Free Pack 2.0.4/` | 地下城爬行：環境 Tileset（地板/牆/水）、角色 |
+| `assets/images/Sunnyside World/` | 明亮農場/世界風格素材 |
+| `assets/images/Tiny RPG Character Asset Pack v1.03b -Free Soldier&Orc/` | 小型 RPG v1.03b：Soldier & Orc sprite（最新版） |
+
+#### 📦 混合遊戲素材包（含圖片+音效） `assets/packs/`
+
+| 路徑 | 內容 |
+|------|------|
+| `assets/packs/PostApocalypse_AssetPack_v1.1.2/` | 末日風格：角色/敵人/物件/Tile/音效/音樂 |
+| `assets/packs/Robot Warfare Asset Pack 24-11-21/` | 機甲戰爭：Soldiers、Robots、Effects、Projectiles、Tileset、UI |
+
+### 缺乏的素材類型（建議下載）
+
+- ❌ **戰鬥/動作 BGM**（節奏激烈的戰鬥音樂，現有僅有輕鬆休閒類）
+- ❌ **都市/現代風格 BGM**（現有以 Retro/末日/休閒為主）
+- ❌ **恐怖/殭屍氣氛 BGM**（殭屍類遊戲適用的黑暗氛圍音樂）
+- ❌ **UI 音效包**（按鈕點擊、開關、滑動等細緻 UI 音效）
+- ❌ **自然環境音**（風聲、雨聲、海浪等背景環境音）
+- ❌ **奇幻/RPG 風格角色 sprite**（多樣英雄/怪物類型）
+
+---
+
+## 提示框 / 通知 / 彈窗安全規則
+
+**避免文字被螢幕切掉的規範**：
+
+```
+所有 position:fixed 或 position:absolute 的提示框（toast、notification、popup、tooltip）
+必須確保在各裝置上不超出可視範圍。
+```
+
+### 必須遵守的規則
+
+1. **頂部留白**：固定式通知的 `top` 值需大於頁面 header + ticker 的實際高度（通常 ≥ 80px）
+   - 有標頭列（~40px）+ 跑馬燈（~20px）時：`top: 80px` 以上
+   - 只有標頭列（~40px）時：`top: 56px` 以上
+   - 無標頭：`top: 20px` 以上
+
+2. **橫向不溢出**：
+   ```css
+   max-width: min(400px, calc(100vw - 32px));
+   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+   /* 或 */
+   word-break: break-word; white-space: normal;
+   ```
+
+3. **彈窗（modal/overlay）高度限制**：
+   ```css
+   max-height: 88vh; overflow-y: auto;
+   ```
+
+4. **tooltip 定位檢查**：動態生成的 tooltip 要用 JS 確認不超出 viewport：
+   ```js
+   const r = el.getBoundingClientRect();
+   if (r.right > window.innerWidth) el.style.left = 'auto'; el.style.right = '8px';
+   if (r.bottom > window.innerHeight) el.style.top = 'auto'; el.style.bottom = '8px';
+   ```
+
+---
+
 ## 音效規範
 
 - **即時動作音效 ≤ 300ms**（撿道具、升級、購買、射擊、受傷等一瞬間的動作）

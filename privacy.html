@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6193561251326215"
+     crossorigin="anonymous"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>隱私權政策 - CapyWorlds</title>
+  <style>
+    :root {
+      --bg: #13100c; --bg-hero: #2d1e0e; --bg2: #1e1812;
+      --border: #3d3020; --accent: #c8a456; --accent-rgb: 200,164,86;
+      --text: #e8ddd0; --text2: #b09880; --text3: #7a6a58;
+      --h1: #ffffff;
+    }
+    [data-theme="light"] {
+      --bg: #f5f0e8; --bg-hero: #e0d0a8; --bg2: #ffffff;
+      --border: #d4c4a0; --accent: #9a6e1e; --accent-rgb: 154,110,30;
+      --text: #2a1e0e; --text2: #7a5a40; --text3: #6a5a48;
+      --h1: #1a0e06;
+    }
+    [data-theme="pink"] {
+      --bg: #1a0810; --bg-hero: #3d0a22; --bg2: #260a18;
+      --border: #6a2050; --accent: #e060a8; --accent-rgb: 224,96,168;
+      --text: #f8d8ec; --text2: #d890b8; --text3: #a05880;
+      --h1: #fff0f8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+      transition: background 0.3s, color 0.3s;
+    }
+    .page-header {
+      width: 100%; text-align: center; padding: 48px 24px 36px;
+      background: radial-gradient(ellipse at 50% -10%, var(--bg-hero) 0%, var(--bg) 68%);
+      position: relative;
+    }
+    .page-header::after {
+      content: ''; position: absolute; bottom: 0; left: 15%; right: 15%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent) 40%, var(--accent) 60%, transparent);
+    }
+    .page-header h1 { font-size: 32px; font-weight: 900; color: var(--h1); letter-spacing: 2px; margin-bottom: 8px; }
+    .page-header h1 .accent { color: var(--accent); }
+    .page-header .sub { font-size: 14px; color: var(--text3); letter-spacing: 1px; }
+    .content { max-width: 720px; width: 100%; padding: 48px 24px 64px; }
+    .section { margin-bottom: 32px; }
+    .section-label {
+      font-size: 10px; letter-spacing: 2.5px; color: var(--accent);
+      text-transform: uppercase; font-weight: 700; margin-bottom: 12px;
+    }
+    .section h2 { font-size: 18px; color: var(--h1); margin-bottom: 14px; }
+    .section p, .section li {
+      font-size: 15px; color: var(--text2); line-height: 1.9; margin-bottom: 10px;
+    }
+    .section ul { padding-left: 22px; }
+    .section li { margin-bottom: 6px; }
+    .card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 14px; padding: 24px 28px; margin-bottom: 20px;
+    }
+    .highlight {
+      background: rgba(var(--accent-rgb), 0.07); border-left: 3px solid var(--accent);
+      padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0;
+      font-size: 14px; color: var(--text2); line-height: 1.8;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .back-link {
+      display: block; text-align: center; margin-top: 36px;
+      color: var(--accent); text-decoration: none; font-size: 14px;
+      letter-spacing: 1px; opacity: 0.7; transition: opacity 0.2s;
+    }
+    .back-link:hover { opacity: 1; }
+    .updated { font-size: 12px; color: var(--text3); text-align: right; margin-top: 24px; }
+    .theme-switcher {
+      position: fixed; top: 14px; right: 14px; z-index: 200;
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(0,0,0,0.35); backdrop-filter: blur(8px);
+      padding: 6px 10px; border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .theme-switcher-label { font-size: 11px; color: var(--text3); margin-right: 2px; user-select: none; }
+    .theme-dot { width: 20px; height: 20px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; outline: none; transition: transform 0.2s, border-color 0.2s; }
+    .theme-dot:hover { transform: scale(1.2); }
+    .theme-dot.active { border-color: var(--text); }
+    .theme-dot[data-t="dark"]  { background: radial-gradient(circle at 35% 35%, #c8a456, #5a3c10); }
+    .theme-dot[data-t="light"] { background: radial-gradient(circle at 35% 35%, #f5f0d8, #c8b480); }
+    .theme-dot[data-t="pink"]  { background: radial-gradient(circle at 35% 35%, #f880c0, #8a1858); }
+  </style>
+</head>
+<body>
+  <div class="theme-switcher">
+    <span class="theme-switcher-label">主題</span>
+    <button class="theme-dot" data-t="dark"  title="深色" onclick="setTheme('dark')"></button>
+    <button class="theme-dot" data-t="light" title="明亮" onclick="setTheme('light')"></button>
+    <button class="theme-dot" data-t="pink"  title="粉色" onclick="setTheme('pink')"></button>
+  </div>
+
+  <header class="page-header">
+    <h1>🛡️ 隱私權<span class="accent">政策</span></h1>
+    <p class="sub">Privacy Policy</p>
+  </header>
+
+  <main class="content">
+
+    <div class="section card">
+      <div class="section-label">概述</div>
+      <p>CapyWorlds（以下簡稱「本網站」）重視您的隱私。本隱私權政策說明我們如何收集、使用及保護您在使用本網站時所提供的資訊。</p>
+      <p>使用本網站即表示您同意本政策的內容。若有疑問，請透過頁尾聯絡方式與我們聯繫。</p>
+      <p class="updated">最後更新：2026 年 3 月 21 日</p>
+    </div>
+
+    <div class="section card">
+      <div class="section-label">資訊收集</div>
+      <h2>我們收集哪些資訊？</h2>
+      <p>本網站為純前端靜態網頁，所有遊戲均在您的瀏覽器本地端運行。我們<strong>不</strong>主動收集個人識別資訊（如姓名、電子郵件、IP 位址）。</p>
+      <div class="highlight">
+        ✅ 遊戲存檔資料（分數、升級進度等）僅儲存於您的瀏覽器 localStorage，不會傳送至任何伺服器。
+      </div>
+      <p>以下是可能涉及的資訊類型：</p>
+      <ul>
+        <li><strong>Cookie 與本地儲存：</strong>用於保存遊戲進度及主題偏好設定，完全在本機運作。</li>
+        <li><strong>廣告相關資料：</strong>本網站使用 Google AdSense 投放廣告，Google 可能依其隱私政策收集使用行為資料。</li>
+        <li><strong>流量分析：</strong>可能使用匿名流量統計工具（如 Cloudflare Analytics）以了解整體瀏覽狀況，不含個人識別資訊。</li>
+      </ul>
+    </div>
+
+    <div class="section card">
+      <div class="section-label">Google AdSense</div>
+      <h2>廣告服務</h2>
+      <p>本網站使用 <strong>Google AdSense</strong> 顯示廣告。Google 作為第三方廣告商，可能使用 Cookie 根據您先前造訪本網站及其他網站的記錄投放廣告。</p>
+      <div class="highlight">
+        Google 使用 DoubleClick Cookie，讓其及其合作夥伴能夠根據您造訪本網站及/或網路上其他網站的記錄向您投放廣告。
+      </div>
+      <p>您可以透過以下方式停用個人化廣告：</p>
+      <ul>
+        <li>前往 <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener">Google 廣告設定</a></li>
+        <li>前往 <a href="https://www.aboutads.info" target="_blank" rel="noopener">aboutads.info</a> 選擇退出第三方廣告商 Cookie</li>
+      </ul>
+      <p>詳細資訊請參閱 <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google 隱私政策</a>。</p>
+    </div>
+
+    <div class="section card">
+      <div class="section-label">資訊使用</div>
+      <h2>我們如何使用這些資訊？</h2>
+      <ul>
+        <li>維持並改善網站功能與遊戲體驗</li>
+        <li>透過廣告支撐網站營運成本</li>
+        <li>了解整體流量趨勢以優化內容</li>
+      </ul>
+      <p>我們<strong>不會</strong>將您的資訊出售、出租或分享給第三方（廣告合作夥伴除外，其依其各自隱私政策處理資料）。</p>
+    </div>
+
+    <div class="section card">
+      <div class="section-label">您的權利</div>
+      <h2>資料控制與隱私選擇</h2>
+      <ul>
+        <li><strong>清除遊戲資料：</strong>您可隨時在瀏覽器設定中清除 localStorage 與 Cookie 以刪除所有本地儲存資料。</li>
+        <li><strong>廣告偏好：</strong>您可透過瀏覽器設定或 Google 廣告設定管理廣告 Cookie。</li>
+        <li><strong>Do Not Track：</strong>本網站尊重瀏覽器的 Do Not Track 訊號。</li>
+      </ul>
+    </div>
+
+    <div class="section card">
+      <div class="section-label">兒童隱私</div>
+      <h2>兒童保護</h2>
+      <p>本網站不特意向 13 歲以下兒童收集個人資訊。若您是兒童的家長或監護人，並認為您的孩子已向我們提供個人資訊，請與我們聯繫，我們將盡速處理。</p>
+    </div>
+
+    <div class="section card">
+      <div class="section-label">政策更新</div>
+      <h2>本政策的變更</h2>
+      <p>我們可能會不定期更新本隱私權政策。更新後將在本頁面公告，並更新頂端的「最後更新」日期。建議您定期查閱本頁面。</p>
+    </div>
+
+    <div class="section card">
+      <div class="section-label">聯絡我們</div>
+      <h2>問題與聯繫</h2>
+      <p>若對本隱私政策有任何疑問，請透過以下方式聯絡我們：</p>
+      <div class="highlight">
+        📧 請前往 <a href="/about.html">關於頁面</a> 取得聯絡資訊
+      </div>
+    </div>
+
+    <a class="back-link" href="/">← 回到首頁 &nbsp; Back Home</a>
+  </main>
+
+  <script>
+    function setTheme(t) {
+      if (t === 'dark') document.documentElement.removeAttribute('data-theme');
+      else document.documentElement.setAttribute('data-theme', t);
+      localStorage.setItem('theme', t);
+      document.querySelectorAll('.theme-dot').forEach(d => {
+        d.classList.toggle('active', d.dataset.t === t || (t === 'dark' && d.dataset.t === 'dark'));
+      });
+    }
+    const saved = localStorage.getItem('theme') || 'dark';
+    setTheme(saved);
+  </script>
+</body>
+</html>

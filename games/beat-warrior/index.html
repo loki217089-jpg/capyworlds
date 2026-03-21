@@ -119,7 +119,7 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
   };
 }
 // ── BLOCK 2: Constants & Sprite Config ───────────────────
-const SBASE = '../../assets/Tiny%20RPG%20Character%20Asset%20Pack%20v1.02%20-Free%20Soldier%26Orc/Tiny%20RPG%20Character%20Asset%20Pack%20v1.02%20-Free%20Soldier%26Orc/';
+const SBASE = '../../assets/images/Tiny%20RPG%20Character%20Asset%20Pack%20v1.02%20-Free%20Soldier%26Orc/Tiny%20RPG%20Character%20Asset%20Pack%20v1.02%20-Free%20Soldier%26Orc/';
 
 // fw=100, fh=100 for ALL sprites in this pack
 const SPRS = {
@@ -403,9 +403,9 @@ function startStage(idx) {
   chartQueue = buildChart(edef.bpm, edef.phases, startT);
 
   const bgmFiles = [
-    '../../assets/JDSherbert%20-%20Minigame%20Music%20Pack%20%5BFREE%5D/JDSherbert%20-%20Minigame%20Music%20Pack%20-%20Corrupted%20Circuitry.ogg',
-    '../../assets/JDSherbert%20-%20Minigame%20Music%20Pack%20%5BFREE%5D/JDSherbert%20-%20Minigame%20Music%20Pack%20-%20Digital%20Waves.ogg',
-    '../../assets/JDSherbert%20-%20Minigame%20Music%20Pack%20%5BFREE%5D/JDSherbert%20-%20Minigame%20Music%20Pack%20-%20Streetlights.ogg',
+    '../../assets/music/JDSherbert%20-%20Minigame%20Music%20Pack%20%5BFREE%5D/JDSherbert%20-%20Minigame%20Music%20Pack%20-%20Corrupted%20Circuitry.ogg',
+    '../../assets/music/JDSherbert%20-%20Minigame%20Music%20Pack%20%5BFREE%5D/JDSherbert%20-%20Minigame%20Music%20Pack%20-%20Digital%20Waves.ogg',
+    '../../assets/music/JDSherbert%20-%20Minigame%20Music%20Pack%20%5BFREE%5D/JDSherbert%20-%20Minigame%20Music%20Pack%20-%20Streetlights.ogg',
   ];
   playBgm(bgmFiles[idx % bgmFiles.length]);
 }

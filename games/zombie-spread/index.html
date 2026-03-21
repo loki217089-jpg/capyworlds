@@ -118,8 +118,8 @@ body{
 <script>
 'use strict';
 // ── BLOCK 2: Constants & Sprite Config ───────────────────
-const PA = '../../assets/PostApocalypse_AssetPack_v1.1.2/';
-const SW = '../../assets/Sunnyside%20World/Sunnyside_World_ASSET_PACK_V2.1/Sunnyside_World_ASSET_PACK_V2.1/Sunnyside_World_Assets/';
+const PA = '../../assets/packs/PostApocalypse_AssetPack_v1.1.2/';
+const SW = '../../assets/images/Sunnyside%20World/Sunnyside_World_ASSET_PACK_V2.1/Sunnyside_World_ASSET_PACK_V2.1/Sunnyside_World_Assets/';
 const CW=900, CH=500, SCALE=4;
 
 // Sprite def: [path, frameCount, sheetW, sheetH]
@@ -639,7 +639,7 @@ function resetGame() {
   document.getElementById('upgrade-overlay').classList.remove('open');
   player=new Player(); hudUpdate();
   startWave(1);
-  playBgm('../../assets/JDSherbert%20-%20Minigame%20Music%20Pack%20%5BFREE%5D/JDSherbert%20-%20Minigame%20Music%20Pack%20-%20Corrupted%20Circuitry.ogg');
+  playBgm('../../assets/music/JDSherbert%20-%20Minigame%20Music%20Pack%20%5BFREE%5D/JDSherbert%20-%20Minigame%20Music%20Pack%20-%20Corrupted%20Circuitry.ogg');
 }
 // ── BLOCK 8: Rendering ───────────────────────────────────
 const canvas=document.getElementById('canvas');
