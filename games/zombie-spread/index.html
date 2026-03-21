@@ -312,7 +312,9 @@ class Player {
     playSfx('shoot');
     hudUpdate();
     const ang = Math.atan2(this.mouseY-this.y, this.mouseX-this.x);
-    return new Bullet(this.x, this.y, ang, Math.round(25*playerMods.dmgMult));
+    const bx = this.x + (this.flip ? -24 : 24);
+    const by = this.y - 6;
+    return new Bullet(bx, by, ang, Math.round(25*playerMods.dmgMult));
   }
   reload() {
     if (this.reloading||this.ammo>=MAX_AMMO+playerMods.magBonus) return;
@@ -335,7 +337,7 @@ class Player {
     const cx = this.x+ox, cy = this.y;
     if (this.flashT>0) {
       ctx.save(); this.anim.draw(ctx,cx,cy,this.flip,1);
-      ctx.globalAlpha=Math.min(.65,this.flashT/200);
+      ctx.globalAlpha=Math.min(.4,this.flashT/200);
       ctx.fillStyle='#f44';
       const [,f,sw,sh]=SPRITES['pIdle']; const fw=sw/f*SCALE, fh=sh*SCALE;
       ctx.fillRect(cx-fw/2, cy-fh/2, fw, fh);
@@ -469,7 +471,7 @@ class Enemy {
     const dw=fw*sc, dh=fh*sc;
     if (this.flashT>0) {
       ctx.save(); this.anim.draw(ctx,this.x,this.y,this.flip,1);
-      ctx.globalAlpha=Math.min(.7,this.flashT/150);
+      ctx.globalAlpha=Math.min(.45,this.flashT/180);
       ctx.fillStyle='#f88';
       ctx.fillRect(this.x-dw/2, this.y-dh/2, dw, dh);
       ctx.restore();
@@ -737,6 +739,8 @@ function loop(now) {
       for (const f of fireAnims) f.anim.update(dt);
       // update enemies
       for (const e of enemies) e.update(dt, player);
+      // update bullets
+      for (const b of bullets) b.update(dt);
 
       // bullet-enemy collision
       for (const b of bullets) {
