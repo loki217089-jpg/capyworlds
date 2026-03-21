@@ -295,6 +295,17 @@ body {
   padding: 2px 10px; font-size: 11px; color: var(--dim);
   border-radius: 3px; white-space: nowrap; z-index: 5; pointer-events: none;
 }
+#skip-btn {
+  position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,60,0,0.85); border: 1px solid var(--green3);
+  color: var(--green2); font-family: 'Share Tech Mono', monospace;
+  font-size: 11px; padding: 3px 14px; border-radius: 3px;
+  cursor: pointer; z-index: 10; display: none; letter-spacing: 1px;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
+}
+#skip-btn:hover { background: rgba(0,120,0,0.9); box-shadow: 0 0 8px var(--green3); }
+#skip-btn.wave-on { border-color: #fbbf24; color: #fbbf24; background: rgba(60,40,0,0.9); }
+#skip-btn.wave-on:hover { background: rgba(100,60,0,0.95); box-shadow: 0 0 8px #fbbf24; }
 #zf-left-label {
   position: absolute; top: 6px; left: 6px;
   font-size: 10px; color: rgba(61,220,88,0.5); pointer-events: none; z-index: 4;
@@ -439,6 +450,7 @@ body {
     <div id="wave-banner">準備中...</div>
     <div id="zf-left-label"></div>
     <div id="zf-right-label"></div>
+    <button id="skip-btn" onclick="skipWave()">⚡ 立即開戰</button>
   </div>
     <div id="stats">
       <div id="bl">🧠 腦髓</div>
@@ -1169,6 +1181,7 @@ function zfUpdateWave(dt) {
     if (allSpawned && zfEnemies.length === 0) {
       waveActive = false;
       waveCooldown = 6;
+      sfxWaveClear(); stopBattleBeats();
       const bonus = Math.floor(bps() * 4 * (1 + waveNum * 0.5));
       G.b += bonus; G.tb += bonus;
       spawnPt(window.innerWidth / 2, 200, '+' + fmt(bonus) + ' 🧠');
@@ -1182,6 +1195,7 @@ function zfUpdateWave(dt) {
     if (waveTimer <= 0 && totZ(G) > 0) {
       waveActive = true;
       waveSpawnQueue = zfBuildWave(waveNum + 1);
+      sfxWaveStart(); startBattleBeats();
     }
   }
 }
@@ -1455,6 +1469,23 @@ function zfDraw() {
   const rightLbl = document.getElementById('zf-right-label');
   if (leftLbl)  leftLbl.textContent  = `🟢 我方 ${zfZombies.length}`;
   if (rightLbl) rightLbl.textContent = `🔴 敵方 ${zfEnemies.length}`;
+
+  const skipBtn = document.getElementById('skip-btn');
+  if (skipBtn) {
+    if (totZ(G) === 0) {
+      skipBtn.style.display = 'none';
+    } else if (waveActive) {
+      skipBtn.style.display = '';
+      const pending = waveSpawnQueue.filter(e => !e.spawned).length;
+      skipBtn.textContent = pending > 0 ? `⚡ 全部召喚 (${pending})` : '⚡ 全部召喚';
+      skipBtn.classList.add('wave-on');
+    } else {
+      skipBtn.style.display = '';
+      const sec = Math.ceil(Math.max(0, waveCooldown > 0 ? waveCooldown : waveTimer));
+      skipBtn.textContent = sec > 0 ? `⚡ 跳過等待 (${sec}s)` : '⚡ 立即開戰';
+      skipBtn.classList.remove('wave-on');
+    }
+  }
 }
 
 // ── 點擊戰場 ──────────────────────────────────
@@ -1513,6 +1544,7 @@ function toggleMute() {
   muted = !muted;
   document.getElementById('mute-btn').textContent = muted ? '🔇' : '🔊';
   bgmNodes.forEach(g => { try { g.gain.value = muted ? 0 : g._vol; } catch(e){} });
+  if (muted) stopBattleBeats();
 }
 
 function startBGM() {
@@ -1586,6 +1618,144 @@ function sfxDeny() {
   g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
   o.connect(g); g.connect(ctx.destination);
   o.start(); o.stop(ctx.currentTime + 0.15);
+}
+
+// ── 波次音效 ──────────────────────────────────
+function sfxWaveStart() {
+  if (muted) return;
+  const ctx = getACtx();
+  // 警報音：上升鋸齒三連發
+  [0, 0.18, 0.36].forEach(delay => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(330, ctx.currentTime + delay);
+    o.frequency.linearRampToValueAtTime(660, ctx.currentTime + delay + 0.14);
+    g.gain.setValueAtTime(0.2, ctx.currentTime + delay);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.14);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(ctx.currentTime + delay); o.stop(ctx.currentTime + delay + 0.14);
+  });
+}
+
+function sfxWaveClear() {
+  if (muted) return;
+  const ctx = getACtx();
+  // 勝利小旋律
+  [262, 330, 392, 523].forEach((f, i) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'square'; o.frequency.value = f;
+    g.gain.setValueAtTime(0.14, ctx.currentTime + i * 0.11);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.11 + 0.25);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(ctx.currentTime + i * 0.11); o.stop(ctx.currentTime + i * 0.11 + 0.25);
+  });
+}
+
+function sfxWaveSkip() {
+  if (muted) return;
+  const ctx = getACtx();
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = 'square';
+  o.frequency.setValueAtTime(500, ctx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(1100, ctx.currentTime + 0.07);
+  g.gain.setValueAtTime(0.18, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.07);
+  o.connect(g); g.connect(ctx.destination);
+  o.start(); o.stop(ctx.currentTime + 0.07);
+}
+
+// ── 戰鬥 BGM（節奏打擊層）────────────────────
+let battleBeatId = null;
+let battleGainNode = null;
+
+function startBattleBeats() {
+  if (battleBeatId || muted) return;
+  const ctx = getACtx();
+  battleGainNode = ctx.createGain();
+  battleGainNode.gain.setValueAtTime(0, ctx.currentTime);
+  battleGainNode.gain.linearRampToValueAtTime(0.11, ctx.currentTime + 0.35);
+  battleGainNode.connect(ctx.destination);
+
+  let beat = 0;
+  const interval = 375; // 160 BPM
+
+  function tick() {
+    if (!battleBeatId) return;
+    const t = ctx.currentTime;
+    const g = battleGainNode;
+    // 踢鼓：拍 0, 2
+    if (beat % 4 === 0 || beat % 4 === 2) {
+      const o = ctx.createOscillator(), gg = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(160, t);
+      o.frequency.exponentialRampToValueAtTime(30, t + 0.14);
+      gg.gain.setValueAtTime(0.9, t);
+      gg.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+      o.connect(gg); gg.connect(g);
+      o.start(t); o.stop(t + 0.16);
+    }
+    // 軍鼓：拍 1, 3
+    if (beat % 4 === 1 || beat % 4 === 3) {
+      const len = Math.ceil(ctx.sampleRate * 0.1);
+      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+      const src = ctx.createBufferSource(); src.buffer = buf;
+      const flt = ctx.createBiquadFilter(); flt.type = 'bandpass';
+      flt.frequency.value = 2800; flt.Q.value = 0.8;
+      const gg = ctx.createGain();
+      gg.gain.setValueAtTime(0.55, t);
+      gg.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+      src.connect(flt); flt.connect(gg); gg.connect(g);
+      src.start(t);
+    }
+    // 高帽：每拍
+    {
+      const len = Math.ceil(ctx.sampleRate * 0.03);
+      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+      const src = ctx.createBufferSource(); src.buffer = buf;
+      const flt = ctx.createBiquadFilter(); flt.type = 'highpass'; flt.frequency.value = 9000;
+      const gg = ctx.createGain();
+      gg.gain.setValueAtTime(0.18, t);
+      gg.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
+      src.connect(flt); flt.connect(gg); gg.connect(g);
+      src.start(t);
+    }
+    beat++;
+    battleBeatId = setTimeout(tick, interval);
+  }
+  battleBeatId = setTimeout(tick, 0);
+}
+
+function stopBattleBeats() {
+  if (battleBeatId) { clearTimeout(battleBeatId); battleBeatId = null; }
+  if (battleGainNode && _actx) {
+    try { battleGainNode.gain.linearRampToValueAtTime(0, _actx.currentTime + 0.5); } catch(e) {}
+    setTimeout(() => { try { battleGainNode.disconnect(); } catch(e) {} battleGainNode = null; }, 600);
+  }
+}
+
+// ── 跳過波次 ──────────────────────────────────
+function skipWave() {
+  if (totZ(G) === 0) return;
+  startBGM();
+  if (waveActive) {
+    // 立刻把剩餘待生成的敵人全部召喚出來
+    for (const e of waveSpawnQueue) {
+      if (!e.spawned) { e.delay = 0; e.spawned = true; zfSpawnEnemy(e.typeId); }
+    }
+    sfxWaveSkip();
+  } else {
+    // 跳過冷卻 / 倒計時，立即開始下一波
+    waveCooldown = 0;
+    waveTimer = 0;
+    waveActive = true;
+    waveSpawnQueue = zfBuildWave(waveNum + 1);
+    sfxWaveStart();
+    startBattleBeats();
+  }
 }
 
 // ══════════════════════════════════════════════
