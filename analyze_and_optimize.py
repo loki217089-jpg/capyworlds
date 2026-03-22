@@ -7,7 +7,6 @@ CapyWorlds 遊戲自動分析 + 優化腳本
 import json
 import os
 import random
-import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -146,16 +145,23 @@ def save_report(game, analysis):
     return report
 
 
-# ── 步驟 5：Claude Code CLI 自動優化 ─────────────────────
+# ── 步驟 5：Claude API 自動優化 ───────────────────────────
 OPTIMIZE_PROMPT = """\
-請根據以下分析報告，對遊戲檔案 `{file}` 進行優化改進。
+請根據以下分析報告，對遊戲 HTML 原始碼進行優化改進。
 
 {report}
+
+遊戲原始碼：
+```html
+{html}
+```
 
 執行原則：
 - 優先處理「優化建議」中排序靠前的項目
 - 只修改遊戲邏輯/體驗，不改變遊戲的核心玩法定位
-- 修改完成後，簡短列出做了哪些改動
+- 直接回傳完整的優化後 HTML 原始碼（不要截斷、不要加說明文字，只回傳 HTML）
+- 在 HTML 最末尾加一段 HTML 註解，列出本次改動摘要，格式如下：
+  <!-- 優化摘要：1. xxx  2. xxx  3. xxx -->
 """
 
 
@@ -163,17 +169,46 @@ def run_optimization(game, report):
     print(f"\n🚀 開始自動優化：{game['name']}")
     print("─" * 60)
 
-    prompt = OPTIMIZE_PROMPT.format(file=game["file"], report=report)
+    game_path = REPO_ROOT / game["file"]
+    html_content = game_path.read_text(encoding="utf-8")
+    if len(html_content) > 80_000:
+        print(f"⚠️  檔案過大（{len(html_content):,} 字元），只優化前 80,000 字元")
+        html_content = html_content[:80_000]
 
-    result = subprocess.run(
-        ["claude", "-p", prompt],
-        cwd=str(REPO_ROOT),
-    )
+    prompt = OPTIMIZE_PROMPT.format(report=report, html=html_content)
 
-    if result.returncode != 0:
-        print(f"⚠️  Claude Code 結束（return code {result.returncode}）")
+    client = anthropic.Anthropic()
+    print("🤖 Claude Sonnet 4.6 優化中…\n")
+
+    optimized = ""
+    with client.messages.stream(
+        model=MODEL,
+        max_tokens=16_000,
+        messages=[{"role": "user", "content": prompt}],
+    ) as stream:
+        for text in stream.text_stream:
+            print(text, end="", flush=True)
+            optimized += text
+
+    print("\n" + "─" * 60)
+
+    # 若模型回傳有 ```html ... ``` 包裝，剝掉它
+    stripped = optimized.strip()
+    if stripped.startswith("```html"):
+        stripped = stripped[7:]
+    if stripped.startswith("```"):
+        stripped = stripped[3:]
+    if stripped.endswith("```"):
+        stripped = stripped[:-3]
+    stripped = stripped.strip()
+
+    if stripped.startswith("<!"):
+        game_path.write_text(stripped, encoding="utf-8")
+        print(f"\n✅ 優化完成，已覆寫：{game_path}")
     else:
-        print("\n✅ 優化完成")
+        fallback = REPO_ROOT / "optimized_output.txt"
+        fallback.write_text(optimized, encoding="utf-8")
+        print(f"\n⚠️  回傳內容非完整 HTML，已另存至：{fallback}")
 
 
 # ── 主程式 ────────────────────────────────────────────────
