@@ -169,12 +169,12 @@ canvas { position:absolute; top:0; left:0; display:block; }
         <h3>對手 CPU</h3>
         <div class="cpu-build-name" id="cpuName">?????</div>
         <div class="cpu-style" id="cpuStyle">隨機對手</div>
-        <div style="font-size:12px;color:#663344;margin-top:8px">對手將在開戰時隨機決定</div>
+        <div id="cpuParts" style="font-size:11px;color:#884466;margin-top:6px;line-height:1.6"></div>
       </div>
     </div>
 
     <button id="startBtn" onclick="startBattle()">⚡ 開始戰鬥！</button>
-    <div class="hint">選好配件按開始 — 戰鬥中可主動出招！</div>
+    <div class="hint">選好配件按開始 — WASD/方向鍵移動陀螺 · Z衝刺 X加速 C防禦</div>
   </div>
 
   <!-- 玩家行動按鈕 -->
@@ -237,11 +237,12 @@ const CPU_BUILDS = [
 // ==================== GAME STATE ====================
 let gameState = 'select';
 let selBlade=0, selCore=0, selDriver=0;
+let previewCpuIdx = Math.floor(Math.random()*3); // 預先揭示 CPU 配件
 let playerTop=null, cpuTop=null;
 let playerScore=0, cpuScore=0, currentRound=1;
 let particles=[];
 let shakeX=0, shakeY=0;
-let countdownTimer=0, roundEndTimer=0, roundEndMsg='';
+let countdownTimer=0, roundEndTimer=0, roundEndMsg='', roundEndReason='';
 let lastBeepN = -1;
 let cpuAggression = 1.0;   // escalates each round CPU loses
 let playerBurstChain = 0;  // consecutive burst activations in a match
@@ -276,11 +277,17 @@ function playerBoostSpin(){
 function playerGuard(){
   if(gameState!=='battle'||!playerTop) return;
   if(playerCooldowns.guard>0) return;
-  playerGuardTimer=3.5;
+  playerGuardTimer=1.5; // 真正 1.5 秒保護期
   playerTop.flashTimer=0;
-  playerCooldowns.guard=9;
-  spawnSparks(playerTop.x,playerTop.y,playerTop.glow,'#44ff88',8);
-  updateBtnCooldown('guard',9);
+  playerCooldowns.guard=6; // 冷卻縮短至 6 秒
+  spawnSparks(playerTop.x,playerTop.y,playerTop.glow,'#44ff88',14);
+  // 護盾粒子環
+  for(let i=0;i<3;i++){
+    particles.push({x:playerTop.x,y:playerTop.y,vx:0,vy:0,
+      color:'#44ff88',life:1,size:0,ring:true,
+      ringR:playerTop.r,ringMax:playerTop.r+28+i*10,type:'ring'});
+  }
+  updateBtnCooldown('guard',6);
 }
 function updateBtnCooldown(type, secs){
   const btn=document.getElementById('btn-'+type);
@@ -374,7 +381,7 @@ class BeyTop {
     if(this.burstActive){ this.spin=Math.min(3200,this.spin+8); this.burstTimer--; if(this.burstTimer<=0) this.burstActive=false; }
     else this.spin*=dr;
 
-    const wobble=(1-this.spinRatio)*2.5;
+    const wobble=this.spin<500 ? (1-this.spinRatio)*9 : (1-this.spinRatio)*2.5;
     this.x+=this.vx+(Math.random()-0.5)*wobble;
     this.y+=this.vy+(Math.random()-0.5)*wobble;
 
@@ -611,6 +618,17 @@ function checkCollision(a,b){
     let bDmg=force*(a.atk/Math.max(1,b.def))*a.spinRatio*(a.burstActive?2:1)*aRubber;
     if(a.blade.type==='defense') aDmg*=0.7;
     if(b.blade.type==='defense') bDmg*=0.7;
+    // 防禦技能：受傷減少75%，對方被反彈
+    if(a.team==='player' && playerGuardTimer>0){
+      aDmg*=0.25;
+      b.vx-=nx*3; b.vy-=ny*3; // 反彈CPU
+      spawnSparks(a.x,a.y,'#44ff88','#ffffff',10);
+    }
+    if(b.team==='player' && playerGuardTimer>0){
+      bDmg*=0.25;
+      a.vx+=nx*3; a.vy+=ny*3;
+      spawnSparks(b.x,b.y,'#44ff88','#ffffff',10);
+    }
 
     a.hp-=aDmg; b.hp-=bDmg;
     a.spin*=0.974; b.spin*=0.974;
@@ -708,6 +726,30 @@ function drawBattleHUD(){
     ctx.font='bold 14px Arial'; ctx.textAlign='left'; ctx.fillStyle='#ff6644';
     ctx.fillText('⚠ 旋轉衰退！', 16, H-34);
   }
+
+  // 旋轉值危機大字警告 (< 500 rpm)
+  const dangerTop = (playerTop&&playerTop.spin<500&&playerTop.alive) ? playerTop
+                  : (cpuTop&&cpuTop.spin<500&&cpuTop.alive) ? cpuTop : null;
+  if(dangerTop){
+    const blink=Math.floor(Date.now()/280)%2===0;
+    if(blink){
+      const isP=dangerTop.team==='player';
+      ctx.textAlign='center'; ctx.font='bold 22px Arial';
+      ctx.fillStyle=isP?'#ff4444':'#ff8855';
+      ctx.shadowBlur=16; ctx.shadowColor=ctx.fillStyle;
+      ctx.fillText(isP?'⚠ 旋轉耗盡倒數！':'⚠ CPU 旋轉即將耗盡！', AX, AY-AR-12);
+      ctx.shadowBlur=0;
+    }
+  }
+
+  // HUD 轉速條中標示 280 rpm 終止線
+  if(playerTop){
+    const bx=16, by2=H-32+18+6;
+    const spinW=95;
+    const dangerPct=280/3200;
+    ctx.fillStyle='rgba(255,80,40,0.7)';
+    ctx.fillRect(bx+spinW*dangerPct-1, by2-20, 2, 16);
+  }
 }
 
 // ==================== 玩家行動 HUD ====================
@@ -730,12 +772,19 @@ function drawPlayerActions(){
     ctx.fillStyle=pct>=1?'#fff':'#888';
     ctx.fillText(rem>0?s.label+' '+rem.toFixed(1)+'s':s.label+' ✓',bx+bw/2,by+13);
   });
-  // 防禦中提示
-  if(playerGuardTimer>0){
+  // 防禦中提示 + 護盾視覺
+  if(playerGuardTimer>0 && playerTop){
     ctx.textAlign='left'; ctx.font='bold 13px Arial'; ctx.fillStyle='#44ff88';
     ctx.shadowBlur=10; ctx.shadowColor='#44ff88';
     ctx.fillText('🛡️ 防禦中', 16, H-52);
     ctx.shadowBlur=0;
+    // 護盾圓弧
+    const gPulse=0.5+0.5*Math.sin(Date.now()*0.012);
+    ctx.beginPath(); ctx.arc(playerTop.x,playerTop.y,playerTop.r+10,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(68,255,136,${0.55+gPulse*0.35})`;
+    ctx.lineWidth=3+gPulse*2;
+    ctx.shadowBlur=18; ctx.shadowColor='#44ff88';
+    ctx.stroke(); ctx.shadowBlur=0; ctx.lineWidth=1;
   }
 }
 
@@ -767,6 +816,7 @@ function drawGameEnd(){
     keys['Enter']=false; keys['KeyR']=false;
     playerScore=0; cpuScore=0; currentRound=1;
     envTimer=18; envActive=null; dirTimer=1;
+    previewCpuIdx=Math.floor(Math.random()*CPU_BUILDS.length); // 重新隨機 CPU
     gameState='select';
     document.getElementById('selectOverlay').style.display='flex';
     document.getElementById('battleBtns').style.display='none';
@@ -808,7 +858,8 @@ function gameLoop(ts){
       ctx.fillText('GO!', AX, AY+32);
       ctx.shadowBlur=0;
     }
-    if(countdownTimer<=-30) gameState='battle';
+    if(keys['Space'] && countdownTimer>0){ keys['Space']=false; countdownTimer=0; }
+    if(countdownTimer<=-20) gameState='battle';
 
   } else if(gameState==='battle'){
     const dtSec = 1/60;
@@ -827,14 +878,24 @@ function gameLoop(ts){
       spawnSparks(cpuTop.x,cpuTop.y,cpuTop.color,'#ffffff',5);
     }
 
-    // 每1秒：雙方互相指向對方 (增加對抗感)
+    // 玩家 WASD / 方向鍵直接操控陀螺移動
+    if(playerTop){
+      const moveF = 0.32 * (1+playerTop.spinRatio*0.4);
+      if(keys['KeyW']||keys['ArrowUp'])    playerTop.vy -= moveF;
+      if(keys['KeyS']||keys['ArrowDown'])  playerTop.vy += moveF;
+      if(keys['KeyA']||keys['ArrowLeft'])  playerTop.vx -= moveF;
+      if(keys['KeyD']||keys['ArrowRight']) playerTop.vx += moveF;
+      const pspd=Math.hypot(playerTop.vx,playerTop.vy);
+      if(pspd>5.5){ playerTop.vx=(playerTop.vx/pspd)*5.5; playerTop.vy=(playerTop.vy/pspd)*5.5; }
+    }
+
+    // 每1秒：CPU 施加少量向玩家的引力（保持對抗感，但不再控制玩家）
     dirTimer -= dtSec;
     if(dirTimer <= 0){
       dirTimer = 1.0;
       if(playerTop && cpuTop){
         const dx=cpuTop.x-playerTop.x, dy=cpuTop.y-playerTop.y, d=Math.hypot(dx,dy)||1;
-        playerTop.vx+=(dx/d)*1.2; playerTop.vy+=(dy/d)*1.2;
-        cpuTop.vx-=(dx/d)*1.2;    cpuTop.vy-=(dy/d)*1.2;
+        cpuTop.vx-=(dx/d)*1.2; cpuTop.vy-=(dy/d)*1.2;
       }
     }
 
@@ -868,12 +929,14 @@ function gameLoop(ts){
 
     if(!playerTop.alive||!cpuTop.alive){
       let winner;
-      if(!playerTop.alive&&!cpuTop.alive){ roundEndMsg='平局！'; winner='draw'; }
-      else if(!playerTop.alive){ roundEndMsg='CPU 獲勝！'; winner='cpu'; cpuScore++; }
-      else { roundEndMsg='你獲勝了！'; winner='player'; playerScore++; }
+      const pReason=playerTop.hp<=0?'HP 歸零':'旋轉耗盡';
+      const cReason=cpuTop.hp<=0?'HP 歸零':'旋轉耗盡';
+      if(!playerTop.alive&&!cpuTop.alive){ roundEndMsg='平局！'; roundEndReason='雙方同時'+pReason; winner='draw'; }
+      else if(!playerTop.alive){ roundEndMsg='CPU 獲勝！'; roundEndReason='你的陀螺因'+pReason+'落敗'; winner='cpu'; cpuScore++; }
+      else { roundEndMsg='你獲勝了！'; roundEndReason='CPU 陀螺因'+cReason+'落敗'; winner='player'; playerScore++; }
       sfx(winner==='player'?'win':winner==='cpu'?'lose':'draw');
       if(winner==='player') cpuAggression=Math.min(2.2, cpuAggression+0.38);
-      roundEndTimer=220;
+      roundEndTimer=150; // 縮短為 2.5 秒（原 3.6 秒）
       gameState='roundEnd';
       document.getElementById('battleBtns').style.display='none';
       if(winner==='player') spawnBurst(playerTop.x,playerTop.y,playerTop.color);
@@ -895,11 +958,15 @@ function gameLoop(ts){
     ctx.shadowBlur=24; ctx.shadowColor=ctx.fillStyle;
     ctx.fillText(roundEndMsg, AX, AY-10);
     ctx.shadowBlur=0;
-    ctx.font='20px Arial'; ctx.fillStyle='#9988bb';
+    ctx.font='15px Arial'; ctx.fillStyle='#aa99cc';
+    ctx.fillText(roundEndReason, AX, AY+28);
+    ctx.font='16px Arial'; ctx.fillStyle='#9988bb';
     const cd=Math.ceil(roundEndTimer/60);
-    ctx.fillText(cd>0?`${cd} 秒後繼續...`:'準備！', AX, AY+38);
+    ctx.fillText(cd>0?`${cd} 秒後繼續（按空白鍵跳過）`:'準備！', AX, AY+52);
 
     roundEndTimer--;
+    // 空白鍵跳過等待
+    if(keys['Space']){ keys['Space']=false; roundEndTimer=0; }
     if(roundEndTimer<=0){
       currentRound++;
       if(playerScore>=2||cpuScore>=2||currentRound>3){ gameState='gameEnd'; }
@@ -926,7 +993,7 @@ function gameLoop(ts){
 function startBattle(){
   document.getElementById('selectOverlay').style.display='none';
   document.getElementById('battleBtns').style.display='flex';
-  const cpuIdx=Math.floor(Math.random()*CPU_BUILDS.length);
+  const cpuIdx=previewCpuIdx; // 使用選角畫面已揭示的 CPU
   window._cpuIdx=cpuIdx;
   playerScore=0; cpuScore=0; currentRound=1;
   envTimer=18; envActive=null;
@@ -947,7 +1014,7 @@ function startRound(){
   particles=[];
   shakeX=shakeY=0; screenFlash=0;
   playerBurstChain=0;
-  countdownTimer=195;
+  countdownTimer=120; // 縮短為 2 秒（原 3.25 秒）
   lastBeepN=-1;
   playerCooldowns={dash:0,spin:0,guard:0};
   playerGuardTimer=0;
@@ -1015,6 +1082,16 @@ function updateSelectUI(){
   document.getElementById('defVal').textContent=def;
   document.getElementById('staVal').textContent=sta;
   document.getElementById('hpVal').textContent=hp;
+
+  // CPU 配件預覽
+  const cpub=CPU_BUILDS[previewCpuIdx];
+  document.getElementById('cpuName').textContent=cpub.name;
+  document.getElementById('cpuStyle').textContent=cpub.style;
+  const cb=BLADES[cpub.blade], cc=CORES[cpub.core], cd2=DRIVERS[cpub.driver];
+  document.getElementById('cpuParts').innerHTML=
+    `刀刃：<span style="color:${cb.color}">${cb.name}</span>（${TYPE_LABELS[cb.type]}）<br>`+
+    `核心：<span style="color:${cc.color}">${cc.name}</span> &nbsp; `+
+    `驅動：<span style="color:${cd2.color}">${cd2.name}</span>`;
 
   drawPreview();
 }
