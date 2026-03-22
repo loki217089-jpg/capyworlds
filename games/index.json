@@ -1,0 +1,100 @@
+[
+  {
+    "id": "village",
+    "name": "水豚小村",
+    "nameEn": "Capy Village",
+    "type": ["simulation", "idle"],
+    "file": "games/village/index.html"
+  },
+  {
+    "id": "mosquito",
+    "name": "進化蚊子",
+    "nameEn": "Evolution Mosquito",
+    "type": ["idle", "clicker", "evolution"],
+    "file": "games/mosquito/index.html"
+  },
+  {
+    "id": "virus",
+    "name": "VIRUS.EXE 系統清除",
+    "nameEn": "Virus.exe",
+    "type": ["strategy", "defense", "hacker"],
+    "file": "games/virus/index.html"
+  },
+  {
+    "id": "hero",
+    "name": "勇者傳說",
+    "nameEn": "Hero Idle RPG",
+    "type": ["rpg", "idle"],
+    "file": "games/hero/index.html"
+  },
+  {
+    "id": "beyblade",
+    "name": "戰鬥陀螺 BURST ARENA",
+    "nameEn": "Beyblade Burst Arena",
+    "type": ["action", "physics", "pvp"],
+    "file": "games/beyblade/index.html"
+  },
+  {
+    "id": "zombie-idle",
+    "name": "殭屍蔓延 Zombie Idle",
+    "nameEn": "Zombie Idle",
+    "type": ["idle", "clicker", "zombie"],
+    "file": "games/zombie-idle/index.html"
+  },
+  {
+    "id": "deep-diggers",
+    "name": "Deep Diggers",
+    "nameEn": "Deep Diggers",
+    "type": ["roguelike", "mining", "upgrade"],
+    "file": "games/deep-diggers.html"
+  },
+  {
+    "id": "earth-civilization",
+    "name": "地球再生 Earth Reborn",
+    "nameEn": "Earth Civilization",
+    "type": ["simulation", "idle", "civilization"],
+    "file": "games/earth-civilization/index.html"
+  },
+  {
+    "id": "space-roguelike",
+    "name": "虛空領航員 Void Navigator",
+    "nameEn": "Space Roguelike",
+    "type": ["roguelike", "space", "exploration"],
+    "file": "games/space-roguelike/index.html"
+  },
+  {
+    "id": "beat-warrior",
+    "name": "節拍戰士",
+    "nameEn": "Beat Warrior",
+    "type": ["rhythm", "rpg", "action"],
+    "file": "games/beat-warrior/index.html"
+  },
+  {
+    "id": "zombie-spread",
+    "name": "末日求生",
+    "nameEn": "Zombie Spread",
+    "type": ["shooter", "survival", "wave"],
+    "file": "games/zombie-spread/index.html"
+  },
+  {
+    "id": "bug-crisis",
+    "name": "機甲蟲蟲危機",
+    "nameEn": "Bug Crisis",
+    "type": ["tower-defense", "strategy"],
+    "file": "games/bug-crisis/index.html"
+  },
+  {
+    "id": "fps",
+    "name": "FPS 射擊遊戲",
+    "nameEn": "FPS Game",
+    "type": ["fps", "shooter", "action"],
+    "file": "games/fps/index.html"
+  },
+  {
+    "id": "farm-match",
+    "name": "寶石三消",
+    "nameEn": "Farm Match",
+    "type": ["puzzle", "match3", "casual"],
+    "file": "games/farm-match/index.html"
+  }
+]
