@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>穿搭工坊 — CapyWorlds</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:#13100c;color:#e8ddd0;font-family:'Segoe UI',sans-serif;height:100dvh;display:flex;flex-direction:column;overflow:hidden;user-select:none}
+header{background:#1e1812;border-bottom:1px solid #c8a45630;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+header h1{font-size:18px;color:#c8a456;letter-spacing:1px}
+.body-controls{display:flex;gap:6px;align-items:center}
+.ctrl-group{display:flex;gap:3px}
+.ctrl-btn{padding:4px 10px;border-radius:20px;border:1.5px solid #c8a45660;background:transparent;color:#e8ddd0;font-size:12px;cursor:pointer;transition:all .2s}
+.ctrl-btn.active{background:#c8a456;color:#13100c;border-color:#c8a456;font-weight:700}
+.main{flex:1;display:flex;overflow:hidden}
+.avatar-area{flex:0 0 auto;display:flex;align-items:center;justify-content:center;background:#1a1510;position:relative;padding:8px}
+canvas#avatar{border-radius:12px;background:#242018;box-shadow:0 0 20px #c8a45620}
+.panel{flex:1;display:flex;flex-direction:column;overflow:hidden;border-left:1px solid #c8a45620}
+.cat-tabs{display:flex;overflow-x:auto;background:#1e1812;border-bottom:1px solid #c8a45630;scrollbar-width:none;flex-shrink:0}
+.cat-tabs::-webkit-scrollbar{display:none}
+.cat-tab{flex:0 0 auto;padding:8px 14px;font-size:13px;color:#a09070;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s}
+.cat-tab.active{color:#c8a456;border-bottom-color:#c8a456}
+.item-grid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:8px;scrollbar-width:thin;scrollbar-color:#c8a45640 transparent;align-content:start}
+.item-card{border-radius:10px;border:1.5px solid #c8a45630;background:#1e1812;cursor:pointer;overflow:hidden;transition:all .2s;display:flex;flex-direction:column;align-items:center;padding:8px 4px 6px}
+.item-card:active{transform:scale(.95)}
+.item-card.selected{border-color:#c8a456;background:#2a2010;box-shadow:0 0 8px #c8a45640}
+.item-card canvas{width:80px;height:80px;image-rendering:pixelated}
+.item-card .item-name{font-size:11px;color:#c8a456;margin-top:4px;text-align:center}
+.item-card .item-tag{font-size:10px;color:#80706a;margin-top:1px}
+.none-card{border-style:dashed;opacity:.6}
+.none-card .item-name{color:#80706a}
+/* save/share bar */
+.bottom-bar{background:#1e1812;border-top:1px solid #c8a45630;padding:8px 12px;display:flex;gap:8px;flex-shrink:0}
+.action-btn{flex:1;padding:8px;border-radius:8px;border:1.5px solid #c8a456;background:transparent;color:#c8a456;font-size:13px;cursor:pointer;transition:all .2s;font-weight:600}
+.action-btn.primary{background:#c8a456;color:#13100c}
+.action-btn:active{transform:scale(.97)}
+/* toast */
+.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-10px);background:#c8a456;color:#13100c;padding:8px 20px;border-radius:20px;font-size:13px;font-weight:700;opacity:0;transition:all .3s;pointer-events:none;z-index:999;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<header>
+  <h1>👗 穿搭工坊</h1>
+  <div class="body-controls">
+    <div class="ctrl-group" id="genderCtrl">
+      <button class="ctrl-btn active" data-val="female">♀ 女</button>
+      <button class="ctrl-btn" data-val="male">♂ 男</button>
+    </div>
+    <div class="ctrl-group" id="skinCtrl">
+      <button class="ctrl-btn active" data-val="light">淺</button>
+      <button class="ctrl-btn" data-val="medium">中</button>
+      <button class="ctrl-btn" data-val="dark">深</button>
+    </div>
+  </div>
+</header>
+<div class="main">
+  <div class="avatar-area" id="avatarArea">
+    <canvas id="avatar" width="200" height="340"></canvas>
+  </div>
+  <div class="panel">
+    <div class="cat-tabs" id="catTabs"></div>
+    <div class="item-grid" id="itemGrid"></div>
+  </div>
+</div>
+<div class="bottom-bar">
+  <button class="action-btn" id="randomBtn">🎲 隨機</button>
+  <button class="action-btn" id="clearBtn">✕ 清除</button>
+  <button class="action-btn primary" id="saveBtn">💾 儲存圖片</button>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────
+const S = {
+  gender: 'female', skin: 'light',
+  selected: { hair:'none', top:'none', bottom:'none', shoes:'none', acc:'none', bag:'none' },
+  currentCat: 'hair'
+};
+
+// ── SKIN PALETTES ──────────────────────────────────────────────────────────
+const SKIN = {
+  light:  { skin:'#f5cba7', shade:'#e8a87c', lip:'#d4877a', hair:'#3d2b1f', eye:'#2c1810' },
+  medium: { skin:'#c68642', shade:'#a0692e', lip:'#b05540', hair:'#1a0f08', eye:'#1a0f08' },
+  dark:   { skin:'#6b3a2a', shade:'#4e2519', lip:'#7a3535', hair:'#0d0804', eye:'#0d0804' }
+};
+
+// ── CANVAS SETUP ───────────────────────────────────────────────────────────
+const cv = document.getElementById('avatar');
+const ctx = cv.getContext('2d');
+const CW = 200, CH = 340;
+
+// ── BODY GEOMETRY ─────────────────────────────────────────────────────────
+// All coordinates at 200x340 canvas
+function getBody(gender) {
+  const f = gender === 'female';
+  return {
+    head:    { x:100, y:50, rx:28, ry:30 },
+    neck:    { x:92, y:79, w:16, h:14 },
+    torso:   f ? { x:63, y:91, w:74, h:72 } : { x:58, y:91, w:84, h:76 },
+    shoulder:{ x:55, y:91, w:90, h:18 },
+    waist:   f ? { x:70, y:145, w:60, h:20 } : { x:65, y:149, w:70, h:18 },
+    hip:     f ? { x:60, y:162, w:80, h:20 } : { x:62, y:164, w:76, h:18 },
+    larm:    { x:42, y:93, w:22, h:68 },
+    rarm:    { x:136, y:93, w:22, h:68 },
+    lhand:   { x:40, y:158, w:24, h:16 },
+    rhand:   { x:136, y:158, w:24, h:16 },
+    lleg:    { x:65, y:180, w:29, h:88 },
+    rleg:    { x:106, y:180, w:29, h:88 },
+    lfoot:   { x:58, y:264, w:36, h:16 },
+    rfoot:   { x:106, y:264, w:38, h:16 },
+    bosom:   f ? [{ x:70, y:115, rx:14, ry:16 },{ x:116, y:115, rx:14, ry:16 }] : null
+  };
+}
+
+// ── DRAWING UTILITIES ──────────────────────────────────────────────────────
+function fillR(x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(x,y,w,h); }
+function fillE(cx,cy,rx,ry,c){ ctx.fillStyle=c; ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.fill(); }
+function fillRR(x,y,w,h,r,c){ ctx.fillStyle=c; ctx.beginPath(); ctx.roundRect(x,y,w,h,r); ctx.fill(); }
+
+function drawBaseBody(gender, palette) {
+  const b = getBody(gender);
+  const { skin, shade, eye, lip } = palette;
+  // Arms behind body
+  fillRR(b.larm.x,b.larm.y,b.larm.w,b.larm.h,8,shade);
+  fillRR(b.rarm.x,b.rarm.y,b.rarm.w,b.rarm.h,8,shade);
+  fillRR(b.lhand.x,b.lhand.y,b.lhand.w,b.lhand.h,6,skin);
+  fillRR(b.rhand.x,b.rhand.y,b.rhand.w,b.rhand.h,6,skin);
+  // Torso
+  fillRR(b.torso.x,b.torso.y,b.torso.w,b.torso.h,10,skin);
+  if(b.bosom){ b.bosom.forEach(e=>fillE(e.x,e.y,e.rx,e.ry,shade)); }
+  // Shoulder highlight
+  fillRR(b.shoulder.x,b.shoulder.y,b.shoulder.w,b.shoulder.h,8,skin);
+  // Waist/hip
+  fillRR(b.waist.x,b.waist.y,b.waist.w,b.waist.h,0,shade);
+  fillRR(b.hip.x,b.hip.y,b.hip.w,b.hip.h,8,skin);
+  // Legs
+  fillRR(b.lleg.x,b.lleg.y,b.lleg.w,b.lleg.h,8,shade);
+  fillRR(b.rleg.x,b.rleg.y,b.rleg.w,b.rleg.h,8,shade);
+  fillRR(b.lfoot.x,b.lfoot.y,b.lfoot.w,b.lfoot.h,6,shade);
+  fillRR(b.rfoot.x,b.rfoot.y,b.rfoot.w,b.rfoot.h,6,shade);
+  // Neck
+  fillRR(b.neck.x,b.neck.y,b.neck.w,b.neck.h,0,skin);
+  // Head
+  fillE(b.head.x,b.head.y,b.head.rx,b.head.ry,skin);
+  // Facial features
+  // Eyes
+  fillE(88,44,4,3,eye); fillE(112,44,4,3,eye);
+  fillE(88,44,2,2,'#fff'); fillE(112,44,2,2,'#fff');
+  fillE(89,44,1,1,eye); fillE(113,44,1,1,eye);
+  // Brows
+  ctx.strokeStyle=palette.hair; ctx.lineWidth=2; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(83,38); ctx.lineTo(94,36); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(107,36); ctx.lineTo(118,38); ctx.stroke();
+  // Nose
+  ctx.strokeStyle=shade; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(97,52); ctx.lineTo(94,57); ctx.lineTo(98,58); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(103,52); ctx.lineTo(106,57); ctx.lineTo(102,58); ctx.stroke();
+  // Mouth
+  ctx.strokeStyle=lip; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(100,64,7,0.15,Math.PI-0.15); ctx.stroke();
+  // Ears
+  fillE(72,50,5,7,skin); fillE(128,50,5,7,skin);
+}
+
+// ── CLOTHING ITEMS DATA ────────────────────────────────────────────────────
+// Each item: { id, name, tag, draw(gender) }
+// draw() receives gender so clothes can adapt shape
+
+const CATEGORIES = [
+  { id:'hair',   label:'💇 髮型' },
+  { id:'top',    label:'👕 上衣' },
+  { id:'bottom', label:'👖 下身' },
+  { id:'shoes',  label:'👟 鞋子' },
+  { id:'acc',    label:'🎩 配件' },
+  { id:'bag',    label:'👜 包包' }
+];
+
+// Hair colors cycling with ctrl
+const HC = ['#3d2b1f','#1a0f08','#f0d050','#c84040','#4060c8','#40c880','#e0a0c0','#888888'];
+let hairColorIdx = 0;
+
+const ITEMS = {
+  hair: [
+    { id:'none', name:'無', tag:'', draw:()=>{} },
+    { id:'h1', name:'短髮', tag:'清爽', draw:(g,hc)=>{
+      fillE(100,30,26,22,hc);
+      fillRR(74,30,52,22,4,hc);
+      if(g==='female'){ fillRR(72,30,8,30,4,hc); fillRR(120,30,8,30,4,hc); }
+    }},
+    { id:'h2', name:'長直髮', tag:'優雅', draw:(g,hc)=>{
+      fillE(100,30,27,23,hc);
+      fillRR(74,28,10,70,4,hc); fillRR(116,28,10,70,4,hc);
+      fillRR(75,28,50,22,4,hc);
+    }},
+    { id:'h3', name:'丸子頭', tag:'可愛', draw:(g,hc)=>{
+      fillE(100,30,27,22,hc);
+      fillRR(75,28,50,22,4,hc);
+      fillE(100,12,13,13,hc);
+    }},
+    { id:'h4', name:'捲髮', tag:'時尚', draw:(g,hc)=>{
+      fillE(100,28,30,26,hc);
+      fillE(76,40,12,16,hc); fillE(124,40,12,16,hc);
+      fillE(80,52,10,12,hc); fillE(120,52,10,12,hc);
+    }},
+    { id:'h5', name:'龐克', tag:'個性', draw:(g,hc)=>{
+      fillRR(82,10,36,22,4,hc);
+      fillRR(75,28,50,20,4,hc);
+    }},
+    { id:'h6', name:'雙馬尾', tag:'活潑', draw:(g,hc)=>{
+      fillE(100,30,27,22,hc);
+      fillRR(75,28,50,20,4,hc);
+      fillE(68,55,8,20,hc); fillE(132,55,8,20,hc);
+      fillE(68,75,7,10,hc); fillE(132,75,7,10,hc);
+    }},
+    { id:'h7', name:'油頭', tag:'紳士', draw:(g,hc)=>{
+      fillE(100,28,27,22,hc);
+      fillRR(75,28,50,20,4,hc);
+      ctx.fillStyle=hc; ctx.beginPath(); ctx.ellipse(100,28,20,6,0.3,0,Math.PI*2); ctx.fill();
+    }},
+    { id:'h8', name:'帽子頭', tag:'休閒', draw:(g,hc)=>{
+      fillE(100,30,27,22,hc);
+      fillRR(75,28,50,20,4,hc);
+      fillRR(72,22,56,18,6,'#4488cc');
+      fillRR(68,22,64,8,4,'#3366aa');
+    }},
+  ],
+  top: [
+    { id:'none', name:'無', tag:'', draw:()=>{} },
+    { id:'t1', name:'白T恤', tag:'基本款', draw:(g)=>{
+      const f=g==='female'; const tw=f?74:84; const tx=f?63:58;
+      fillRR(tx,91,tw,72,8,'#f0f0f0');
+      fillRR(tx-20,93,tw+40,18,0,'#f0f0f0');
+      fillRR(tx-20,93,20,60,8,'#f0f0f0'); fillRR(tx+tw,93,20,60,8,'#f0f0f0');
+    }},
+    { id:'t2', name:'條紋衫', tag:'休閒', draw:(g)=>{
+      const f=g==='female'; const tw=f?74:84; const tx=f?63:58;
+      fillRR(tx,91,tw,72,8,'#ffffff');
+      for(let i=0;i<7;i++) fillR(tx,97+i*10,tw,5,'#3366cc');
+      fillRR(tx-20,93,tw+40,18,0,'#ffffff');
+      fillRR(tx-20,93,20,60,8,'#ddeeff'); fillRR(tx+tw,93,20,60,8,'#ddeeff');
+    }},
+    { id:'t3', name:'連帽衫', tag:'潮流', draw:(g)=>{
+      const f=g==='female'; const tw=f?76:86; const tx=f?62:57;
+      fillRR(tx,91,tw,76,10,'#6644aa');
+      fillRR(tx-22,91,tw+44,20,0,'#6644aa');
+      fillRR(tx-22,91,22,68,10,'#6644aa'); fillRR(tx+tw,91,22,68,10,'#6644aa');
+      // hood
+      ctx.fillStyle='#5533990'; fillRR(82,80,36,22,10,'#553399');
+      fillRR(87,90,26,10,0,'#553399');
+      // pocket
+      fillRR(88,140,24,16,4,'#553399');
+    }},
+    { id:'t4', name:'西裝外套', tag:'正式', draw:(g)=>{
+      const f=g==='female'; const tw=f?74:84; const tx=f?63:58;
+      fillRR(tx,91,tw,76,8,'#222244');
+      fillRR(tx-20,91,tw+40,20,0,'#222244');
+      fillRR(tx-20,91,20,68,8,'#222244'); fillRR(tx+tw,91,20,68,8,'#222244');
+      // lapels
+      ctx.fillStyle='#ffffff'; ctx.beginPath(); ctx.moveTo(100,95); ctx.lineTo(88,105); ctx.lineTo(88,150); ctx.lineTo(95,150); ctx.lineTo(100,110); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(100,95); ctx.lineTo(112,105); ctx.lineTo(112,150); ctx.lineTo(105,150); ctx.lineTo(100,110); ctx.fill();
+      // tie
+      fillRR(97,95,6,50,2,'#cc3333');
+    }},
+    { id:'t5', name:'吊帶背心', tag:'夏日', draw:(g)=>{
+      const f=g==='female'; const tw=f?64:74; const tx=f?68:63;
+      fillRR(tx,95,tw,68,6,'#ff8899');
+      // straps
+      fillRR(74,91,10,14,3,'#ff8899'); fillRR(116,91,10,14,3,'#ff8899');
+    }},
+    { id:'t6', name:'格紋襯衫', tag:'英倫', draw:(g)=>{
+      const f=g==='female'; const tw=f?74:84; const tx=f?63:58;
+      fillRR(tx,91,tw,76,6,'#cc4422');
+      fillRR(tx-20,91,tw+40,20,0,'#cc4422');
+      fillRR(tx-20,91,20,68,6,'#cc4422'); fillRR(tx+tw,91,20,68,6,'#cc4422');
+      ctx.strokeStyle='#ffffff44'; ctx.lineWidth=4;
+      for(let i=0;i<5;i++){ ctx.beginPath(); ctx.moveTo(tx,97+i*14); ctx.lineTo(tx+tw,97+i*14); ctx.stroke(); }
+      for(let i=0;i<5;i++){ ctx.beginPath(); ctx.moveTo(tx+i*16,91); ctx.lineTo(tx+i*16,167); ctx.stroke(); }
+      fillRR(97,91,6,76,0,'#ffffff44');
+    }},
+    { id:'t7', name:'旗袍', tag:'傳統', draw:(g)=>{
+      fillRR(63,91,74,140,8,'#cc2244');
+      fillRR(43,93,24,68,8,'#cc2244'); fillRR(133,93,24,68,8,'#cc2244');
+      ctx.strokeStyle='#ffdd88'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(100,91); ctx.lineTo(100,230); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(95,91); ctx.bezierCurveTo(80,110,78,130,63,140); ctx.stroke();
+    }},
+    { id:'t8', name:'運動衛衣', tag:'運動', draw:(g)=>{
+      const f=g==='female'; const tw=f?74:84; const tx=f?63:58;
+      fillRR(tx,91,tw,76,8,'#e84040');
+      fillRR(tx-22,91,tw+44,22,0,'#e84040');
+      fillRR(tx-22,91,22,68,8,'#e84040'); fillRR(tx+tw,91,22,68,8,'#e84040');
+      fillRR(tx,91,tw,8,0,'#cc3030');
+      fillR(tx-22,111,tw+44,4,'#cc3030');
+    }},
+  ],
+  bottom: [
+    { id:'none', name:'無', tag:'', draw:()=>{} },
+    { id:'b1', name:'牛仔褲', tag:'百搭', draw:(g)=>{
+      fillRR(62,163,76,106,8,'#3355aa');
+      fillRR(64,163,35,106,6,'#3355aa'); fillRR(101,163,35,106,6,'#3355aa');
+      fillR(99,163,4,106,'#2244880');
+      ctx.strokeStyle='#ffffff33'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(99,163); ctx.lineTo(99,269); ctx.stroke();
+    }},
+    { id:'b2', name:'短裙', tag:'甜美', draw:(g)=>{
+      fillRR(63,163,74,52,8,'#ff88aa');
+      fillR(58,195,84,20,'#ff88aa');
+    }},
+    { id:'b3', name:'長裙', tag:'優雅', draw:(g)=>{
+      fillRR(60,163,80,110,10,'#9966cc');
+      ctx.strokeStyle='#bb88ee'; ctx.lineWidth=1;
+      for(let i=0;i<5;i++){ ctx.beginPath(); ctx.moveTo(63,173+i*18); ctx.lineTo(137,173+i*18); ctx.stroke(); }
+    }},
+    { id:'b4', name:'短褲', tag:'休閒', draw:(g)=>{
+      fillRR(63,163,74,48,8,'#446688');
+      fillR(98,163,4,48,'#335577');
+    }},
+    { id:'b5', name:'運動褲', tag:'運動', draw:(g)=>{
+      fillRR(62,163,76,106,8,'#333333');
+      fillR(99,163,4,106,'#222222');
+      fillR(62,163,6,106,'#cc3333'); fillR(132,163,6,106,'#cc3333');
+    }},
+    { id:'b6', name:'格紋裙', tag:'學院', draw:(g)=>{
+      fillRR(63,163,74,52,8,'#883333');
+      for(let i=0;i<4;i++) fillR(63,163+i*13,74,6,'#aa4444');
+      ctx.strokeStyle='#ffffff44'; ctx.lineWidth=2;
+      for(let i=0;i<5;i++){ ctx.beginPath(); ctx.moveTo(63+i*17,163); ctx.lineTo(63+i*17,215); ctx.stroke(); }
+    }},
+    { id:'b7', name:'西裝褲', tag:'正式', draw:(g)=>{
+      fillRR(62,163,76,106,8,'#222244');
+      fillR(99,163,4,106,'#111133');
+      ctx.strokeStyle='#3344660'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(66,163); ctx.lineTo(66,269); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(134,163); ctx.lineTo(134,269); ctx.stroke();
+    }},
+    { id:'b8', name:'熱褲', tag:'夏日', draw:(g)=>{
+      fillRR(63,163,74,36,8,'#cc6633');
+      fillR(98,163,4,36,'#bb5522');
+    }},
+  ],
+  shoes: [
+    { id:'none', name:'無', tag:'', draw:()=>{} },
+    { id:'s1', name:'球鞋', tag:'休閒', draw:()=>{
+      fillRR(56,264,40,18,6,'#ffffff'); fillRR(104,264,40,18,6,'#ffffff');
+      fillR(56,266,40,6,'#ff4444'); fillR(104,266,40,6,'#ff4444');
+      fillRR(56,264,40,8,4,'#eeeeee'); fillRR(104,264,40,8,4,'#eeeeee');
+    }},
+    { id:'s2', name:'高跟鞋', tag:'優雅', draw:()=>{
+      fillRR(58,264,36,12,4,'#ff4488'); fillRR(106,264,36,12,4,'#ff4488');
+      fillRR(82,272,8,18,2,'#ff4488'); fillRR(130,272,8,18,2,'#ff4488');
+    }},
+    { id:'s3', name:'靴子', tag:'個性', draw:()=>{
+      fillRR(56,244,22,38,5,'#4a3020'); fillRR(104,244,22,38,5,'#4a3020');
+      fillRR(54,268,26,14,4,'#4a3020'); fillRR(102,268,26,14,4,'#4a3020');
+    }},
+    { id:'s4', name:'樂福鞋', tag:'學院', draw:()=>{
+      fillRR(56,264,40,16,5,'#222222'); fillRR(104,264,40,16,5,'#222222');
+      fillRR(62,264,10,8,3,'#cc9900'); fillRR(110,264,10,8,3,'#cc9900');
+    }},
+    { id:'s5', name:'涼鞋', tag:'夏日', draw:()=>{
+      fillRR(58,268,36,10,3,'#c8a456');
+      ctx.strokeStyle='#c8a456'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(60,264); ctx.lineTo(92,264); ctx.stroke();
+      fillRR(106,268,36,10,3,'#c8a456');
+      ctx.beginPath(); ctx.moveTo(108,264); ctx.lineTo(140,264); ctx.stroke();
+    }},
+    { id:'s6', name:'帆布鞋', tag:'百搭', draw:()=>{
+      fillRR(56,262,40,20,5,'#e8ddd0'); fillRR(104,262,40,20,5,'#e8ddd0');
+      fillR(56,274,40,8,'#cccccc');
+      fillR(104,274,40,8,'#cccccc');
+    }},
+  ],
+  acc: [
+    { id:'none', name:'無', tag:'', draw:()=>{} },
+    { id:'a1', name:'貝雷帽', tag:'法式', draw:()=>{
+      fillE(100,22,32,14,'#333366');
+      fillRR(78,26,44,8,4,'#333366');
+    }},
+    { id:'a2', name:'棒球帽', tag:'休閒', draw:()=>{
+      fillRR(76,22,48,18,8,'#cc3333');
+      fillRR(70,34,60,6,3,'#cc3333');
+      fillRR(100,36,40,8,4,'#cc3333');
+    }},
+    { id:'a3', name:'眼鏡', tag:'知性', draw:()=>{
+      ctx.strokeStyle='#333'; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.ellipse(88,44,10,7,0,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(112,44,10,7,0,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(98,44); ctx.lineTo(102,44); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(72,41); ctx.lineTo(78,43); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(122,43); ctx.lineTo(128,41); ctx.stroke();
+    }},
+    { id:'a4', name:'耳環', tag:'時尚', draw:()=>{
+      fillE(70,56,5,5,'#c8a456'); fillE(130,56,5,5,'#c8a456');
+      ctx.strokeStyle='#c8a456'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.arc(70,60,4,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(130,60,4,0,Math.PI*2); ctx.stroke();
+    }},
+    { id:'a5', name:'頸鏈', tag:'精緻', draw:()=>{
+      ctx.strokeStyle='#c8a456'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(100,90,16,Math.PI*0.2,Math.PI*0.8); ctx.stroke();
+      fillE(100,97,4,4,'#c8a456');
+    }},
+    { id:'a6', name:'髮箍', tag:'可愛', draw:()=>{
+      ctx.strokeStyle='#ff88aa'; ctx.lineWidth=5;
+      ctx.beginPath(); ctx.arc(100,28,28,Math.PI*1.1,Math.PI*1.9); ctx.stroke();
+      fillE(72,30,6,6,'#ff88aa'); fillE(128,30,6,6,'#ff88aa');
+    }},
+  ],
+  bag: [
+    { id:'none', name:'無', tag:'', draw:()=>{} },
+    { id:'bg1', name:'托特包', tag:'日常', draw:()=>{
+      fillRR(28,140,40,52,6,'#c8a456');
+      ctx.strokeStyle='#aa8830'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(33,140); ctx.bezierCurveTo(28,120,48,118,53,140); ctx.stroke();
+      fillR(28,155,40,3,'#aa8830');
+    }},
+    { id:'bg2', name:'後背包', tag:'休閒', draw:()=>{
+      fillRR(150,90,36,52,8,'#336699');
+      fillRR(154,86,28,8,4,'#336699');
+      fillRR(152,94,32,3,0,'#2255880'); 
+      ctx.strokeStyle='#2255880'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(156,90); ctx.lineTo(156,142); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(178,90); ctx.lineTo(178,142); ctx.stroke();
+    }},
+    { id:'bg3', name:'手提包', tag:'優雅', draw:()=>{
+      fillRR(28,148,38,42,6,'#cc4488');
+      ctx.strokeStyle='#aa2266'; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.moveTo(32,148); ctx.lineTo(28,130); ctx.lineTo(50,124); ctx.lineTo(66,130); ctx.lineTo(62,148); ctx.stroke();
+      fillRR(42,158,14,10,4,'#aa2266');
+    }},
+    { id:'bg4', name:'斜背包', tag:'百搭', draw:()=>{
+      fillRR(30,155,30,36,6,'#664422');
+      ctx.strokeStyle='#664422'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(55,145); ctx.lineTo(137,100); ctx.stroke();
+      fillRR(34,168,22,10,3,'#885533');
+    }},
+  ]
+};
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+function render() {
+  ctx.clearRect(0,0,CW,CH);
+  const pal = SKIN[S.skin];
+  const hairColor = HC[hairColorIdx];
+  // Adjust palette eyebrows to hair color
+  const drawPal = Object.assign({}, pal, { hair: hairColor });
+  // Draw selected bottom before body (behind arms)
+  drawItem('bottom');
+  drawBaseBody(S.gender, drawPal);
+  // Draw clothes on top in z-order
+  drawItem('top');
+  drawItem('shoes');
+  drawItem('bag');
+  drawItem('hair', hairColor);
+  drawItem('acc');
+}
+
+function drawItem(cat, extra) {
+  const id = S.selected[cat];
+  if(!id || id==='none') return;
+  const list = ITEMS[cat];
+  const item = list.find(i=>i.id===id);
+  if(!item) return;
+  if(cat==='hair') item.draw(S.gender, extra);
+  else item.draw(S.gender);
+}
+
+// ── ITEM CARD CANVAS ──────────────────────────────────────────────────────
+function drawItemPreview(canvas, item, cat) {
+  const c = canvas.getContext('2d');
+  c.clearRect(0,0,80,80);
+  if(item.id==='none'){ c.strokeStyle='#60504a'; c.lineWidth=2; c.setLineDash([4,3]); c.strokeRect(4,4,72,72); return; }
+  const pal = SKIN[S.skin];
+  const hc = HC[hairColorIdx];
+  // Mini body silhouette
+  c.fillStyle=pal.shade; c.fillRect(24,20,12,40); c.fillRect(44,20,12,40);
+  c.fillStyle=pal.skin; c.fillRect(28,15,24,50);
+  c.beginPath(); c.ellipse(40,12,10,12,0,0,Math.PI*2); c.fill();
+  // Draw the item on mini canvas (scale 0.4)
+  c.save(); c.scale(0.4,0.4); c.translate(-100+100,0);
+  const origCtx = ctx;
+  // We need to temporarily draw on this canvas's context
+  const savedCtx = window._ctx;
+  window._ctx = ctx;
+  // Actually render item using a temp technique
+  c.restore();
+  // Just show item emoji/color swatch instead
+  const swatchMap = {
+    hair:'#a06040', top:'#4488cc', bottom:'#3355aa', shoes:'#886644', acc:'#c8a456', bag:'#cc6644'
+  };
+  c.fillStyle = swatchMap[cat]||'#888';
+  c.beginPath(); c.roundRect(10,10,60,60,8); c.fill();
+  c.fillStyle = '#ffffff'; c.font = 'bold 22px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  const icons = { hair:'💇', top:'👕', bottom:'👖', shoes:'👟', acc:'✨', bag:'👜' };
+  c.fillText(icons[cat]||'?', 40, 40);
+}
+
+// ── UI BUILDER ────────────────────────────────────────────────────────────
+function buildCatTabs() {
+  const tabs = document.getElementById('catTabs');
+  tabs.innerHTML = '';
+  CATEGORIES.forEach(cat => {
+    const btn = document.createElement('div');
+    btn.className = 'cat-tab' + (S.currentCat===cat.id?' active':'');
+    btn.textContent = cat.label;
+    btn.addEventListener('click', ()=>{ S.currentCat=cat.id; buildCatTabs(); buildItemGrid(); });
+    tabs.appendChild(btn);
+  });
+}
+
+function buildItemGrid() {
+  const grid = document.getElementById('itemGrid');
+  grid.innerHTML = '';
+  const items = ITEMS[S.currentCat]||[];
+  items.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'item-card' + (S.selected[S.currentCat]===item.id?' selected':'') + (item.id==='none'?' none-card':'');
+    const miniCv = document.createElement('canvas');
+    miniCv.width = 80; miniCv.height = 80;
+    drawItemPreview(miniCv, item, S.currentCat);
+    const name = document.createElement('div'); name.className='item-name'; name.textContent=item.name;
+    const tag = document.createElement('div'); tag.className='item-tag'; tag.textContent=item.tag;
+    card.appendChild(miniCv); card.appendChild(name); card.appendChild(tag);
+    card.addEventListener('click', ()=>{
+      S.selected[S.currentCat] = item.id;
+      buildItemGrid(); render();
+    });
+    grid.appendChild(card);
+  });
+}
+
+// ── BODY CONTROLS ─────────────────────────────────────────────────────────
+document.getElementById('genderCtrl').addEventListener('click', e=>{
+  const btn = e.target.closest('.ctrl-btn'); if(!btn) return;
+  S.gender = btn.dataset.val;
+  document.querySelectorAll('#genderCtrl .ctrl-btn').forEach(b=>b.classList.toggle('active', b.dataset.val===S.gender));
+  render();
+});
+
+document.getElementById('skinCtrl').addEventListener('click', e=>{
+  const btn = e.target.closest('.ctrl-btn'); if(!btn) return;
+  S.skin = btn.dataset.val;
+  document.querySelectorAll('#skinCtrl .ctrl-btn').forEach(b=>b.classList.toggle('active', b.dataset.val===S.skin));
+  render();
+});
+
+// ── RESIZE CANVAS ─────────────────────────────────────────────────────────
+function resizeAvatar() {
+  const area = document.getElementById('avatarArea');
+  const w = area.clientWidth - 16;
+  const h = area.clientHeight - 16;
+  const scale = Math.min(w/CW, h/CH);
+  cv.style.width = CW*scale+'px';
+  cv.style.height = CH*scale+'px';
+}
+window.addEventListener('resize', ()=>{ resizeAvatar(); render(); });
+
+// ── TOAST ──────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2000);
+}
+
+// ── ACTION BUTTONS ────────────────────────────────────────────────────────
+document.getElementById('randomBtn').addEventListener('click', ()=>{
+  CATEGORIES.forEach(cat=>{
+    const items = ITEMS[cat.id].filter(i=>i.id!=='none');
+    if(items.length) S.selected[cat.id] = items[Math.floor(Math.random()*items.length)].id;
+  });
+  hairColorIdx = Math.floor(Math.random()*HC.length);
+  buildItemGrid(); render(); showToast('🎲 隨機搭配完成！');
+});
+
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  Object.keys(S.selected).forEach(k=>S.selected[k]='none');
+  buildItemGrid(); render(); showToast('✕ 已清除所有配件');
+});
+
+document.getElementById('saveBtn').addEventListener('click', ()=>{
+  // Add background before saving
+  ctx.save();
+  ctx.globalCompositeOperation='destination-over';
+  const grad = ctx.createLinearGradient(0,0,CW,CH);
+  grad.addColorStop(0,'#2a2010'); grad.addColorStop(1,'#13100c');
+  ctx.fillStyle=grad; ctx.fillRect(0,0,CW,CH);
+  ctx.restore();
+  const link = document.createElement('a');
+  link.download = 'my-outfit.png';
+  link.href = cv.toDataURL('image/png');
+  link.click();
+  render();
+  showToast('💾 已儲存圖片！');
+});
+
+// ── HAIR COLOR SELECTOR ───────────────────────────────────────────────────
+// Add a small hair color row to header
+const hairRow = document.createElement('div');
+hairRow.style.cssText='display:flex;gap:4px;align-items:center;margin-top:4px;padding:0 12px 6px;background:#1e1812;border-bottom:1px solid #c8a45620;flex-shrink:0;overflow-x:auto';
+hairRow.innerHTML = '<span style="font-size:11px;color:#a09070;white-space:nowrap">髮色：</span>';
+HC.forEach((c,i)=>{
+  const dot = document.createElement('div');
+  dot.style.cssText=`width:20px;height:20px;border-radius:50%;background:${c};cursor:pointer;border:2px solid ${i===hairColorIdx?'#c8a456':'transparent'};flex-shrink:0`;
+  dot.addEventListener('click',()=>{
+    hairColorIdx=i;
+    hairRow.querySelectorAll('div').forEach((d,j)=>d.style.borderColor=j===i?'#c8a456':'transparent');
+    render();
+  });
+  hairRow.appendChild(dot);
+});
+document.querySelector('.main').insertAdjacentElement('beforebegin', hairRow);
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+resizeAvatar();
+buildCatTabs();
+buildItemGrid();
+render();
+</script>
+</body>
+</html>
