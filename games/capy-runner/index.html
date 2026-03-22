@@ -182,36 +182,51 @@ const LANE_SPEED = 16;
 
 let gameState = 'idle';
 let score = 0, coins = 0, best = parseInt(localStorage.getItem('capyBest') || '0');
+let totalCoins = parseInt(localStorage.getItem('capyTotalCoins') || '0');
 let frame = 0, speed = 4, spawnTimer = 0, spawnInterval = 55;
 let obstacles = [], coinItems = [], particles = [], powerups = [];
 let distanceTick = 0, shieldActive = 0, magnetActive = 0;
+let lastMilestone = 0; // 里程碑追蹤
 
 // ============================================================
-// Audio
+// Audio — 真實音效 + BGM
 // ============================================================
-let AC;
-function initAudio() {
-  if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
-  if (AC.state === 'suspended') AC.resume();
+const _SFX={};
+function _preload(name,path,vol,maxMs){
+  const a=new Audio(path);a.volume=vol;a.preload='auto';
+  _SFX[name]={audio:a,maxMs:maxMs||null};
 }
-function beep(freq, dur, vol=0.25, type='sine') {
-  if (!AC) return;
-  try {
-    const o = AC.createOscillator(), g = AC.createGain();
-    o.connect(g); g.connect(AC.destination);
-    o.frequency.value = freq; o.type = type;
-    g.gain.setValueAtTime(vol, AC.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + dur);
-    o.start(); o.stop(AC.currentTime + dur);
-  } catch(e) {}
+function sfxPlay(name){
+  const s=_SFX[name];if(!s)return;
+  try{const a=s.audio.cloneNode();a.volume=s.audio.volume;
+  if(s.maxMs)setTimeout(()=>{a.pause();a.currentTime=0;},s.maxMs);
+  a.play().catch(()=>{});}catch(e){}
+}
+const _B='../../assets/sfx/';
+_preload('jump',  _B+'GameSFX1/Bounce Jump/Retro Jump Simple A 01.wav',        0.45, 280);
+_preload('coin',  _B+'GameSFX3/PickUp/Retro PickUp Coin 07.wav',               0.45, 220);
+_preload('roll',  _B+'GameSFX1/Blops/Retro Blop 07.wav',                       0.35, 180);
+_preload('lane',  _B+'GameSFX1/Events/Retro Event UI 15.wav',                  0.3,  150);
+_preload('die',   _B+'GameSFX1/Events/Negative/Retro Negative Short 07.wav',   0.55, 500);
+_preload('power', _B+'GameSFX3/PowerUp/Retro PowerUP 09.wav',                  0.5,  400);
+_preload('mile',  _B+'GameSFX0/Ascending/Retro Ascending Short 20.wav',        0.5,  300);
+
+// BGM
+let bgm=null;
+function initAudio(){
+  if(!bgm){
+    bgm=new Audio('../../assets/music/JDSherbert - Minigame Music Pack [FREE]/JDSherbert - Minigame Music Pack - Smooth Driving.ogg');
+    bgm.loop=true;bgm.volume=0.2;
+  }
+  bgm.play().catch(()=>{});
 }
 const SFX = {
-  jump:  () => { beep(480,0.1,0.2,'sine'); beep(640,0.08,0.1,'sine'); },
-  coin:  () => beep(900,0.07,0.18,'sine'),
-  roll:  () => beep(220,0.09,0.18,'sawtooth'),
-  lane:  () => beep(340,0.05,0.1,'sine'),
-  die:   () => { beep(250,0.12,0.35,'sawtooth'); setTimeout(()=>beep(160,0.25,0.3,'sawtooth'),100); },
-  power: () => { beep(600,0.07); setTimeout(()=>beep(800,0.07),70); setTimeout(()=>beep(1000,0.1),140); },
+  jump:  ()=>sfxPlay('jump'),
+  coin:  ()=>sfxPlay('coin'),
+  roll:  ()=>sfxPlay('roll'),
+  lane:  ()=>sfxPlay('lane'),
+  die:   ()=>sfxPlay('die'),
+  power: ()=>sfxPlay('power'),
 };
 
 // ============================================================
@@ -584,7 +599,7 @@ function startGame() {
   gameState='running';
   score=0; coins=0; speed=4; frame=0;
   spawnTimer=0; spawnInterval=55; distanceTick=0;
-  shieldActive=0; magnetActive=0;
+  shieldActive=0; magnetActive=0; lastMilestone=0;
   obstacles=[]; coinItems=[]; particles=[]; powerups=[];
   player.reset();
 }
@@ -592,6 +607,7 @@ function showGameOver() {
   gameState='dead';
   const s=Math.floor(score);
   if(s>best){best=s;localStorage.setItem('capyBest',best);}
+  totalCoins+=coins;localStorage.setItem('capyTotalCoins',totalCoins);
   const ov=document.getElementById('overlay');
   ov.style.display='flex';
   document.getElementById('ovTitle').textContent='遊戲結束';
@@ -599,7 +615,7 @@ function showGameOver() {
   const ls=document.getElementById('lastScore');
   ls.style.display='block'; ls.textContent='本次：'+s+'m  🪙'+coins;
   const bs=document.getElementById('bestScore');
-  bs.style.display='block'; bs.textContent='🏆 最佳：'+best+'m';
+  bs.style.display='block'; bs.textContent='🏆 最佳：'+best+'m  累積🪙'+totalCoins;
   document.getElementById('startBtn').textContent='再跑一次！';
 }
 function update() {
@@ -610,6 +626,11 @@ function update() {
   spawnInterval=Math.max(26,55-score/28);
   if(shieldActive>0) shieldActive--;
   if(magnetActive>0) magnetActive--;
+  // 里程碑獎勵（每100m）
+  const mile = Math.floor(score/100);
+  if(mile>lastMilestone){lastMilestone=mile;const bonus=5+mile*2;coins+=bonus;
+    sfxPlay('mile');spawnParticles(player.x,player.y,'#ffd700',18,true);
+    showPower('🏁 '+mile*100+'m！+'+bonus+'🪙','#ffd700');}
 
   if(++spawnTimer>=spawnInterval) {
     spawnTimer=0;

@@ -703,6 +703,40 @@ document.getElementById('start-btn').addEventListener('click', () => {
   });
 });
 
+// ── SFX ──────────────────────────────────────────────────────
+const _SFX={};
+function _preload(name,path,vol,maxMs){
+  const a=new Audio(path);a.volume=vol;a.preload='auto';
+  _SFX[name]={audio:a,maxMs:maxMs||null};
+}
+function sfx(name){
+  const s=_SFX[name];if(!s)return;
+  try{const a=s.audio.cloneNode();a.volume=s.audio.volume;
+  if(s.maxMs)setTimeout(()=>{a.pause();a.currentTime=0;},s.maxMs);
+  a.play().catch(()=>{});}catch(e){}
+}
+const _B='../../assets/sfx/';
+_preload('deploy',  _B+'GameSFX1/Events/Retro Event UI 01.wav',               0.4, 300);
+_preload('wave',    _B+'GameSFX1/Events/Retro Event StereoUP 02.wav',         0.5, 400);
+_preload('shoot',   _B+'GameSFX1/Explosion/Retro Explosion Short 01.wav',     0.25,150);
+_preload('explode', _B+'GameSFX1/Explosion/Retro Explosion Short 15.wav',     0.4, 280);
+_preload('hit',     _B+'GameSFX2/Impact/Retro Impact Metal 36.wav',           0.3, 180);
+_preload('win',     _B+'GameSFX2/Music/Success/Retro Success Melody 01 - sawtooth lead 1.wav', 0.5);
+_preload('lose',    _B+'GameSFX1/Events/Negative/Retro Negative Long 01.wav', 0.5);
+
+// BGM
+const bgm=new Audio('../../assets/music/JDSherbert - Minigame Music Pack [FREE]/JDSherbert - Minigame Music Pack - A Minor Distraction.ogg');
+bgm.loop=true;bgm.volume=0.16;
+document.getElementById('start-btn').addEventListener('click',()=>bgm.play().catch(()=>{}),{once:true});
+
+// 插入音效觸發點
+const _origDeploy=deploySoldier;
+function deploySoldier(type,lane){_origDeploy(type,lane);sfx('deploy');}
+const _origStartWave=startWave;
+function startWave(idx){_origStartWave(idx);sfx('wave');}
+const _origEndGame=endGame;
+function endGame(win){_origEndGame(win);sfx(win?'win':'lose');bgm.pause();}
+
 // Single game loop
 requestAnimationFrame(loop);
 </script>
