@@ -110,6 +110,17 @@
 
 ---
 
+## 提示框 / 通知 / 彈窗安全規則
+
+所有 `position:fixed/absolute` 的提示框必須不超出可視範圍：
+
+1. **頂部留白**：有 header+ticker → `top: 80px`；只有 header → `top: 56px`；無 header → `top: 20px`
+2. **橫向不溢出**：`max-width: min(400px, calc(100vw - 32px))`
+3. **彈窗高度**：`max-height: 88vh; overflow-y: auto`
+4. **tooltip** 要用 JS 確認不超出 viewport（getBoundingClientRect 檢查）
+
+---
+
 ## 音效規範
 
 - **即時動作音效 <= 300ms**（撿道具、升級、購買、射擊、受傷等一瞬間的動作）
@@ -146,9 +157,10 @@ window.addEventListener('resize', resizeAll);
 ```
 
 **觸控規則：**
-- `touch-action: none` 只加在 canvas 元素
+- `touch-action: none` 只加在 canvas 元素（加在 body 會讓按鈕 tap 失效）
 - 按鈕同時加 `ontouchend="handler(event)"` 和 `addEventListener('click', ...)`
 - 滑動判斷用 touchstart/touchend delta
+- Overlay/UI 元素需用 JS 同步設定 position/size，與 canvas 對齊
 
 ---
 
@@ -178,6 +190,21 @@ JS: `document.documentElement.setAttribute('data-theme', t)` + `localStorage.set
 | `/danmaku` | GET/POST | 彈幕（text<=40, color: hex） |
 
 資料庫：Cloudflare D1（`capyworlds-comments`）
+
+---
+
+## 素材庫總覽
+
+| 資料夾 | 用途 |
+|--------|------|
+| `PostApocalypse_AssetPack_v1.1.2/` | 末日：主角（Idle/Run/Death/Punch）、殭屍3種、物件/Tile/音效/音樂 |
+| `sfx/GameSFX0~3/` | 分類音效庫（撿道具、升級、爆炸、UI 音等） |
+| `JDSherbert Minigame Music/` | 背景音樂迴圈 |
+| `Sunnyside World/` | 農村/村落素材 74MB（tile、NPC、建築） |
+| `Pixel Art Gem Pack - Animated/` | 10 種寶石動畫 + 火花效果 |
+| `instruments/` | 樂器取樣音源 |
+| `Robot Warfare Asset Pack/` | 機甲：Soldiers×7、Robots×5、Effects、Projectiles |
+| `Pixel Crawler Free Pack 2.0.4/` | 地城：怪物 sprite、地板、效果 |
 
 ---
 
@@ -220,8 +247,8 @@ JS: `document.documentElement.setAttribute('data-theme', t)` + `localStorage.set
 
 ### 水豚跑酷 `capy-runner/`（2026/3/22）
 - 直式手機跑酷、Canvas 縮放填滿螢幕、滑動觸控控制
-- 護盾/磁鐵道具、速度漸增
-- 音效為 Web Audio 合成，尚未用真實素材
+- 護盾/磁鐵道具、速度漸增、5 種障礙物
+- **注意**：touch-action:none 只加 canvas，button 需同時綁 ontouchend + click
 
 ### 每日一題 RPG `daily-quiz-rpg/`（2026/3/22）
 - 答題換經驗值、角色升級、技能解鎖
@@ -299,14 +326,18 @@ git commit -m "Add <資料夾名稱>"
 git push origin main
 ```
 
+**常見錯誤：** `pathspec did not match any files` → 複製沒成功，先確認 `git status`
+
 ---
 
 ## 歷史對話重點紀錄
 
 - **2026/3/22** 新增每日一題 RPG `daily-quiz-rpg/`（手機答題養成）
-- **2026/3/22** 水豚跑酷修復：Canvas 改為全螢幕響應式縮放，修復 touch-action 導致按鈕失效
 - **2026/3/22** 新增手遊專區 `games/mobile.html`，首頁加入 📱 導航卡片
-- **2026/3/22** 新增水豚跑酷 `capy-runner/`（直式手機跑酷）+ 護盾/磁鐵道具
+- **2026/3/22** 新增水豚跑酷 `capy-runner/`（直式手機跑酷）
+  - 修復：Canvas 改為全螢幕響應式縮放
+  - 修復：touch-action:none 移至 canvas，修復按鈕 tap 失效問題
+  - 新增：護盾/磁鐵道具、速度感特效、油桶障礙物
 - **2026/3/19** 節拍戰士 bug 修：第二關「繼續」按鈕 overlay 不消失 -> 已修 showOverlay
 - **2026/3/19** 節拍戰士音效：從 WebAudio 合成改為素材庫真實音效
 - **2026/3/19** 彈幕按鈕移到右上角，配色改用主題變數
