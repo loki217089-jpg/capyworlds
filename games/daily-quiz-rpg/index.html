@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>每日一題 RPG</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { width:100%; height:100%; background:#0a0a1a; overflow:hidden;
+  font-family:'PingFang TC','Microsoft JhengHei','Arial',sans-serif; }
+#app {
+  position:fixed; inset:0;
+  display:flex; flex-direction:column; align-items:center;
+  background:linear-gradient(180deg,#0a0a1a 0%,#0d1428 100%);
+  overflow-y:auto; overflow-x:hidden;
+  padding:env(safe-area-inset-top,12px) 0 env(safe-area-inset-bottom,12px);
+}
+/* ── Screens ── */
+.screen { width:100%; max-width:440px; min-height:100%; display:none; flex-direction:column; padding:16px; }
+.screen.active { display:flex; }
+
+/* ── Title Screen ── */
+#titleScreen { justify-content:center; align-items:center; gap:16px; text-align:center; }
+.title-hero { font-size:72px; margin-bottom:8px; }
+.title-name { font-size:34px; font-weight:900; color:#00e5ff;
+  text-shadow:0 0 24px rgba(0,229,255,0.7); letter-spacing:3px; }
+.title-sub  { font-size:14px; color:#607090; margin-bottom:8px; }
+.hero-preview { display:flex; align-items:flex-end; justify-content:center; gap:24px; margin:8px 0; }
+.hero-class-btn {
+  background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12);
+  border-radius:16px; padding:14px 10px; cursor:pointer;
+  transition:transform 0.15s, border-color 0.15s; min-width:88px;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+}
+.hero-class-btn.selected { border-color:#00e5ff; background:rgba(0,229,255,0.1); transform:scale(1.06); }
+.hero-class-btn .class-icon { font-size:36px; }
+.hero-class-btn .class-name { font-size:13px; font-weight:700; color:#cce0f0; }
+.hero-class-btn .class-desc { font-size:10px; color:#607090; text-align:center; }
+.name-input-row { display:flex; gap:8px; width:100%; max-width:320px; }
+.name-input {
+  flex:1; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.2);
+  border-radius:12px; padding:12px 16px; color:#e0f0ff; font-size:16px;
+  outline:none; transition:border-color 0.2s;
+}
+.name-input:focus { border-color:#00e5ff; }
+.name-input::placeholder { color:#405060; }
+.btn-primary {
+  background:linear-gradient(135deg,#00b4d8,#0077b6);
+  color:#fff; border:none; border-radius:50px; font-size:18px; font-weight:900;
+  padding:14px 36px; cursor:pointer; box-shadow:0 4px 20px rgba(0,180,216,0.4);
+  transition:transform 0.1s; letter-spacing:1px;
+}
+.btn-primary:active { transform:scale(0.94); }
+.save-badge {
+  background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.2);
+  border-radius:12px; padding:10px 16px; font-size:12px; color:#607090;
+  display:none;
+}
+/* ── Status Bar ── */
+#statusBar {
+  display:none; width:100%; max-width:440px;
+  background:rgba(0,0,0,0.4); padding:10px 16px;
+  flex-direction:row; align-items:center; justify-content:space-between;
+  border-bottom:1px solid rgba(255,255,255,0.06); position:sticky; top:0; z-index:10;
+  backdrop-filter:blur(8px);
+}
+#statusBar.visible { display:flex; }
+.sb-hero { display:flex; align-items:center; gap:8px; }
+.sb-avatar { font-size:24px; }
+.sb-name   { font-size:13px; font-weight:700; color:#cce0f0; }
+.sb-lv     { font-size:11px; color:#00e5ff; }
+.sb-right  { display:flex; align-items:center; gap:12px; }
+.sb-stat   { display:flex; flex-direction:column; align-items:center; }
+.sb-stat-val { font-size:14px; font-weight:700; color:#ffd700; }
+.sb-stat-lbl { font-size:9px; color:#607090; }
+/* HP bar */
+.hp-bar-wrap { width:80px; height:6px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden; }
+.hp-bar { height:100%; background:linear-gradient(90deg,#44ff44,#00cc44); border-radius:4px; transition:width 0.4s; }
+/* ── Main Screen ── */
+#mainScreen { gap:14px; }
+.section-title { font-size:11px; font-weight:700; letter-spacing:3px; color:#00e5ff;
+  text-transform:uppercase; opacity:0.7; }
+/* XP Bar */
+.xp-card {
+  background:rgba(0,229,255,0.05); border:1px solid rgba(0,229,255,0.15);
+  border-radius:16px; padding:14px 16px;
+}
+.xp-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.xp-lv-big { font-size:22px; font-weight:900; color:#00e5ff; }
+.xp-label  { font-size:12px; color:#607090; }
+.xp-bar-wrap { height:10px; background:rgba(255,255,255,0.08); border-radius:6px; overflow:hidden; }
+.xp-bar { height:100%; background:linear-gradient(90deg,#00b4d8,#0077b6); border-radius:6px; transition:width 0.6s; }
+/* Stat Cards */
+.stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.stat-card {
+  background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+  border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:10px;
+}
+.stat-icon { font-size:22px; }
+.stat-val  { font-size:18px; font-weight:900; color:#e0f0ff; }
+.stat-name { font-size:10px; color:#607090; }
+/* Action buttons */
+.action-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.action-btn {
+  background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+  border-radius:16px; padding:18px 12px; cursor:pointer;
+  text-align:center; transition:transform 0.15s, border-color 0.15s;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  text-decoration:none; color:inherit;
+}
+.action-btn:active { transform:scale(0.95); }
+.action-btn.highlight { border-color:rgba(0,229,255,0.4); background:rgba(0,229,255,0.06); }
+.action-btn .ab-icon { font-size:32px; }
+.action-btn .ab-name { font-size:14px; font-weight:700; color:#cce0f0; }
+.action-btn .ab-desc { font-size:11px; color:#607090; }
+.action-btn .ab-badge {
+  background:#ff4444; color:#fff; font-size:10px; font-weight:700;
+  padding:2px 7px; border-radius:20px; margin-top:2px;
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Status Bar -->
+  <div id="statusBar">
+    <div class="sb-hero">
+      <span class="sb-avatar" id="sbAvatar">🧙</span>
+      <div>
+        <div class="sb-name" id="sbName">勇者</div>
+        <div class="sb-lv" id="sbLv">Lv.1</div>
+      </div>
+    </div>
+    <div class="sb-right">
+      <div class="sb-stat">
+        <div class="sb-stat-val" id="sbCoins">0</div>
+        <div class="sb-stat-lbl">金幣</div>
+      </div>
+      <div>
+        <div style="font-size:9px;color:#607090;margin-bottom:3px;">HP</div>
+        <div class="hp-bar-wrap"><div class="hp-bar" id="sbHp"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Title Screen -->
+  <div id="titleScreen" class="screen active">
+    <div class="title-hero">📚</div>
+    <div class="title-name">每日一題 RPG</div>
+    <div class="title-sub">答題換經驗值 · 打怪升級 · 成為知識勇者</div>
+    <div class="save-badge" id="saveBadge"></div>
+    <div class="section-title" style="margin-top:8px;">選擇職業</div>
+    <div class="hero-preview" id="classSelect">
+      <div class="hero-class-btn selected" data-class="mage">
+        <span class="class-icon">🧙</span>
+        <span class="class-name">法師</span>
+        <span class="class-desc">高魔法<br>答題+30%XP</span>
+      </div>
+      <div class="hero-class-btn" data-class="warrior">
+        <span class="class-icon">⚔️</span>
+        <span class="class-name">勇士</span>
+        <span class="class-desc">高攻擊<br>金幣+25%</span>
+      </div>
+      <div class="hero-class-btn" data-class="archer">
+        <span class="class-icon">🏹</span>
+        <span class="class-name">射手</span>
+        <span class="class-desc">高速度<br>連答加倍</span>
+      </div>
+    </div>
+    <div class="name-input-row">
+      <input class="name-input" id="nameInput" type="text" maxlength="12" placeholder="輸入你的名字">
+    </div>
+    <button class="btn-primary" id="startBtn">開始冒險！</button>
+  </div>
+
+  <!-- Main Screen -->
+  <div id="mainScreen" class="screen">
+    <div class="section-title">冒險狀態</div>
+    <div class="xp-card">
+      <div class="xp-row">
+        <div><div class="xp-lv-big" id="mainLv">Lv.1</div><div class="xp-label">等級</div></div>
+        <div style="text-align:right"><div style="font-size:14px;font-weight:700;color:#cce0f0" id="xpText">0/100 XP</div><div class="xp-label" id="streakText">連答: 0</div></div>
+      </div>
+      <div class="xp-bar-wrap"><div class="xp-bar" id="xpBar"></div></div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><span class="stat-icon">⚔️</span><div><div class="stat-val" id="statAtk">10</div><div class="stat-name">攻擊力</div></div></div>
+      <div class="stat-card"><span class="stat-icon">🛡️</span><div><div class="stat-val" id="statDef">5</div><div class="stat-name">防禦力</div></div></div>
+      <div class="stat-card"><span class="stat-icon">✨</span><div><div class="stat-val" id="statMag">8</div><div class="stat-name">魔法力</div></div></div>
+      <div class="stat-card"><span class="stat-icon">💰</span><div><div class="stat-val" id="statCoins">0</div><div class="stat-name">金幣</div></div></div>
+    </div>
+    <div class="section-title">今日行動</div>
+    <div class="action-grid">
+      <div class="action-btn highlight" id="btnQuiz">
+        <span class="ab-icon">🎯</span>
+        <span class="ab-name">答題挑戰</span>
+        <span class="ab-desc">答對獲得 XP</span>
+        <span class="ab-badge" id="quizBadge">+XP</span>
+      </div>
+      <div class="action-btn" id="btnBattle">
+        <span class="ab-icon">⚔️</span>
+        <span class="ab-name">打怪冒險</span>
+        <span class="ab-desc">消耗 HP 獲得金幣</span>
+      </div>
+      <div class="action-btn" id="btnShop">
+        <span class="ab-icon">🏪</span>
+        <span class="ab-name">商店</span>
+        <span class="ab-desc">購買技能與道具</span>
+      </div>
+      <div class="action-btn" id="btnSkills">
+        <span class="ab-icon">💫</span>
+        <span class="ab-name">技能</span>
+        <span class="ab-desc">查看已學技能</span>
+      </div>
+    </div>
+    <div class="section-title">成就</div>
+    <div id="achieveList" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+  </div>
+  <!-- Quiz Screen -->
+  <div id="quizScreen" class="screen">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+      <button id="quizBack" style="background:none;border:none;color:#607090;font-size:22px;cursor:pointer;">←</button>
+      <div class="section-title" style="margin-bottom:0">答題挑戰</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:#607090;margin-bottom:12px;">
+      <span id="qCategory"></span>
+      <span id="qProgress"></span>
+    </div>
+    <!-- Timer bar -->
+    <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden;margin-bottom:16px;">
+      <div id="timerBar" style="height:100%;background:linear-gradient(90deg,#00e5ff,#0077b6);border-radius:4px;transition:width 0.1s linear;width:100%;"></div>
+    </div>
+    <div id="qText" style="font-size:18px;font-weight:700;color:#e0f0ff;line-height:1.6;min-height:80px;margin-bottom:16px;"></div>
+    <div id="choices" style="display:flex;flex-direction:column;gap:10px;"></div>
+    <div id="qResult" style="display:none;text-align:center;padding:20px 0;">
+      <div id="qResultIcon" style="font-size:52px;"></div>
+      <div id="qResultText" style="font-size:18px;font-weight:700;margin:8px 0;"></div>
+      <div id="qResultSub" style="font-size:13px;color:#607090;margin-bottom:16px;"></div>
+      <div id="qResultXP" style="font-size:22px;font-weight:900;color:#00e5ff;"></div>
+      <button class="btn-primary" id="nextQuizBtn" style="margin-top:16px;font-size:16px;padding:12px 32px;">繼續</button>
+    </div>
+  </div>
+
+  <!-- Battle Screen -->
+  <div id="battleScreen" class="screen">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+      <button id="battleBack" style="background:none;border:none;color:#607090;font-size:22px;cursor:pointer;">←</button>
+      <div class="section-title" style="margin-bottom:0">打怪冒險</div>
+    </div>
+    <div id="battleArena" style="text-align:center;padding:20px 0;">
+      <div id="monsterIcon" style="font-size:80px;margin-bottom:8px;"></div>
+      <div id="monsterName" style="font-size:20px;font-weight:700;color:#ff8866;margin-bottom:6px;"></div>
+      <div id="monsterHpBar" style="height:12px;background:rgba(255,255,255,0.08);border-radius:6px;overflow:hidden;margin:0 20px 16px;">
+        <div id="monsterHpFill" style="height:100%;background:linear-gradient(90deg,#ff4444,#ff8844);border-radius:6px;transition:width 0.4s;"></div>
+      </div>
+      <div id="battleLog" style="min-height:80px;font-size:14px;color:#a0b8c8;line-height:1.8;margin-bottom:16px;text-align:left;background:rgba(0,0,0,0.2);border-radius:12px;padding:12px;"></div>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button class="btn-primary" id="btnAttack" style="font-size:15px;padding:12px 28px;">⚔️ 攻擊</button>
+        <button class="btn-primary" id="btnMagic" style="font-size:15px;padding:12px 28px;background:linear-gradient(135deg,#7b2ff7,#4a00e0);">✨ 魔法</button>
+      </div>
+      <div id="battleResult" style="display:none;margin-top:20px;">
+        <div id="battleResultText" style="font-size:24px;font-weight:900;margin-bottom:12px;"></div>
+        <div id="battleReward" style="font-size:15px;color:#ffd700;margin-bottom:16px;"></div>
+        <button class="btn-primary" id="btnNextBattle" style="font-size:16px;padding:12px 32px;">繼續冒險</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shop Screen -->
+  <div id="shopScreen" class="screen">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button id="shopBack" style="background:none;border:none;color:#607090;font-size:22px;cursor:pointer;">←</button>
+        <div class="section-title" style="margin-bottom:0">商店</div>
+      </div>
+      <div style="font-size:15px;color:#ffd700;font-weight:700;">💰 <span id="shopCoins">0</span></div>
+    </div>
+    <div id="shopList" style="display:flex;flex-direction:column;gap:10px;"></div>
+  </div>
+
+  <!-- Skills Screen -->
+  <div id="skillsScreen" class="screen">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+      <button id="skillsBack" style="background:none;border:none;color:#607090;font-size:22px;cursor:pointer;">←</button>
+      <div class="section-title" style="margin-bottom:0">已學技能</div>
+    </div>
+    <div id="skillsList" style="display:flex;flex-direction:column;gap:10px;"></div>
+  </div>
+</div>
+<script>
+// ============================================================
+// Audio
+// ============================================================
+let AC;
+function initAC(){if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}
+function beep(freq,dur,vol=0.2,type='sine'){
+  if(!AC)return;
+  try{const o=AC.createOscillator(),g=AC.createGain();o.connect(g);g.connect(AC.destination);
+  o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(vol,AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+dur);o.start();o.stop(AC.currentTime+dur);}catch(e){}
+}
+const SFX={
+  correct:()=>{beep(660,0.08,0.25);setTimeout(()=>beep(880,0.1,0.2),80);},
+  wrong:  ()=>{beep(200,0.12,0.25,'sawtooth');},
+  levelup:()=>{[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,0.12,0.3),i*80));},
+  coin:   ()=>beep(880,0.06,0.15),
+  attack: ()=>beep(300,0.08,0.2,'square'),
+  magic:  ()=>{beep(600,0.06);setTimeout(()=>beep(900,0.08),60);},
+  buy:    ()=>{beep(500,0.07);setTimeout(()=>beep(700,0.08),70);},
+};
+
+// ============================================================
+// Data — Questions Bank
+// ============================================================
+const QUESTIONS = [
+  // 常識
+  {cat:'常識',q:'世界上最大的沙漠是？',c:['撒哈拉沙漠','南極洲','戈壁沙漠','阿拉伯沙漠'],a:1,hint:'提示：它其實是冰雪覆蓋的！'},
+  {cat:'常識',q:'人體最大的器官是？',c:['心臟','肝臟','皮膚','大腦'],a:2,hint:'你每天都摸得到它'},
+  {cat:'常識',q:'蜜蜂如何告訴同伴花在哪裡？',c:['氣味','聲音','跳舞','觸碰'],a:2,hint:'它們會跳一種特殊的舞'},
+  {cat:'常識',q:'光在真空中的速度約為？',c:['每秒10萬公里','每秒30萬公里','每秒100萬公里','每秒3萬公里'],a:1,hint:'c = 3×10^8 m/s'},
+  {cat:'常識',q:'哪種動物的心跳最慢？',c:['大象','藍鯨','烏龜','冬眠的熊'],a:2,hint:'海裡最大的生物'},
+  // 歷史
+  {cat:'歷史',q:'第一次世界大戰始於哪一年？',c:['1912年','1914年','1916年','1918年'],a:1,hint:'薩拉熱窩事件發生年'},
+  {cat:'歷史',q:'古羅馬帝國的首都是？',c:['雅典','迦太基','羅馬','拜占庭'],a:2,hint:'「條條大路通...」'},
+  {cat:'歷史',q:'中國第一個統一的朝代是？',c:['周朝','漢朝','秦朝','商朝'],a:2,hint:'萬里長城的建設者'},
+  {cat:'歷史',q:'埃及金字塔最主要的用途是？',c:['神廟','倉庫','陵墓','天文台'],a:2,hint:'法老長眠之所'},
+  {cat:'歷史',q:'哥倫布首次抵達美洲是哪一年？',c:['1488年','1492年','1498年','1500年'],a:1,hint:'1492，哥倫布出海去'},
+  // 科學
+  {cat:'科學',q:'DNA 的全名是？',c:['去氧核醣核酸','核醣核酸','去氧核酸','脫氧核醣核酸'],a:0,hint:'遺傳信息的載體'},
+  {cat:'科學',q:'元素週期表中，H 代表什麼元素？',c:['鈦','鉫','氫','汞'],a:2,hint:'宇宙中最輕的元素'},
+  {cat:'科學',q:'地球繞太陽一圈需要多久？',c:['365.25天','364天','366天','360天'],a:0,hint:'所以每4年有一個閏年'},
+  {cat:'科學',q:'哪種氣體最多在地球大氣中？',c:['氧氣','二氧化碳','氮氣','氬氣'],a:2,hint:'約佔78%'},
+  {cat:'科學',q:'電流的單位是？',c:['伏特','瓦特','安培','歐姆'],a:2,hint:'以物理學家André-Marie命名'},
+  // 地理
+  {cat:'地理',q:'世界上最長的河流是？',c:['亞馬遜河','密西西比河','尼羅河','長江'],a:2,hint:'流經非洲大陸'},
+  {cat:'地理',q:'日本的首都是？',c:['大阪','京都','名古屋','東京'],a:3,hint:'人口最多的都市之一'},
+  {cat:'地理',q:'澳洲的首都是？',c:['雪梨','墨爾本','坎培拉','布里斯本'],a:2,hint:'不是最大的城市喔！'},
+  {cat:'地理',q:'面積最小的國家是？',c:['摩納哥','聖馬利諾','梵蒂岡','列支敦斯登'],a:2,hint:'在義大利境內'},
+  {cat:'地理',q:'台灣最高的山是？',c:['合歡山','雪山','玉山','阿里山'],a:2,hint:'東北亞最高峰'},
+  // 數學
+  {cat:'數學',q:'圓周率 π 的近似值是？',c:['3.14159','3.14195','3.14519','3.41159'],a:0,hint:'π ≈ 3.14159...'},
+  {cat:'數學',q:'1 到 100 的整數之和是？',c:['4950','5000','5050','5100'],a:2,hint:'高斯的故事'},
+  {cat:'數學',q:'如果正方形邊長為4，面積是？',c:['8','12','16','20'],a:2,hint:'面積 = 邊長的平方'},
+  {cat:'數學',q:'三角形內角和等於？',c:['90度','180度','270度','360度'],a:1,hint:'三角形是幾何的基礎'},
+  {cat:'數學',q:'費氏數列的第7個數是？(1,1,2,3,5...)',c:['8','11','13','21'],a:2,hint:'前兩個相加等於下一個'},
+];
+// ============================================================
+// Classes & Shop Items
+// ============================================================
+const CLASSES = {
+  mage:    {icon:'🧙', name:'法師',   atk:8,  def:4,  mag:14, xpBonus:0.3,  coinBonus:0,    streakBonus:0},
+  warrior: {icon:'⚔️', name:'勇士',   atk:14, def:8,  mag:6,  xpBonus:0,    coinBonus:0.25, streakBonus:0},
+  archer:  {icon:'🏹', name:'射手',   atk:10, def:5,  mag:9,  xpBonus:0,    coinBonus:0,    streakBonus:0.5},
+};
+const SHOP_ITEMS = [
+  {id:'potion',  name:'恢復藥水', icon:'🧪', desc:'回復 30 HP',          cost:30,  type:'use'},
+  {id:'sword',   name:'精鐵劍',   icon:'⚔️', desc:'攻擊力 +8',           cost:80,  type:'equip', stat:'atk', val:8},
+  {id:'shield',  name:'木盾',     icon:'🛡️', desc:'防禦力 +6',           cost:60,  type:'equip', stat:'def', val:6},
+  {id:'tome',    name:'魔法書',   icon:'📖', desc:'魔法力 +10',          cost:90,  type:'equip', stat:'mag', val:10},
+  {id:'hint',    name:'提示卷軸', icon:'💡', desc:'答題時可用，顯示提示',  cost:20,  type:'consumable'},
+  {id:'skip',    name:'跳題券',   icon:'⏭️', desc:'答題時可用，跳過題目', cost:15,  type:'consumable'},
+  {id:'xpscroll',name:'經驗卷',   icon:'✨', desc:'立即獲得 50 XP',      cost:50,  type:'use'},
+];
+const SKILLS_DATA = [
+  {id:'fireball', name:'火球術',  icon:'🔥', desc:'魔法攻擊+50%',   lv:3,  cost:100},
+  {id:'shield',   name:'鐵壁防禦',icon:'🛡️', desc:'減少傷害30%',   lv:5,  cost:150},
+  {id:'wisdom',   name:'智者之心',icon:'🧠', desc:'答題XP再+20%',  lv:7,  cost:200},
+  {id:'lucky',    name:'幸運星', icon:'⭐', desc:'金幣掉落+40%',   lv:10, cost:300},
+];
+const MONSTERS = [
+  {name:'史萊姆',icon:'🟢',hp:30, atk:5, reward:15, xp:20},
+  {name:'哥布林',icon:'👺',hp:50, atk:9, reward:25, xp:35},
+  {name:'骷髏兵',icon:'💀',hp:70, atk:13,reward:40, xp:55},
+  {name:'巨人',  icon:'👹',hp:100,atk:18,reward:60, xp:80},
+  {name:'龍',    icon:'🐉',hp:200,atk:28,reward:120,xp:150},
+];
+const ACHIEVEMENTS = [
+  {id:'first_quiz',  name:'初學者',  icon:'📚', desc:'完成第一道題',     check:s=>s.totalAnswered>=1},
+  {id:'quiz10',      name:'勤學者',  icon:'🎓', desc:'累計答對10題',     check:s=>s.totalCorrect>=10},
+  {id:'quiz50',      name:'知識王',  icon:'👑', desc:'累計答對50題',     check:s=>s.totalCorrect>=50},
+  {id:'streak5',     name:'連勝',    icon:'🔥', desc:'連續答對5題',      check:s=>s.maxStreak>=5},
+  {id:'lv5',         name:'成長中',  icon:'⚔️', desc:'達到5等',          check:s=>s.lv>=5},
+  {id:'lv10',        name:'精英',    icon:'💫', desc:'達到10等',         check:s=>s.lv>=10},
+  {id:'first_kill',  name:'冒險家',  icon:'⚔️', desc:'擊敗第一隻怪物',   check:s=>s.totalKills>=1},
+  {id:'rich',        name:'小富翁',  icon:'💰', desc:'累積100金幣',      check:s=>s.coins>=100},
+];
+
+// ============================================================
+// State
+// ============================================================
+const XP_PER_LEVEL = lv => 100 + lv * 60;
+const defaultState = () => ({
+  name:'勇者', heroClass:'mage',
+  lv:1, xp:0, hp:100, maxHp:100,
+  atk:8, def:4, mag:14, coins:0,
+  streak:0, maxStreak:0, totalAnswered:0, totalCorrect:0, totalKills:0,
+  inventory:{hint:2,skip:1},
+  equipped:{}, learnedSkills:[],
+  unlockedAchieves:[], lastAnswerTime:0,
+});
+let S = defaultState();
+let qPool=[], qIndex=0, currentQ=null, timerID=null, timerLeft=0;
+let monsterState=null;
+
+function save(){ localStorage.setItem('dailyQuizRPG', JSON.stringify(S)); }
+function load(){
+  try{const d=JSON.parse(localStorage.getItem('dailyQuizRPG'));if(d&&d.name)S={...defaultState(),...d};}catch(e){}
+}
+
+// ============================================================
+// Screens
+// ============================================================
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const bar=document.getElementById('statusBar');
+  if(id==='titleScreen'){bar.classList.remove('visible');}
+  else{bar.classList.add('visible');updateStatusBar();}
+}
+function updateStatusBar(){
+  const cls=CLASSES[S.heroClass];
+  document.getElementById('sbAvatar').textContent=cls.icon;
+  document.getElementById('sbName').textContent=S.name;
+  document.getElementById('sbLv').textContent='Lv.'+S.lv;
+  document.getElementById('sbCoins').textContent=S.coins;
+  document.getElementById('sbHp').style.width=Math.round(S.hp/S.maxHp*100)+'%';
+}
+function updateMain(){
+  document.getElementById('mainLv').textContent='Lv.'+S.lv;
+  const need=XP_PER_LEVEL(S.lv);
+  document.getElementById('xpText').textContent=S.xp+'/'+need+' XP';
+  document.getElementById('streakText').textContent='連答: '+S.streak+(S.streak>0?' 🔥':'');
+  document.getElementById('xpBar').style.width=Math.min(S.xp/need*100,100)+'%';
+  document.getElementById('statAtk').textContent=S.atk;
+  document.getElementById('statDef').textContent=S.def;
+  document.getElementById('statMag').textContent=S.mag;
+  document.getElementById('statCoins').textContent=S.coins;
+  // Achievements
+  checkAchieves();
+  renderAchieves();
+}
+function checkAchieves(){
+  ACHIEVEMENTS.forEach(a=>{
+    if(!S.unlockedAchieves.includes(a.id)&&a.check(S)){
+      S.unlockedAchieves.push(a.id);
+      showToast(a.icon+' 成就解鎖：'+a.name);
+    }
+  });
+}
+function renderAchieves(){
+  const el=document.getElementById('achieveList');
+  el.innerHTML='';
+  ACHIEVEMENTS.forEach(a=>{
+    const locked=!S.unlockedAchieves.includes(a.id);
+    el.innerHTML+=`<div title="${a.desc}" style="background:rgba(255,255,255,${locked?'0.03':'0.08'});border:1px solid rgba(255,255,255,${locked?'0.06':'0.15'});border-radius:10px;padding:6px 10px;font-size:12px;color:${locked?'#405060':'#cce0f0'};display:flex;align-items:center;gap:5px;">${locked?'🔒':a.icon} ${a.name}</div>`;
+  });
+}
+function showToast(msg){
+  const t=document.createElement('div');
+  t.textContent=msg;
+  Object.assign(t.style,{position:'fixed',bottom:'80px',left:'50%',transform:'translateX(-50%)',
+    background:'rgba(0,200,100,0.9)',color:'#fff',padding:'10px 20px',borderRadius:'20px',
+    fontSize:'14px',fontWeight:'700',zIndex:'999',whiteSpace:'nowrap',transition:'opacity 0.4s'});
+  document.body.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),400);},1800);
+}
+// ============================================================
+// Quiz Logic
+// ============================================================
+function startQuiz(){
+  initAC();
+  qPool=[...QUESTIONS].sort(()=>Math.random()-0.5).slice(0,10);
+  qIndex=0;
+  showScreen('quizScreen');
+  showQuestion();
+}
+function showQuestion(){
+  if(qIndex>=qPool.length){endQuizSession();return;}
+  currentQ=qPool[qIndex];
+  document.getElementById('qCategory').textContent=currentQ.cat;
+  document.getElementById('qProgress').textContent=(qIndex+1)+'/'+qPool.length;
+  document.getElementById('qText').textContent=currentQ.q;
+  document.getElementById('qResult').style.display='none';
+  document.getElementById('choices').style.display='flex';
+  // Render choices
+  const ch=document.getElementById('choices');
+  ch.innerHTML='';
+  currentQ.c.forEach((text,i)=>{
+    const btn=document.createElement('button');
+    btn.textContent=String.fromCharCode(65+i)+'. '+text;
+    Object.assign(btn.style,{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.12)',
+      borderRadius:'14px',padding:'14px 16px',color:'#cce0f0',fontSize:'15px',
+      cursor:'pointer',textAlign:'left',transition:'background 0.15s, border-color 0.15s'});
+    btn.addEventListener('click',()=>answerQ(i));
+    btn.addEventListener('touchend',e=>{e.preventDefault();answerQ(i);});
+    ch.appendChild(btn);
+  });
+  // Timer
+  clearTimeout(timerID);
+  timerLeft=20;
+  document.getElementById('timerBar').style.width='100%';
+  animTimer();
+}
+let timerStart=0,timerDur=20000;
+function animTimer(){
+  timerStart=performance.now();
+  function step(){
+    const elapsed=performance.now()-timerStart;
+    const pct=Math.max(0,(1-elapsed/timerDur)*100);
+    document.getElementById('timerBar').style.width=pct+'%';
+    if(pct<=0){answerQ(-1);return;}
+    timerID=requestAnimationFrame(step);
+  }
+  timerID=requestAnimationFrame(step);
+}
+function answerQ(chosen){
+  cancelAnimationFrame(timerID);
+  document.getElementById('timerBar').style.width='0%';
+  const correct=chosen===currentQ.a;
+  S.totalAnswered++;
+  // Highlight choices
+  const btns=document.getElementById('choices').querySelectorAll('button');
+  btns.forEach((b,i)=>{
+    b.style.pointerEvents='none';
+    if(i===currentQ.a) b.style.background='rgba(0,255,100,0.2)',b.style.borderColor='#00ff44';
+    if(i===chosen&&!correct) b.style.background='rgba(255,0,50,0.2)',b.style.borderColor='#ff4444';
+  });
+  let xpGain=0, coinGain=0;
+  if(correct){
+    S.totalCorrect++; S.streak++;
+    if(S.streak>S.maxStreak) S.maxStreak=S.streak;
+    SFX.correct();
+    const cls=CLASSES[S.heroClass];
+    const streakMult=1+(S.streak>1?S.streak*0.1:0)+(cls.streakBonus&&S.streak>2?S.streak*cls.streakBonus:0);
+    const hasWisdom=S.learnedSkills.includes('wisdom');
+    xpGain=Math.round(30*(1+cls.xpBonus)*(hasWisdom?1.2:1)*streakMult);
+    coinGain=Math.round(8*(1+cls.coinBonus));
+    gainXP(xpGain); S.coins+=coinGain; SFX.coin();
+  } else {
+    S.streak=0;
+    if(chosen===-1)SFX.wrong();else SFX.wrong();
+    S.hp=Math.max(1,S.hp-8);
+  }
+  // Show result
+  setTimeout(()=>{
+    document.getElementById('choices').style.display='none';
+    const res=document.getElementById('qResult');
+    res.style.display='block';
+    document.getElementById('qResultIcon').textContent=correct?'✅':'❌';
+    document.getElementById('qResultText').textContent=correct?'正確！':'錯誤...';
+    document.getElementById('qResultSub').textContent=correct?'連答：'+S.streak+'題':(chosen===-1?'時間到！ 正確答案：'+currentQ.c[currentQ.a]:'正確答案：'+currentQ.c[currentQ.a]+'\n'+currentQ.hint);
+    document.getElementById('qResultXP').textContent=correct?'+'+xpGain+' XP  +'+coinGain+' 金幣':'HP -8';
+    save();
+  },600);
+}
+function gainXP(amount){
+  S.xp+=amount;
+  const need=XP_PER_LEVEL(S.lv);
+  if(S.xp>=need){S.xp-=need;S.lv++;S.maxHp+=10;S.hp=S.maxHp;applyClassStats();SFX.levelup();showToast('⬆️ 升級了！Lv.'+S.lv);}
+}
+function applyClassStats(){
+  const cls=CLASSES[S.heroClass];
+  const lvBonus=Math.floor((S.lv-1)*1.5);
+  S.atk=cls.atk+lvBonus;S.def=cls.def+lvBonus;S.mag=cls.mag+lvBonus;
+  // Add equip bonuses
+  for(const [,item] of Object.entries(S.equipped)){if(item){const sh=SHOP_ITEMS.find(x=>x.id===item);if(sh&&sh.stat)S[sh.stat]+=sh.val;}}
+}
+function endQuizSession(){
+  showScreen('mainScreen');updateMain();
+}
+document.getElementById('nextQuizBtn').addEventListener('click',()=>{qIndex++;showQuestion();});
+document.getElementById('quizBack').addEventListener('click',()=>{cancelAnimationFrame(timerID);showScreen('mainScreen');updateMain();});
+
+// ============================================================
+// Battle Logic
+// ============================================================
+function startBattle(){
+  initAC();
+  const mIdx=Math.min(Math.floor(S.lv/3),MONSTERS.length-1);
+  const m=MONSTERS[mIdx];
+  monsterState={...m,curHp:m.hp};
+  document.getElementById('monsterIcon').textContent=m.icon;
+  document.getElementById('monsterName').textContent=m.name;
+  document.getElementById('monsterHpFill').style.width='100%';
+  document.getElementById('battleLog').innerHTML='<span style="color:#00e5ff">'+m.icon+' '+m.name+'（HP:'+m.hp+'）出現了！</span>';
+  document.getElementById('battleResult').style.display='none';
+  document.getElementById('btnAttack').disabled=false;
+  document.getElementById('btnMagic').disabled=false;
+  showScreen('battleScreen');
+}
+function doBattle(type){
+  if(!monsterState||monsterState.dead)return;
+  const cls=CLASSES[S.heroClass];
+  let dmg=type==='magic'
+    ?(Math.round(S.mag*1.5*(S.learnedSkills.includes('fireball')?1.5:1))+Math.floor(Math.random()*8))
+    :(S.atk+Math.floor(Math.random()*6));
+  monsterState.curHp=Math.max(0,monsterState.curHp-dmg);
+  document.getElementById('monsterHpFill').style.width=Math.round(monsterState.curHp/monsterState.hp*100)+'%';
+  const log=document.getElementById('battleLog');
+  const atkIcon=type==='magic'?'✨':'⚔️';
+  log.innerHTML+=`<br>${atkIcon} 你造成 <span style="color:#ffdd44">${dmg}</span> 點傷害！`;
+  if(type==='magic')SFX.magic();else SFX.attack();
+  if(monsterState.curHp<=0){
+    monsterState.dead=true;
+    S.totalKills++;
+    const hasLucky=S.learnedSkills.includes('lucky');
+    const coins=Math.round(monsterState.reward*(1+(cls.coinBonus||0))*(hasLucky?1.4:1));
+    const xp=monsterState.xp;
+    S.coins+=coins;gainXP(xp);SFX.levelup();save();
+    document.getElementById('battleResult').style.display='block';
+    document.getElementById('battleResultText').textContent='🏆 勝利！';
+    document.getElementById('battleReward').textContent='+'+xp+' XP  +'+coins+' 💰';
+    document.getElementById('btnAttack').disabled=true;
+    document.getElementById('btnMagic').disabled=true;
+    updateStatusBar();return;
+  }
+  // Monster attacks back
+  setTimeout(()=>{
+    const reduction=S.learnedSkills.includes('shield')?0.3:0;
+    const mDmg=Math.max(1,Math.round((monsterState.atk-S.def*0.5)*(1-reduction)+Math.random()*4));
+    S.hp=Math.max(0,S.hp-mDmg);
+    log.innerHTML+=`<br>💢 ${monsterState.name} 反擊造成 <span style="color:#ff6644">${mDmg}</span> 點傷害！`;
+    log.scrollTop=log.scrollHeight;
+    updateStatusBar();
+    if(S.hp<=0){
+      S.hp=5;save();
+      document.getElementById('battleResult').style.display='block';
+      document.getElementById('battleResultText').textContent='💀 敗北...';
+      document.getElementById('battleReward').textContent='HP 回復到 5，趕快回城喝藥水！';
+      document.getElementById('btnAttack').disabled=true;
+      document.getElementById('btnMagic').disabled=true;
+    }
+    save();
+  },500);
+}
+document.getElementById('btnAttack').addEventListener('click',()=>doBattle('atk'));
+document.getElementById('btnMagic').addEventListener('click',()=>doBattle('magic'));
+document.getElementById('btnNextBattle').addEventListener('click',startBattle);
+document.getElementById('battleBack').addEventListener('click',()=>{showScreen('mainScreen');updateMain();});
+
+// ============================================================
+// Shop & Skills
+// ============================================================
+function renderShop(){
+  document.getElementById('shopCoins').textContent=S.coins;
+  const el=document.getElementById('shopList');
+  el.innerHTML='';
+  SHOP_ITEMS.forEach(item=>{
+    const canAfford=S.coins>=item.cost;
+    const owned=S.equipped[item.id]||false;
+    const count=S.inventory[item.id]||0;
+    el.innerHTML+=`<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:30px;">${item.icon}</span>
+      <div style="flex:1;">
+        <div style="font-size:15px;font-weight:700;color:#cce0f0;">${item.name}${item.type==='consumable'?` <span style="font-size:11px;color:#607090;">x${count}</span>`:''}</div>
+        <div style="font-size:12px;color:#607090;">${item.desc}</div>
+      </div>
+      <button onclick="buyItem('${item.id}')" style="background:${canAfford?'linear-gradient(135deg,#00b4d8,#0077b6)':'rgba(255,255,255,0.05)'};border:none;border-radius:10px;padding:8px 14px;color:${canAfford?'#fff':'#405060'};font-size:13px;font-weight:700;cursor:${canAfford?'pointer':'default'};">
+        ${owned&&item.type==='equip'?'已裝備':'💰'+item.cost}
+      </button>
+    </div>`;
+  });
+}
+function buyItem(id){
+  const item=SHOP_ITEMS.find(x=>x.id===id);
+  if(!item||S.coins<item.cost)return;
+  S.coins-=item.cost;SFX.buy();
+  if(item.type==='equip'){S.equipped[id]=true;applyClassStats();}
+  else if(item.type==='consumable'){S.inventory[id]=(S.inventory[id]||0)+1;}
+  else if(item.type==='use'){
+    if(id==='potion'){S.hp=Math.min(S.maxHp,S.hp+30);showToast('💚 HP +30');}
+    if(id==='xpscroll'){gainXP(50);showToast('✨ +50 XP');}
+  }
+  save();renderShop();updateStatusBar();
+}
+function renderSkills(){
+  const el=document.getElementById('skillsList');
+  el.innerHTML='';
+  SKILLS_DATA.forEach(sk=>{
+    const learned=S.learnedSkills.includes(sk.id);
+    const canLearn=S.lv>=sk.lv&&!learned&&S.coins>=sk.cost;
+    el.innerHTML+=`<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;">
+      <span style="font-size:30px;">${sk.icon}</span>
+      <div style="flex:1;">
+        <div style="font-size:15px;font-weight:700;color:${learned?'#ffd700':'#cce0f0'};">${sk.name}${learned?' ✓':''}</div>
+        <div style="font-size:12px;color:#607090;">${sk.desc}　需 Lv.${sk.lv}</div>
+      </div>
+      ${learned?'<span style="color:#ffd700;font-size:20px;">★</span>':
+        `<button onclick="learnSkill('${sk.id}')" ${canLearn?'':'disabled'} style="background:${canLearn?'linear-gradient(135deg,#7b2ff7,#4a00e0)':'rgba(255,255,255,0.05)'};border:none;border-radius:10px;padding:8px 14px;color:${canLearn?'#fff':'#405060'};font-size:13px;font-weight:700;">
+          ${S.lv<sk.lv?'Lv.'+sk.lv+'↑':'💰'+sk.cost}
+        </button>`}
+    </div>`;
+  });
+}
+function learnSkill(id){
+  const sk=SKILLS_DATA.find(x=>x.id===id);
+  if(!sk||S.lv<sk.lv||S.coins<sk.cost||S.learnedSkills.includes(id))return;
+  S.coins-=sk.cost;S.learnedSkills.push(id);SFX.buy();
+  showToast('💫 學會了：'+sk.name);save();renderSkills();updateStatusBar();
+}
+document.getElementById('shopBack').addEventListener('click',()=>{showScreen('mainScreen');updateMain();});
+document.getElementById('skillsBack').addEventListener('click',()=>{showScreen('mainScreen');updateMain();});
+
+// ============================================================
+// Title Screen
+// ============================================================
+let selectedClass='mage';
+document.querySelectorAll('.hero-class-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.hero-class-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedClass=btn.dataset.class;
+  });
+});
+document.getElementById('startBtn').addEventListener('click',()=>{
+  initAC();
+  const name=document.getElementById('nameInput').value.trim()||'勇者';
+  S=defaultState();
+  S.name=name;S.heroClass=selectedClass;
+  applyClassStats();save();
+  showScreen('mainScreen');updateMain();
+});
+document.getElementById('startBtn').addEventListener('touchend',e=>{e.preventDefault();document.getElementById('startBtn').click();});
+
+// Action buttons
+document.getElementById('btnQuiz').addEventListener('click',startQuiz);
+document.getElementById('btnBattle').addEventListener('click',startBattle);
+document.getElementById('btnShop').addEventListener('click',()=>{renderShop();showScreen('shopScreen');});
+document.getElementById('btnSkills').addEventListener('click',()=>{renderSkills();showScreen('skillsScreen');});
+
+// ============================================================
+// Init
+// ============================================================
+load();
+if(S.totalAnswered>0){
+  // Returning player
+  const cls=CLASSES[S.heroClass];
+  document.getElementById('saveBadge').style.display='block';
+  document.getElementById('saveBadge').textContent=cls.icon+' '+S.name+' · Lv.'+S.lv+'  上次進度已保存';
+  document.getElementById('nameInput').value=S.name;
+  document.querySelectorAll('.hero-class-btn').forEach(b=>{
+    if(b.dataset.class===S.heroClass)b.classList.add('selected');
+    else b.classList.remove('selected');
+  });
+  selectedClass=S.heroClass;
+  document.getElementById('startBtn').textContent='繼續冒險';
+}
+</script>
+</body>
+</html>
