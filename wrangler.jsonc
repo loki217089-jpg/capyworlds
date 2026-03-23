@@ -8,7 +8,7 @@
   },
   "assets": {
     "directory": ".",
-    "run_worker_first": ["/match/*", "/rps/*", "/quiz/*", "/comments*", "/leaderboard/*", "/danmaku*"]
+    "run_worker_first": ["/match/*", "/room/*", "/comments*", "/leaderboard/*", "/danmaku*"]
   },
   "compatibility_flags": [
     "nodejs_compat"

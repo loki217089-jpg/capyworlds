@@ -348,7 +348,7 @@ async function startMatchmaking(name) {
   showScreen('screen-match');
   document.getElementById('match-status').textContent = '尋找對手中…';
   try {
-    const res=await fetch(`${API}/rps/join`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pid,name})});
+    const res=await fetch(`${API}/room/rps/join`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pid,name})});
     const data=await res.json();
     if(data.error){document.getElementById('match-status').textContent=data.error;return;}
     roomId=data.room_id; myRole=data.role;
@@ -363,7 +363,7 @@ function stopPolling(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;}}
 async function pollOnce(){
   if(!roomId) return;
   try {
-    const res=await fetch(`${API}/rps/${roomId}?pid=${pid}`);
+    const res=await fetch(`${API}/room/rps/${roomId}?pid=${pid}`);
     if(!res.ok) return;
     const st=await res.json();
     handleState(st);
@@ -520,7 +520,7 @@ function onChoice(e, choice){
 async function sendChoice(choice){
   if(!roomId) return;
   try {
-    await fetch(`${API}/rps/${roomId}/choose`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pid,choice})});
+    await fetch(`${API}/room/rps/${roomId}/act`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pid,choice})});
   } catch {}
 }
 
