@@ -135,7 +135,8 @@ body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;backgr
       <button class="gender-btn male" onclick="selectGender('male')">♂<span>男生</span></button>
       <button class="gender-btn female" onclick="selectGender('female')">♀<span>女生</span></button>
     </div>
-    <input class="name-input" id="nameInput" type="text" placeholder="輸入暱稱（最多10字）" maxlength="10">
+    <input class="name-input" id="nameInput" type="text" placeholder="輸入暱稱（最多10字，可不填）" maxlength="10" oninput="checkCanStart()">
+    <div style="font-size:12px;color:var(--text2);text-align:center;margin-top:-8px;">不填暱稱將以「陌生人」顯示</div>
     <button class="start-btn" id="startBtn" onclick="startMatching()" disabled>尋找對象</button>
   </div>
 </div>
@@ -284,8 +285,7 @@ function selectGender(g){
 }
 
 function checkCanStart(){
-  const name = document.getElementById('nameInput').value.trim();
-  document.getElementById('startBtn').disabled = !(myGender && name.length > 0);
+  document.getElementById('startBtn').disabled = !myGender;
 }
 
 function showScreen(id){
@@ -296,8 +296,8 @@ function showScreen(id){
 
 // ── Matching ──
 async function startMatching(){
-  myName = document.getElementById('nameInput').value.trim();
-  if(!myGender || !myName) return;
+  myName = document.getElementById('nameInput').value.trim() || '陌生人';
+  if(!myGender) return;
   showScreen('waitScreen');
   await doJoin();
 }
