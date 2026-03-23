@@ -500,6 +500,117 @@
       75%  { opacity:1; }
       100% { opacity:0; transform:translateY(-20px); }
     }
+
+    /* ── Mystic Daily Card ── */
+    .mystic-section { max-width:840px; margin:52px auto 0; padding:0 24px; }
+    .mystic-header {
+      font-size:13px; font-weight:700; letter-spacing:3px; text-transform:uppercase;
+      color:var(--accent); margin-bottom:20px;
+      display:flex; align-items:center; gap:12px;
+    }
+    .mystic-header::before { content:''; flex:1; height:1px; background:linear-gradient(90deg,transparent,var(--border)); }
+    .mystic-header::after  { content:''; flex:1; height:1px; background:linear-gradient(90deg,var(--border),transparent); }
+    .mystic-tabs { display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+    .m-tab {
+      background:var(--bg2); border:1px solid var(--border); border-radius:50px;
+      padding:8px 20px; font-size:13px; color:var(--text3); cursor:pointer;
+      transition:all .2s; font-weight:600; font-family:inherit;
+    }
+    .m-tab:hover { border-color:var(--accent); color:var(--accent); }
+    .m-tab.active { background:rgba(var(--accent-rgb),.12); border-color:var(--accent); color:var(--accent); }
+    .m-panel { display:none; } .m-panel.show { display:block; }
+    .m-box { background:var(--bg2); border:1px solid var(--border); border-radius:18px; padding:28px; transition:background .3s; }
+    .m-row { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-bottom:24px; }
+    .m-row label { font-size:13px; color:var(--text3); display:block; margin-bottom:6px; }
+    .m-date {
+      background:var(--bg3,#13100c); border:1px solid var(--border); border-radius:10px;
+      padding:10px 14px; color:var(--text); font-size:14px; outline:none;
+      transition:border-color .2s; color-scheme:dark;
+    }
+    [data-theme="light"] .m-date { color-scheme:light; }
+    .m-date:focus { border-color:var(--accent); }
+    .m-btn {
+      background:var(--accent); color:var(--bg); border:none; border-radius:10px;
+      padding:10px 22px; font-weight:700; font-size:14px; cursor:pointer;
+      transition:opacity .2s; white-space:nowrap; font-family:inherit;
+    }
+    .m-btn:hover { opacity:.85; }
+    .m-btn-ghost {
+      background:rgba(var(--accent-rgb),.1); border:1px solid rgba(var(--accent-rgb),.4);
+      color:var(--accent); border-radius:10px; padding:10px 22px;
+      font-weight:700; font-size:14px; cursor:pointer; transition:all .2s; font-family:inherit;
+    }
+    .m-btn-ghost:hover { background:rgba(var(--accent-rgb),.2); }
+    .f-result { display:none; } .f-result.show { display:block; }
+    .f-sign { display:flex; align-items:center; gap:16px; margin-bottom:20px; }
+    .f-sym { font-size:50px; filter:drop-shadow(0 0 14px rgba(var(--accent-rgb),.5)); }
+    .f-sign-info h3 { font-size:20px; font-weight:800; color:var(--h1); margin-bottom:4px; }
+    .f-sign-info p { font-size:12px; color:var(--text3); }
+    .f-meters { display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
+    .f-m-row { display:flex; align-items:center; gap:12px; }
+    .f-m-lbl { font-size:12px; color:var(--text3); width:38px; flex-shrink:0; }
+    .f-m-bar { flex:1; height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+    .f-m-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,rgba(var(--accent-rgb),.5),var(--accent)); transition:width 1s ease; width:0; }
+    .f-m-val { font-size:12px; color:var(--accent); width:30px; text-align:right; flex-shrink:0; }
+    .f-msg {
+      background:rgba(var(--accent-rgb),.06); border:1px solid rgba(var(--accent-rgb),.18);
+      border-radius:12px; padding:18px 20px; font-size:14px; color:var(--text5,#c8b89a);
+      line-height:1.85; position:relative;
+    }
+    .f-msg::before { content:'✦'; position:absolute; top:-10px; left:20px; background:var(--bg2); padding:0 6px; color:var(--accent); }
+    .f-lucky { display:flex; gap:24px; margin-top:14px; flex-wrap:wrap; }
+    .f-lucky-item { font-size:12px; color:var(--text3); }
+    .f-lucky-item span { color:var(--accent); font-weight:700; }
+    /* Tarot */
+    .t-intro { font-size:13px; color:var(--text3); margin-bottom:20px; line-height:1.6; text-align:center; }
+    .t-slots { display:flex; gap:16px; justify-content:center; margin-bottom:20px; flex-wrap:wrap; }
+    .t-card { width:100px; height:160px; perspective:700px; cursor:pointer; flex-shrink:0; }
+    .t-card-inner { width:100%; height:100%; position:relative; transform-style:preserve-3d; transition:transform .7s cubic-bezier(.4,0,.2,1); }
+    .t-card.flipped .t-card-inner { transform:rotateY(180deg); }
+    .t-face,.t-back { position:absolute; width:100%; height:100%; backface-visibility:hidden; border-radius:12px; overflow:hidden; }
+    .t-back {
+      background:linear-gradient(135deg,#12091f 0%,#2a1550 50%,#12091f 100%);
+      border:1px solid rgba(var(--accent-rgb),.3);
+      display:flex; align-items:center; justify-content:center;
+    }
+    .t-face {
+      background:linear-gradient(160deg,#0d0a18,#1e1530);
+      border:1px solid rgba(var(--accent-rgb),.5);
+      transform:rotateY(180deg);
+      display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px; text-align:center;
+    }
+    .t-face .t-num { font-size:9px; color:rgba(var(--accent-rgb),.5); margin-bottom:3px; }
+    .t-face .t-ico { font-size:26px; margin-bottom:6px; }
+    .t-face .t-nm  { font-size:10px; color:var(--accent); font-weight:700; line-height:1.3; }
+    .t-face .t-kw  { font-size:9px; color:var(--text3); margin-top:4px; line-height:1.4; }
+    .t-reading { margin-top:20px; }
+    .t-reading-ttl { font-size:11px; color:var(--text3); text-align:center; margin-bottom:12px; letter-spacing:2px; text-transform:uppercase; }
+    .t-reading-list { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+    .t-r-item { background:rgba(var(--accent-rgb),.06); border:1px solid rgba(var(--accent-rgb),.18); border-radius:12px; padding:14px; text-align:center; flex:1; min-width:140px; max-width:210px; }
+    .t-r-pos { font-size:10px; color:var(--text4,#4a3828); letter-spacing:1px; margin-bottom:6px; text-transform:uppercase; }
+    .t-r-ico { font-size:22px; margin-bottom:6px; }
+    .t-r-nm  { font-size:13px; color:var(--accent); font-weight:700; margin-bottom:4px; }
+    .t-r-msg { font-size:12px; color:var(--text3); line-height:1.5; }
+    /* Compatibility */
+    .c-result { display:none; } .c-result.show { display:block; }
+    .c-persons { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:16px; }
+    .c-person { display:flex; flex-direction:column; gap:6px; }
+    .c-person label { font-size:13px; color:var(--text3); }
+    .c-vs { font-size:22px; color:var(--accent); opacity:.5; }
+    .c-signs { display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:20px; flex-wrap:wrap; }
+    .c-sign-box { background:rgba(var(--accent-rgb),.06); border:1px solid rgba(var(--accent-rgb),.18); border-radius:14px; padding:14px 22px; text-align:center; }
+    .c-sign-sym { font-size:34px; }
+    .c-sign-nm { font-size:13px; color:var(--accent); font-weight:700; margin-top:4px; }
+    .c-sign-el { font-size:11px; color:var(--text3); margin-top:2px; }
+    .c-arrow { font-size:22px; color:var(--accent); opacity:.4; }
+    .c-score-wrap { text-align:center; margin-bottom:20px; }
+    .c-score-num { font-size:52px; font-weight:900; color:var(--accent); line-height:1; text-shadow:0 0 30px rgba(var(--accent-rgb),.5); }
+    .c-score-lbl { font-size:13px; color:var(--text3); margin-top:4px; }
+    .c-bar-wrap { width:200px; height:8px; background:var(--border); border-radius:4px; overflow:hidden; margin:12px auto; }
+    .c-bar-fill { height:100%; border-radius:4px; background:linear-gradient(90deg,rgba(var(--accent-rgb),.6),var(--accent)); transition:width 1.2s ease; width:0; }
+    .c-msg { background:rgba(var(--accent-rgb),.06); border:1px solid rgba(var(--accent-rgb),.18); border-radius:12px; padding:16px 20px; font-size:14px; color:var(--text5,#c8b89a); line-height:1.8; text-align:center; }
+    .c-aspects { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; justify-content:center; }
+    .c-aspect { background:rgba(var(--accent-rgb),.08); border:1px solid rgba(var(--accent-rgb),.2); border-radius:20px; padding:4px 14px; font-size:12px; color:var(--text3); }
   </style>
 </head>
 <body>
@@ -623,6 +734,84 @@
         </svg>
         Steam
       </a>
+    </div>
+  </section>
+
+  <!-- Mystic Daily Card -->
+  <section class="mystic-section">
+    <div class="mystic-header">✦ 每日星象 · Daily Mystic ✦</div>
+    <div class="mystic-tabs">
+      <button class="m-tab active" onclick="mysticTab('fortune',this)">🌟 每日運勢</button>
+      <button class="m-tab" onclick="mysticTab('tarot',this)">🃏 塔羅抽牌</button>
+      <button class="m-tab" onclick="mysticTab('compat',this)">💫 靈魂配對</button>
+    </div>
+
+    <!-- Panel 1: Daily Fortune -->
+    <div class="m-panel show" id="m-fortune">
+      <div class="m-box">
+        <div class="m-row">
+          <div><label>你的生日</label><input type="date" class="m-date" id="fortuneBirth" max="2009-12-31"></div>
+          <button class="m-btn" onclick="showFortune()">✦ 查看今日運勢</button>
+        </div>
+        <div class="f-result" id="fortuneResult">
+          <div class="f-sign">
+            <div class="f-sym" id="fSym"></div>
+            <div class="f-sign-info"><h3 id="fName"></h3><p id="fDesc"></p></div>
+          </div>
+          <div class="f-meters" id="fMeters"></div>
+          <div class="f-msg" id="fMsg"></div>
+          <div class="f-lucky" id="fLucky"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel 2: Tarot -->
+    <div class="m-panel" id="m-tarot">
+      <div class="m-box">
+        <p class="t-intro">靜下心，聚焦你的問題，然後點擊牌背翻開命運的訊息。</p>
+        <div class="t-slots" id="tarotSlots"></div>
+        <div style="text-align:center">
+          <button class="m-btn-ghost" onclick="drawTarot()">✦ 重新洗牌抽三張</button>
+        </div>
+        <div class="t-reading" id="tarotReading" style="display:none">
+          <div class="t-reading-ttl">✦ 解讀 ✦</div>
+          <div class="t-reading-list" id="tarotReadingList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel 3: Compatibility -->
+    <div class="m-panel" id="m-compat">
+      <div class="m-box">
+        <div class="c-persons">
+          <div class="c-person"><label>你的生日</label><input type="date" class="m-date" id="c-birth1" max="2009-12-31"></div>
+          <div class="c-vs">💫</div>
+          <div class="c-person"><label>對方的生日</label><input type="date" class="m-date" id="c-birth2" max="2009-12-31"></div>
+        </div>
+        <button class="m-btn" onclick="showCompat()">✦ 查看靈魂契合度</button>
+        <div class="c-result" id="compatResult" style="margin-top:24px">
+          <div class="c-signs">
+            <div class="c-sign-box">
+              <div class="c-sign-sym" id="cSym1"></div>
+              <div class="c-sign-nm" id="cNm1"></div>
+              <div class="c-sign-el" id="cEl1"></div>
+            </div>
+            <div class="c-arrow">✦</div>
+            <div class="c-sign-box">
+              <div class="c-sign-sym" id="cSym2"></div>
+              <div class="c-sign-nm" id="cNm2"></div>
+              <div class="c-sign-el" id="cEl2"></div>
+            </div>
+          </div>
+          <div class="c-score-wrap">
+            <div class="c-score-num" id="cScore">0%</div>
+            <div class="c-score-lbl" id="cScoreLbl"></div>
+            <div class="c-bar-wrap"><div class="c-bar-fill" id="cBarFill"></div></div>
+          </div>
+          <div class="c-msg" id="cMsg"></div>
+          <div class="c-aspects" id="cAspects"></div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -959,11 +1148,12 @@
     if (dmBadgeClicks >= 5) {
       dmBadgeClicks = 0;
       if (dmAdminMode) {
-        dmAdminMode = false;
-        showPtsPopup('已退出管理員模式');
+        const action = prompt('管理員選項：\n1 → 退出管理員模式\n2 → 重置我的積分為 0\n\n輸入數字：');
+        if (action === '1') { dmAdminMode = false; showPtsPopup('已退出管理員模式'); }
+        else if (action === '2') { setPoints(0); showPtsPopup('積分已重置 ✓'); }
       } else {
         const pw = prompt('輸入管理員密碼：');
-        if (pw && pw === adminKey) {
+        if (pw && pw === '66520') {
           dmAdminMode = true;
           showPtsPopup('管理員模式：彈幕免費 ✓');
         } else if (pw !== null) {
