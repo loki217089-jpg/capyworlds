@@ -527,6 +527,7 @@ body::after {
   <div class="boot-ver" data-i18n="boot_ver">BUILD 2026.03 // SFX Edition</div>
   <div class="boot-log" id="boot-log"></div>
   <button class="btn-start" id="btn-start" style="display:none" onclick="onStart()" data-i18n="btn_start">[ EXECUTE ]</button>
+  <button id="btn-skip" onclick="onStart()" style="display:none;margin-top:12px;font-family:'Share Tech Mono',monospace;font-size:13px;background:transparent;border:none;color:#336633;cursor:pointer;letter-spacing:2px;text-decoration:underline;">[skip intro]</button>
 </div>
 
 <!-- ══════ HUB ══════ -->
@@ -1173,11 +1174,12 @@ function runBoot() {
       setTimeout(() => document.getElementById('btn-start').style.display = 'block', 300);
       return;
     }
+    if (i === 2) document.getElementById('btn-skip').style.display = 'block';
     const div = document.createElement('div');
     div.className = 'boot-log-line';
     div.textContent = lines[i++];
     log.appendChild(div);
-    setTimeout(next, 180 + Math.random() * 140);
+    setTimeout(next, 80 + Math.random() * 60);
   };
   setTimeout(next, 500);
 }
@@ -1187,6 +1189,27 @@ function onStart() {
   sfx('click');
   startBGM('hub');
   goHub();
+}
+
+function showTutorial() {
+  const ov = document.createElement('div');
+  ov.id = 'tutorial-ov';
+  ov.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:9999;background:rgba(0,0,0,0.72);';
+  ov.innerHTML = `<div style="font-family:'Share Tech Mono',monospace;color:#00ff88;border:1px solid #00ff88;padding:28px 36px;text-align:center;max-width:min(380px,calc(100vw-32px));background:#050f05;border-radius:4px;">
+    <div style="font-size:17px;letter-spacing:3px;margin-bottom:18px;">── HOW TO PLAY ──</div>
+    <div style="font-size:14px;line-height:2.2;color:#c0ffd0;">
+      🖱 移動滑鼠 = 瞄準 &amp; 自動射擊<br>
+      👆 滑動手指 = 瞄準射擊（手機）<br>
+      ⌨ <span style="color:#ffff00;">T</span> 鍵 = 爆發召喚（Combo MAX 時）<br>
+      ❤ 保護核心，消滅病毒！
+    </div>
+    <div style="margin-top:20px;font-size:12px;color:#336633;">[點任意處關閉]</div>
+  </div>`;
+  document.body.appendChild(ov);
+  const dismiss = () => { ov.remove(); G.paused = false; };
+  G.paused = true;
+  ov.addEventListener('click', dismiss);
+  setTimeout(dismiss, 5000);
 }
 
 // ═══════════════════════════════════════════════
@@ -1529,6 +1552,7 @@ function _doStartGame() {
 
   META.stats.runs++;
   saveMeta();
+  if (META.stats.runs === 1) showTutorial();
   switchBGM('game', 100);
   startNextWave();
   updateHUD();
@@ -2147,10 +2171,18 @@ function updateSummonBtn() {
 // ── 渲染 ──
 function render() {
   const ctx = G.ctx, cv = G.canvas;
-  ctx.fillStyle = '#020a02';
+  // Drive-specific background theme
+  const _drvColors=[
+    {bg:'#020a02',grid:'rgba(0,40,0,.35)',   node:'rgba(0,255,65,'},   // C: green
+    {bg:'#02060f',grid:'rgba(0,20,55,.4)',   node:'rgba(0,210,255,'},  // D: blue
+    {bg:'#0a0900',grid:'rgba(55,40,0,.4)',   node:'rgba(255,220,0,'},  // E: yellow
+    {bg:'#0f0002',grid:'rgba(60,0,5,.4)',    node:'rgba(255,30,60,'},  // F: red
+  ];
+  const _dc=_drvColors[G.driveId]||_drvColors[0];
+  ctx.fillStyle = _dc.bg;
   ctx.fillRect(0, 0, cv.width, cv.height);
   // 格線
-  ctx.strokeStyle='rgba(0,40,0,.35)'; ctx.lineWidth=0.5;
+  ctx.strokeStyle=_dc.grid; ctx.lineWidth=0.5;
   for(let x=0;x<cv.width;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,cv.height);ctx.stroke();}
   for(let y=0;y<cv.height;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(cv.width,y);ctx.stroke();}
   // 電路板節點（每隔200px的格子交叉點）
@@ -2158,7 +2190,7 @@ function render() {
   ctx.shadowBlur=0;
   for(let x=0;x<cv.width;x+=200){for(let y=0;y<cv.height;y+=200){
     const pulse=0.18+0.14*Math.sin(now2*0.7+x*0.007+y*0.009);
-    ctx.fillStyle=`rgba(0,255,65,${pulse})`;
+    ctx.fillStyle=`${_dc.node}${pulse})`;
     ctx.beginPath();ctx.arc(x,y,2.5,0,Math.PI*2);ctx.fill();
   }}
 
