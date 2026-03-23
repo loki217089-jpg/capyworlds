@@ -1,11 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6193561251326215"
-     crossorigin="anonymous"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VIRUS.EXE — 系統清除</title>
+<title>VIRUS.EXE — System Purge</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=Noto+Sans+TC:wght@400;700;900&display=swap');
 
@@ -389,6 +387,15 @@ body::after {
 }
 .acbtn:hover { border-color:var(--green3); }
 .acbtn.off { opacity:.35; }
+/* ── LANG TOGGLE ── */
+#lang-btn {
+  position:fixed; top:10px; right:10px; z-index:2001;
+  font-size:13px; padding:4px 10px; letter-spacing:1px;
+  background:rgba(0,20,0,.9); border:1px solid #1a3a1a;
+  color:var(--dim); cursor:none; border-radius:3px; transition:all .15s;
+  pointer-events:all; font-family:'Share Tech Mono',monospace;
+}
+#lang-btn:hover { border-color:var(--green3); color:var(--green); }
 
 /* ── SUMMON POPUP ── */
 #summon-pop {
@@ -514,37 +521,37 @@ body::after {
  ╚██╗ ██╔╝██║██╔══██╗██║   ██║╚════██║
   ╚████╔╝ ██║██║  ██║╚██████╔╝███████║
    ╚═══╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
-        .EXE ──  系 統 清 除  ── v2.0
+        .EXE ── SYSTEM PURGE ── v2.0
   </div>
   <div class="boot-sub">SYSTEM PURGE PROTOCOL</div>
-  <div class="boot-ver">BUILD 2026.03 // 含音效版</div>
+  <div class="boot-ver" data-i18n="boot_ver">BUILD 2026.03 // SFX Edition</div>
   <div class="boot-log" id="boot-log"></div>
-  <button class="btn-start" id="btn-start" style="display:none" onclick="onStart()">[ 執行程式 ]</button>
+  <button class="btn-start" id="btn-start" style="display:none" onclick="onStart()" data-i18n="btn_start">[ EXECUTE ]</button>
 </div>
 
 <!-- ══════ HUB ══════ -->
 <div id="screen-hub" class="screen">
   <div class="hub-hdr">
-    <div class="hub-title">// 系統操作中樞 //</div>
-    <div class="hub-cred">💾 資料碎片: <span id="hub-cred-val">0</span></div>
+    <div class="hub-title" data-i18n="hub_title">// SYSTEM HUB //</div>
+    <div class="hub-cred"><span data-i18n="hub_cred_label">💾 Data Shards: </span><span id="hub-cred-val">0</span></div>
   </div>
   <div class="hub-grid">
     <div class="hub-panel">
-      <div class="hub-ptitle">▶ 選擇游標</div>
+      <div class="hub-ptitle" data-i18n="hub_cursors">▶ SELECT CURSOR</div>
       <div class="cursor-grid" id="cursor-grid"></div>
     </div>
     <div class="hub-panel">
-      <div class="hub-ptitle">▶ 選擇磁碟</div>
+      <div class="hub-ptitle" data-i18n="hub_drives">▶ SELECT DRIVE</div>
       <div class="drive-list" id="drive-list"></div>
     </div>
     <div class="hub-panel">
-      <div class="hub-ptitle">▶ 場外升級</div>
+      <div class="hub-ptitle" data-i18n="hub_upgrades">▶ UPGRADES</div>
       <div class="upgrade-list" id="upgrade-list"></div>
     </div>
     <div class="hub-panel">
-      <div class="hub-ptitle">▶ 統計資料</div>
+      <div class="hub-ptitle" data-i18n="hub_stats_title">▶ STATS</div>
       <div id="hub-stats"></div>
-      <button class="hub-launch" onclick="startGame()">[ 進入磁碟 ]</button>
+      <button class="hub-launch" onclick="startGame()" data-i18n="hub_launch">[ ENTER DRIVE ]</button>
     </div>
   </div>
 </div>
@@ -559,36 +566,36 @@ body::after {
         <div class="hbar"><div class="hbar-fill hp" id="hud-hpbar" style="width:100%"></div></div>
       </div>
       <div class="hblock">
-        <div class="hlabel">攻擊力</div>
+        <div class="hlabel" data-i18n="hud_atk">ATK</div>
         <div class="hval atk" id="hud-atk">10</div>
       </div>
       <div class="hblock">
-        <div class="hlabel">磁碟</div>
+        <div class="hlabel" data-i18n="hud_drive_label">DRIVE</div>
         <div class="hval" style="color:var(--green3)" id="hud-drive">C:/</div>
       </div>
       <div class="hblock">
-        <div class="hlabel">分數</div>
+        <div class="hlabel" data-i18n="hud_score">SCORE</div>
         <div class="hval scr" id="hud-score">0</div>
       </div>
       <div class="hblock" style="min-width:60px">
-        <div class="hlabel">碎片</div>
+        <div class="hlabel" data-i18n="hud_cred">SHARDS</div>
         <div class="hval cred" id="hud-cred">0</div>
       </div>
-      <button style="pointer-events:all;font-family:'VT323',monospace;font-size:13px;padding:4px 10px;background:transparent;border:1px solid #333;color:#555;cursor:none;" onclick="pauseBack()">中斷</button>
+      <button style="pointer-events:all;font-family:'VT323',monospace;font-size:13px;padding:4px 10px;background:transparent;border:1px solid #333;color:#555;cursor:none;" onclick="pauseBack()" data-i18n="hud_quit">QUIT</button>
     </div>
     <div id="hud-combo">
       <div class="combo-label">COMBO</div>
       <div class="combo-pips" id="combo-pips"></div>
       <div class="cmul" id="cmul">×1.0</div>
       <div style="flex:1"></div>
-      <div style="font-size:11px;color:var(--dim)">門檻: <span style="color:var(--combo1)">×2.0</span></div>
+      <div style="font-size:11px;color:var(--dim)" data-i18n="hud_threshold">THRESHOLD: ×2.0</div>
     </div>
     <div id="hud-summon">
-      <button id="btn-summon" onclick="openSummon()">⚡ 爆發召喚 [T]</button>
-      <div class="shint" id="shint">累積COMBO至×2.0解鎖</div>
+      <button id="btn-summon" onclick="openSummon()" data-i18n="btn_summon">⚡ BURST SUMMON [T]</button>
+      <div class="shint" id="shint" data-i18n="shint_locked">Build COMBO to ×2.0 to unlock</div>
     </div>
     <div id="hud-cp">
-      <span>存檔點:</span>
+      <span data-i18n="hud_cp">CHECKPOINT:</span>
       <span id="cp-pips-hud"></span>
       <span id="cp-status" style="color:var(--yellow);font-size:11px"></span>
     </div>
@@ -608,8 +615,8 @@ body::after {
 <!-- ══════ CHECKPOINT POPUP ══════ -->
 <div id="cp-pop">
   <div id="cp-box">
-    <div id="cp-title">💾 存檔點</div>
-    <div id="cp-desc">已抵達區段存檔點！<br>進度自動儲存中……</div>
+    <div id="cp-title" data-i18n="cp_title">💾 CHECKPOINT</div>
+    <div id="cp-desc" data-i18n="cp_desc">Checkpoint reached!<br>Progress auto-saved...</div>
     <div id="cp-btns"></div>
     <div class="cp-reward" id="cp-reward"></div>
   </div>
@@ -618,13 +625,13 @@ body::after {
 <!-- ══════ GAME OVER ══════ -->
 <div id="go-pop">
   <div class="rbox">
-    <div class="rtitle" style="color:var(--red)">// 程式崩潰 //</div>
+    <div class="rtitle" style="color:var(--red)" data-i18n="go_title">// SYSTEM CRASH //</div>
     <div class="rstats" id="go-stats"></div>
     <div class="rscore" id="go-score"></div>
     <div class="rbonus" id="go-bonus"></div>
     <div class="rbtns">
-      <button class="rbtn retry" id="retry-btn" onclick="retryCP()">[ 從存檔點重試 ]</button>
-      <button class="rbtn hub"   onclick="goHub()">[ 返回操作中樞 ]</button>
+      <button class="rbtn retry" id="retry-btn" onclick="retryCP()" data-i18n="go_retry">[ RETRY FROM CHECKPOINT ]</button>
+      <button class="rbtn hub"   onclick="goHub()" data-i18n="go_hub">[ RETURN TO HUB ]</button>
     </div>
   </div>
 </div>
@@ -632,12 +639,12 @@ body::after {
 <!-- ══════ VICTORY ══════ -->
 <div id="win-pop">
   <div class="rbox">
-    <div class="rtitle" style="color:var(--green2)">// 系統清除完畢 //</div>
+    <div class="rtitle" style="color:var(--green2)" data-i18n="win_title">// SYSTEM PURGED //</div>
     <div class="rstats" id="win-stats"></div>
     <div class="rscore" id="win-score"></div>
     <div class="rbonus" id="win-bonus"></div>
     <div class="rbtns">
-      <button class="rbtn hub" onclick="goHub()">[ 返回操作中樞 ]</button>
+      <button class="rbtn hub" onclick="goHub()" data-i18n="win_hub">[ RETURN TO HUB ]</button>
     </div>
   </div>
 </div>
@@ -645,29 +652,27 @@ body::after {
 <!-- ══════ PAUSE ══════ -->
 <div id="pause-overlay">
   <div id="pause-text">⏸ PAUSED</div>
-  <div style="font-family:'Share Tech Mono',monospace;font-size:15px;color:var(--dim)">SPACE 繼續遊戲</div>
-  <button id="pause-back-btn" onclick="quitToHub()">⬅ 放棄並回到主畫面</button>
+  <div style="font-family:'Share Tech Mono',monospace;font-size:15px;color:var(--dim)" data-i18n="pause_hint">SPACE to Resume</div>
+  <button id="pause-back-btn" onclick="quitToHub()" data-i18n="pause_back">⬅ QUIT TO MAIN MENU</button>
 </div>
 
 <!-- ══════ KEY HINTS ══════ -->
-<div id="key-hints">
-  <span>SPACE</span> 暫停／繼續 &nbsp;
-  <span>T</span> 爆發召喚
-</div>
+<div id="key-hints" data-i18n="key_hints"><span>SPACE</span> Pause/Resume &nbsp; <span>T</span> Burst Summon</div>
 
 <!-- ══════ BOSS WARNING ══════ -->
 <div id="boss-warn"><div id="bwtext">⚠ BOSS DETECTED ⚠</div></div>
 
 <!-- ══════ AUDIO CONTROLS ══════ -->
 <div id="audio-ctrl">
-  <button class="acbtn" id="sfx-btn"  onclick="toggleSFX()"  title="音效">🔊 音效</button>
-  <button class="acbtn" id="bgm-btn"  onclick="toggleBGM()"  title="音樂">🎵 音樂</button>
+  <button class="acbtn" id="sfx-btn"  onclick="toggleSFX()"  title="SFX">🔊 SFX</button>
+  <button class="acbtn" id="bgm-btn"  onclick="toggleBGM()"  title="BGM">🎵 BGM</button>
 </div>
+<button id="lang-btn" onclick="toggleLang()">中文</button>
 
 <!-- ══════ 觸控按鈕 ══════ -->
 <button id="touch-summon-btn" ontouchstart="handleTouchSummon(event)">
   <span style="font-size:20px">⚡</span>
-  <span>爆發召喚</span>
+  <span id="touch-summon-label">BURST</span>
 </button>
 <button id="touch-pause-btn" ontouchstart="handleTouchPause(event)">⏸</button>
 <div id="touch-indicator"></div>
@@ -887,13 +892,13 @@ function switchBGM(theme, delay = 400) {
 function toggleSFX() {
   sfxOn = !sfxOn;
   document.getElementById('sfx-btn').classList.toggle('off', !sfxOn);
-  document.getElementById('sfx-btn').textContent = sfxOn ? '🔊 音效' : '🔇 音效';
+  document.getElementById('sfx-btn').textContent = sfxOn ? (LANG==='zh'?'🔊 音效':'🔊 SFX') : (LANG==='zh'?'🔇 音效':'🔇 SFX');
   if (sfxOn) sfx('click');
 }
 function toggleBGM() {
   bgmOn = !bgmOn;
   document.getElementById('bgm-btn').classList.toggle('off', !bgmOn);
-  document.getElementById('bgm-btn').textContent = bgmOn ? '🎵 音樂' : '🎵 音樂';
+  document.getElementById('bgm-btn').textContent = LANG==='zh' ? '🎵 音樂' : '🎵 BGM';
   if (bgmOn) {
     const theme = G ? (G.bossWave ? 'boss' : 'game') : 'hub';
     startBGM(theme);
@@ -901,6 +906,172 @@ function toggleBGM() {
     stopBGM();
   }
 }
+
+// ═══════════════════════════════════════════════
+//  I18N 雙語系統 / Bilingual System
+// ═══════════════════════════════════════════════
+let LANG = localStorage.getItem('vexLang') || 'en';
+
+const I18N = {
+  en: {
+    title:'VIRUS.EXE — System Purge', boot_ver:'BUILD 2026.03 // SFX Edition',
+    btn_start:'[ EXECUTE ]', hub_title:'// SYSTEM HUB //',
+    hub_cred_label:'💾 Data Shards: ', hub_cursors:'▶ SELECT CURSOR',
+    hub_drives:'▶ SELECT DRIVE', hub_upgrades:'▶ UPGRADES',
+    hub_stats_title:'▶ STATS', hub_launch:'[ ENTER DRIVE ]',
+    hud_atk:'ATK', hud_drive_label:'DRIVE', hud_score:'SCORE',
+    hud_cred:'SHARDS', hud_quit:'QUIT', hud_threshold:'THRESHOLD: ×2.0',
+    btn_summon:'⚡ BURST SUMMON [T]', shint_locked:'Build COMBO to ×2.0 to unlock',
+    hud_cp:'CHECKPOINT:', cp_title:'💾 CHECKPOINT',
+    cp_desc:'Checkpoint reached!<br>Progress auto-saved...',
+    cp_save:'[ SAVE & CONTINUE ]',
+    go_title:'// SYSTEM CRASH //', go_retry:'[ RETRY FROM CHECKPOINT ]',
+    go_hub:'[ RETURN TO HUB ]', win_title:'// SYSTEM PURGED //',
+    win_hub:'[ RETURN TO HUB ]', pause_hint:'SPACE to Resume',
+    pause_back:'⬅ QUIT TO MAIN MENU',
+    key_hints:'<span>SPACE</span> Pause/Resume &nbsp; <span>T</span> Burst Summon',
+    cp_saved:'✓ SAVED',
+    wave_boss_next:'WAVE %1 / %2  ⚠ NEXT: BOSS', wave_boss_ready:'Brace for the Final Threat',
+    wave_label:'WAVE %1 / %2', paused_text:'⏸  PAUSED  —  SPACE to Resume',
+    badge_saved:'SAVED', badge_cleared:'CLEAR', badge_new:'NEW',
+    stat_cursor:'Cursor', stat_atk:'⚔ Effective ATK', stat_firerate:'⚡ Fire Rate',
+    stat_special:'✨ Special', stat_maxhp:'Max HP', stat_runs:'Runs', stat_best:'Best Score',
+    go_stats:'Wave %1/%2 | Kills: %3 | COMBO ×%4',
+    score_label:'Score: %1', cred_gained:'+%1 Data Shards earned',
+    win_stats:'Wave %1/%2 | Kills: %3 | %4', win_bonus:'Clear Bonus +15 Shards! Total +%1',
+    cp_reward:'✓ Saved! +%1 HP restored',
+    summon_max:'⚡ MAX COMBO SUPER SUMMON!', summon_normal:'⚡ BURST SUMMON ×%1',
+    summon_sub:'Choose an effect  [ 1 / 2 / 3 ]',
+    summon_ready_max:'⚡ MAX COMBO — Super Summon ready!',
+    summon_ready:'COMBO ×%1 — Burst Summon ready!',
+    summon_cooldown:'Cooldown... (%1s)', summon_locked:'Build COMBO ×2.0 to unlock (current ×%1)',
+    scan_progress:'Scanning... %1%', scan_complete:'Scan Complete — Entering Drive',
+    threat_levels:['LOW ██░░░░','MED ███░░░','HIGH ████░░','CRIT ██████'],
+    threat_label:'Threat Level: ', di_skip:'[ Click to Skip ]',
+    di_lines:[
+      '>','> Loading virus signature database. [OK]',
+      '> Analyzing disk sector structure.. [DONE]',
+      '> Malicious processes detected — Defense matrix active',
+      '> WARNING: Intrusion in progress — Emergency alert',
+    ],
+    boot_lines:[
+      '> Initializing VIRUS.EXE v2.0...',
+      '> Loading antivirus core........ [OK]',
+      '> Scanning drives............... [4 detected]',
+      '> Updating virus database....... [9 virus types]',
+      '> Burst summon engine........... [UNLOCKED]',
+      '> Checkpoint system............. [ENABLED]',
+      '> Meta-upgrade module........... [ONLINE]',
+      '> Audio engine (Web Audio)...... [LOADED]',
+      '> WARNING: System infection rate 97.3%',
+      '> Ready. Good luck.',
+    ],
+    flt_split:'SPLIT!', flt_swarm:'SWARM!',
+    special_normal:'Standard bullet, steady tracking',
+    special_rapid:'3-shot spread, lower damage per shot',
+    special_heavy:'Impact shockwave on hit, AoE damage',
+    special_drain:'Lifesteal on hit, +50% dmg at close range',
+    special_pierce:'Bullets pierce all enemies',
+    special_explode:'Explode on hit, AoE 80px 🔥',
+  },
+  zh: {
+    title:'VIRUS.EXE — 系統清除', boot_ver:'BUILD 2026.03 // 含音效版',
+    btn_start:'[ 執行程式 ]', hub_title:'// 系統操作中樞 //',
+    hub_cred_label:'💾 資料碎片: ', hub_cursors:'▶ 選擇游標',
+    hub_drives:'▶ 選擇磁碟', hub_upgrades:'▶ 場外升級',
+    hub_stats_title:'▶ 統計資料', hub_launch:'[ 進入磁碟 ]',
+    hud_atk:'攻擊力', hud_drive_label:'磁碟', hud_score:'分數',
+    hud_cred:'碎片', hud_quit:'中斷', hud_threshold:'門檻: ×2.0',
+    btn_summon:'⚡ 爆發召喚 [T]', shint_locked:'累積COMBO至×2.0解鎖',
+    hud_cp:'存檔點:', cp_title:'💾 存檔點',
+    cp_desc:'已抵達區段存檔點！<br>進度自動儲存中……',
+    cp_save:'[ 儲存並繼續 ]',
+    go_title:'// 程式崩潰 //', go_retry:'[ 從存檔點重試 ]',
+    go_hub:'[ 返回操作中樞 ]', win_title:'// 系統清除完畢 //',
+    win_hub:'[ 返回操作中樞 ]', pause_hint:'SPACE 繼續遊戲',
+    pause_back:'⬅ 放棄並回到主畫面',
+    key_hints:'<span>SPACE</span> 暫停／繼續 &nbsp; <span>T</span> 爆發召喚',
+    cp_saved:'✓ 已存檔',
+    wave_boss_next:'WAVE %1 / %2  ⚠ 下一波: BOSS', wave_boss_ready:'準備面對最終威脅',
+    wave_label:'WAVE %1 / %2', paused_text:'⏸  PAUSED  —  SPACE 繼續',
+    badge_saved:'有存檔', badge_cleared:'已通關', badge_new:'新',
+    stat_cursor:'已選游標', stat_atk:'⚔ 有效攻擊', stat_firerate:'⚡ 射擊間隔',
+    stat_special:'✨ 特殊效果', stat_maxhp:'最大HP', stat_runs:'總局數', stat_best:'最高分',
+    go_stats:'Wave %1/%2 | 擊殺 %3 | COMBO ×%4',
+    score_label:'分數: %1', cred_gained:'+%1 資料碎片已獲得',
+    win_stats:'Wave %1/%2 | 擊殺 %3 | %4', win_bonus:'通關獎勵 +15碎片！總計 +%1',
+    cp_reward:'✓ 存檔完成！+%1 HP 補給',
+    summon_max:'⚡ MAX COMBO 超級召喚！', summon_normal:'⚡ 爆發召喚 ×%1',
+    summon_sub:'選擇一個效果觸發  [ 1 / 2 / 3 ]',
+    summon_ready_max:'⚡ MAX COMBO — 超級召喚可用！',
+    summon_ready:'COMBO ×%1 — 爆發召喚可用！',
+    summon_cooldown:'冷卻中… (%1s)', summon_locked:'累積COMBO至×2.0解鎖（目前×%1）',
+    scan_progress:'掃描中... %1%', scan_complete:'掃描完成 — 進入磁碟',
+    threat_levels:['低危 ██░░░░','中等 ███░░░','高危 ████░░','極危 ██████'],
+    threat_label:'威脅等級：', di_skip:'[ 點擊跳過 ]',
+    di_lines:[
+      '>','> 載入病毒特徵碼庫.......... [OK]',
+      '> 分析磁碟扇區結構........... [完成]',
+      '> 偵測到惡意進程 — 防禦矩陣啟動',
+      '> 警告: 入侵已開始 — 系統緊急告急',
+    ],
+    boot_lines:[
+      '> 初始化 VIRUS.EXE v2.0...',
+      '> 載入防毒核心........... [OK]',
+      '> 掃描系統磁碟........... [4個已偵測]',
+      '> 病毒資料庫更新......... [9種病毒]',
+      '> 爆發召喚引擎........... [已解鎖]',
+      '> 存檔點系統............. [已啟用]',
+      '> 場外升級模組........... [已連線]',
+      '> 音效引擎 (Web Audio)... [已載入]',
+      '> 警告: 系統感染率 97.3%',
+      '> 準備就緒。祝您好運。',
+    ],
+    flt_split:'分裂!', flt_swarm:'蜂群!',
+    special_normal:'普通子彈，穩定追蹤',
+    special_rapid:'3連散射，每發傷害低',
+    special_heavy:'命中產生震波環，波及周圍',
+    special_drain:'命中回血，近距離傷害+50%',
+    special_pierce:'子彈穿透全場所有敵人',
+    special_explode:'命中爆炸，波及80px範圍🔥',
+  },
+};
+
+function t(key) {
+  const l = I18N[LANG] || I18N.en;
+  return (l[key] !== undefined ? l[key] : (I18N.en[key] !== undefined ? I18N.en[key] : key));
+}
+function tf(key, ...args) {
+  let s = t(key);
+  args.forEach((a, i) => { s = s.replace('%'+(i+1), a); });
+  return s;
+}
+function applyI18N() {
+  document.title = t('title');
+  document.documentElement.lang = LANG === 'zh' ? 'zh-TW' : 'en';
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.innerHTML = t(el.dataset.i18n);
+  });
+  const lb = document.getElementById('lang-btn');
+  if (lb) lb.textContent = LANG === 'zh' ? 'EN' : '中文';
+  const tsl = document.getElementById('touch-summon-label');
+  if (tsl) tsl.textContent = LANG === 'zh' ? '爆發召喚' : 'BURST';
+  const sfxBtn = document.getElementById('sfx-btn');
+  if (sfxBtn) sfxBtn.textContent = sfxOn ? (LANG==='zh'?'🔊 音效':'🔊 SFX') : (LANG==='zh'?'🔇 音效':'🔇 SFX');
+  const bgmBtn = document.getElementById('bgm-btn');
+  if (bgmBtn) bgmBtn.textContent = LANG==='zh' ? '🎵 音樂' : '🎵 BGM';
+  const hub = document.getElementById('screen-hub');
+  if (hub && hub.classList.contains('active')) renderHub();
+}
+function toggleLang() {
+  LANG = LANG === 'en' ? 'zh' : 'en';
+  localStorage.setItem('vexLang', LANG);
+  applyI18N();
+  sfx('click');
+}
+// helper: pick name/desc from bilingual data object
+function dn(x) { return LANG==='zh' ? (x.name||x) : (x.name_en||x.name||x); }
+function dd(x) { return LANG==='zh' ? (x.desc||'') : (x.desc_en||x.desc||''); }
 
 // ═══════════════════════════════════════════════
 //  存檔 / META 資料
@@ -919,53 +1090,43 @@ function saveMeta() { localStorage.setItem('vexMeta2', JSON.stringify(META)); }
 //  遊戲資料
 // ═══════════════════════════════════════════════
 const CURSORS = [
-  // id, icon, name, desc, unlockCred, atkMul, fireRate倍率, special
-  { id:0, icon:'🖱️', name:'標準游標',   desc:'均衡型 | 穩定輸出',         unlockCred:0,  atkMul:1.0, spdMul:1.0,  special:'normal'  },
-  { id:1, icon:'⚡', name:'閃電游標',   desc:'×1.6攻速 | 傷害低 | 連射',  unlockCred:0,  atkMul:0.6, spdMul:1.6,  special:'rapid'   },
-  { id:2, icon:'💥', name:'重擊游標',   desc:'×2.2傷害 | 攻速慢 | 震波',  unlockCred:20, atkMul:2.2, spdMul:0.55, special:'heavy'   },
-  { id:3, icon:'🌀', name:'吸取游標',   desc:'每發回血 | 近距增幅',        unlockCred:25, atkMul:0.85,spdMul:1.0,  special:'drain'   },
-  { id:4, icon:'🎯', name:'狙擊游標',   desc:'穿透全場 | 極高傷害',        unlockCred:30, atkMul:2.5, spdMul:0.5,  special:'pierce'  },
-  { id:5, icon:'🔥', name:'爆炎游標',   desc:'範圍爆炸 | 波及周圍敵人',   unlockCred:40, atkMul:1.2, spdMul:0.85, special:'explode' },
+  { id:0, icon:'🖱️', name:'標準游標', name_en:'Standard',    desc:'均衡型 | 穩定輸出',        desc_en:'Balanced | Steady Output',         unlockCred:0,  atkMul:1.0, spdMul:1.0,  special:'normal'  },
+  { id:1, icon:'⚡', name:'閃電游標', name_en:'Lightning',   desc:'×1.6攻速 | 傷害低 | 連射', desc_en:'×1.6 fire rate | Low dmg | Rapid',  unlockCred:0,  atkMul:0.6, spdMul:1.6,  special:'rapid'   },
+  { id:2, icon:'💥', name:'重擊游標', name_en:'Heavy Strike',desc:'×2.2傷害 | 攻速慢 | 震波', desc_en:'×2.2 dmg | Slow rate | Shockwave',  unlockCred:20, atkMul:2.2, spdMul:0.55, special:'heavy'   },
+  { id:3, icon:'🌀', name:'吸取游標', name_en:'Drain',       desc:'每發回血 | 近距增幅',       desc_en:'Lifesteal | Bonus dmg at close range',unlockCred:25, atkMul:0.85,spdMul:1.0,  special:'drain'   },
+  { id:4, icon:'🎯', name:'狙擊游標', name_en:'Sniper',      desc:'穿透全場 | 極高傷害',       desc_en:'Pierce all enemies | Extreme dmg',  unlockCred:30, atkMul:2.5, spdMul:0.5,  special:'pierce'  },
+  { id:5, icon:'🔥', name:'爆炎游標', name_en:'Inferno',     desc:'範圍爆炸 | 波及周圍敵人',  desc_en:'AoE explosion | Splash damage',     unlockCred:40, atkMul:1.2, spdMul:0.85, special:'explode' },
 ];
 const DRIVES = [
-  { id:0, icon:'💿', name:'C:\\ 系統根目錄', desc:'入門 | 8波 | BOSS: ROOTKIT.EXE',    col:'#00ff41', waves:8,  bossHpX:1.0 },
-  { id:1, icon:'📀', name:'D:\\ 資料磁碟',   desc:'一般 | 10波 | BOSS: RANSOMWARE_v2',  col:'#00cfff', waves:10, bossHpX:1.5 },
-  { id:2, icon:'🖥️', name:'E:\\ 執行環境',   desc:'困難 | 12波 | BOSS: ZERO_DAY.BAT',   col:'#ffe600', waves:12, bossHpX:2.2 },
-  { id:3, icon:'⚠️', name:'F:\\ 核心系統',   desc:'極限 | 15波 | BOSS: KERNEL_DAEMON',  col:'#ff2244', waves:15, bossHpX:3.5 },
+  { id:0, icon:'💿', name:'C:\\ 系統根目錄', name_en:'C:\\ System Root', desc:'入門 | 8波 | BOSS: ROOTKIT.EXE',    desc_en:'Beginner | 8 Waves | BOSS: ROOTKIT.EXE',    col:'#00ff41', waves:8,  bossHpX:1.0 },
+  { id:1, icon:'📀', name:'D:\\ 資料磁碟',   name_en:'D:\\ Data Disk',   desc:'一般 | 10波 | BOSS: RANSOMWARE_v2',  desc_en:'Normal | 10 Waves | BOSS: RANSOMWARE_v2',  col:'#00cfff', waves:10, bossHpX:1.5 },
+  { id:2, icon:'🖥️', name:'E:\\ 執行環境',   name_en:'E:\\ Exec Env',    desc:'困難 | 12波 | BOSS: ZERO_DAY.BAT',   desc_en:'Hard | 12 Waves | BOSS: ZERO_DAY.BAT',     col:'#ffe600', waves:12, bossHpX:2.2 },
+  { id:3, icon:'⚠️', name:'F:\\ 核心系統',   name_en:'F:\\ Core System', desc:'極限 | 15波 | BOSS: KERNEL_DAEMON',  desc_en:'Extreme | 15 Waves | BOSS: KERNEL_DAEMON', col:'#ff2244', waves:15, bossHpX:3.5 },
 ];
 const UPGRADES = [
-  { id:'maxHp',     icon:'❤️', name:'緊急修復包',   desc:'最大HP +20',        max:5, cost:8  },
-  { id:'atkBonus',  icon:'⚔️', name:'攻擊強化',     desc:'基礎攻擊 +3',       max:5, cost:8  },
-  { id:'comboDecay',icon:'🔗', name:'COMBO延遲器',  desc:'COMBO更不易消退',   max:3, cost:12 },
-  { id:'startCred', icon:'💰', name:'初始資金',      desc:'開局帶 +10碎片',    max:3, cost:10 },
-  { id:'summonCD',  icon:'⚡', name:'召喚加速',      desc:'召喚冷卻-15%/級',   max:3, cost:15 },
+  { id:'maxHp',     icon:'❤️', name:'緊急修復包', name_en:'Emergency Patch',   desc:'最大HP +20',      desc_en:'Max HP +20',                max:5, cost:8  },
+  { id:'atkBonus',  icon:'⚔️', name:'攻擊強化',   name_en:'Attack Boost',      desc:'基礎攻擊 +3',     desc_en:'Base ATK +3',               max:5, cost:8  },
+  { id:'comboDecay',icon:'🔗', name:'COMBO延遲器', name_en:'COMBO Stabilizer',  desc:'COMBO更不易消退', desc_en:'COMBO decays slower',       max:3, cost:12 },
+  { id:'startCred', icon:'💰', name:'初始資金',    name_en:'Starting Credits',  desc:'開局帶 +10碎片',  desc_en:'Start with +10 shards',     max:3, cost:10 },
+  { id:'summonCD',  icon:'⚡', name:'召喚加速',    name_en:'Summon Rush',       desc:'召喚冷卻-15%/級', desc_en:'Summon CD -15% per level',  max:3, cost:15 },
 ];
 const ENEMIES = [
-  // 射擊型
-  { name:'木馬',     icon:'🐴', hp:18, atk:4,  spd:0.7, score:10, cred:2, col:'#ff6600', sz:15, atype:'bullet' },
-  { name:'蠕蟲',     icon:'🐛', hp:12, atk:3,  spd:1.2, score:8,  cred:1, col:'#ffe600', sz:12, atype:'bullet' },
-  { name:'間諜程式', icon:'👁️', hp:25, atk:6,  spd:0.5, score:15, cred:3, col:'#bf00ff', sz:17, atype:'bullet' },
-  { name:'勒索病毒', icon:'🔒', hp:35, atk:8,  spd:0.4, score:20, cred:4, col:'#ff2244', sz:19, atype:'bullet' },
-  { name:'殭屍進程', icon:'🧟', hp:45, atk:5,  spd:0.9, score:18, cred:3, col:'#00cfff', sz:21, atype:'bullet' },
-  { name:'後門程式', icon:'🚪', hp:55, atk:10, spd:0.3, score:30, cred:6, col:'#ff00aa', sz:23, atype:'bullet' },
-  // 衝撞型
-  { name:'記憶體溢出', icon:'💾', hp:60, atk:18, spd:0.0, score:25, cred:5, col:'#ff4400', sz:20, atype:'ram' },
-  { name:'緩衝區炸彈', icon:'🔴', hp:35, atk:22, spd:2.8, score:22, cred:5, col:'#ff0000', sz:14, atype:'ram' },
-  // 光柱型
-  { name:'掃描程式',   icon:'📡', hp:40, atk:14, spd:0.2, score:28, cred:6, col:'#00ffff', sz:18, atype:'laser' },
-  { name:'系統掃描器', icon:'🔭', hp:70, atk:20, spd:0.1, score:35, cred:7, col:'#ffff00', sz:22, atype:'laser' },
-  // 電磁脈衝型 — 短暫致盲（黑屏遮蓋）玩家視野
-  { name:'EMP炸彈',   icon:'🌐', hp:30, atk:8,  spd:0.5, score:22, cred:5, col:'#9900ff', sz:16, atype:'emp_burst' },
-  // 地雷型 — 靠近就爆炸
-  { name:'邏輯炸彈',  icon:'💿', hp:20, atk:25, spd:0.0, score:18, cred:4, col:'#ff6600', sz:14, atype:'mine' },
-  // 分裂型 — 死亡後分裂成2隻小病毒
-  { name:'病毒母體',  icon:'🦠', hp:80, atk:6,  spd:0.4, score:35, cred:8, col:'#44ff44', sz:24, atype:'split'    },
-  // 傳送型 — 蓄力後瞬移到玩家附近爆發近身
-  { name:'量子病毒',  icon:'🌀', hp:45, atk:16, spd:0.0, score:28, cred:6, col:'#aa00ff', sz:17, atype:'teleport'  },
-  // 護盾型 — 有護盾層，先破甲才能傷血
-  { name:'防火牆',    icon:'🛡️', hp:60, atk:10, spd:0.35,score:32, cred:7, col:'#4488ff', sz:20, atype:'armored'   },
-  // 群體型 — 死亡後釋放3顆追蹤彈
-  { name:'蜂巢進程',  icon:'🐝', hp:35, atk:8,  spd:0.6, score:25, cred:5, col:'#ffcc00', sz:16, atype:'swarm'     },
+  { name:'木馬',     name_en:'TROJAN',      icon:'🐴', hp:18, atk:4,  spd:0.7, score:10, cred:2, col:'#ff6600', sz:15, atype:'bullet' },
+  { name:'蠕蟲',     name_en:'WORM',        icon:'🐛', hp:12, atk:3,  spd:1.2, score:8,  cred:1, col:'#ffe600', sz:12, atype:'bullet' },
+  { name:'間諜程式', name_en:'SPYWARE',     icon:'👁️', hp:25, atk:6,  spd:0.5, score:15, cred:3, col:'#bf00ff', sz:17, atype:'bullet' },
+  { name:'勒索病毒', name_en:'RANSOMWARE',  icon:'🔒', hp:35, atk:8,  spd:0.4, score:20, cred:4, col:'#ff2244', sz:19, atype:'bullet' },
+  { name:'殭屍進程', name_en:'ZOMBIE.SYS',  icon:'🧟', hp:45, atk:5,  spd:0.9, score:18, cred:3, col:'#00cfff', sz:21, atype:'bullet' },
+  { name:'後門程式', name_en:'BACKDOOR',    icon:'🚪', hp:55, atk:10, spd:0.3, score:30, cred:6, col:'#ff00aa', sz:23, atype:'bullet' },
+  { name:'記憶體溢出', name_en:'MEM.OVERFLOW',icon:'💾', hp:60, atk:18, spd:0.0, score:25, cred:5, col:'#ff4400', sz:20, atype:'ram' },
+  { name:'緩衝區炸彈', name_en:'BUFBOMB',   icon:'🔴', hp:35, atk:22, spd:2.8, score:22, cred:5, col:'#ff0000', sz:14, atype:'ram' },
+  { name:'掃描程式',   name_en:'SCANNER',   icon:'📡', hp:40, atk:14, spd:0.2, score:28, cred:6, col:'#00ffff', sz:18, atype:'laser' },
+  { name:'系統掃描器', name_en:'SYS.SCAN',  icon:'🔭', hp:70, atk:20, spd:0.1, score:35, cred:7, col:'#ffff00', sz:22, atype:'laser' },
+  { name:'EMP炸彈',   name_en:'EMP.BOMB',   icon:'🌐', hp:30, atk:8,  spd:0.5, score:22, cred:5, col:'#9900ff', sz:16, atype:'emp_burst' },
+  { name:'邏輯炸彈',  name_en:'LOGIC.BOMB', icon:'💿', hp:20, atk:25, spd:0.0, score:18, cred:4, col:'#ff6600', sz:14, atype:'mine' },
+  { name:'病毒母體',  name_en:'VIRUS.QUEEN',icon:'🦠', hp:80, atk:6,  spd:0.4, score:35, cred:8, col:'#44ff44', sz:24, atype:'split'    },
+  { name:'量子病毒',  name_en:'QUANTUM.VIR',icon:'🌀', hp:45, atk:16, spd:0.0, score:28, cred:6, col:'#aa00ff', sz:17, atype:'teleport'  },
+  { name:'防火牆',    name_en:'FIREWALL',   icon:'🛡️', hp:60, atk:10, spd:0.35,score:32, cred:7, col:'#4488ff', sz:20, atype:'armored'   },
+  { name:'蜂巢進程',  name_en:'HIVE.PROC',  icon:'🐝', hp:35, atk:8,  spd:0.6, score:25, cred:5, col:'#ffcc00', sz:16, atype:'swarm'     },
 ];
 const BOSSES = [
   { name:'ROOTKIT.EXE',     icon:'💀', hp:150, atk:12, score:80,  cred:20, col:'#ff2244', sz:40 },
@@ -976,54 +1137,45 @@ const BOSSES = [
 
 // ── 爆發召喚事件池 ──
 const POOL_T1 = [
-  { icon:'🛡️', name:'防護程序', desc:'獲得15護盾持續5秒',    pow:'防禦', col:'#00cfff', fx:g=>{ g.shield+=15; g.shieldT=300; flt('+15🛡️','#00cfff'); } },
-  { icon:'🔋', name:'能量充填', desc:'回復25HP',              pow:'治療', col:'#00ff41', fx:g=>{ g.hp=Math.min(g.maxHp,g.hp+25); flt('+25HP','#00ff41'); } },
-  { icon:'⚡', name:'超速模式', desc:'攻速×2，持續4秒',      pow:'加速', col:'#ffe600', fx:g=>{ g.speedBuff=2.0; g.speedT=240; flt('×2速!','#ffe600'); } },
-  { icon:'💣', name:'定時炸彈', desc:'3秒後全場40傷害',       pow:'爆炸', col:'#ff6600', fx:g=>{ g.bombT=180; flt('炸彈⏱','#ff6600'); } },
-  { icon:'🧲', name:'電磁脈衝', desc:'敵人減速50%，4秒',     pow:'減速', col:'#bf00ff', fx:g=>{ g.empT=240; flt('EMP!','#bf00ff'); } },
+  { icon:'🛡️', name:'防護程序', name_en:'Defense Shield', desc:'獲得15護盾持續5秒',  desc_en:'+15 shield for 5s', pow_zh:'防禦', pow_en:'SHIELD', col:'#00cfff', fx:g=>{ g.shield+=15; g.shieldT=300; flt('+15🛡️','#00cfff'); } },
+  { icon:'🔋', name:'能量充填', name_en:'Power Restore',  desc:'回復25HP',            desc_en:'Restore 25 HP',     pow_zh:'治療', pow_en:'HEAL',   col:'#00ff41', fx:g=>{ g.hp=Math.min(g.maxHp,g.hp+25); flt('+25HP','#00ff41'); } },
+  { icon:'⚡', name:'超速模式', name_en:'Overclock',      desc:'攻速×2，持續4秒',    desc_en:'Fire rate ×2 for 4s',pow_zh:'加速', pow_en:'SPEED',  col:'#ffe600', fx:g=>{ g.speedBuff=2.0; g.speedT=240; flt('×2 SPD!','#ffe600'); } },
+  { icon:'💣', name:'定時炸彈', name_en:'Time Bomb',      desc:'3秒後全場40傷害',     desc_en:'40 AoE dmg after 3s',pow_zh:'爆炸', pow_en:'BOMB',   col:'#ff6600', fx:g=>{ g.bombT=180; flt('BOMB⏱','#ff6600'); } },
+  { icon:'🧲', name:'電磁脈衝', name_en:'EMP Pulse',      desc:'敵人減速50%，4秒',   desc_en:'Slow enemies 50% for 4s',pow_zh:'減速', pow_en:'SLOW', col:'#bf00ff', fx:g=>{ g.empT=240; flt('EMP!','#bf00ff'); } },
 ];
 const POOL_T2 = [
-  { icon:'☄️', name:'殞石衝擊', desc:'立即全場60傷害',        pow:'傷害', col:'#ff2244', fx:g=>{ g.ents.filter(e=>e.t==='E'||e.t==='B').forEach(e=>dmgE(e,60)); flt('殞石!','#ff2244'); } },
-  { icon:'🌐', name:'全域掃描', desc:'全場攻擊×3，3秒',       pow:'超強', col:'#ff00aa', fx:g=>{ g.atkX=3.0; g.atkXT=180; flt('×3攻擊!','#ff00aa'); } },
-  { icon:'💚', name:'緊急還原', desc:'完全回復HP+20護盾',     pow:'全回', col:'#00ff41', fx:g=>{ g.hp=g.maxHp; g.shield=20; g.shieldT=300; flt('完全回復!','#00ff41'); } },
-  { icon:'🎆', name:'連鎖爆炸', desc:'敵人數×10連鎖傷害',    pow:'連鎖', col:'#ff6600', fx:g=>{ const d=g.ents.filter(e=>e.t==='E'||e.t==='B').length*10; g.ents.filter(e=>e.t==='E'||e.t==='B').forEach(e=>dmgE(e,d)); flt(`連鎖${d}!`,'#ff6600'); } },
+  { icon:'☄️', name:'殞石衝擊', name_en:'Meteor Strike', desc:'立即全場60傷害',      desc_en:'60 AoE damage instantly', pow_zh:'傷害', pow_en:'NUKE',   col:'#ff2244', fx:g=>{ g.ents.filter(e=>e.t==='E'||e.t==='B').forEach(e=>dmgE(e,60)); flt('METEOR!','#ff2244'); } },
+  { icon:'🌐', name:'全域掃描', name_en:'Global Scan',   desc:'全場攻擊×3，3秒',     desc_en:'ATK ×3 for 3s',           pow_zh:'超強', pow_en:'POWER',  col:'#ff00aa', fx:g=>{ g.atkX=3.0; g.atkXT=180; flt('×3 ATK!','#ff00aa'); } },
+  { icon:'💚', name:'緊急還原', name_en:'Full Restore',  desc:'完全回復HP+20護盾',   desc_en:'Full HP + 20 shield',      pow_zh:'全回', pow_en:'FULL',   col:'#00ff41', fx:g=>{ g.hp=g.maxHp; g.shield=20; g.shieldT=300; flt('FULL HP!','#00ff41'); } },
+  { icon:'🎆', name:'連鎖爆炸', name_en:'Chain Explosion',desc:'敵人數×10連鎖傷害',  desc_en:'Enemy count ×10 chain dmg',pow_zh:'連鎖', pow_en:'CHAIN',  col:'#ff6600', fx:g=>{ const d=g.ents.filter(e=>e.t==='E'||e.t==='B').length*10; g.ents.filter(e=>e.t==='E'||e.t==='B').forEach(e=>dmgE(e,d)); flt(`CHAIN ${d}!`,'#ff6600'); } },
 ];
 const POOL_CHAOS = [
-  { icon:'🎲', name:'混沌協議', desc:'隨機強力效果（難以預測）', pow:'混沌', col:'#bf00ff', fx:g=>{
+  { icon:'🎲', name:'混沌協議', name_en:'Chaos Protocol', desc:'隨機強力效果（難以預測）', desc_en:'Random powerful effect (unpredictable)', pow_zh:'混沌', pow_en:'CHAOS', col:'#bf00ff', fx:g=>{
     const r=Math.random();
     if(r<0.25){g.hp=Math.max(1,g.hp-30);flt('-30HP!','#ff2244');}
-    else if(r<0.6){g.ents.filter(e=>e.t==='E'||e.t==='B').forEach(e=>dmgE(e,80));flt('混沌爆發!','#bf00ff');}
-    else{g.hp=g.maxHp;g.atkX=2;g.atkXT=300;flt('混沌祝福!','#bf00ff');}
+    else if(r<0.6){g.ents.filter(e=>e.t==='E'||e.t==='B').forEach(e=>dmgE(e,80));flt('CHAOS!','#bf00ff');}
+    else{g.hp=g.maxHp;g.atkX=2;g.atkXT=300;flt('BLESSING!','#bf00ff');}
   }},
 ];
 
 // ═══════════════════════════════════════════════
 //  開機序列
 // ═══════════════════════════════════════════════
-const BOOT_LINES = [
-  '> 初始化 VIRUS.EXE v2.0...',
-  '> 載入防毒核心........... [OK]',
-  '> 掃描系統磁碟........... [4個已偵測]',
-  '> 病毒資料庫更新......... [9種病毒]',
-  '> 爆發召喚引擎........... [已解鎖]',
-  '> 存檔點系統............. [已啟用]',
-  '> 場外升級模組........... [已連線]',
-  '> 音效引擎 (Web Audio)... [已載入]',
-  '> 警告: 系統感染率 97.3%',
-  '> 準備就緒。祝您好運。',
-];
+function getBootLines() { return t('boot_lines'); }
 
 function runBoot() {
+  applyI18N();
   const log = document.getElementById('boot-log');
   let i = 0;
+  const lines = getBootLines();
   const next = () => {
-    if (i >= BOOT_LINES.length) {
+    if (i >= lines.length) {
       setTimeout(() => document.getElementById('btn-start').style.display = 'block', 300);
       return;
     }
     const div = document.createElement('div');
     div.className = 'boot-log-line';
-    div.textContent = BOOT_LINES[i++];
+    div.textContent = lines[i++];
     log.appendChild(div);
     setTimeout(next, 180 + Math.random() * 140);
   };
@@ -1167,7 +1319,7 @@ function renderHub() {
     const unlocked = META.credits >= c.unlockCred || i < 2;
     const div = document.createElement('div');
     div.className = 'cursor-card' + (i === selCursor ? ' sel' : '') + (!unlocked ? ' locked' : '');
-    div.innerHTML = `<div class="cursor-icon">${c.icon}</div><div class="cursor-name">${c.name}</div><div class="cursor-desc">${c.desc}</div>`;
+    div.innerHTML = `<div class="cursor-icon">${c.icon}</div><div class="cursor-name">${dn(c)}</div><div class="cursor-desc">${dd(c)}</div>`;
     div.onclick = () => { if (unlocked) { selCursor = i; sfx('click'); renderHub(); } };
     cg.appendChild(div);
   });
@@ -1185,9 +1337,9 @@ function renderHub() {
     div.innerHTML = `
       <div class="drive-left">
         <div class="drive-icon">${d.icon}</div>
-        <div><div class="drive-name">${d.name}</div><div class="drive-desc">${d.desc}</div></div>
+        <div><div class="drive-name">${dn(d)}</div><div class="drive-desc">${dd(d)}</div></div>
       </div>
-      <div class="dbadge ${saved?'b-save':cleared?'b-clr':'b-new'}">${saved?'有存檔':cleared?'已通關':'新'}</div>`;
+      <div class="dbadge ${saved?'b-save':cleared?'b-clr':'b-new'}">${saved?t('badge_saved'):cleared?t('badge_cleared'):t('badge_new')}</div>`;
     if (unlocked) div.onclick = () => { selDrive = i; sfx('click'); renderHub(); };
     dl.appendChild(div);
   });
@@ -1204,7 +1356,7 @@ function renderHub() {
     div.innerHTML = `
       <div class="upg-left">
         <div class="upg-icon">${u.icon}</div>
-        <div><div class="upg-iname">${u.name} ${maxed?'[MAX]':'['+lv+'/'+u.max+']'}</div><div class="upg-idesc">${u.desc}</div></div>
+        <div><div class="upg-iname">${dn(u)} ${maxed?'[MAX]':'['+lv+'/'+u.max+']'}</div><div class="upg-idesc">${dd(u)}</div></div>
       </div>
       <button class="upg-btn" ${!canBuy?'disabled':''} onclick="buyUpgrade('${u.id}',${u.cost})">
         ${maxed?'MAX':'💾'+u.cost}
@@ -1217,22 +1369,19 @@ function renderHub() {
   const effAtk  = Math.round(baseAtk * cur.atkMul);
   const fireMs  = Math.round(28/cur.spdMul * (1000/60));
   const specialDesc = {
-    normal:  '普通子彈，穩定追蹤',
-    rapid:   '3連散射，每發傷害低',
-    heavy:   '命中產生震波環，波及周圍',
-    drain:   '命中回血，近距離傷害+50%',
-    pierce:  '子彈穿透全場所有敵人',
-    explode: '命中爆炸，波及80px範圍🔥',
+    normal:  t('special_normal'), rapid:   t('special_rapid'),
+    heavy:   t('special_heavy'),  drain:   t('special_drain'),
+    pierce:  t('special_pierce'), explode: t('special_explode'),
   };
   const hs = document.getElementById('hub-stats');
   hs.innerHTML = `
-    <div class="stat-row"><span class="slabel">已選游標</span><span class="sval">${cur.icon} ${cur.name}</span></div>
-    <div class="stat-row"><span class="slabel">⚔ 有效攻擊</span><span class="sval" style="color:#ffe600">${effAtk}</span></div>
-    <div class="stat-row"><span class="slabel">⚡ 射擊間隔</span><span class="sval">${fireMs}ms</span></div>
-    <div class="stat-row"><span class="slabel">✨ 特殊效果</span><span class="sval" style="color:#00cfff;font-size:12px">${specialDesc[cur.special]||'—'}</span></div>
-    <div class="stat-row"><span class="slabel">最大HP</span><span class="sval">${80+(META.upgrades.maxHp||0)*20}</span></div>
-    <div class="stat-row"><span class="slabel">總局數</span><span class="sval">${META.stats.runs}</span></div>
-    <div class="stat-row"><span class="slabel">最高分</span><span class="sval">${META.stats.bestScore}</span></div>`;
+    <div class="stat-row"><span class="slabel">${t('stat_cursor')}</span><span class="sval">${cur.icon} ${dn(cur)}</span></div>
+    <div class="stat-row"><span class="slabel">${t('stat_atk')}</span><span class="sval" style="color:#ffe600">${effAtk}</span></div>
+    <div class="stat-row"><span class="slabel">${t('stat_firerate')}</span><span class="sval">${fireMs}ms</span></div>
+    <div class="stat-row"><span class="slabel">${t('stat_special')}</span><span class="sval" style="color:#00cfff;font-size:12px">${specialDesc[cur.special]||'—'}</span></div>
+    <div class="stat-row"><span class="slabel">${t('stat_maxhp')}</span><span class="sval">${80+(META.upgrades.maxHp||0)*20}</span></div>
+    <div class="stat-row"><span class="slabel">${t('stat_runs')}</span><span class="sval">${META.stats.runs}</span></div>
+    <div class="stat-row"><span class="slabel">${t('stat_best')}</span><span class="sval">${META.stats.bestScore}</span></div>`;
 }
 
 function buyUpgrade(id, cost) {
@@ -1279,17 +1428,16 @@ function _diBeep(urgent) {
 function showDriveBoot(drv, done) {
   let ov = document.getElementById('driveIntro');
   if (!ov) { ov = document.createElement('div'); ov.id = 'driveIntro'; document.body.appendChild(ov); }
-  const threatLv = drv.id >= 3 ? '極危 ██████' : drv.id >= 2 ? '高危 ████░░' : drv.id >= 1 ? '中等 ███░░░' : '低危 ██░░░░';
+  const threatLvs = t('threat_levels');
+  const threatLv = threatLvs[Math.min(drv.id, 3)];
   const threatCol = drv.id >= 3 ? 'var(--red)' : drv.id >= 2 ? 'var(--yellow)' : drv.id >= 1 ? 'var(--blue)' : 'var(--green)';
-  ov.innerHTML = `<div class="di-scanline"></div><div class="di-title">${drv.icon} ${drv.name}</div><div class="di-sub" style="color:${threatCol}">威脅等級：${threatLv}</div><div class="di-log" id="di-log"></div><div class="di-scanbar"><div class="di-scanfill" id="di-fill"></div></div><div class="di-pct" id="di-pct">掃描中... 0%</div><div class="di-hint">[ 點擊跳過 ]</div>`;
+  ov.innerHTML = `<div class="di-scanline"></div><div class="di-title">${drv.icon} ${dn(drv)}</div><div class="di-sub" style="color:${threatCol}">${t('threat_label')}${threatLv}</div><div class="di-log" id="di-log"></div><div class="di-scanbar"><div class="di-scanfill" id="di-fill"></div></div><div class="di-pct" id="di-pct">${tf('scan_progress',0)}</div><div class="di-hint">${t('di_skip')}</div>`;
   ov.classList.remove('hide'); ov.classList.add('show');
-  sfx('boss_enter'); // 登場音效
+  sfx('boss_enter');
+  const diExtraLines = t('di_lines');
   const lines = [
-    drv.desc,
-    '載入病毒特徵碼庫.......... [OK]',
-    '分析磁碟扇區結構........... [完成]',
-    '偵測到惡意進程 — 防禦矩陣啟動',
-    '警告: 入侵已開始 — 系統緊急告急',
+    dd(drv),
+    diExtraLines[1], diExtraLines[2], diExtraLines[3], diExtraLines[4],
   ];
   const logEl = document.getElementById('di-log');
   const fillEl = document.getElementById('di-fill');
@@ -1310,14 +1458,14 @@ function showDriveBoot(drv, done) {
         if (dismissed) { clearInterval(bar); return; }
         p = Math.min(100, p + 2);
         fillEl.style.width = p + '%';
-        pctEl.textContent = '掃描中... ' + p + '%';
+        pctEl.textContent = tf('scan_progress', p);
         if (p % 20 === 0) _diBeep(false);
-        if (p >= 100) { clearInterval(bar); pctEl.textContent = '掃描完成 — 進入磁碟'; _diBeep(true); setTimeout(dismiss, 500); }
+        if (p >= 100) { clearInterval(bar); pctEl.textContent = t('scan_complete'); _diBeep(true); setTimeout(dismiss, 500); }
       }, 20);
       return;
     }
     const lineText = lines[i++];
-    const isUrgent = lineText.startsWith('警告');
+    const isUrgent = lineText.startsWith('警告') || lineText.toUpperCase().startsWith('> WARNING');
     const div = document.createElement('div');
     div.textContent = lineText; // 先放真實文字佔位
     logEl.appendChild(div);
@@ -1325,7 +1473,7 @@ function showDriveBoot(drv, done) {
     if (isUrgent) div.style.color = 'var(--red)';
     _glitchResolve(div, lineText); // 亂碼 → resolve 動畫
     fillEl.style.width = (i / lines.length * 55) + '%';
-    pctEl.textContent = '掃描中... ' + Math.round(i / lines.length * 55) + '%';
+    pctEl.textContent = tf('scan_progress', Math.round(i / lines.length * 55));
     setTimeout(addLine, 240 + Math.random() * 180);
   };
   setTimeout(addLine, 280);
@@ -1594,7 +1742,7 @@ function update() {
           const lx=Math.cos(e.laserAngle),ly=Math.sin(e.laserAngle);
           const t2=(G.px-e.x)*lx+(G.py-e.y)*ly;
           if(t2>0&&t2<600){const px2=e.x+lx*t2,py2=e.y+ly*t2;if(Math.hypot(G.px-px2,G.py-py2)<16){ playerHit(e.atk*0.04); if(G.hp<=0)return; }}
-          if(e.tp?.name==='系統掃描器')e.laserAngle+=0.012;
+          if(e.tp?.name_en==='SYS.SCAN'||e.tp?.name==='系統掃描器')e.laserAngle+=0.012;
           if(e.laserTimer>=90){e.laserOn=false;e.laserState='rest';e.laserTimer=0;}
         } else { e.laserOn=false; if(e.laserTimer>=70){e.laserState='aim';e.laserTimer=0;} }
         e.shootT=(e.shootT||0)+1; if(e.shootT>=120){e.shootT=0;fireEBullet(e);}
@@ -1905,7 +2053,7 @@ function dmgE(e, d) {
           col:'#88ff88', sz:10, shootT:30, shootRate:120, isSplitChild:true, atype:'bullet',
         });
       }
-      flt('分裂!','#44ff44',e.x,e.y);
+      flt(t('flt_split'),'#44ff44',e.x,e.y);
     }
     // 群體型：死亡後釋放3顆追蹤彈
     if (eAtype==='swarm') {
@@ -1918,7 +2066,7 @@ function dmgE(e, d) {
           col:'#ffcc00', bsz:6,
         });
       }
-      flt('蜂群!','#ffcc00',e.x,e.y);
+      flt(t('flt_swarm'),'#ffcc00',e.x,e.y);
     }
     // COMBO
     G.combo = Math.min(G.maxCombo, G.combo+1);
@@ -1943,7 +2091,7 @@ function updateHUD() {
   document.getElementById('hud-hp').textContent = `${Math.ceil(G.hp)}/${G.maxHp}`;
   document.getElementById('hud-hpbar').style.width = `${(G.hp/G.maxHp)*100}%`;
   document.getElementById('hud-atk').textContent = Math.round(G.atk * comboMul() * G.atkX);
-  document.getElementById('hud-drive').textContent = G.drv.name.split(' ')[0];
+  document.getElementById('hud-drive').textContent = dn(G.drv).split(' ')[0];
   document.getElementById('hud-score').textContent = G.score;
   document.getElementById('hud-cred').textContent  = G.cred;
   // 存檔點
@@ -1954,7 +2102,7 @@ function updateHUD() {
     pip.className='cppip'+(G.cpDone.includes(cp)?' reached':G.wave-1===cp?' cur':'');
     cpp.appendChild(pip);
   });
-  document.getElementById('cp-status').textContent = G.cpDone.length ? '✓ 已存檔' : '';
+  document.getElementById('cp-status').textContent = G.cpDone.length ? t('cp_saved') : '';
 }
 
 function refreshComboPips() {
@@ -1985,13 +2133,13 @@ function updateSummonBtn() {
   G.summonReady = ready;
   const isMax = ready && G.combo>=G.maxCombo;
   if (isMax) {
-    btn.className='maxr'; hint.textContent='⚡ MAX COMBO — 超級召喚可用！';
+    btn.className='maxr'; hint.textContent=t('summon_ready_max');
     tbtn.className='maxr';
   } else if (ready) {
-    btn.className='ready'; hint.textContent=`COMBO ×${mul.toFixed(1)} — 爆發召喚可用！`;
+    btn.className='ready'; hint.textContent=tf('summon_ready', mul.toFixed(1));
     tbtn.className='ready';
   } else {
-    btn.className=''; hint.textContent=G.summonCD>0?`冷卻中… (${Math.ceil(G.summonCD/60)}s)`:`累積COMBO至×2.0解鎖（目前×${mul.toFixed(1)}）`;
+    btn.className=''; hint.textContent=G.summonCD>0?tf('summon_cooldown',Math.ceil(G.summonCD/60)):tf('summon_locked',mul.toFixed(1));
     tbtn.className='';
   }
 }
@@ -2023,15 +2171,15 @@ function render() {
       ctx.font='bold 20px VT323,monospace';
       ctx.fillStyle=`rgba(255,34,68,${wPulse})`;
       ctx.shadowColor='#ff2244'; ctx.shadowBlur=16;
-      ctx.fillText(`WAVE ${G.wave} / ${G.totalWaves}  ⚠ 下一波: BOSS`, cv.width/2, cv.height/2 - 10);
+      ctx.fillText(tf('wave_boss_next',G.wave,G.totalWaves), cv.width/2, cv.height/2 - 10);
       ctx.shadowBlur=0;
       ctx.font='14px VT323,monospace'; ctx.fillStyle='rgba(255,68,68,.55)';
-      ctx.fillText('準備面對最終威脅', cv.width/2, cv.height/2 + 14);
+      ctx.fillText(t('wave_boss_ready'), cv.width/2, cv.height/2 + 14);
     } else {
       ctx.font='24px VT323,monospace';
       ctx.fillStyle=`rgba(0,255,65,${wPulse})`;
       ctx.shadowColor='#00ff41'; ctx.shadowBlur=12;
-      ctx.fillText(`WAVE ${G.wave} / ${G.totalWaves}`, cv.width/2, cv.height/2 - 8);
+      ctx.fillText(tf('wave_label',G.wave,G.totalWaves), cv.width/2, cv.height/2 - 8);
       ctx.shadowBlur=0;
       // 進度條
       const pw = 200, ph = 4, px = cv.width/2 - pw/2, py2 = cv.height/2 + 8;
@@ -2318,7 +2466,7 @@ function render() {
     const eIcon = e.t==='B' ? e.bd.icon : (e.tp?.icon || e.icon || '🦠');
     ctx.font=`${e.sz}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText(eIcon, e.x, e.y);
-    if(e.t==='B'){ctx.font='14px VT323,monospace';ctx.fillStyle=e.col;ctx.fillText(e.bd.name,e.x,e.y+e.sz+18);}
+    if(e.t==='B'){ctx.font='14px VT323,monospace';ctx.fillStyle=e.col;ctx.fillText(e.bd.name,e.x,e.y+e.sz+18);} // Boss name is already English
     ctx.textAlign='left'; ctx.textBaseline='alphabetic';
   });
 
@@ -2379,7 +2527,7 @@ function render() {
     ctx.font='48px VT323,monospace'; ctx.fillStyle='#39ff14';
     ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.shadowColor='#00ff41'; ctx.shadowBlur=20;
-    ctx.fillText('⏸  PAUSED  —  SPACE 繼續', cv.width/2, cv.height/2);
+    ctx.fillText(t('paused_text'), cv.width/2, cv.height/2);
     ctx.shadowBlur=0; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
   }
 }
@@ -2409,8 +2557,8 @@ function openSummon() {
   const ch   = document.getElementById('summon-choices');
   box.className = isMax?'maxpow':'';
   title.style.color = isMax?'var(--comboMax)':'var(--combo1)';
-  title.textContent = isMax?`⚡ MAX COMBO 超級召喚！`:`⚡ 爆發召喚 ×${comboMul().toFixed(1)}`;
-  sub.textContent = '選擇一個效果觸發  [ 1 / 2 / 3 ]';
+  title.textContent = isMax ? t('summon_max') : tf('summon_normal', comboMul().toFixed(1));
+  sub.textContent = t('summon_sub');
   let pool;
   if(isMax) pool=[...POOL_T2,...POOL_CHAOS];
   else if(G.combo>=3) pool=[...POOL_T1,...POOL_T2];
@@ -2420,7 +2568,7 @@ function openSummon() {
   _summonPicks.forEach((ev,i)=>{
     const d=document.createElement('div');
     d.className='schoice';
-    d.innerHTML=`<div class="schoice-icon">${ev.icon}</div><div style="flex:1"><div class="schoice-name">${ev.name} <span style="font-size:.7em;opacity:.5">[${i+1}]</span></div><div class="schoice-desc">${ev.desc}</div></div><div class="schoice-pow" style="color:${ev.col}">${ev.pow}</div>`;
+    d.innerHTML=`<div class="schoice-icon">${ev.icon}</div><div style="flex:1"><div class="schoice-name">${dn(ev)} <span style="font-size:.7em;opacity:.5">[${i+1}]</span></div><div class="schoice-desc">${dd(ev)}</div></div><div class="schoice-pow" style="color:${ev.col}">${LANG==='zh'?(ev.pow_zh||ev.pow):(ev.pow_en||ev.pow)}</div>`;
     d.onclick=()=>_pickSummon(ev);
     ch.appendChild(d);
   });
@@ -2437,11 +2585,11 @@ function showCPPopup(cpIdx) {
   CPSAVE={ driveId:G.driveId, wave:G.wave, hp:G.hp, score:G.score, cred:G.cred, kills:G.kills, cpDone:[...G.cpDone] };
   sfx('save');
   const hpR = Math.floor(G.maxHp*0.2);
-  document.getElementById('cp-reward').textContent=`✓ 存檔完成！+${hpR} HP 補給`;
+  document.getElementById('cp-reward').textContent=tf('cp_reward', hpR);
   const btns=document.getElementById('cp-btns');
   btns.innerHTML='';
   const btn=document.createElement('button');
-  btn.className='cpbtn save'; btn.textContent='[ 儲存並繼續 ]';
+  btn.className='cpbtn save'; btn.textContent=t('cp_save');
   btn.onclick=()=>{
     G.hp=Math.min(G.maxHp,G.hp+hpR);
     G.paused=false;
@@ -2463,9 +2611,9 @@ function triggerGameOver() {
   if(G.score>META.stats.bestScore) META.stats.bestScore=G.score;
   META.credits+=G.cred;
   saveMeta();
-  document.getElementById('go-stats').textContent=`Wave ${G.wave}/${G.totalWaves} | 擊殺 ${G.kills} | COMBO ×${comboMul().toFixed(1)}`;
-  document.getElementById('go-score').textContent=`分數: ${G.score}`;
-  document.getElementById('go-bonus').textContent=`+${G.cred} 資料碎片已獲得`;
+  document.getElementById('go-stats').textContent=tf('go_stats',G.wave,G.totalWaves,G.kills,comboMul().toFixed(1));
+  document.getElementById('go-score').textContent=tf('score_label',G.score);
+  document.getElementById('go-bonus').textContent=tf('cred_gained',G.cred);
   document.getElementById('retry-btn').style.display = CPSAVE&&CPSAVE.driveId===selDrive?'block':'none';
   document.getElementById('go-pop').classList.add('on');
 }
@@ -2481,9 +2629,9 @@ function triggerVictory() {
   META.stats.totalScore+=G.score;
   if(G.score>META.stats.bestScore) META.stats.bestScore=G.score;
   saveMeta();
-  document.getElementById('win-stats').textContent=`Wave ${G.wave-1}/${G.totalWaves} | 擊殺 ${G.kills} | ${G.drv.name}`;
-  document.getElementById('win-score').textContent=`分數: ${G.score}`;
-  document.getElementById('win-bonus').textContent=`通關獎勵 +15碎片！總計 +${totalCred}`;
+  document.getElementById('win-stats').textContent=tf('win_stats',G.wave-1,G.totalWaves,G.kills,dn(G.drv));
+  document.getElementById('win-score').textContent=tf('score_label',G.score);
+  document.getElementById('win-bonus').textContent=tf('win_bonus',totalCred);
   document.getElementById('win-pop').classList.add('on');
 }
 

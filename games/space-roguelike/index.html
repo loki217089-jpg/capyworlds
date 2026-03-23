@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6193561251326215" crossorigin="anonymous"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>虛空領航員 — Void Navigator</title>
@@ -261,6 +262,16 @@ const DIFFICULTIES = [
 ];
 let difficulty = 1; // 0=Scout … 4=Nightmare
 
+// ─── RELICS ───────────────────────────────────────────────────────────────────
+const RELIC_DEFS = [
+  {id:'photon_core',  name:'光子核心',  desc:'子彈速度 +50%',          color:'#00ccff'},
+  {id:'nanobots',     name:'奈米機器人',desc:'每6秒自動修復1點船殼',   color:'#44ff88'},
+  {id:'energy_lens',  name:'能量透鏡',  desc:'每次射擊額外發射1顆子彈',color:'#ffdd44'},
+  {id:'revenge_pod',  name:'復仇艙',    desc:'受傷時反射4發子彈',      color:'#ff4488'},
+  {id:'void_crystal', name:'虛空晶石',  desc:'殺敵後30%機率掉落晶體',  color:'#aa44ff'},
+  {id:'overclock',    name:'超頻芯片',  desc:'射速 +30%',              color:'#ff8800'},
+];
+
 const WARP_CORE_POSITIONS = [
   {x:2200, y:1000},    // 近 — 適合前幾局達成
   {x:4800, y:-2400},   // 中距離
@@ -490,8 +501,12 @@ function createPlayer() {
     returnCharges: 0,
     warpFlash: 0,   // countdown timer for warp flash effect
     // Weapon system
-    weaponMode: 'laser',      // 'laser' | 'scatter' | 'heavy'
+    weaponMode: 'laser',      // 'laser' | 'scatter' | 'heavy' | 'missile' | 'wave'
     unlockedWeapons: ['laser'],
+    waveCharge: 0,            // wave cannon charge progress (0-1)
+    // Relics
+    relics: [],               // array of relic IDs collected this run
+    nanoTimer: 0,             // nanobots relic timer
     // Kill combo
     killCombo: 0,
     killComboTimer: 0,
@@ -542,26 +557,52 @@ function generateChunk(cx, cy) {
   const baseCount = baseDist < 0.1 ? 3 : Math.min(14, 3 + Math.floor(rng()*(5+tier*2)));
   const numEnemies = Math.max(1, Math.round(baseCount * dConf.countMult));
   const types = ['drone','pirate','alien','gunship'];
+  // New enemy types introduced at higher tiers
+  const advTypes = tier >= 2 ? ['drone','pirate','alien','gunship','kamikaze'] : types;
+  const allTypes = tier >= 3 ? [...advTypes, 'shielder'] : advTypes;
+  // Carrier: large capital ship that spawns drones, appears at tier 3+
+  const hasCarrier = tier >= 3 && rng() < 0.30;
   for (let i = 0; i < numEnemies; i++) {
     const ex = ox + rng()*CHUNK;
     const ey = oy + rng()*CHUNK;
-    // typeIdx progresses with tier: drone only at 0, all 4 by tier 3
-    const typeIdx = Math.floor(rng()*Math.min(4, 1+tier));
-    const t = types[typeIdx];
+    // typeIdx progresses with tier: drone only at 0, all types by tier 3
+    const typePool = tier <= 1 ? types : allTypes;
+    const typeIdx = Math.floor(rng()*Math.min(typePool.length, 1+tier+1));
+    const t = typePool[Math.min(typeIdx, typePool.length-1)];
     const hpScale  = (1 + tier*0.15) * dConf.hpMult;
     const dmgScale = (1 + tier*0.13) * dConf.dmgMult;
     let hp, speed, dmg, fr, r, color;
-    if (t==='drone')   {hp=30*hpScale; speed=100; dmg=10*dmgScale; fr=0;   r=14; color='#88aacc';}
-    if (t==='pirate')  {hp=55*hpScale; speed=135; dmg=12*dmgScale; fr=1.8; r=15; color='#ff8833';}
-    if (t==='alien')   {hp=80*hpScale; speed=155; dmg=20*dmgScale; fr=1.4; r=17; color='#aa44ff';}
-    if (t==='gunship') {hp=110*hpScale;speed=115; dmg=15*dmgScale; fr=1.0; r=19; color='#ff3355';}
+    if (t==='drone')    {hp=30*hpScale;  speed=100; dmg=10*dmgScale; fr=0;   r=14; color='#88aacc';}
+    if (t==='pirate')   {hp=55*hpScale;  speed=135; dmg=12*dmgScale; fr=1.8; r=15; color='#ff8833';}
+    if (t==='alien')    {hp=80*hpScale;  speed=155; dmg=20*dmgScale; fr=1.4; r=17; color='#aa44ff';}
+    if (t==='gunship')  {hp=110*hpScale; speed=115; dmg=15*dmgScale; fr=1.0; r=19; color='#ff3355';}
+    if (t==='kamikaze') {hp=25*hpScale;  speed=210; dmg=45*dmgScale; fr=0;   r=11; color='#ff2200';}
+    if (t==='shielder') {hp=90*hpScale;  speed=95;  dmg=14*dmgScale; fr=1.6; r=18; color='#4488ff';}
+    const shieldMax = t==='shielder' ? Math.ceil(50*hpScale) : 0;
     enemies.push({x:ex,y:ey,vx:0,vy:0,type:t,hp:Math.ceil(hp),maxHp:Math.ceil(hp),
       speed,dmg:Math.ceil(dmg),fireRate:fr,fireTimer:rng()*fr,r,color,
       state:'patrol',patrolAngle:rng()*Math.PI*2,patrolTimer:0,
       angle:rng()*Math.PI*2,alive:true,
-      // new attack fields
+      // attack fields
       shotCount:0, charging:false, chargeCD:0, chargeDur:0,
-      circleAngle:rng()*Math.PI*2, burstLeft:0});
+      circleAngle:rng()*Math.PI*2, burstLeft:0,
+      // shielder fields
+      shield: shieldMax, maxShield: shieldMax, shieldRegen: 0});
+  }
+  // Spawn carrier if applicable
+  if (hasCarrier) {
+    const ex = ox + 200 + rng()*(CHUNK-400);
+    const ey = oy + 200 + rng()*(CHUNK-400);
+    const hpScale = (1 + tier*0.2) * dConf.hpMult;
+    const dmgScale = (1 + tier*0.15) * dConf.dmgMult;
+    enemies.push({x:ex,y:ey,vx:0,vy:0,type:'carrier',
+      hp:Math.ceil(280*hpScale),maxHp:Math.ceil(280*hpScale),
+      speed:60,dmg:Math.ceil(18*dmgScale),fireRate:2.5,fireTimer:2.5,r:30,color:'#cc4400',
+      state:'patrol',patrolAngle:rng()*Math.PI*2,patrolTimer:0,
+      angle:rng()*Math.PI*2,alive:true,
+      shotCount:0,charging:false,chargeCD:0,chargeDur:0,
+      circleAngle:rng()*Math.PI*2,burstLeft:0,
+      droneSpawnTimer:8+rng()*4,droneSpawnCD:8});
   }
 
   const items = [];
@@ -572,6 +613,12 @@ function generateChunk(cx, cy) {
     const iy = oy + rng()*CHUNK;
     const it = itemTypes[Math.floor(rng()*itemTypes.length)];
     items.push({x:ix,y:iy,type:it,r:12,bobOffset:rng()*Math.PI*2,alive:true});
+  }
+  // Rare relic caches (3% per chunk, only at tier 1+)
+  if (tier >= 1 && rng() < 0.03) {
+    const ix = ox + 200 + rng()*(CHUNK-400);
+    const iy = oy + 200 + rng()*(CHUNK-400);
+    items.push({x:ix,y:iy,type:'relic',r:14,bobOffset:rng()*Math.PI*2,alive:true});
   }
 
   // Warp cores at fixed positions
@@ -681,7 +728,8 @@ window.addEventListener('keydown', e => {
     if (wl.length > 1) {
       const idx = wl.indexOf(player.weaponMode);
       player.weaponMode = wl[(idx+1) % wl.length];
-      const names = {laser:'雷射砲', scatter:'散射炮', heavy:'重砲'};
+      player.waveCharge = 0;
+      const names = {laser:'雷射砲', scatter:'散射炮', heavy:'重砲', missile:'導彈砲', wave:'波動砲'};
       setStatus(`切換武器：${names[player.weaponMode]}`);
     }
   }
@@ -802,6 +850,20 @@ function renderShop() {
       player.unlockedWeapons.push('heavy');
       player.weaponMode='heavy';
       setStatus('重砲解鎖！按 Q 切換武器');
+    }});
+  }
+  if (!player.unlockedWeapons.includes('missile')) {
+    upgrades.push({name:'導彈砲 — 追蹤飛彈 爆炸範圍傷害 (按Q切換)',cost:{ore:60,crystal:6},req:()=>true,buy:()=>{
+      player.unlockedWeapons.push('missile');
+      player.weaponMode='missile';
+      setStatus('導彈砲解鎖！按 Q 切換武器');
+    }});
+  }
+  if (!player.unlockedWeapons.includes('wave')) {
+    upgrades.push({name:'波動砲 — 蓄力扇形衝擊波 超廣角 (按Q切換)',cost:{ore:80,crystal:10},req:()=>true,buy:()=>{
+      player.unlockedWeapons.push('wave');
+      player.weaponMode='wave';
+      setStatus('波動砲解鎖！按 Q 切換武器');
     }});
   }
   // Consumables (always visible if needed)
@@ -934,8 +996,11 @@ function getPlayerFireRate() {
   let fr = FIRE_RATE;
   if (player.combatExpert > 0) fr *= (1 - player.combatExpert*0.07);
   fr *= (1 - metaLevel('fireBonus')*0.15);
+  if (player.relics.includes('overclock')) fr *= 0.70;
   return Math.max(fr, 0.08);
 }
+function hasRelic(id) { return player.relics.includes(id); }
+function getBulletSpeed() { return BULLET_SPEED * (hasRelic('photon_core') ? 1.5 : 1); }
 
 function updatePlayer(dt) {
   // Engine level scales thrust (+15% per level above 1)
@@ -1018,34 +1083,74 @@ function updatePlayer(dt) {
     if (player.killComboTimer <= 0) { player.killCombo = 0; player.killComboMult = 1; }
   }
 
+  // Wave weapon: charge while holding mouse, fire on release
+  if (player.weaponMode === 'wave') {
+    if (mouse.down && player.fireTimer<=0) {
+      player.waveCharge = Math.min(1, (player.waveCharge||0) + dt/1.2);
+    } else if (!mouse.down && player.waveCharge > 0.1) {
+      const wdmg = getPlayerDmg();
+      const wang = player.angle;
+      const shotCount = 5 + Math.floor(player.waveCharge * 7);
+      const spreadAngle = 0.55 + player.waveCharge * 0.75;
+      for (let si = 0; si < shotCount; si++) {
+        const a = wang - spreadAngle/2 + (si/(shotCount-1))*spreadAngle;
+        spawnBullet(player.x, player.y, a, BULLET_SPEED*(0.65+player.waveCharge*0.35), wdmg*(1.0+player.waveCharge*1.8), 'player');
+      }
+      audio.play('shoot', 0.7, 0.45);
+      for (let k=0;k<10;k++) {
+        const ta=wang+(Math.random()-0.5)*spreadAngle;
+        spawnParticle(player.x,player.y,Math.cos(ta)*220,Math.sin(ta)*220,0.28,'#44ffaa',5+player.waveCharge*5);
+      }
+      player.fireTimer = 0.8 + player.waveCharge * 1.8;
+      player.waveCharge = 0;
+    }
+  }
+
   // Fire
   if (player.fireTimer>0) player.fireTimer-=dt;
-  if (mouse.down && player.fireTimer<=0) {
+  if (mouse.down && player.fireTimer<=0 && player.weaponMode !== 'wave') {
     const dmg = getPlayerDmg();
     const fr  = getPlayerFireRate();
     const ang = player.angle;
     const mx  = player.x + Math.cos(ang)*25;
     const my  = player.y + Math.sin(ang)*25;
+    const bspd = getBulletSpeed();
     if (player.weaponMode === 'scatter') {
       player.fireTimer = fr * 1.35;
       for (let si = -1; si <= 1; si++) {
-        spawnBullet(player.x, player.y, ang + si*0.28, BULLET_SPEED*0.9, dmg*0.7, 'player');
+        spawnBullet(player.x, player.y, ang + si*0.28, bspd*0.9, dmg*0.7, 'player');
       }
+      if (hasRelic('energy_lens')) spawnBullet(player.x, player.y, ang+(Math.random()-0.5)*0.5, bspd*0.85, dmg*0.7, 'player');
       audio.play('shoot', 0.28);
       spawnParticle(mx, my, Math.cos(ang)*60, Math.sin(ang)*60, 0.1, '#ffff88', 7);
     } else if (player.weaponMode === 'heavy') {
       player.fireTimer = fr * 2.8;
       // Big slow piercing bolt — store pierce flag
       const b = {x:player.x, y:player.y,
-        vx:Math.cos(ang)*BULLET_SPEED*0.55, vy:Math.sin(ang)*BULLET_SPEED*0.55,
+        vx:Math.cos(ang)*bspd*0.55, vy:Math.sin(ang)*bspd*0.55,
         life:BULLET_LIFE*1.8, dmg:dmg*2.8, owner:'player', r:9, homing:false, pierce:true};
       bullets.push(b);
+      if (hasRelic('energy_lens')) spawnBullet(player.x, player.y, ang+(Math.random()-0.5)*0.3, bspd*0.5, dmg*1.8, 'player');
       audio.play('shoot', 0.45, 0.75);
       spawnParticle(mx, my, Math.cos(ang)*100, Math.sin(ang)*100, 0.12, '#ff8800', 10);
+    } else if (player.weaponMode === 'missile') {
+      player.fireTimer = fr * 3.5;
+      // Homing missile with explosion on hit (handled in bullet update)
+      const b = {x:player.x, y:player.y,
+        vx:Math.cos(ang)*bspd*0.65, vy:Math.sin(ang)*bspd*0.65,
+        life:BULLET_LIFE*2.8, dmg:dmg*3.8, owner:'player', r:7, homing:true, pierce:false, isMissile:true};
+      bullets.push(b);
+      audio.play('shoot', 0.55, 0.6);
+      spawnParticle(mx, my, Math.cos(ang)*60, Math.sin(ang)*60, 0.18, '#ff6600', 9);
+      for (let k=0;k<3;k++) {
+        const ta=ang+Math.PI+(Math.random()-0.5)*0.6;
+        spawnParticle(player.x,player.y,Math.cos(ta)*40,Math.sin(ta)*40,0.2,'#ff8833',4);
+      }
     } else {
       // Default laser
       player.fireTimer = fr;
-      spawnBullet(player.x, player.y, ang, BULLET_SPEED, dmg, 'player');
+      spawnBullet(player.x, player.y, ang, bspd, dmg, 'player');
+      if (hasRelic('energy_lens')) spawnBullet(player.x, player.y, ang+(Math.random()-0.5)*0.25, bspd, dmg*0.8, 'player');
       audio.play('shoot', 0.22);
       spawnParticle(mx, my, Math.cos(ang)*80, Math.sin(ang)*80, 0.08, '#ffffaa', 6);
     }
@@ -1062,9 +1167,17 @@ function updatePlayer(dt) {
     player.shield=Math.min(player.maxShield,player.shield+SHIELD_REGEN*dt);
   }
 
-  // Auto repair
+  // Auto repair (perk)
   if (player.autoRepair > 0 && player.hull<player.maxHull) {
     player.hull=Math.min(player.maxHull, player.hull + player.autoRepair*0.5*dt);
+  }
+  // Nanobots relic: repair 1 hull every 6s
+  if (hasRelic('nanobots') && player.hull < player.maxHull) {
+    player.nanoTimer += dt;
+    if (player.nanoTimer >= 6) {
+      player.nanoTimer = 0;
+      player.hull = Math.min(player.maxHull, player.hull + 1);
+    }
   }
 }
 
@@ -1079,6 +1192,13 @@ function damagePlayer(dmg) {
   if (dmg>0) player.hull-=dmg;
   player.shieldCooldown=SHIELD_REGEN_DELAY;
   player.invulTimer=0.5;
+  // Revenge pod relic: fire 4 bullets outward
+  if (hasRelic('revenge_pod')) {
+    for (let ri=0; ri<4; ri++) {
+      const ra = (ri/4)*Math.PI*2;
+      spawnBullet(player.x, player.y, ra, getBulletSpeed()*0.9, getPlayerDmg()*0.8, 'player');
+    }
+  }
   if (player.hull<=0) {
     player.hull=0;
     explosion(player.x,player.y,30,'#ff4400');
@@ -1130,8 +1250,8 @@ function updateBullets(dt) {
       for (const en of chunk.enemies) {
         if (!en.alive) continue;
         if (dist2(b.x,b.y,en.x,en.y)<(b.r+en.r)**2) {
-          en.hp-=b.dmg;
-          explosion(b.x,b.y,6,en.color);
+          if (b.isMissile) missileExplode(b.x,b.y,b.dmg,chunk);
+          else { en.hp-=b.dmg; explosion(b.x,b.y,6,en.color); }
           if (en.hp<=0) {
             en.alive=false;
             audio.play('explodeBig', 0.6);
@@ -1177,6 +1297,11 @@ function dropLoot(x,y,chunk) {
   else if (roll<0.9) type='crystal';
   else type='alientech';
   chunk.items.push({x,y,type,r:12,bobOffset:Math.random()*Math.PI*2,alive:true});
+  // Void crystal relic: 30% chance extra crystal
+  if (hasRelic('void_crystal') && Math.random() < 0.30) {
+    chunk.items.push({x:x+(Math.random()-0.5)*40,y:y+(Math.random()-0.5)*40,
+      type:'crystal',r:12,bobOffset:Math.random()*Math.PI*2,alive:true});
+  }
   // Extra drop from kill combo
   const mult = player ? player.killComboMult : 1;
   if (mult >= 1.5 && Math.random() < (mult-1)) {
@@ -1187,6 +1312,47 @@ function dropLoot(x,y,chunk) {
   if (!milestones.firstKill) {
     milestones.firstKill = true;
     setStatus('首次擊殺！繼續消滅敵人獲取補給');
+  }
+}
+
+function missileExplode(bx, by, dmg, nearChunk) {
+  // Area explosion: damages all enemies within 100px
+  const EXPL_R = 100;
+  audio.play('explodeBig', 0.7);
+  explosion(bx,by,30,'#ff6600');
+  explosion(bx,by,15,'#ffcc44');
+  for (const [,chunk] of chunks) {
+    for (const en of chunk.enemies) {
+      if (!en.alive) continue;
+      const d2=dist2(bx,by,en.x,en.y);
+      if (d2 < EXPL_R**2) {
+        const falloff = 1 - Math.sqrt(d2)/EXPL_R;
+        en.hp -= dmg * falloff;
+        explosion(en.x,en.y,6,en.color);
+        if (en.hp<=0) {
+          en.alive=false;
+          explosion(en.x,en.y,18,en.color);
+          dropLoot(en.x,en.y,chunk);
+          registerKill();
+        }
+      }
+    }
+  }
+  for (const en of dynamicEnemies) {
+    if (!en.alive) continue;
+    const d2=dist2(bx,by,en.x,en.y);
+    if (d2 < EXPL_R**2) {
+      const falloff = 1 - Math.sqrt(d2)/EXPL_R;
+      en.hp -= dmg * falloff;
+      if (en.hp<=0) {
+        en.alive=false;
+        explosion(en.x,en.y,18,en.color);
+        const ncx=Math.floor(en.x/CHUNK), ncy=Math.floor(en.y/CHUNK);
+        const nc=chunks.get(chunkKey(ncx,ncy));
+        if(nc) dropLoot(en.x,en.y,nc);
+        registerKill();
+      }
+    }
   }
 }
 
@@ -1331,6 +1497,33 @@ function updateEnemies(dt) {
             spawnBullet(en.x,en.y,ang-0.08,520,en.dmg,'enemy');
             spawnBullet(en.x,en.y,ang+0.08,520,en.dmg,'enemy');
           }
+        }
+      }
+      // Carrier: slow moving, fires multi-shot barrage + periodically spawns drones
+      if (en.type==='carrier') {
+        en.fireTimer-=dt;
+        en.droneSpawnTimer-=dt;
+        if (d < 500) {
+          if (en.fireTimer<=0) {
+            en.fireTimer=en.fireRate;
+            const ang=Math.atan2(dy,dx);
+            // 5-way spread volley
+            for(let si=-2;si<=2;si++) spawnBullet(en.x,en.y,ang+si*0.25,440,en.dmg*0.85,'enemy');
+          }
+        }
+        if (en.droneSpawnTimer<=0 && en.alive) {
+          en.droneSpawnTimer=en.droneSpawnCD;
+          // Spawn 2 drone escorts
+          for (let k=0;k<2;k++) {
+            const a=Math.random()*Math.PI*2;
+            dynamicEnemies.push({x:en.x+Math.cos(a)*50,y:en.y+Math.sin(a)*50,
+              vx:0,vy:0,type:'drone',hp:25,maxHp:25,speed:130,dmg:8,fireRate:0,
+              fireTimer:0,r:14,color:'#88aacc',state:'chase',
+              patrolAngle:a,patrolTimer:0,angle:a,alive:true,
+              shotCount:0,charging:false,chargeCD:2+Math.random()*2,chargeDur:0,
+              circleAngle:a,burstLeft:0,isHunter:true});
+          }
+          setStatus('⚠ 母艦放出護衛無人機！');
         }
       }
 
@@ -1933,11 +2126,43 @@ function drawOneEnemy(en, t) {
     ctx.fillStyle='#ff3300';
     ctx.beginPath(); ctx.arc(-r*0.9,r*0.35,4,0,Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(-r*0.9,-r*0.35,4,0,Math.PI*2); ctx.fill();
+  } else if (en.type==='carrier') {
+    // Capital ship — large hexagonal body with multiple gun ports
+    const pulse=0.7+0.3*Math.sin(t*0.003+en.droneSpawnTimer||0);
+    ctx.shadowColor='#ff4400'; ctx.shadowBlur=20*pulse;
+    // Main hull (large rectangle)
+    ctx.fillStyle='#1a0a00';
+    ctx.fillRect(-r*1.2,-r*0.65,r*2.4,r*1.3);
+    ctx.strokeStyle='#cc4400'; ctx.lineWidth=3;
+    ctx.strokeRect(-r*1.2,-r*0.65,r*2.4,r*1.3);
+    // Bridge
+    ctx.fillStyle='#331100';
+    ctx.fillRect(-r*0.4,-r*0.4,r*0.8,r*0.8);
+    ctx.strokeStyle='#ff6600'; ctx.lineWidth=1;
+    ctx.strokeRect(-r*0.4,-r*0.4,r*0.8,r*0.8);
+    // Gun ports (5 total)
+    ctx.fillStyle='#ff3300';
+    for(let gi=0;gi<5;gi++) {
+      const gx=r*1.2+4; const gy=-r*0.5+gi*r*0.25;
+      ctx.beginPath(); ctx.arc(gx,gy,4,0,Math.PI*2); ctx.fill();
+    }
+    // Warning beacon (pulsing)
+    ctx.fillStyle=`rgba(255,100,0,${pulse})`;
+    ctx.beginPath(); ctx.arc(0,0,7,0,Math.PI*2); ctx.fill();
+    // Drone bay indicator
+    const dtPct=1-(en.droneSpawnTimer||0)/(en.droneSpawnCD||8);
+    ctx.fillStyle='#222200'; ctx.fillRect(-r*0.8,r*0.55,r*1.6,6);
+    ctx.fillStyle=`hsl(${40+dtPct*20},100%,55%)`; ctx.fillRect(-r*0.8,r*0.55,r*1.6*dtPct,6);
   }
   ctx.shadowBlur=0;
   const hpFrac=en.hp/en.maxHp;
-  ctx.fillStyle='#550000'; ctx.fillRect(-r,-r-10,r*2,5);
-  ctx.fillStyle=hpFrac>0.5?'#00cc44':'#ff4400'; ctx.fillRect(-r,-r-10,r*2*hpFrac,5);
+  ctx.fillStyle='#550000'; ctx.fillRect(-r,-r-14,r*2,6);
+  ctx.fillStyle=hpFrac>0.5?'#00cc44':'#ff4400'; ctx.fillRect(-r,-r-14,r*2*hpFrac,6);
+  if (en.type==='carrier') {
+    // Show BOSS label
+    ctx.fillStyle='#ff4400'; ctx.font='bold 10px Courier New'; ctx.textAlign='center';
+    ctx.fillText('母艦',0,-r-18);
+  }
   ctx.restore();
 }
 
@@ -2029,7 +2254,16 @@ function drawBullets(t) {
     ctx.save();
     ctx.translate(b.x,b.y);
     ctx.rotate(ang);
-    if (b.pierce) {
+    if (b.isMissile) {
+      // Homing missile — red warhead with exhaust trail
+      ctx.shadowColor='#ff2200'; ctx.shadowBlur=14;
+      ctx.fillStyle='#cc2200';
+      ctx.beginPath(); ctx.moveTo(b.r+2,0); ctx.lineTo(-b.r,b.r*0.5); ctx.lineTo(-b.r,-b.r*0.5); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#ff6600';
+      ctx.beginPath(); ctx.arc(b.r,0,3,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#ff4400'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(-b.r,0); ctx.lineTo(-b.r-8+Math.random()*6,0); ctx.stroke();
+    } else if (b.pierce) {
       // Heavy cannon — big orange glowing orb
       ctx.shadowColor='#ff6600'; ctx.shadowBlur=18;
       ctx.fillStyle='#ff8800';
@@ -2112,13 +2346,19 @@ function drawHUD(t) {
   ctx.fillStyle='#112200';
   ctx.fillRect(50,boostY,160,10);
   const bf=player.boostFuel/player.maxBoostFuel;
-  ctx.fillStyle=player.boosting?'#aaff22':'#55aa22';
+  const bfLow = bf < 0.2;
+  const bfBlink = bfLow && Math.floor(performance.now()*0.005)%2===0;
+  ctx.fillStyle=player.boosting?'#aaff22':bfLow?(bfBlink?'#ff4400':'#882200'):'#55aa22';
   ctx.fillRect(50,boostY,160*bf,10);
-  ctx.fillStyle=player.boosting?'#ccff44':'#88cc44';
+  ctx.fillStyle=player.boosting?'#ccff44':bfLow?'#ff8844':'#88cc44';
   ctx.fillText('加速',14,boostY+9);
   if (player.boosting) {
     ctx.fillStyle='#ccff44'; ctx.font='bold 13px Courier New';
     ctx.fillText('◀▶ BOOST!',90,boostY+9);
+    ctx.font='13px Courier New';
+  } else if (bfLow && bfBlink) {
+    ctx.fillStyle='#ff6633'; ctx.font='bold 11px Courier New';
+    ctx.fillText('⚠ 燃料不足',55,boostY+9);
     ctx.font='13px Courier New';
   }
 
@@ -2176,20 +2416,28 @@ function drawHUD(t) {
 
   // Weapon indicator (bottom left)
   if (state === 'playing') {
-    const wNames = {laser:'雷射砲 ●', scatter:'散射炮 ▲▲▲', heavy:'重砲 ◆'};
-    const wColors = {laser:'#00ffff', scatter:'#ffee44', heavy:'#ff8800'};
+    const wNames = {laser:'雷射砲 ●', scatter:'散射炮 ▲▲▲', heavy:'重砲 ◆', missile:'導彈砲 ◎', wave:'波動砲 ≋'};
+    const wColors = {laser:'#00ffff', scatter:'#ffee44', heavy:'#ff8800', missile:'#ff4466', wave:'#44ffaa'};
     const wm = player.weaponMode;
     ctx.fillStyle='rgba(0,5,20,0.7)';
-    ctx.fillRect(10, H-44, 160, 34);
+    ctx.fillRect(10, H-50, 180, 40);
     ctx.strokeStyle=wColors[wm]+'55'; ctx.lineWidth=1;
-    ctx.strokeRect(10, H-44, 160, 34);
+    ctx.strokeRect(10, H-50, 180, 40);
     ctx.fillStyle=wColors[wm];
     ctx.font='bold 13px Courier New'; ctx.textAlign='left';
-    ctx.fillText(wNames[wm]||wm, 18, H-24);
-    if (player.unlockedWeapons.length > 1) {
+    ctx.fillText(wNames[wm]||wm, 18, H-30);
+    // Wave charge bar
+    if (wm === 'wave' && player.waveCharge > 0) {
+      ctx.fillStyle='#112200'; ctx.fillRect(18, H-22, 150, 8);
+      const wc=player.waveCharge;
+      ctx.fillStyle=`hsl(${130-wc*50},100%,${55+wc*20}%)`;
+      ctx.fillRect(18, H-22, 150*wc, 8);
+      ctx.fillStyle='#88ffcc'; ctx.font='9px Courier New';
+      ctx.fillText(`蓄力 ${Math.floor(wc*100)}%`, 18, H-14);
+    } else if (player.unlockedWeapons.length > 1) {
       ctx.fillStyle='rgba(150,180,200,0.6)';
       ctx.font='10px Courier New';
-      ctx.fillText('[Q] 切換武器', 18, H-12);
+      ctx.fillText('[Q] 切換武器', 18, H-14);
     }
   }
 
@@ -2253,6 +2501,43 @@ function drawHUD(t) {
       ctx.font='12px Courier New'; ctx.textAlign='center'; ctx.fillStyle='#ffdd00';
       ctx.fillText(`${Math.floor(Math.sqrt(nearestDist))}u`,0,20);
       ctx.restore(); ctx.globalAlpha=1;
+    }
+  }
+
+  // Critical hull warning — red screen vignette flash
+  if (player.hull / player.maxHull < 0.25) {
+    const pct = 1 - player.hull/player.maxHull;
+    const pulse = 0.5+0.5*Math.sin(t*0.006);
+    const grad = ctx.createRadialGradient(W/2,H/2,H*0.2,W/2,H/2,H*0.75);
+    grad.addColorStop(0,'rgba(150,0,0,0)');
+    grad.addColorStop(1,`rgba(200,0,0,${pct*0.45*pulse})`);
+    ctx.fillStyle=grad;
+    ctx.fillRect(0,0,W,H);
+    if (Math.floor(t*0.005)%2===0) {
+      ctx.fillStyle=`rgba(255,50,50,${pct*0.8})`;
+      ctx.font='bold 16px Courier New'; ctx.textAlign='center';
+      ctx.fillText('⚠ 船殼臨界損傷 ⚠', W/2, H/2-60);
+    }
+  }
+
+  // Portal compass arrow when all 5 cores collected
+  if (player.warpCores >= 5) {
+    const px2=ESCAPE_PORTAL_POS.x, py2=ESCAPE_PORTAL_POS.y;
+    const pdx=px2-player.x, pdy=py2-player.y;
+    const pdist=Math.sqrt(pdx*pdx+pdy*pdy);
+    if (pdist > 150) { // only show when portal not on screen
+      const pang=Math.atan2(pdy,pdx);
+      const arR=Math.min(W,H)*0.42;
+      const ax2=W/2+Math.cos(pang)*arR, ay2=H/2+Math.sin(pang)*arR;
+      const ppulse=0.7+0.3*Math.sin(t*0.004);
+      ctx.save(); ctx.translate(ax2,ay2); ctx.rotate(pang);
+      ctx.globalAlpha=ppulse;
+      ctx.shadowColor='#00ff88'; ctx.shadowBlur=15;
+      ctx.fillStyle='#00ff88';
+      ctx.beginPath(); ctx.moveTo(18,0); ctx.lineTo(-10,10); ctx.lineTo(-10,-10); ctx.closePath(); ctx.fill();
+      ctx.font='11px Courier New'; ctx.textAlign='center'; ctx.fillStyle='#44ffaa';
+      ctx.fillText(`傳送門 ${Math.floor(pdist)}u`,0,22);
+      ctx.restore(); ctx.globalAlpha=1; ctx.shadowBlur=0;
     }
   }
 }

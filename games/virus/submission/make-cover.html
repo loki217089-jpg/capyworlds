@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>VIRUS.EXE Cover Generator</title>
+<style>
+body { background:#111; display:flex; flex-direction:column; align-items:center; padding:20px; font-family:monospace; color:#0f0; }
+canvas { border:2px solid #1a3a1a; }
+button { margin-top:16px; padding:10px 40px; background:#050a05; border:2px solid #00ff41; color:#00ff41; font-size:18px; font-family:monospace; cursor:pointer; letter-spacing:2px; }
+button:hover { background:#0d1a0d; }
+p { color:#336633; margin-top:10px; font-size:12px; }
+</style>
+</head>
+<body>
+<canvas id="cv" width="630" height="500"></canvas>
+<button onclick="download()">⬇ Download Cover PNG</button>
+<p>itch.io / CrazyGames cover size: 630×500</p>
+
+<script>
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const W = 630, H = 500;
+
+// Load VT323 font
+const font = new FontFace('VT323', 'url(https://fonts.gstatic.com/s/vt323/v17/pxiKyp0ihIEF2isfFJU.woff2)');
+font.load().then(f => {
+  document.fonts.add(f);
+  draw();
+}).catch(() => draw());
+
+function rnd(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+function drawScanlines() {
+  for (let y = 0; y < H; y += 4) {
+    ctx.fillStyle = 'rgba(0,255,65,0.025)';
+    ctx.fillRect(0, y, W, 2);
+  }
+}
+
+function drawHexBg() {
+  ctx.font = '11px monospace';
+  const chars = '0123456789ABCDEF';
+  for (let i = 0; i < 220; i++) {
+    const x = rnd(0, W);
+    const y = rnd(0, H);
+    const a = Math.random() * 0.18 + 0.04;
+    ctx.fillStyle = `rgba(0,255,65,${a})`;
+    ctx.fillText(chars[rnd(0,15)] + chars[rnd(0,15)], x, y);
+  }
+}
+
+function drawCorruptBlock(x, y, w, h) {
+  for (let row = y; row < y + h; row += 3) {
+    const alpha = Math.random() * 0.15;
+    ctx.fillStyle = `rgba(0,200,80,${alpha})`;
+    ctx.fillRect(x, row, w * Math.random(), 2);
+  }
+}
+
+function drawFakeUI() {
+  // Drive slots panel
+  ctx.strokeStyle = '#1a3a1a';
+  ctx.lineWidth = 1;
+  const driveY = 310;
+  ['C:', 'D:', 'E:'].forEach((d, i) => {
+    const dx = 40 + i * 190;
+    const fillPct = [0.72, 0.45, 0.88][i];
+    const colors = ['#00ff41', '#ffe600', '#ff2244'];
+    ctx.strokeStyle = '#1a3a1a'; ctx.lineWidth = 1;
+    ctx.strokeRect(dx, driveY, 170, 80);
+    ctx.fillStyle = '#090f09'; ctx.fillRect(dx+1, driveY+1, 168, 78);
+    ctx.font = '14px monospace'; ctx.fillStyle = '#00ff41';
+    ctx.fillText(`DRIVE ${d}`, dx+10, driveY+22);
+    ctx.fillStyle = '#336633';
+    ctx.fillText(`${Math.floor(fillPct*100)}% INFECTED`, dx+10, driveY+40);
+    // HP bar
+    ctx.fillStyle = '#0a0a0a'; ctx.fillRect(dx+10, driveY+52, 148, 10);
+    ctx.fillStyle = colors[i]; ctx.fillRect(dx+10, driveY+52, 148*fillPct, 10);
+    // blinking indicator
+    if (i === 2) {
+      ctx.fillStyle = '#ff2244';
+      ctx.fillText('◉ CRITICAL', dx+10, driveY+75);
+    }
+  });
+
+  // Fake virus list
+  const virusY = 410;
+  ctx.font = '12px monospace';
+  const viruses = [
+    { col:'#ff2244', txt:'▌ RANSOMWARE.sys    [ACTIVE]  ██████ HP:340' },
+    { col:'#ffe600', txt:'▌ TROJAN.dll        [WARN]    ████░░ HP:180' },
+    { col:'#00ff41', txt:'▌ ADWARE.exe        [CLEAR]   ░░░░░░ HP:0  ' },
+  ];
+  viruses.forEach((v, i) => {
+    ctx.fillStyle = v.col;
+    ctx.fillText(v.txt, 40, virusY + i * 18);
+  });
+}
+
+function drawGlitchStripe() {
+  // Horizontal glitch stripes
+  for (let i = 0; i < 6; i++) {
+    const y = rnd(60, 280);
+    const h = rnd(1, 4);
+    const shift = rnd(-8, 8);
+    ctx.save();
+    ctx.globalAlpha = 0.3;
+    ctx.drawImage(cv, 0, y, W, h, shift, y, W, h);
+    ctx.restore();
+  }
+}
+
+function draw() {
+  // Background
+  ctx.fillStyle = '#050a05';
+  ctx.fillRect(0, 0, W, H);
+
+  // Hex background noise
+  drawHexBg();
+  drawCorruptBlock(0, 0, W, H);
+
+  // Top bar
+  ctx.fillStyle = '#090f09';
+  ctx.fillRect(0, 0, W, 44);
+  ctx.strokeStyle = '#1a3a1a'; ctx.lineWidth = 1;
+  ctx.strokeRect(0, 0, W, 44);
+  ctx.font = '14px monospace'; ctx.fillStyle = '#336633';
+  ctx.fillText('SYS://PURGE.exe  VER_2.0  [RUNNING]', 12, 27);
+  ctx.fillStyle = '#ff2244';
+  ctx.fillText('⚠ THREAT LEVEL: CRITICAL', W - 220, 27);
+
+  // Main title
+  ctx.save();
+  // Glow effect
+  ctx.shadowColor = '#00ff41';
+  ctx.shadowBlur = 40;
+  ctx.font = 'bold 110px VT323, monospace';
+  ctx.fillStyle = '#39ff14';
+  ctx.textAlign = 'center';
+  ctx.fillText('VIRUS.EXE', W/2, 170);
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
+  // Red glitch duplicate
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = '#ff0044';
+  ctx.font = 'bold 110px VT323, monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('VIRUS.EXE', W/2 + 4, 168);
+  ctx.restore();
+
+  // Subtitle
+  ctx.save();
+  ctx.shadowColor = '#00c030';
+  ctx.shadowBlur = 12;
+  ctx.font = 'bold 36px VT323, monospace';
+  ctx.fillStyle = '#00ff41';
+  ctx.textAlign = 'center';
+  ctx.fillText('SYSTEM PURGE  ─  HTML5 HACKING GAME', W/2, 220);
+  ctx.restore();
+
+  // Divider line
+  const grad = ctx.createLinearGradient(0, 240, W, 240);
+  grad.addColorStop(0, 'transparent');
+  grad.addColorStop(0.1, '#00ff41');
+  grad.addColorStop(0.9, '#00ff41');
+  grad.addColorStop(1, 'transparent');
+  ctx.strokeStyle = grad; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(40, 245); ctx.lineTo(W-40, 245); ctx.stroke();
+
+  // Tagline
+  ctx.font = '16px monospace';
+  ctx.fillStyle = '#336633';
+  ctx.textAlign = 'center';
+  ctx.fillText('Eliminate Viruses  ◆  Defend the Core  ◆  Hack Back', W/2, 272);
+
+  // Progress bar (fake scan)
+  ctx.fillStyle = '#090f09';
+  ctx.fillRect(40, 282, W-80, 14);
+  ctx.strokeStyle = '#1a3a1a'; ctx.lineWidth = 1;
+  ctx.strokeRect(40, 282, W-80, 14);
+  ctx.fillStyle = '#00ff41';
+  ctx.fillRect(41, 283, (W-82)*0.67, 12);
+  ctx.font = '11px monospace'; ctx.fillStyle = '#00ff41'; ctx.textAlign = 'left';
+  ctx.fillText('Scanning... 67%  ██████████████░░░░░░░', 44, 293);
+
+  // Fake UI
+  drawFakeUI();
+
+  // Scanlines overlay
+  drawScanlines();
+
+  // Glitch effect
+  drawGlitchStripe();
+
+  // Bottom bar
+  ctx.fillStyle = '#090f09';
+  ctx.fillRect(0, H-36, W, 36);
+  ctx.strokeStyle = '#1a3a1a'; ctx.lineWidth = 1;
+  ctx.strokeRect(0, H-36, W, 36);
+  ctx.font = '13px monospace'; ctx.fillStyle = '#336633'; ctx.textAlign = 'left';
+  ctx.fillText('capyworlds.com/games/virus/', 12, H-14);
+  ctx.fillStyle = '#00ff41'; ctx.textAlign = 'right';
+  ctx.fillText('[ HTML5 · English · FREE ]', W-12, H-14);
+
+  // Corner markers
+  ctx.strokeStyle = '#00ff41'; ctx.lineWidth = 2;
+  [[0,0,1,1],[W,0,-1,1],[0,H,1,-1],[W,H,-1,-1]].forEach(([x,y,sx,sy]) => {
+    ctx.beginPath();
+    ctx.moveTo(x + sx*12, y); ctx.lineTo(x, y); ctx.lineTo(x, y + sy*12);
+    ctx.stroke();
+  });
+
+  ctx.textAlign = 'left';
+}
+
+draw();
+setInterval(() => {
+  // Re-draw glitch periodically
+  drawGlitchStripe();
+  drawScanlines();
+}, 2000);
+
+function download() {
+  draw(); // fresh render
+  setTimeout(() => {
+    const a = document.createElement('a');
+    a.download = 'virus-exe-cover.png';
+    a.href = cv.toDataURL('image/png');
+    a.click();
+  }, 100);
+}
+</script>
+</body>
+</html>
