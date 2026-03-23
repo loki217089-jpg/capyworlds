@@ -131,6 +131,26 @@
     .result-score { font-size: 3rem; font-weight: 900; color: var(--accent); }
     .result-sub { font-size: 1rem; color: #907a60; text-align: center; }
     .win-text { color: var(--green); } .lose-text { color: var(--red); } .draw-text { color: var(--accent); }
+
+    /* ── Leaderboard & Stats ── */
+    .lb-box { width: 100%; background: var(--bg2); border-radius: 14px;
+      padding: 14px 16px; border: 1px solid #3d3020; }
+    .lb-title { font-size: 0.85rem; font-weight: 700; color: var(--accent);
+      letter-spacing: 1px; margin-bottom: 8px; }
+    .lb-row { display: flex; align-items: center; gap: 8px;
+      padding: 5px 0; border-bottom: 1px solid #2a2018; font-size: 0.85rem; }
+    .lb-row:last-child { border-bottom: none; }
+    .lb-rank { width: 24px; text-align: center; color: #6a5a48; font-size: 0.8rem; }
+    .lb-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lb-score { font-weight: 700; color: var(--accent); }
+    .lb-empty { color: #6a5a48; font-size: 0.85rem; text-align: center; padding: 8px; }
+    .my-stats { width: 100%; display: flex; justify-content: space-around;
+      background: var(--bg2); border-radius: 12px; padding: 12px 16px;
+      border: 1px solid #3d3020; }
+    .stat-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .stat-val { font-size: 1.4rem; font-weight: 900; color: var(--accent); }
+    .stat-lbl { font-size: 0.72rem; color: #6a5a48; }
+    .player-total { font-size: 0.72rem; color: #6a5a48; margin-top: 2px; }
   </style>
 </head>
 <body>
@@ -144,6 +164,15 @@
   <button class="btn btn-primary" id="btn-find"
     ontouchend="onFindTap(event)" onclick="onFindTap(event)">尋找對手</button>
   <a href="../battle.html" class="back-link">← 返回對戰遊戲</a>
+  <div class="my-stats">
+    <div class="stat-item"><div class="stat-val" id="my-total-wins">0</div><div class="stat-lbl">總勝場</div></div>
+    <div class="stat-item"><div class="stat-val" id="my-streak">0</div><div class="stat-lbl">當前連勝</div></div>
+    <div class="stat-item"><div class="stat-val" id="my-best">0</div><div class="stat-lbl">最佳連勝</div></div>
+  </div>
+  <div class="lb-box">
+    <div class="lb-title">🏆 勝場排行榜</div>
+    <div id="lb-list"><div class="lb-empty">載入中…</div></div>
+  </div>
 </div>
 
 <!-- Matchmaking -->
@@ -161,6 +190,7 @@
     <div class="player-info">
       <div class="player-name p1-color" id="p1-name">玩家1</div>
       <div class="player-wins p1-color" id="p1-wins">0</div>
+      <div class="player-total" id="p1-total"></div>
     </div>
     <div class="round-info">
       <div class="round-label">第</div>
@@ -170,6 +200,7 @@
     <div class="player-info">
       <div class="player-name p2-color" id="p2-name">玩家2</div>
       <div class="player-wins p2-color" id="p2-wins">0</div>
+      <div class="player-total" id="p2-total"></div>
     </div>
   </div>
 
@@ -229,6 +260,7 @@ const API = '';
 const POLL_MS = 300;
 const CHOOSE_SEC = 10;
 const CHOICE_EMOJI = { rock:'🪨', paper:'📄', scissors:'✂️', forfeit:'⏱️', '':'❓' };
+const GAME_ID = 'capy-rps';
 
 let pid = localStorage.getItem('capy_rps_pid') || (() => {
   const id = Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -239,12 +271,60 @@ let pid = localStorage.getItem('capy_rps_pid') || (() => {
 let roomId=null, myRole=null, pollTimer=null, gameState=null;
 let myChoice=null, lastState=null, isChoosing=false;
 
+// ── Win tracking ──────────────────────────────────────────
+let myTotalWins = parseInt(localStorage.getItem('capy_rps_total_wins')||'0');
+let myStreak    = parseInt(localStorage.getItem('capy_rps_streak')||'0');
+let myBestStreak= parseInt(localStorage.getItem('capy_rps_best')||'0');
+let lbData = [];
+
+function updateMyStats() {
+  document.getElementById('my-total-wins').textContent = myTotalWins;
+  document.getElementById('my-streak').textContent = myStreak;
+  document.getElementById('my-best').textContent = myBestStreak;
+}
+
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function fetchLeaderboard() {
+  try {
+    const res = await fetch(`/leaderboard/${GAME_ID}`);
+    lbData = await res.json();
+    renderLeaderboard();
+  } catch { document.getElementById('lb-list').innerHTML='<div class="lb-empty">載入失敗</div>'; }
+}
+
+function renderLeaderboard() {
+  const el = document.getElementById('lb-list');
+  if (!lbData || !lbData.length) {
+    el.innerHTML='<div class="lb-empty">還沒有紀錄，快成為第一名！</div>'; return;
+  }
+  const medals=['🥇','🥈','🥉'];
+  el.innerHTML = lbData.slice(0,10).map((r,i)=>`
+    <div class="lb-row">
+      <div class="lb-rank">${medals[i]||i+1}</div>
+      <div class="lb-name">${escHtml(r.name)}</div>
+      <div class="lb-score">${r.score} 勝</div>
+    </div>`).join('');
+}
+
+async function submitScore() {
+  const name = localStorage.getItem('capy_rps_name')||'水豚玩家';
+  try {
+    await fetch(`/leaderboard/${GAME_ID}`,{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name, score: myTotalWins})});
+    fetchLeaderboard();
+  } catch {}
+}
+
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const el=document.getElementById(id); if(el) el.classList.add('active');
 }
 
 document.getElementById('name-input').value = localStorage.getItem('capy_rps_name')||'';
+updateMyStats();
+fetchLeaderboard();
 
 function onFindTap(e) {
   if(e.type==='touchend') e.preventDefault();
@@ -260,6 +340,7 @@ function onAgainTap(e) {
   if(e.type==='touchend') e.preventDefault();
   document.getElementById('result-overlay').classList.add('hidden');
   roomId=null; myRole=null; myChoice=null; lastState=null; isChoosing=false; gameState=null;
+  updateMyStats(); fetchLeaderboard();
   showScreen('screen-lobby');
 }
 
@@ -331,6 +412,13 @@ function updateNames(st){
   document.getElementById('p2-reveal-name').textContent=st.p2_name||'玩家2';
   const myNameEl=document.getElementById(myRole+'-name');
   if(myNameEl) myNameEl.style.fontWeight='900';
+  // Show historical records
+  const myLbEntry = lbData.find(r=>r.name===(myRole==='p1'?st.p1_name:st.p2_name));
+  const oppLbEntry= lbData.find(r=>r.name===(myRole==='p1'?st.p2_name:st.p1_name));
+  const myRec  = myLbEntry ? myLbEntry.score+'勝' : myTotalWins+'勝';
+  const oppRec = oppLbEntry? oppLbEntry.score+'勝' : '新手';
+  document.getElementById('p1-total').textContent = myRole==='p1' ? '歷史：'+myRec : '歷史：'+oppRec;
+  document.getElementById('p2-total').textContent = myRole==='p2' ? '歷史：'+myRec : '歷史：'+oppRec;
 }
 function updateScoreboard(st){
   document.getElementById('p1-wins').textContent=st.p1_wins;
@@ -440,12 +528,24 @@ function showGameOver(st){
   const myWins=myRole==='p1'?st.p1_wins:st.p2_wins;
   const oppWins=myRole==='p1'?st.p2_wins:st.p1_wins;
   const iWon=st.winner===myRole, isDraw=st.winner==='draw';
+  // Track wins
+  if(iWon) {
+    myTotalWins++; myStreak++;
+    if(myStreak>myBestStreak) myBestStreak=myStreak;
+    localStorage.setItem('capy_rps_total_wins', myTotalWins);
+    localStorage.setItem('capy_rps_streak', myStreak);
+    localStorage.setItem('capy_rps_best', myBestStreak);
+    submitScore();
+  } else if(!isDraw) {
+    myStreak=0; localStorage.setItem('capy_rps_streak', 0);
+  }
   document.getElementById('result-emoji').textContent=isDraw?'🤝':iWon?'🎉':'😢';
   document.getElementById('result-title').textContent=isDraw?'平手！':iWon?'你贏了！':'你輸了…';
   document.getElementById('result-title').className='result-title '+(isDraw?'draw-text':iWon?'win-text':'lose-text');
   document.getElementById('result-score').textContent=myWins+' : '+oppWins;
   const oppName=myRole==='p1'?(st.p2_name||'對手'):(st.p1_name||'對手');
-  document.getElementById('result-sub').textContent=isDraw?'勢均力敵，再來一局！':iWon?'恭喜擊敗 '+oppName+'！':'敗給了 '+oppName+'，加油！';
+  const streakMsg=iWon&&myStreak>1?' 🔥連勝'+myStreak+'場！':'';
+  document.getElementById('result-sub').textContent=isDraw?'勢均力敵，再來一局！':iWon?'恭喜擊敗 '+oppName+'！'+streakMsg:'敗給了 '+oppName+'，加油！';
   document.getElementById('result-overlay').classList.remove('hidden');
 }
 

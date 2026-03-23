@@ -157,6 +157,26 @@
       border-bottom: 1px solid #3d3020; padding-bottom: 2px; }
     .back-link:hover { color: var(--accent); }
 
+    /* ── Leaderboard & Stats ── */
+    .lb-box { width: 100%; background: var(--bg2); border-radius: 14px;
+      padding: 14px 16px; border: 1px solid #3d3020; }
+    .lb-title { font-size: 0.85rem; font-weight: 700; color: var(--accent);
+      letter-spacing: 1px; margin-bottom: 8px; }
+    .lb-row { display: flex; align-items: center; gap: 8px;
+      padding: 5px 0; border-bottom: 1px solid #2a2018; font-size: 0.85rem; }
+    .lb-row:last-child { border-bottom: none; }
+    .lb-rank { width: 24px; text-align: center; color: #6a5a48; font-size: 0.8rem; }
+    .lb-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lb-score { font-weight: 700; color: var(--accent); }
+    .lb-empty { color: #6a5a48; font-size: 0.85rem; text-align: center; padding: 8px; }
+    .my-stats { width: 100%; display: flex; justify-content: space-around;
+      background: var(--bg2); border-radius: 12px; padding: 12px 16px;
+      border: 1px solid #3d3020; }
+    .stat-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .stat-val { font-size: 1.4rem; font-weight: 900; color: var(--accent); }
+    .stat-lbl { font-size: 0.72rem; color: #6a5a48; }
+    .player-total { font-size: 0.72rem; color: #6a5a48; margin-top: 2px; }
+
     .tap-ripple {
       position: absolute; border-radius: 50%;
       background: rgba(0,229,255,0.4); pointer-events: none;
@@ -181,6 +201,15 @@
   <button class="btn btn-primary" id="btn-find"
     ontouchend="onFindTap(event)" onclick="onFindTap(event)">尋找對手</button>
   <a href="../" class="back-link">← 返回遊戲列表</a>
+  <div class="my-stats">
+    <div class="stat-item"><div class="stat-val" id="my-total-wins">0</div><div class="stat-lbl">總勝場</div></div>
+    <div class="stat-item"><div class="stat-val" id="my-streak">0</div><div class="stat-lbl">當前連勝</div></div>
+    <div class="stat-item"><div class="stat-val" id="my-best">0</div><div class="stat-lbl">最佳連勝</div></div>
+  </div>
+  <div class="lb-box">
+    <div class="lb-title">🏆 拔河王排行榜</div>
+    <div id="lb-list"><div class="lb-empty">載入中…</div></div>
+  </div>
 </div>
 
 <!-- ── Matchmaking ── -->
@@ -199,6 +228,7 @@
     <div class="player-info">
       <div class="player-name p1-color" id="p1-name">玩家1</div>
       <div class="player-wins p1-color" id="p1-wins">0</div>
+      <div class="player-total" id="p1-total"></div>
     </div>
     <div class="round-info">
       <div class="round-label">第</div>
@@ -208,6 +238,7 @@
     <div class="player-info">
       <div class="player-name p2-color" id="p2-name">玩家2</div>
       <div class="player-wins p2-color" id="p2-wins">0</div>
+      <div class="player-total" id="p2-total"></div>
     </div>
   </div>
 
@@ -268,6 +299,7 @@
 const API = '';
 const POLL_MS = 300;
 const ROUND_SEC = 30;
+const GAME_ID = 'capy-tug';
 
 // ── State ───────────────────────────────────────────────
 let pid = localStorage.getItem('capy_tug_pid') || (() => {
@@ -285,6 +317,45 @@ let tapSendTimer = null;
 let gameState = null;    // last polled state object
 let countdownInterval = null;
 let isPlaying = false;
+
+// ── Win tracking ──────────────────────────────────────────
+let myTotalWins = parseInt(localStorage.getItem('capy_tug_total_wins')||'0');
+let myStreak    = parseInt(localStorage.getItem('capy_tug_streak')||'0');
+let myBestStreak= parseInt(localStorage.getItem('capy_tug_best')||'0');
+let lbData = [];
+
+function updateMyStats(){
+  document.getElementById('my-total-wins').textContent=myTotalWins;
+  document.getElementById('my-streak').textContent=myStreak;
+  document.getElementById('my-best').textContent=myBestStreak;
+}
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+async function fetchLeaderboard(){
+  try{
+    const res=await fetch(`/leaderboard/${GAME_ID}`);
+    lbData=await res.json(); renderLeaderboard();
+  }catch{ document.getElementById('lb-list').innerHTML='<div class="lb-empty">載入失敗</div>'; }
+}
+function renderLeaderboard(){
+  const el=document.getElementById('lb-list');
+  if(!lbData||!lbData.length){el.innerHTML='<div class="lb-empty">還沒有紀錄，快成為拔河王！</div>';return;}
+  const medals=['🥇','🥈','🥉'];
+  el.innerHTML=lbData.slice(0,10).map((r,i)=>`
+    <div class="lb-row">
+      <div class="lb-rank">${medals[i]||i+1}</div>
+      <div class="lb-name">${escHtml(r.name)}</div>
+      <div class="lb-score">${r.score} 勝</div>
+    </div>`).join('');
+}
+async function submitScore(){
+  const name=localStorage.getItem('capy_tug_name')||'水豚玩家';
+  try{
+    await fetch(`/leaderboard/${GAME_ID}`,{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,score:myTotalWins})});
+    fetchLeaderboard();
+  }catch{}
+}
 
 // ── Screens ─────────────────────────────────────────────
 function showScreen(id) {
@@ -321,6 +392,7 @@ function onAgainTap(e) {
   isPlaying = false;
   lastState = null;
   prevRound = 1;
+  updateMyStats(); fetchLeaderboard();
   showScreen('screen-lobby');
 }
 
@@ -421,6 +493,13 @@ function updateNames(st) {
   // Highlight "you"
   const myNameEl = document.getElementById(myRole + '-name');
   if (myNameEl) myNameEl.style.fontWeight = '900';
+  // Show historical records
+  const myLbEntry=lbData.find(r=>r.name===(myRole==='p1'?st.p1_name:st.p2_name));
+  const oppLbEntry=lbData.find(r=>r.name===(myRole==='p1'?st.p2_name:st.p1_name));
+  const myRec=myLbEntry?myLbEntry.score+'勝':myTotalWins+'勝';
+  const oppRec=oppLbEntry?oppLbEntry.score+'勝':'新手';
+  document.getElementById('p1-total').textContent=myRole==='p1'?'歷史：'+myRec:'歷史：'+oppRec;
+  document.getElementById('p2-total').textContent=myRole==='p2'?'歷史：'+myRec:'歷史：'+oppRec;
 }
 
 function updateScoreboard(st) {
@@ -530,6 +609,17 @@ function showGameOver(st) {
   const myWins = myRole === 'p1' ? st.p1_wins : st.p2_wins;
   const oppWins = myRole === 'p1' ? st.p2_wins : st.p1_wins;
   const iWon = st.winner === myRole;
+  // Track wins
+  if (iWon) {
+    myTotalWins++; myStreak++;
+    if (myStreak > myBestStreak) myBestStreak = myStreak;
+    localStorage.setItem('capy_tug_total_wins', myTotalWins);
+    localStorage.setItem('capy_tug_streak', myStreak);
+    localStorage.setItem('capy_tug_best', myBestStreak);
+    submitScore();
+  } else {
+    myStreak = 0; localStorage.setItem('capy_tug_streak', 0);
+  }
   const overlay = document.getElementById('result-overlay');
   document.getElementById('result-emoji').textContent = iWon ? '🎉' : '😢';
   document.getElementById('result-title').textContent = iWon ? '你贏了！' : '你輸了…';
@@ -537,8 +627,9 @@ function showGameOver(st) {
     'result-title ' + (iWon ? 'win-text' : 'lose-text');
   document.getElementById('result-score').textContent = myWins + ' : ' + oppWins;
   const oppName = myRole === 'p1' ? (st.p2_name || '對手') : (st.p1_name || '對手');
+  const streakMsg = iWon && myStreak > 1 ? ` 🔥連勝${myStreak}場！` : '';
   document.getElementById('result-sub').textContent =
-    iWon ? `恭喜擊敗 ${oppName}！` : `敗給了 ${oppName}，加油！`;
+    iWon ? `恭喜擊敗 ${oppName}！${streakMsg}` : `敗給了 ${oppName}，加油！`;
   overlay.classList.remove('hidden');
 }
 
@@ -554,6 +645,8 @@ setInterval(() => {
 }, 200);
 
 // ── Init ─────────────────────────────────────────────────
+updateMyStats();
+fetchLeaderboard();
 document.getElementById('name-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') onFindTap({ type: 'click', preventDefault: () => {} });
 });
