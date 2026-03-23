@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>💬 1對1情境聊天室 — CapyWorlds</title>
+<style>
+:root{--bg:#13100c;--bg2:#1e1812;--bg3:#2a1e16;--border:#3d3020;--accent:#c8a456;--text:#e8ddd0;--text2:#907a60;--h1:#fff;--male:#60b8ff;--female:#ff80c0;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+
+/* ── Header ── */
+.top-bar{position:fixed;top:0;left:0;right:0;height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;z-index:100;}
+.top-bar a{color:var(--text2);text-decoration:none;font-size:13px;}
+.top-bar .logo{font-size:16px;font-weight:700;color:var(--accent);}
+
+/* ── Screens ── */
+.screen{display:none;width:100%;max-width:440px;padding:16px;}
+.screen.active{display:flex;flex-direction:column;gap:16px;}
+
+/* ── Setup Screen ── */
+.setup-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:28px 24px;display:flex;flex-direction:column;gap:20px;margin-top:64px;}
+.setup-title{font-size:22px;font-weight:700;color:var(--h1);text-align:center;}
+.setup-sub{font-size:13px;color:var(--text2);text-align:center;}
+.gender-btns{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.gender-btn{border:2px solid var(--border);background:transparent;color:var(--text);border-radius:12px;padding:18px 8px;cursor:pointer;font-size:24px;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .2s;}
+.gender-btn span{font-size:14px;font-weight:600;}
+.gender-btn.male{--gc:var(--male);}
+.gender-btn.female{--gc:var(--female);}
+.gender-btn.selected{border-color:var(--gc);background:rgba(var(--gc-raw),.12);}
+.gender-btn.male.selected{border-color:var(--male);background:rgba(96,184,255,.12);}
+.gender-btn.female.selected{border-color:var(--female);background:rgba(255,128,192,.12);}
+.name-input{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:12px 14px;font-size:15px;outline:none;width:100%;}
+.name-input:focus{border-color:var(--accent);}
+.start-btn{background:var(--accent);color:#13100c;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:700;cursor:pointer;transition:opacity .2s;}
+.start-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* ── Waiting Screen ── */
+.wait-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:40px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px;margin-top:64px;}
+.pulse{width:72px;height:72px;border-radius:50%;background:rgba(200,164,86,.15);display:flex;align-items:center;justify-content:center;font-size:36px;animation:pulse 1.6s infinite;}
+@keyframes pulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(200,164,86,.4);}50%{transform:scale(1.05);box-shadow:0 0 0 12px rgba(200,164,86,0);}}
+.wait-title{font-size:18px;font-weight:700;color:var(--h1);}
+.wait-sub{font-size:13px;color:var(--text2);}
+.cancel-btn{background:transparent;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:10px 24px;font-size:14px;cursor:pointer;}
+
+/* ── Chat Screen ── */
+#chatScreen{width:100%;max-width:540px;height:100vh;display:none;flex-direction:column;padding-top:48px;}
+#chatScreen.active{display:flex;}
+.chat-header{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;}
+.opp-info{display:flex;align-items:center;gap:8px;}
+.opp-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.opp-avatar.male{background:rgba(96,184,255,.18);}
+.opp-avatar.female{background:rgba(255,128,192,.18);}
+.opp-name{font-size:15px;font-weight:600;}
+.scenario-badge{font-size:11px;color:var(--text2);}
+.timer{font-size:22px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;min-width:60px;text-align:right;}
+.timer.urgent{color:#ff4444;animation:blink .6s step-end infinite;}
+@keyframes blink{50%{opacity:.3;}}
+.chat-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;}
+.msg-row{display:flex;gap:8px;align-items:flex-end;}
+.msg-row.me{flex-direction:row-reverse;}
+.bubble{max-width:72%;padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;word-break:break-word;}
+.msg-row.other .bubble{background:var(--bg3);border-bottom-left-radius:4px;}
+.msg-row.me .bubble{background:var(--accent);color:#1a1000;border-bottom-right-radius:4px;}
+.sticker-bubble{background:transparent!important;font-size:48px;padding:4px 0!important;}
+.msg-name{font-size:11px;color:var(--text2);margin-bottom:2px;}
+.msg-row.me .msg-name{text-align:right;}
+.msg-time{font-size:10px;color:var(--text2);margin:0 4px;flex-shrink:0;}
+.system-msg{text-align:center;font-size:12px;color:var(--text2);padding:4px 0;}
+
+/* ── Chat Input ── */
+.chat-input-area{border-top:1px solid var(--border);background:var(--bg2);padding:10px 12px;display:flex;gap:8px;align-items:flex-end;}
+.input-actions{display:flex;gap:6px;}
+.ico-btn{background:transparent;border:1px solid var(--border);color:var(--text2);border-radius:8px;width:38px;height:38px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ico-btn:hover{border-color:var(--accent);color:var(--accent);}
+.msg-text{flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:9px 12px;font-size:14px;resize:none;outline:none;max-height:80px;font-family:inherit;}
+.msg-text:focus{border-color:var(--accent);}
+.send-btn{background:var(--accent);color:#1a1000;border:none;border-radius:10px;width:38px;height:38px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:700;}
+.send-btn:disabled{opacity:.35;cursor:not-allowed;}
+
+/* ── Sticker Panel ── */
+.sticker-panel{background:var(--bg2);border-top:1px solid var(--border);padding:12px;display:none;flex-wrap:wrap;gap:8px;justify-content:center;}
+.sticker-panel.open{display:flex;}
+.stk{font-size:36px;cursor:pointer;padding:4px;border-radius:8px;transition:transform .15s;}
+.stk:hover{transform:scale(1.2);background:rgba(255,255,255,.06);}
+
+/* ── Scenario Panel (popup) ── */
+.scene-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:200;padding:16px;}
+.scene-overlay.open{display:flex;}
+.scene-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px;width:100%;max-width:360px;display:flex;flex-direction:column;gap:14px;}
+.scene-title{font-size:17px;font-weight:700;color:var(--h1);}
+.scene-sub{font-size:13px;color:var(--text2);}
+.scene-list{display:flex;flex-direction:column;gap:8px;}
+.scene-item{border:1px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:border-color .2s;}
+.scene-item:hover{border-color:var(--accent);}
+.scene-item.selected{border-color:var(--accent);background:rgba(200,164,86,.08);}
+.scene-emoji{font-size:24px;flex-shrink:0;}
+.scene-name{font-size:14px;font-weight:600;}
+.scene-desc{font-size:12px;color:var(--text2);}
+.scene-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.scene-ok{background:var(--accent);color:#1a1000;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;}
+.scene-cancel{background:transparent;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:11px;font-size:14px;cursor:pointer;}
+
+/* ── Request popup ── */
+.req-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;z-index:200;padding:16px;}
+.req-overlay.open{display:flex;}
+.req-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px;width:100%;max-width:440px;display:flex;flex-direction:column;gap:12px;margin-bottom:8px;}
+.req-title{font-size:15px;font-weight:700;color:var(--h1);}
+.req-scene{font-size:24px;} .req-desc{font-size:13px;color:var(--text2);}
+.req-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.req-accept{background:#44dd88;color:#0a2010;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;}
+.req-reject{background:transparent;border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:11px;font-size:14px;cursor:pointer;}
+
+/* ── Done Screen ── */
+.done-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:36px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px;margin-top:64px;}
+.done-emoji{font-size:52px;}
+.done-title{font-size:20px;font-weight:700;color:var(--h1);}
+.done-sub{font-size:14px;color:var(--text2);}
+.again-btn{background:var(--accent);color:#13100c;border:none;border-radius:10px;padding:13px 32px;font-size:15px;font-weight:700;cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <a href="/">← CapyWorlds</a>
+  <span class="logo">💬 情境聊天室</span>
+  <a href="/games/">所有遊戲</a>
+</div>
+
+<!-- 選性別/暱稱 -->
+<div class="screen active" id="setupScreen">
+  <div class="setup-card">
+    <div class="setup-title">💬 1對1情境聊天室</div>
+    <div class="setup-sub">選擇你的性別，隨機配對一位異性聊天 5 分鐘</div>
+    <div class="gender-btns">
+      <button class="gender-btn male" onclick="selectGender('male')">♂<span>男生</span></button>
+      <button class="gender-btn female" onclick="selectGender('female')">♀<span>女生</span></button>
+    </div>
+    <input class="name-input" id="nameInput" type="text" placeholder="輸入暱稱（最多10字）" maxlength="10">
+    <button class="start-btn" id="startBtn" onclick="startMatching()" disabled>尋找對象</button>
+  </div>
+</div>
+
+<!-- 等待配對 -->
+<div class="screen" id="waitScreen">
+  <div class="wait-card">
+    <div class="pulse" id="waitEmoji">💬</div>
+    <div class="wait-title">正在尋找<span id="waitGenderText"></span>...</div>
+    <div class="wait-sub">等待另一位使用者進入</div>
+    <button class="cancel-btn" onclick="cancelMatch()">取消</button>
+  </div>
+</div>
+
+<!-- 聊天室 -->
+<div id="chatScreen" class="screen">
+  <div class="chat-header">
+    <div class="opp-info">
+      <div class="opp-avatar" id="oppAvatar">?</div>
+      <div>
+        <div class="opp-name" id="oppName">---</div>
+        <div class="scenario-badge" id="scenarioBadge"></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="ico-btn" onclick="openScenePanel()" title="調情境">🎭</button>
+      <div class="timer" id="timer">5:00</div>
+    </div>
+  </div>
+  <div class="chat-msgs" id="chatMsgs"></div>
+  <div class="sticker-panel" id="stickerPanel"></div>
+  <div class="chat-input-area">
+    <button class="ico-btn" id="stickerBtn" onclick="toggleStickers()">😊</button>
+    <textarea class="msg-text" id="msgText" rows="1" placeholder="輸入訊息..." onkeydown="onMsgKey(event)"></textarea>
+    <button class="send-btn" id="sendBtn" onclick="sendMsg()">➤</button>
+  </div>
+</div>
+
+<!-- 情境選擇面板 -->
+<div class="scene-overlay" id="sceneOverlay" onclick="closeScenePanel(event)">
+  <div class="scene-box" onclick="event.stopPropagation()">
+    <div class="scene-title">🎭 選擇情境</div>
+    <div class="scene-sub">選擇後會請對方同意，對方同意才會切換</div>
+    <div class="scene-list" id="sceneList"></div>
+    <div class="scene-actions">
+      <button class="scene-ok" onclick="proposeScene()">提出請求</button>
+      <button class="scene-cancel" onclick="closeScenePanel()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 情境請求通知 -->
+<div class="req-overlay" id="reqOverlay">
+  <div class="req-box">
+    <div class="req-title">對方提出情境切換請求</div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="req-scene" id="reqEmoji"></div>
+      <div>
+        <div style="font-size:15px;font-weight:700;" id="reqSceneName"></div>
+        <div class="req-desc" id="reqSceneDesc"></div>
+      </div>
+    </div>
+    <div class="req-actions">
+      <button class="req-accept" onclick="respondScene(true)">✓ 同意</button>
+      <button class="req-reject" onclick="respondScene(false)">✗ 拒絕</button>
+    </div>
+  </div>
+</div>
+
+<!-- 結束畫面 -->
+<div class="screen" id="doneScreen">
+  <div class="done-card">
+    <div class="done-emoji">⏰</div>
+    <div class="done-title">時間到！</div>
+    <div class="done-sub">5 分鐘的聊天結束了<br>希望你們聊得愉快 💕</div>
+    <button class="again-btn" onclick="resetAll()">再聊一次</button>
+    <a href="/" style="color:var(--text2);font-size:13px;text-decoration:none;">回到首頁</a>
+  </div>
+</div>
+<script>
+const API = 'https://capyworlds.loki217089.workers.dev';
+const CHAT_MS = 300000; // 5 min
+
+const SCENES = [
+  {id:0, emoji:'🌿', name:'無情境', desc:'自由聊天模式'},
+  {id:1, emoji:'🌙', name:'深夜告白', desc:'夜深了，兩個人獨處，想說些什麼...'},
+  {id:2, emoji:'☕', name:'咖啡廳偶遇', desc:'偶然坐在同一張桌子旁，相談甚歡'},
+  {id:3, emoji:'🎮', name:'遊戲隊友', desc:'剛一起打完遊戲，情緒高漲'},
+  {id:4, emoji:'🌸', name:'校園春天', desc:'春天的校園裡，路上偶遇'},
+  {id:5, emoji:'🌊', name:'海邊散步', desc:'傍晚一起在海邊漫步'},
+  {id:6, emoji:'🌃', name:'城市夜景', desc:'站在高處，一起看城市的燈光'},
+];
+
+const STICKERS = [
+  '😊','😘','🥰','😳','😂','🤭',
+  '💕','💗','💓','🌸','✨','🌙',
+  '💫','🎵','🍵','🤗','👋','🥺',
+  '😏','😍','🫶','🙈','😆','🤩',
+];
+
+// ── State ──
+let myPid = localStorage.getItem('chat_pid') || (() => {
+  const p = Math.random().toString(36).slice(2,12);
+  localStorage.setItem('chat_pid', p); return p;
+})();
+let myGender = '', myName = '', roomId = '', myRole = '';
+let lastMsgId = 0, pollTimer = null, timerInterval = null;
+let currentScenario = 0, pendingSceneReq = null;
+let selectedScene = 0;
+
+// ── Init ──
+(function init(){
+  buildStickerPanel();
+  buildSceneList();
+  document.getElementById('nameInput').addEventListener('input', checkCanStart);
+})();
+
+function buildStickerPanel(){
+  const p = document.getElementById('stickerPanel');
+  STICKERS.forEach(s => {
+    const b = document.createElement('span');
+    b.className = 'stk'; b.textContent = s;
+    b.onclick = () => sendSticker(s);
+    p.appendChild(b);
+  });
+}
+
+function buildSceneList(){
+  const list = document.getElementById('sceneList');
+  SCENES.slice(1).forEach(sc => {
+    const d = document.createElement('div');
+    d.className = 'scene-item'; d.dataset.id = sc.id;
+    d.innerHTML = `<div class="scene-emoji">${sc.emoji}</div><div><div class="scene-name">${sc.name}</div><div class="scene-desc">${sc.desc}</div></div>`;
+    d.onclick = () => selectScene(sc.id);
+    list.appendChild(d);
+  });
+}
+
+function selectGender(g){
+  myGender = g;
+  document.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelector('.gender-btn.' + g).classList.add('selected');
+  document.getElementById('waitEmoji').textContent = g === 'male' ? '♂' : '♀';
+  document.getElementById('waitGenderText').textContent = g === 'male' ? '女生' : '男生';
+  checkCanStart();
+}
+
+function checkCanStart(){
+  const name = document.getElementById('nameInput').value.trim();
+  document.getElementById('startBtn').disabled = !(myGender && name.length > 0);
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if(el) el.classList.add('active');
+}
+
+// ── Matching ──
+async function startMatching(){
+  myName = document.getElementById('nameInput').value.trim();
+  if(!myGender || !myName) return;
+  showScreen('waitScreen');
+  await doJoin();
+}
+
+async function doJoin(){
+  try {
+    const r = await fetch(`${API}/chat/join`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({pid:myPid, name:myName, gender:myGender})
+    });
+    const d = await r.json();
+    if(d.error){alert(d.error);showScreen('setupScreen');return;}
+    roomId = d.room_id; myRole = d.role;
+    if(d.state === 'chatting'){
+      enterChat(d.opp_name);
+    } else {
+      pollTimer = setInterval(pollWait, 2000);
+    }
+  } catch(e){
+    setTimeout(doJoin, 3000);
+  }
+}
+
+async function pollWait(){
+  try {
+    const r = await fetch(`${API}/chat/${roomId}?pid=${myPid}`);
+    const d = await r.json();
+    if(d.state === 'chatting'){
+      clearInterval(pollTimer); pollTimer = null;
+      const oppName = myRole==='p1' ? d.p2_name : d.p1_name;
+      enterChat(oppName);
+    }
+  } catch(e){}
+}
+
+function cancelMatch(){
+  clearInterval(pollTimer); pollTimer = null;
+  roomId = ''; myRole = '';
+  showScreen('setupScreen');
+}
+
+// ── Enter Chat ──
+function enterChat(oppName){
+  const oppGender = myGender === 'male' ? 'female' : 'male';
+  const avatar = document.getElementById('oppAvatar');
+  avatar.textContent = oppGender === 'male' ? '♂' : '♀';
+  avatar.className = 'opp-avatar ' + oppGender;
+  document.getElementById('oppName').textContent = oppName || '對方';
+  document.getElementById('chatMsgs').innerHTML = '';
+  lastMsgId = 0; currentScenario = 0; pendingSceneReq = null;
+  updateScenarioBadge();
+  showScreen('chatScreen');
+  addSystemMsg('已連線！開始 5 分鐘的聊天吧 💬');
+  pollTimer = setInterval(pollChat, 1500);
+  startTimer(CHAT_MS);
+}
+
+// ── Timer ──
+function startTimer(ms){
+  clearInterval(timerInterval);
+  let end = Date.now() + ms;
+  function tick(){
+    const left = Math.max(0, end - Date.now());
+    const mm = String(Math.floor(left/60000)).padStart(1,'0');
+    const ss = String(Math.floor((left%60000)/1000)).padStart(2,'0');
+    const el = document.getElementById('timer');
+    el.textContent = mm + ':' + ss;
+    el.classList.toggle('urgent', left < 60000);
+    if(left <= 0){ clearInterval(timerInterval); endChat(); }
+  }
+  timerInterval = setInterval(tick, 500);
+  tick();
+}
+
+// ── Poll Chat ──
+async function pollChat(){
+  try {
+    const r = await fetch(`${API}/chat/${roomId}?pid=${myPid}&last=${lastMsgId}`);
+    const d = await r.json();
+    if(d.state === 'done' && document.getElementById('chatScreen').classList.contains('active')){
+      endChat(); return;
+    }
+    // sync timer
+    if(d.time_left > 0){
+      const el = document.getElementById('timer');
+      const left = d.time_left;
+      const mm = String(Math.floor(left/60000)).padStart(1,'0');
+      const ss = String(Math.floor((left%60000)/1000)).padStart(2,'0');
+      el.textContent = mm+':'+ss;
+      el.classList.toggle('urgent', left < 60000);
+    }
+    // scenario req
+    if(d.scenario_req && d.scenario_req.proposer !== myRole){
+      if(!pendingSceneReq || pendingSceneReq.scene_id !== d.scenario_req.scene_id){
+        pendingSceneReq = d.scenario_req;
+        showSceneRequest(pendingSceneReq.scene_id);
+      }
+    } else if(!d.scenario_req){
+      pendingSceneReq = null;
+      document.getElementById('reqOverlay').classList.remove('open');
+    }
+    // scenario update
+    if(d.scenario_id !== currentScenario){
+      currentScenario = d.scenario_id;
+      updateScenarioBadge();
+      const sc = SCENES[currentScenario];
+      if(sc && currentScenario > 0) addSystemMsg(`🎭 情境切換為：${sc.emoji} ${sc.name}`);
+    }
+    // messages
+    if(d.messages && d.messages.length){
+      d.messages.forEach(m => {
+        appendMsg(m.role === myRole ? 'me' : 'other', m.name, m.msg_type, m.content);
+        lastMsgId = Math.max(lastMsgId, m.id);
+      });
+    }
+  } catch(e){}
+}
+
+function endChat(){
+  clearInterval(pollTimer); pollTimer = null;
+  clearInterval(timerInterval); timerInterval = null;
+  document.getElementById('reqOverlay').classList.remove('open');
+  document.getElementById('sceneOverlay').classList.remove('open');
+  showScreen('doneScreen');
+}
+
+function resetAll(){
+  roomId = ''; myRole = ''; lastMsgId = 0;
+  currentScenario = 0; pendingSceneReq = null;
+  document.getElementById('chatMsgs').innerHTML = '';
+  showScreen('setupScreen');
+}
+
+// ── Messages ──
+function appendMsg(side, name, type, content){
+  const msgs = document.getElementById('chatMsgs');
+  const row = document.createElement('div');
+  row.className = 'msg-row ' + side;
+  const bclass = type === 'sticker' ? 'bubble sticker-bubble' : 'bubble';
+  const t = new Date(); const ts = t.getHours()+':'+String(t.getMinutes()).padStart(2,'0');
+  row.innerHTML = `<div><div class="msg-name">${side==='other'?name:''}</div><div class="${bclass}">${escHtml(content)}</div></div><span class="msg-time">${ts}</span>`;
+  msgs.appendChild(row);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function addSystemMsg(text){
+  const msgs = document.getElementById('chatMsgs');
+  const d = document.createElement('div');
+  d.className = 'system-msg'; d.textContent = text;
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Send ──
+async function sendMsg(){
+  const txt = document.getElementById('msgText').value.trim();
+  if(!txt || !roomId) return;
+  document.getElementById('msgText').value = '';
+  appendMsg('me', myName, 'text', txt);
+  try {
+    await fetch(`${API}/chat/${roomId}/msg`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({pid:myPid, type:'text', content:txt})
+    });
+  } catch(e){}
+}
+
+async function sendSticker(s){
+  if(!roomId) return;
+  appendMsg('me', myName, 'sticker', s);
+  toggleStickers();
+  try {
+    await fetch(`${API}/chat/${roomId}/msg`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({pid:myPid, type:'sticker', content:s})
+    });
+  } catch(e){}
+}
+
+function onMsgKey(e){
+  if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendMsg(); }
+}
+
+function toggleStickers(){
+  document.getElementById('stickerPanel').classList.toggle('open');
+}
+
+// ── Scenario ──
+function updateScenarioBadge(){
+  const sc = SCENES[currentScenario] || SCENES[0];
+  document.getElementById('scenarioBadge').textContent = currentScenario > 0 ? `${sc.emoji} ${sc.name}` : '自由聊天';
+}
+
+function selectScene(id){
+  selectedScene = id;
+  document.querySelectorAll('.scene-item').forEach(el => el.classList.toggle('selected', parseInt(el.dataset.id) === id));
+}
+
+function openScenePanel(){
+  selectedScene = 0;
+  document.querySelectorAll('.scene-item').forEach(el => el.classList.remove('selected'));
+  document.getElementById('sceneOverlay').classList.add('open');
+}
+
+function closeScenePanel(e){
+  if(!e || e.target === document.getElementById('sceneOverlay'))
+    document.getElementById('sceneOverlay').classList.remove('open');
+}
+
+async function proposeScene(){
+  if(!selectedScene){ alert('請先選擇一個情境');return; }
+  document.getElementById('sceneOverlay').classList.remove('open');
+  try {
+    await fetch(`${API}/chat/${roomId}/scene`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({pid:myPid, action:'propose', scene_id:selectedScene})
+    });
+    addSystemMsg('已發送情境切換請求，等待對方同意...');
+  } catch(e){}
+}
+
+function showSceneRequest(scene_id){
+  const sc = SCENES[scene_id];
+  if(!sc) return;
+  document.getElementById('reqEmoji').textContent = sc.emoji;
+  document.getElementById('reqSceneName').textContent = sc.name;
+  document.getElementById('reqSceneDesc').textContent = sc.desc;
+  document.getElementById('reqOverlay').classList.add('open');
+}
+
+async function respondScene(accept){
+  document.getElementById('reqOverlay').classList.remove('open');
+  try {
+    await fetch(`${API}/chat/${roomId}/scene`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({pid:myPid, action: accept ? 'accept' : 'reject'})
+    });
+    if(!accept) addSystemMsg('已拒絕情境切換請求');
+  } catch(e){}
+  pendingSceneReq = null;
+}
+</script>
+</body>
+</html>

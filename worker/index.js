@@ -290,6 +290,104 @@ export default {
       return Response.json({ok:true},{headers:cors});
     }
 
+    // ── 1對1情境聊天室 ────────────────────────────────────────────
+    // POST /chat/join  { pid, name, gender }
+    if (url.pathname==='/chat/join' && request.method==='POST') {
+      let b; try{b=await request.json();}catch{return Response.json({error:'bad request'},{status:400,headers:cors});}
+      const pid=(b.pid||'').slice(0,40), name=(b.name||'').trim().slice(0,20)||'匿名', gender=b.gender;
+      if (!pid||!['male','female'].includes(gender)) return Response.json({error:'pid/gender required'},{status:400,headers:cors});
+      const now=Date.now();
+      // clean up stale rooms
+      await env.DB.prepare("DELETE FROM chat_rooms WHERE created_at<?").bind(now-3600000).run();
+      // check if already in a room
+      const ex=await env.DB.prepare("SELECT id,p1_id,p2_id,state FROM chat_rooms WHERE (p1_id=? OR p2_id=?) AND state!='done' LIMIT 1").bind(pid,pid).first();
+      if (ex) return Response.json({room_id:ex.id,role:ex.p1_id===pid?'p1':'p2',state:ex.state},{headers:cors});
+      // find opposite gender waiting room
+      const opp=gender==='male'?'female':'male';
+      const wait=await env.DB.prepare("SELECT id,p1_id,p1_name FROM chat_rooms WHERE state='waiting' AND p1_gender=? LIMIT 1").bind(opp).first();
+      if (wait && wait.p1_id!==pid) {
+        const timer_end=now+300000;
+        await env.DB.prepare("UPDATE chat_rooms SET p2_id=?,p2_name=?,p2_gender=?,state='chatting',timer_end=? WHERE id=?").bind(pid,name,gender,timer_end,wait.id).run();
+        return Response.json({room_id:wait.id,role:'p2',state:'chatting',opp_name:wait.p1_name},{headers:cors});
+      }
+      const cnt=await env.DB.prepare("SELECT COUNT(*) as c FROM chat_rooms WHERE state='waiting'").first();
+      if ((cnt?.c||0)>=20) return Response.json({error:'等待人數已滿，請稍後再試'},{status:503,headers:cors});
+      const id=Math.random().toString(36).slice(2,8).toUpperCase();
+      await env.DB.prepare("INSERT INTO chat_rooms (id,p1_id,p1_name,p1_gender,state,created_at) VALUES (?,?,?,?,?,?)").bind(id,pid,name,gender,'waiting',now).run();
+      return Response.json({room_id:id,role:'p1',state:'waiting'},{headers:cors});
+    }
+
+    // GET /chat/:id?pid=
+    const chatGet=url.pathname.match(/^\/chat\/([A-Z0-9]{6})$/);
+    if (chatGet && request.method==='GET') {
+      const room_id=chatGet[1], pid=url.searchParams.get('pid')||'', last_msg=parseInt(url.searchParams.get('last')||'0');
+      const now=Date.now();
+      const room=await env.DB.prepare('SELECT * FROM chat_rooms WHERE id=?').bind(room_id).first();
+      if (!room) return Response.json({error:'room not found'},{status:404,headers:cors});
+      let {state,timer_end}=room;
+      if (state==='chatting' && timer_end && now>=timer_end) {
+        state='done';
+        await env.DB.prepare("UPDATE chat_rooms SET state='done' WHERE id=? AND state='chatting'").bind(room_id).run();
+      }
+      const msgs=await env.DB.prepare('SELECT id,role,name,msg_type,content,created_at FROM chat_messages WHERE room_id=? AND id>? ORDER BY id ASC LIMIT 80').bind(room_id,last_msg).all();
+      const role=room.p1_id===pid?'p1':'p2';
+      return Response.json({
+        state, role, scenario_id:room.scenario_id, scenario_req:room.scenario_req?JSON.parse(room.scenario_req):null,
+        p1_name:room.p1_name, p2_name:room.p2_name||null,
+        p1_gender:room.p1_gender, p2_gender:room.p2_gender||null,
+        time_left:state==='chatting'?Math.max(0,timer_end-now):0,
+        messages:(msgs.results||[]),
+      },{headers:cors});
+    }
+
+    // POST /chat/:id/msg  { pid, type, content }
+    const chatMsg=url.pathname.match(/^\/chat\/([A-Z0-9]{6})\/msg$/);
+    if (chatMsg && request.method==='POST') {
+      const room_id=chatMsg[1];
+      let b; try{b=await request.json();}catch{return Response.json({ok:false},{headers:cors});}
+      const pid=(b.pid||'').slice(0,40);
+      const room=await env.DB.prepare("SELECT p1_id,p2_id,p1_name,p2_name,state FROM chat_rooms WHERE id=?").bind(room_id).first();
+      if (!room||room.state!=='chatting') return Response.json({ok:false,error:'not in chat'},{headers:cors});
+      const role=room.p1_id===pid?'p1':room.p2_id===pid?'p2':null;
+      if (!role) return Response.json({ok:false},{headers:cors});
+      const name=role==='p1'?room.p1_name:room.p2_name;
+      const msg_type=['text','sticker'].includes(b.type)?b.type:'text';
+      const content=(b.content||'').trim().slice(0,200);
+      if (!content) return Response.json({ok:false},{headers:cors});
+      await env.DB.prepare('INSERT INTO chat_messages (room_id,role,name,msg_type,content,created_at) VALUES (?,?,?,?,?,?)').bind(room_id,role,name,msg_type,content,Date.now()).run();
+      return Response.json({ok:true},{headers:cors});
+    }
+
+    // POST /chat/:id/scene  { pid, action, scene_id }
+    const chatScene=url.pathname.match(/^\/chat\/([A-Z0-9]{6})\/scene$/);
+    if (chatScene && request.method==='POST') {
+      const room_id=chatScene[1];
+      let b; try{b=await request.json();}catch{return Response.json({ok:false},{headers:cors});}
+      const pid=(b.pid||'').slice(0,40), action=b.action;
+      const room=await env.DB.prepare("SELECT p1_id,p2_id,state,scenario_req FROM chat_rooms WHERE id=?").bind(room_id).first();
+      if (!room||room.state!=='chatting') return Response.json({ok:false},{headers:cors});
+      const role=room.p1_id===pid?'p1':room.p2_id===pid?'p2':null;
+      if (!role) return Response.json({ok:false},{headers:cors});
+      if (action==='propose') {
+        const scene_id=parseInt(b.scene_id)||0;
+        if (scene_id<1||scene_id>6) return Response.json({ok:false},{headers:cors});
+        const req=JSON.stringify({proposer:role,scene_id});
+        await env.DB.prepare("UPDATE chat_rooms SET scenario_req=? WHERE id=?").bind(req,room_id).run();
+        return Response.json({ok:true},{headers:cors});
+      }
+      if (action==='accept') {
+        const req=room.scenario_req?JSON.parse(room.scenario_req):null;
+        if (!req||req.proposer===role) return Response.json({ok:false},{headers:cors});
+        await env.DB.prepare("UPDATE chat_rooms SET scenario_id=?,scenario_req=NULL WHERE id=?").bind(req.scene_id,room_id).run();
+        return Response.json({ok:true},{headers:cors});
+      }
+      if (action==='reject') {
+        await env.DB.prepare("UPDATE chat_rooms SET scenario_req=NULL WHERE id=?").bind(room_id).run();
+        return Response.json({ok:true},{headers:cors});
+      }
+      return Response.json({ok:false},{headers:cors});
+    }
+
     return env.ASSETS.fetch(request);
   }
 };
