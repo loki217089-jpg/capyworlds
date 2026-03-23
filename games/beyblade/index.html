@@ -84,6 +84,88 @@ canvas { position:absolute; top:0; left:0; display:block; }
 
 .hint { font-size:13px; color:#554477; margin-top:8px; letter-spacing:1px; }
 
+/* ===== TITLE SCREEN ===== */
+#titleOverlay {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  z-index:20; overflow:hidden; cursor:pointer; user-select:none;
+}
+#titleLogo {
+  font-size:52px; font-weight:900; letter-spacing:8px;
+  background:linear-gradient(180deg,#e8f0ff 0%,#88aad0 40%,#445566 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 14px #00aaff88);
+  margin-bottom:4px; font-family:'Arial Black',Arial,sans-serif; text-align:center;
+}
+#titleSub {
+  font-size:18px; letter-spacing:14px; color:#3399cc;
+  text-shadow:0 0 18px #0066ff,0 0 36px #0044aa;
+  margin-bottom:44px; font-family:Arial,sans-serif;
+}
+#pressStartBtn {
+  font-size:17px; letter-spacing:6px; padding:14px 52px;
+  background:linear-gradient(135deg,#001830,#002850);
+  border:1px solid #0088cc; color:#66ccff;
+  border-radius:4px; cursor:pointer; font-family:inherit;
+  box-shadow:0 0 22px #0066aa44,inset 0 0 12px #003366;
+  animation:blinkStart 1.4s ease-in-out infinite;
+  transition:all 0.2s;
+}
+#pressStartBtn:hover {
+  background:linear-gradient(135deg,#002040,#003c60);
+  box-shadow:0 0 32px #0088cc66,inset 0 0 18px #004488;
+  border-color:#00ccff; color:#aaddff; transform:scale(1.06);
+}
+@keyframes blinkStart { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.title-corner {
+  position:absolute; width:44px; height:44px; border-color:#0088cc66;
+}
+.title-corner.tl{top:14px;left:14px;border-top:2px solid;border-left:2px solid;}
+.title-corner.tr{top:14px;right:14px;border-top:2px solid;border-right:2px solid;}
+.title-corner.bl{bottom:14px;left:14px;border-bottom:2px solid;border-left:2px solid;}
+.title-corner.br{bottom:14px;right:14px;border-bottom:2px solid;border-right:2px solid;}
+.title-version { position:absolute; bottom:18px; font-size:11px; color:#334455; letter-spacing:2px; }
+
+/* ===== RESULT OVERLAY ===== */
+#resultOverlay {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  background:linear-gradient(160deg,#000810 0%,#001020 60%,#000508 100%);
+  display:none; flex-direction:column; align-items:center; justify-content:center;
+  z-index:15; padding:20px;
+}
+#resultBanner {
+  font-size:68px; font-weight:900; letter-spacing:10px;
+  font-family:'Arial Black',Arial,sans-serif; margin-bottom:2px; text-align:center;
+}
+#resultBanner.victory {
+  background:linear-gradient(180deg,#ffe566 0%,#ffaa00 50%,#cc6600 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 20px #ffaa0088);
+}
+#resultBanner.defeat {
+  background:linear-gradient(180deg,#ff9999 0%,#ff2244 50%,#aa0022 100%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 20px #ff224488);
+}
+#resultScore { font-size:18px; color:#8899bb; letter-spacing:4px; margin-bottom:20px; }
+.result-stats-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:7px 28px;
+  background:#ffffff08; border:1px solid #ffffff10;
+  border-radius:8px; padding:14px 22px; margin-bottom:22px; min-width:370px;
+}
+.result-stat-item { display:flex; justify-content:space-between; align-items:center; padding:2px 0; }
+.result-stat-label { font-size:12px; color:#556688; letter-spacing:1px; }
+.result-stat-value { font-size:13px; font-weight:bold; color:#88aadd; font-family:monospace; }
+.result-btns { display:flex; gap:14px; }
+.result-btn {
+  padding:11px 34px; font-size:14px; font-weight:bold; letter-spacing:2px;
+  border-radius:5px; cursor:pointer; border:1px solid; transition:all 0.2s; font-family:inherit;
+}
+#retryBtn { background:linear-gradient(135deg,#001840,#002860); border-color:#0088cc; color:#66ccff; }
+#retryBtn:hover { background:linear-gradient(135deg,#002050,#003870); box-shadow:0 0 22px #0066aa44; transform:scale(1.04); }
+#mainMenuBtn { background:linear-gradient(135deg,#1a0008,#300015); border-color:#880044; color:#ff88aa; }
+#mainMenuBtn:hover { background:linear-gradient(135deg,#280010,#440020); box-shadow:0 0 22px #88004444; transform:scale(1.04); }
+
 /* ===== 玩家行動按鈕 ===== */
 #battleBtns {
   position:absolute; bottom:12px; left:50%; transform:translateX(-50%);
@@ -114,8 +196,20 @@ canvas { position:absolute; top:0; left:0; display:block; }
 <div id="app">
   <canvas id="gameCanvas" width="800" height="600"></canvas>
 
+  <!-- TITLE SCREEN -->
+  <div id="titleOverlay">
+    <div class="title-corner tl"></div>
+    <div class="title-corner tr"></div>
+    <div class="title-corner bl"></div>
+    <div class="title-corner br"></div>
+    <div id="titleLogo">⚡ 戰鬥陀螺</div>
+    <div id="titleSub">BURST ARENA</div>
+    <button id="pressStartBtn" onclick="goToSelect()">PRESS START</button>
+    <div class="title-version">CAPYWORLDS EDITION</div>
+  </div>
+
   <!-- SELECT SCREEN -->
-  <div id="selectOverlay">
+  <div id="selectOverlay" style="display:none">
     <h1>⚡ 戰鬥陀螺 BURST ARENA ⚡</h1>
 
     <div class="sel-row">
@@ -184,6 +278,24 @@ canvas { position:absolute; top:0; left:0; display:block; }
     <button class="bbt" id="btn-guard" onclick="playerGuard()">🛡️ 防禦姿態</button>
   </div>
   <div id="envMsg"></div>
+
+  <!-- RESULT OVERLAY -->
+  <div id="resultOverlay">
+    <div id="resultBanner">VICTORY</div>
+    <div id="resultScore">你 2 ─ 0 CPU</div>
+    <div class="result-stats-grid">
+      <div class="result-stat-item"><span class="result-stat-label">對戰時間</span><span class="result-stat-value" id="r-time">--</span></div>
+      <div class="result-stat-item"><span class="result-stat-label">總碰撞次數</span><span class="result-stat-value" id="r-collisions">--</span></div>
+      <div class="result-stat-item"><span class="result-stat-label">造成傷害</span><span class="result-stat-value" id="r-damage">--</span></div>
+      <div class="result-stat-item"><span class="result-stat-label">最高轉速</span><span class="result-stat-value" id="r-maxrpm">--</span></div>
+      <div class="result-stat-item"><span class="result-stat-label">爆裂次數</span><span class="result-stat-value" id="r-burst">--</span></div>
+      <div class="result-stat-item"><span class="result-stat-label">對戰回合</span><span class="result-stat-value" id="r-rounds">--</span></div>
+    </div>
+    <div class="result-btns">
+      <button class="result-btn" id="retryBtn">⟳ 再次挑戰</button>
+      <button class="result-btn" id="mainMenuBtn">⌂ 主選單</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -235,7 +347,7 @@ const CPU_BUILDS = [
 ];
 
 // ==================== GAME STATE ====================
-let gameState = 'select';
+let gameState = 'title';
 let selBlade=0, selCore=0, selDriver=0;
 let previewCpuIdx = Math.floor(Math.random()*3); // 預先揭示 CPU 配件
 let playerTop=null, cpuTop=null;
@@ -247,6 +359,12 @@ let lastBeepN = -1;
 let cpuAggression = 1.0;   // escalates each round CPU loses
 let playerBurstChain = 0;  // consecutive burst activations in a match
 let screenFlash = 0;       // 0-1 white flash intensity
+// ---- match stats ----
+let battleStartTime = 0;
+let matchCollisions = 0;
+let playerMaxRpm = 0;
+let playerDamageDealt = 0;
+let playerBurstCount = 0;
 const keys={};
 document.addEventListener('keydown', e=>{
   keys[e.code]=true;
@@ -255,6 +373,8 @@ document.addEventListener('keydown', e=>{
   if(e.code==='KeyC') playerGuard();
 });
 document.addEventListener('keyup', e=>{ keys[e.code]=false; });
+canvas.addEventListener('contextmenu', e=>e.preventDefault());
+window.addEventListener('blur', ()=>{ Object.keys(keys).forEach(k=>{ keys[k]=false; }); });
 
 // ==================== 玩家技能 ====================
 function playerDash(){
@@ -413,6 +533,7 @@ class BeyTop {
   activateBurst(){
     if(this.burst>=100&&!this.burstActive){
       this.burstActive=true; this.burst=0; sfx('burst');
+      if(this.team==='player') playerBurstCount++;
       if(this.team==='player'){
         playerBurstChain++;
         const chainBoost = playerBurstChain > 1 ? Math.min(1.6, 1 + playerBurstChain * 0.18) : 1;
@@ -630,6 +751,9 @@ function checkCollision(a,b){
       spawnSparks(b.x,b.y,'#44ff88','#ffffff',10);
     }
 
+    matchCollisions++;
+    if(a.team==='player') playerDamageDealt+=bDmg;
+    if(b.team==='player') playerDamageDealt+=aDmg;
     a.hp-=aDmg; b.hp-=bDmg;
     a.spin*=0.974; b.spin*=0.974;
     a.burst=Math.min(100,a.burst+aDmg*3.2);
@@ -788,40 +912,10 @@ function drawPlayerActions(){
   }
 }
 
-// ==================== GAME OVER SCREEN ====================
+// ==================== GAME OVER (canvas bg only — HTML overlay handles UI) ====================
 function drawGameEnd(){
-  ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.fillRect(0,0,W,H);
-  const won=playerScore>cpuScore;
-  ctx.textAlign='center';
-  if(won){
-    ctx.font='bold 72px Arial'; ctx.fillStyle='#44ff88';
-    ctx.shadowBlur=25; ctx.shadowColor='#22cc66';
-    ctx.fillText('勝利！', AX, AY-55);
-    ctx.shadowBlur=0; ctx.font='26px Arial'; ctx.fillStyle='#aaffcc';
-    ctx.fillText('你的陀螺稱霸競技場！', AX, AY-8);
-  } else {
-    ctx.font='bold 72px Arial'; ctx.fillStyle='#ff4466';
-    ctx.shadowBlur=25; ctx.shadowColor='#cc2244';
-    ctx.fillText('敗北...', AX, AY-55);
-    ctx.shadowBlur=0; ctx.font='26px Arial'; ctx.fillStyle='#ffaabb';
-    ctx.fillText('調整配件再挑戰！', AX, AY-8);
-  }
-  ctx.shadowBlur=0;
-  ctx.font='20px Arial'; ctx.fillStyle='#9988bb';
-  ctx.fillText(`最終比分  你 ${playerScore} ─ ${cpuScore} CPU`, AX, AY+34);
-  ctx.font='bold 18px Arial'; ctx.fillStyle='#6644aa';
-  ctx.fillText('按 Enter 或 R 重新選擇', AX, AY+78);
-
-  if(keys['Enter']||keys['KeyR']){
-    keys['Enter']=false; keys['KeyR']=false;
-    playerScore=0; cpuScore=0; currentRound=1;
-    envTimer=18; envActive=null; dirTimer=1;
-    previewCpuIdx=Math.floor(Math.random()*CPU_BUILDS.length); // 重新隨機 CPU
-    gameState='select';
-    document.getElementById('selectOverlay').style.display='flex';
-    document.getElementById('battleBtns').style.display='none';
-    updateSelectUI();
-  }
+  // Dark overlay — HTML resultOverlay shows on top
+  ctx.fillStyle='rgba(0,4,12,0.82)'; ctx.fillRect(0,0,W,H);
 }
 
 // ==================== MAIN LOOP ====================
@@ -831,7 +925,9 @@ function gameLoop(ts){
   shakeX*=0.82; shakeY*=0.82;
   ctx.save(); ctx.translate(Math.round(shakeX),Math.round(shakeY));
 
-  if(gameState==='select'){
+  if(gameState==='title'){
+    drawTitleCanvas();
+  } else if(gameState==='select'){
     drawSelectBG();
   } else if(gameState==='countdown'){
     drawArena();
@@ -841,22 +937,51 @@ function gameLoop(ts){
     countdownTimer--;
     const n=Math.ceil(countdownTimer/60);
 
-    // Countdown beeps
+    // Countdown ring burst on each number
     if(n !== lastBeepN && n>=1 && n<=3 && countdownTimer>0){
+      lastBeepN=n;
+      const col=n===3?'#ff6600':n===2?'#ffee00':'#44ff88';
+      for(let i=0;i<4;i++){
+        particles.push({x:AX,y:AY,vx:0,vy:0,color:col,life:1,size:0,ring:true,
+          ringR:0,ringMax:70+i*45,type:'ring'});
+      }
+      screenFlash=0.25;
+    }
+    // GO! effect
+    if(countdownTimer<=0 && lastBeepN!==0){
+      lastBeepN=0;
+      for(let i=0;i<6;i++){
+        particles.push({x:AX,y:AY,vx:0,vy:0,color:'#ffffff',life:1,size:0,ring:true,
+          ringR:0,ringMax:80+i*55,type:'ring'});
+      }
+      spawnBurst(AX,AY-40,'#ffffff'); spawnBurst(AX,AY+40,'#ffaa00');
+      screenFlash=0.55;
     }
 
     if(countdownTimer>0){
-      ctx.textAlign='center'; ctx.font='bold 110px Arial';
+      // scale pulse: biggest right when number changes
+      const phase=(countdownTimer%60)/60; // 1→0 within each second
+      const scale=1+phase*0.5; // 1.5 → 1.0
+      const sz=Math.round(110*scale);
+      ctx.textAlign='center'; ctx.font=`bold ${sz}px Arial`;
       ctx.fillStyle='#ffffff';
-      ctx.shadowBlur=35;
-      ctx.shadowColor=n===3?'#ff6600':n===2?'#ffee00':'#44ff88';
-      ctx.fillText(n, AX, AY+40);
-      ctx.shadowBlur=0;
+      const col=n===3?'#ff6600':n===2?'#ffee00':'#44ff88';
+      ctx.shadowBlur=40; ctx.shadowColor=col;
+      ctx.globalAlpha=0.5+phase*0.5;
+      ctx.fillText(n, AX, AY+sz*0.35);
+      ctx.globalAlpha=1; ctx.shadowBlur=0;
+      // outer glow ring
+      ctx.beginPath(); ctx.arc(AX,AY,60+phase*80,0,Math.PI*2);
+      ctx.strokeStyle=col+Math.floor((1-phase)*120).toString(16).padStart(2,'0');
+      ctx.lineWidth=3*(1-phase); ctx.stroke();
     } else {
-      ctx.textAlign='center'; ctx.font='bold 86px Arial';
-      ctx.fillStyle='#ffffff'; ctx.shadowBlur=28; ctx.shadowColor='#ff4400';
-      ctx.fillText('GO!', AX, AY+32);
-      ctx.shadowBlur=0;
+      const goPhase=Math.max(0,(-countdownTimer)/20); // 0→1 over 20 frames
+      ctx.textAlign='center';
+      ctx.font=`bold ${Math.round(86+goPhase*30)}px Arial`;
+      ctx.fillStyle='#ffffff'; ctx.shadowBlur=35+goPhase*20; ctx.shadowColor='#ff6600';
+      ctx.globalAlpha=Math.max(0,1-goPhase*0.6);
+      ctx.fillText('LET IT RIP!', AX, AY+32);
+      ctx.globalAlpha=1; ctx.shadowBlur=0;
     }
     if(keys['Space'] && countdownTimer>0){ keys['Space']=false; countdownTimer=0; }
     if(countdownTimer<=-20) gameState='battle';
@@ -903,6 +1028,7 @@ function gameLoop(ts){
     if(playerGuardTimer>0 && playerTop) playerTop.iframes=Math.max(playerTop.iframes,3);
 
     playerTop.update(); cpuTop.update();
+    if(playerTop.spin>playerMaxRpm) playerMaxRpm=playerTop.spin;
     checkCollision(playerTop,cpuTop);
     updateParticles();
 
@@ -936,7 +1062,7 @@ function gameLoop(ts){
       else { roundEndMsg='你獲勝了！'; roundEndReason='CPU 陀螺因'+cReason+'落敗'; winner='player'; playerScore++; }
       sfx(winner==='player'?'win':winner==='cpu'?'lose':'draw');
       if(winner==='player') cpuAggression=Math.min(2.2, cpuAggression+0.38);
-      roundEndTimer=150; // 縮短為 2.5 秒（原 3.6 秒）
+      roundEndTimer=150;
       gameState='roundEnd';
       document.getElementById('battleBtns').style.display='none';
       if(winner==='player') spawnBurst(playerTop.x,playerTop.y,playerTop.color);
@@ -969,7 +1095,7 @@ function gameLoop(ts){
     if(keys['Space']){ keys['Space']=false; roundEndTimer=0; }
     if(roundEndTimer<=0){
       currentRound++;
-      if(playerScore>=2||cpuScore>=2||currentRound>3){ gameState='gameEnd'; }
+      if(playerScore>=2||cpuScore>=2||currentRound>3){ gameState='gameEnd'; showResult(); }
       else { startRound(); }
     }
 
@@ -996,6 +1122,8 @@ function startBattle(){
   const cpuIdx=previewCpuIdx; // 使用選角畫面已揭示的 CPU
   window._cpuIdx=cpuIdx;
   playerScore=0; cpuScore=0; currentRound=1;
+  matchCollisions=0; playerMaxRpm=0; playerDamageDealt=0; playerBurstCount=0;
+  battleStartTime=Date.now();
   envTimer=18; envActive=null;
   dirTimer=1; cpuAggression=1.0; playerBurstChain=0; screenFlash=0;
   startRound();
@@ -1045,6 +1173,128 @@ function drawSelectBG(){
     }
     ctx.closePath(); ctx.fillStyle=blade.color+'55'; ctx.fill();
     ctx.restore();
+  }
+}
+
+// ==================== TITLE / RESULT UI ====================
+function goToSelect(){
+  document.getElementById('titleOverlay').style.display='none';
+  document.getElementById('selectOverlay').style.display='flex';
+  gameState='select';
+}
+
+function showResult(){
+  const won = playerScore > cpuScore;
+  const banner = document.getElementById('resultBanner');
+  banner.textContent = won ? 'VICTORY' : 'DEFEAT';
+  banner.className = won ? 'victory' : 'defeat';
+  document.getElementById('resultScore').textContent = `你 ${playerScore} ─ ${cpuScore} CPU`;
+  const elapsed = ((Date.now()-battleStartTime)/1000).toFixed(1);
+  document.getElementById('r-time').textContent = elapsed + 's';
+  document.getElementById('r-collisions').textContent = matchCollisions;
+  document.getElementById('r-damage').textContent = Math.floor(playerDamageDealt);
+  document.getElementById('r-maxrpm').textContent = Math.floor(playerMaxRpm) + ' RPM';
+  document.getElementById('r-burst').textContent = playerBurstCount + ' 次';
+  document.getElementById('r-rounds').textContent = (currentRound-1) + ' 回合';
+  document.getElementById('resultOverlay').style.display='flex';
+}
+
+function _resetMatch(){
+  playerScore=0; cpuScore=0; currentRound=1;
+  matchCollisions=0; playerMaxRpm=0; playerDamageDealt=0; playerBurstCount=0;
+  envTimer=18; envActive=null; dirTimer=1; cpuAggression=1.0; playerBurstChain=0;
+  screenFlash=0;
+  previewCpuIdx=Math.floor(Math.random()*CPU_BUILDS.length);
+  document.getElementById('resultOverlay').style.display='none';
+}
+
+document.getElementById('retryBtn').onclick = function(){
+  _resetMatch();
+  gameState='select';
+  document.getElementById('selectOverlay').style.display='flex';
+  updateSelectUI();
+};
+document.getElementById('mainMenuBtn').onclick = function(){
+  _resetMatch();
+  gameState='title';
+  document.getElementById('titleOverlay').style.display='flex';
+};
+
+// ==================== TITLE CANVAS ====================
+function drawTitleCanvas(){
+  ctx.fillStyle='#000c1a'; ctx.fillRect(0,0,W,H);
+  const t=Date.now()*0.001;
+
+  // Animated hex grid
+  ctx.strokeStyle='rgba(0,100,180,0.07)'; ctx.lineWidth=1;
+  const hex=40, rows=Math.ceil(H/hex)+2, cols=Math.ceil(W/hex)+2;
+  for(let r=-1;r<rows;r++){
+    for(let c=-1;c<cols;c++){
+      const ox = c*hex*1.5;
+      const oy = r*hex*Math.sqrt(3) + (c%2===0?0:hex*Math.sqrt(3)/2);
+      ctx.beginPath();
+      for(let i=0;i<6;i++){
+        const a=Math.PI/3*i - Math.PI/6;
+        const px=ox+hex*0.55*Math.cos(a), py=oy+hex*0.55*Math.sin(a);
+        if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+      }
+      ctx.closePath(); ctx.stroke();
+    }
+  }
+
+  // Scanning light bar
+  const scanY=((t*0.22)%1.3-0.15)*H;
+  const scanG=ctx.createLinearGradient(0,scanY-30,0,scanY+30);
+  scanG.addColorStop(0,'rgba(0,120,255,0)');
+  scanG.addColorStop(0.5,'rgba(0,180,255,0.06)');
+  scanG.addColorStop(1,'rgba(0,120,255,0)');
+  ctx.fillStyle=scanG; ctx.fillRect(0,scanY-30,W,60);
+
+  // Central rotating rings
+  for(let i=0;i<4;i++){
+    const r=60+i*38, a=t*(0.4+i*0.12)*(i%2===0?1:-1);
+    ctx.save(); ctx.translate(AX,AY); ctx.rotate(a);
+    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(0,${140+i*20},255,${0.12-i*0.02})`; ctx.lineWidth=1.5; ctx.stroke();
+    // tick marks
+    for(let j=0;j<8;j++){
+      const ta=j*Math.PI/4;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(ta)*r,Math.sin(ta)*r);
+      ctx.lineTo(Math.cos(ta)*(r-8),Math.sin(ta)*(r-8));
+      ctx.strokeStyle=`rgba(0,180,255,0.25)`; ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // Mini spinning blades in background
+  const demos=[{bi:0,ci:0},{bi:1,ci:1},{bi:2,ci:2},{bi:3,ci:0}];
+  for(let i=0;i<demos.length;i++){
+    const ang=t*0.2+i*Math.PI/2;
+    const rx=AX+Math.cos(ang)*170, ry=AY+Math.sin(ang)*120;
+    const blade=BLADES[demos[i].bi];
+    ctx.save(); ctx.translate(rx,ry); ctx.rotate(t*(1.8+i*0.4)); ctx.globalAlpha=0.18;
+    ctx.beginPath(); ctx.arc(0,0,14,0,Math.PI*2);
+    ctx.fillStyle=blade.color+'22'; ctx.fill();
+    const pts=blade.pts;
+    ctx.beginPath();
+    for(let j=0;j<pts;j++){
+      const a1=(j/pts)*Math.PI*2, a2=((j+0.4)/pts)*Math.PI*2;
+      if(j===0) ctx.moveTo(Math.cos(a1)*18,Math.sin(a1)*18);
+      else ctx.lineTo(Math.cos(a1)*18,Math.sin(a1)*18);
+      ctx.lineTo(Math.cos(a2)*9,Math.sin(a2)*9);
+    }
+    ctx.closePath(); ctx.fillStyle=blade.color; ctx.fill();
+    ctx.restore();
+  }
+
+  // Side accent lines
+  const lineA=Math.sin(t*0.7)*0.4+0.6;
+  ctx.strokeStyle=`rgba(0,140,220,${lineA*0.18})`; ctx.lineWidth=1;
+  for(let i=0;i<6;i++){
+    const y=H*0.1+i*(H*0.8/5);
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W*0.12,y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(W,y); ctx.lineTo(W*0.88,y); ctx.stroke();
   }
 }
 
@@ -1134,7 +1384,11 @@ function changePart(type,dir){
 
 // ==================== INIT ====================
 updateSelectUI();
-(function bgLoop(){ requestAnimationFrame(bgLoop); if(gameState==='select') drawSelectBG(); })();
+(function bgLoop(){
+  requestAnimationFrame(bgLoop);
+  if(gameState==='select') drawSelectBG();
+  else if(gameState==='title') drawTitleCanvas();
+})();
 
 // ==================== SFX ====================
 const _SFX = {};

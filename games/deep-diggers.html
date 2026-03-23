@@ -340,6 +340,8 @@ document.addEventListener('keydown',e=>{
   if((e.key==='b'||e.key==='B')&&ST.phase==='dig')useBomb();
 });
 document.addEventListener('keyup',e=>keys[e.key]=false);
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+window.addEventListener('blur',()=>{ Object.keys(keys).forEach(k=>{ keys[k]=false; }); });
 const isK=(...k)=>k.some(x=>keys[x]);
 
 function useBomb(){

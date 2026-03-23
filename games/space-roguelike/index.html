@@ -310,7 +310,7 @@ const META_DEFAULTS = {
   credits: 0,
   startSpeed: 0, startShield: 0, startHull: 0,
   oreBonus: 0, fuelBonus: 0, fireBonus: 0,
-  coreDetector: 0, startKit: 0,
+  coreDetector: 0, startKit: 0, relicSlot: 0,
   totalRuns: 0, bestCores: 0, bestTime: 0,
 };
 const META_UPGRADES = [
@@ -322,6 +322,7 @@ const META_UPGRADES = [
   {id:'fireBonus',   name:'武器校準',   desc:'每局射速 +15%',      max:3, costs:[30,55,90]},
   {id:'coreDetector',name:'核心偵測器', desc:'HUD 顯示最近核心方向',max:1, costs:[80]},
   {id:'startKit',    name:'應急補給包', desc:'開局攜帶護盾×1+修復包×1',max:1, costs:[50]},
+  {id:'relicSlot',   name:'遺物倉擴充', desc:'遺物上限 +1（初始3，最多6）',max:3, costs:[60,100,150]},
 ];
 let meta = {...META_DEFAULTS};
 
@@ -614,8 +615,8 @@ function generateChunk(cx, cy) {
     const it = itemTypes[Math.floor(rng()*itemTypes.length)];
     items.push({x:ix,y:iy,type:it,r:12,bobOffset:rng()*Math.PI*2,alive:true});
   }
-  // Rare relic caches (3% per chunk, only at tier 1+)
-  if (tier >= 1 && rng() < 0.03) {
+  // Rare relic caches (8% per chunk, only at tier 1+)
+  if (tier >= 1 && rng() < 0.08) {
     const ix = ox + 200 + rng()*(CHUNK-400);
     const iy = oy + 200 + rng()*(CHUNK-400);
     items.push({x:ix,y:iy,type:'relic',r:14,bobOffset:rng()*Math.PI*2,alive:true});
@@ -666,6 +667,7 @@ function getChunksAround(wx, wy, radius) {
 let bullets = [];
 let enemyBullets = [];
 let particles = [];
+let damageNumbers = []; // floating damage text
 let dynamicEnemies = []; // hunter wave enemies (not bound to chunks)
 let hunterTimer = 0;
 
@@ -686,6 +688,17 @@ function explosion(x,y,n,color) {
     const s = 50+Math.random()*150;
     spawnParticle(x,y,Math.cos(a)*s,Math.sin(a)*s,0.3+Math.random()*0.5,color,2+Math.random()*3);
   }
+}
+
+function spawnDamageNumber(x, y, dmg, color) {
+  damageNumbers.push({
+    x, y, dmg: Math.ceil(dmg),
+    vy: -60 - Math.random()*30,
+    vx: (Math.random()-0.5)*30,
+    life: 0.9, maxLife: 0.9,
+    color: color || '#ffffff',
+    big: dmg >= 50
+  });
 }
 
 // ─── ENGINE TRAIL ─────────────────────────────────────────────────────────────
@@ -760,6 +773,8 @@ window.addEventListener('keyup', e => {
   keys[e.code] = false;
   if (e.code==='Space') mouse.down = false;
 });
+canvas.addEventListener('contextmenu', e=>e.preventDefault());
+window.addEventListener('blur', ()=>{ Object.keys(keys).forEach(k=>{ keys[k]=false; }); mouse.down=false; });
 canvas.addEventListener('mousemove', e => { mouse.x=e.clientX; mouse.y=e.clientY; });
 canvas.addEventListener('mousedown', e => { if(e.button===0) { mouse.down=true; audio.init(); } });
 canvas.addEventListener('mouseup', e => { if(e.button===0) mouse.down=false; });
@@ -869,6 +884,18 @@ function renderShop() {
   // Consumables (always visible if needed)
   if (player.hull<player.maxHull) upgrades.push({name:'緊急維修 (船殼恢復)',cost:{ore:15},req:()=>true,buy:()=>{player.hull=player.maxHull;}});
   if (player.shield<player.maxShield) upgrades.push({name:'護盾充能 (護盾恢復)',cost:{ore:8},req:()=>true,buy:()=>{player.shield=player.maxShield;}});
+  // Relic purchase (random, costs alienTech)
+  const ownedAll = RELIC_DEFS.every(r => player.relics.includes(r.id));
+  const relicFull = player.relics.length >= maxRelics();
+  if (!ownedAll) {
+    const relicLabel = relicFull
+      ? `遺物包 — 遺物欄已滿(${maxRelics()}/${maxRelics()})`
+      : `遺物包 — 隨機獲得1個遺物 (${player.relics.length}/${maxRelics()})`;
+    upgrades.push({name: relicLabel, cost:{alienTech:3}, req:()=>true, buy:()=>{
+      if (relicFull) { setStatus(`遺物欄已滿！請先擴充遺物倉（META 商店）`); return; }
+      giveRandomRelic();
+    }});
+  }
 
   // ── Navigator talents (Lv.1 → Lv.10) ────────────────────────────────────
   const PERK_MAX = 10;
@@ -1251,7 +1278,20 @@ function updateBullets(dt) {
         if (!en.alive) continue;
         if (dist2(b.x,b.y,en.x,en.y)<(b.r+en.r)**2) {
           if (b.isMissile) missileExplode(b.x,b.y,b.dmg,chunk);
-          else { en.hp-=b.dmg; explosion(b.x,b.y,6,en.color); }
+          else {
+            // Shielder: absorb damage with shield first
+            let dmgLeft = b.dmg;
+            if (en.shield > 0) {
+              const absorbed = Math.min(en.shield, dmgLeft);
+              en.shield -= absorbed; dmgLeft -= absorbed;
+              spawnDamageNumber(en.x, en.y - en.r, absorbed, '#4488ff');
+            }
+            if (dmgLeft > 0) {
+              en.hp -= dmgLeft;
+              spawnDamageNumber(en.x + (Math.random()-0.5)*20, en.y - en.r, dmgLeft, b.pierce ? '#ff8800' : '#ffffff');
+            }
+            explosion(b.x,b.y,6,en.color);
+          }
           if (en.hp<=0) {
             en.alive=false;
             audio.play('explodeBig', 0.6);
@@ -1271,6 +1311,7 @@ function updateBullets(dt) {
       if (!en.alive) continue;
       if (dist2(b.x,b.y,en.x,en.y)<(b.r+en.r)**2) {
         en.hp-=b.dmg;
+        spawnDamageNumber(en.x + (Math.random()-0.5)*20, en.y - en.r, b.dmg, '#ffffff');
         explosion(b.x,b.y,6,en.color);
         if (en.hp<=0) {
           en.alive=false;
@@ -1327,7 +1368,9 @@ function missileExplode(bx, by, dmg, nearChunk) {
       const d2=dist2(bx,by,en.x,en.y);
       if (d2 < EXPL_R**2) {
         const falloff = 1 - Math.sqrt(d2)/EXPL_R;
-        en.hp -= dmg * falloff;
+        const exDmg = dmg * falloff;
+        en.hp -= exDmg;
+        spawnDamageNumber(en.x + (Math.random()-0.5)*20, en.y - en.r, exDmg, '#ffaa44');
         explosion(en.x,en.y,6,en.color);
         if (en.hp<=0) {
           en.alive=false;
@@ -1344,6 +1387,7 @@ function missileExplode(bx, by, dmg, nearChunk) {
     if (d2 < EXPL_R**2) {
       const falloff = 1 - Math.sqrt(d2)/EXPL_R;
       en.hp -= dmg * falloff;
+      spawnDamageNumber(en.x + (Math.random()-0.5)*20, en.y - en.r, dmg * falloff, '#ffaa44');
       if (en.hp<=0) {
         en.alive=false;
         explosion(en.x,en.y,18,en.color);
@@ -1663,8 +1707,33 @@ function collectItem(item) {
         if (player.warpCores>=5) setStatus('所有翹曲核心已蒐集！前往逃脫傳送門！');
       }
       break;
+    case 'relic':
+      giveRandomRelic(item.x, item.y);
+      break;
   }
   explosion(item.x,item.y,8,'#ffffff');
+}
+
+function maxRelics() {
+  return 3 + metaLevel('relicSlot');
+}
+
+function giveRandomRelic(x, y) {
+  const cap = maxRelics();
+  if (player.relics.length >= cap) {
+    setStatus(`遺物欄已滿（${cap}/${cap}）— 需在 META 商店擴充遺物槽`);
+    return;
+  }
+  const available = RELIC_DEFS.filter(r => !player.relics.includes(r.id));
+  if (available.length === 0) {
+    setStatus('所有遺物已蒐集！');
+    return;
+  }
+  const relic = available[Math.floor(Math.random() * available.length)];
+  player.relics.push(relic.id);
+  audio.play('powerup', 0.8, 1, 280);
+  setStatus(`✦ 遺物獲得：${relic.name} — ${relic.desc}`);
+  if (x !== undefined) { explosion(x, y, 20, relic.color); explosion(x, y, 10, '#ffffff'); }
 }
 
 function updatePortal(dt) {
@@ -1715,6 +1784,13 @@ function updateParticles(dt) {
     p.life-=dt;
     if (p.life<=0) engineTrail.splice(i,1);
   }
+  for (let i=damageNumbers.length-1;i>=0;i--) {
+    const d=damageNumbers[i];
+    d.x+=d.vx*dt; d.y+=d.vy*dt;
+    d.vy*=0.92;
+    d.life-=dt;
+    if (d.life<=0) damageNumbers.splice(i,1);
+  }
 }
 
 // ─── RENDER ───────────────────────────────────────────────────────────────────
@@ -1739,6 +1815,7 @@ function render(timestamp) {
   drawPlayer(timestamp);
   drawBullets(timestamp);
   drawParticles();
+  drawDamageNumbers();
 
   ctx.restore();
 
@@ -2312,6 +2389,28 @@ function drawParticles() {
   ctx.globalAlpha=1;
 }
 
+function drawDamageNumbers() {
+  ctx.save();
+  ctx.textAlign='center';
+  for (const d of damageNumbers) {
+    const alpha = d.life / d.maxLife;
+    const sx = W/2 + (d.x - player.x);
+    const sy = H/2 + (d.y - player.y);
+    ctx.globalAlpha = alpha;
+    if (d.big) {
+      ctx.font = 'bold 18px Courier New';
+      ctx.shadowColor = d.color; ctx.shadowBlur = 10;
+    } else {
+      ctx.font = '13px Courier New';
+      ctx.shadowBlur = 0;
+    }
+    ctx.fillStyle = d.color;
+    ctx.fillText(Math.ceil(d.dmg), sx, sy);
+  }
+  ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
 // ─── HUD ──────────────────────────────────────────────────────────────────────
 function drawHUD(t) {
   // Top left panel
@@ -2501,6 +2600,25 @@ function drawHUD(t) {
       ctx.font='12px Courier New'; ctx.textAlign='center'; ctx.fillStyle='#ffdd00';
       ctx.fillText(`${Math.floor(Math.sqrt(nearestDist))}u`,0,20);
       ctx.restore(); ctx.globalAlpha=1;
+    }
+  }
+
+  // Relic panel (below weapon indicator, bottom left)
+  if (player.relics.length > 0) {
+    const relicPanelH = 14 + player.relics.length * 18;
+    const relicPanelY = H - 50 - relicPanelH - 6;
+    ctx.fillStyle = 'rgba(0,5,20,0.7)';
+    ctx.fillRect(10, relicPanelY, 180, relicPanelH);
+    ctx.strokeStyle = 'rgba(180,100,255,0.35)'; ctx.lineWidth = 1;
+    ctx.strokeRect(10, relicPanelY, 180, relicPanelH);
+    ctx.fillStyle = '#aa66ff'; ctx.font = '10px Courier New'; ctx.textAlign = 'left';
+    ctx.fillText(`✦ 遺物 ${player.relics.length}/${maxRelics()}`, 18, relicPanelY + 11);
+    for (let ri = 0; ri < player.relics.length; ri++) {
+      const rd = RELIC_DEFS.find(r => r.id === player.relics[ri]);
+      if (!rd) continue;
+      ctx.fillStyle = rd.color;
+      ctx.font = '11px Courier New';
+      ctx.fillText(`◆ ${rd.name}`, 18, relicPanelY + 11 + (ri + 1) * 18);
     }
   }
 
