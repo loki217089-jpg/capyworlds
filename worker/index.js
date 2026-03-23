@@ -1,4 +1,29 @@
-// v1.2.0 - added 1v1 match rooms (水豚拔河)
+// v1.3.0 - added RPS (水豚猜拳) and Quiz (水豚問答PK) rooms
+
+// RPS: who wins between c1 (p1) and c2 (p2)?
+function rpsWinner(c1, c2) {
+  if (!c1 || !c2) return null;
+  if (c1 === c2) return 'draw';
+  if ((c1==='rock'&&c2==='scissors')||(c1==='paper'&&c2==='rock')||(c1==='scissors'&&c2==='paper')) return 'p1';
+  return 'p2';
+}
+
+// Quiz questions (12 questions, answers are 0-indexed)
+const QUIZ_Q = [
+  {q:'水豚（Capybara）是世界上最大的什麼動物？',a:['嚙齒動物','有袋動物','猛獸','爬蟲類'],c:0},
+  {q:'地球繞太陽一圈大約需要幾天？',a:['265天','365天','465天','185天'],c:1},
+  {q:'1+1+1×0+1 等於幾？',a:['0','1','3','2'],c:2},
+  {q:'以下哪個是台灣的國花？',a:['玫瑰','梅花','菊花','蓮花'],c:1},
+  {q:'光速約為每秒幾公里？',a:['30萬公里','3萬公里','3百公里','30億公里'],c:0},
+  {q:'以下哪個國家的國旗是純紅色的？',a:['中國','日本','蒙古','吐瓦魯'],c:0},
+  {q:'水的沸點在標準大氣壓下是幾度？',a:['90°C','80°C','100°C','110°C'],c:2},
+  {q:'以下哪個不是足球場上的位置？',a:['前鋒','守門員','角衛','中場'],c:2},
+  {q:'人類有幾根肋骨（成人）？',a:['20根','24根','28根','16根'],c:1},
+  {q:'哪個星球是太陽系最大的行星？',a:['土星','天王星','木星','海王星'],c:2},
+  {q:'以下哪種語言使用人數最多？',a:['英語','西班牙語','普通話','印地語'],c:2},
+  {q:'鑽石的主要成分是什麼？',a:['矽','碳','氧','鐵'],c:1},
+];
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -246,6 +271,187 @@ export default {
         await env.DB.prepare('UPDATE match_rooms SET p2_taps=? WHERE id=?').bind(taps, room_id).run();
       }
       return Response.json({ ok: true }, { headers: cors });
+    }
+
+    // ── 水豚猜拳 RPS API ────────────────────────────────────────
+
+    // POST /rps/join
+    if (url.pathname === '/rps/join' && request.method === 'POST') {
+      let body; try { body = await request.json(); } catch { return Response.json({error:'bad request'},{status:400,headers:cors}); }
+      const pid = (body.pid||'').slice(0,40), name = (body.name||'玩家').trim().slice(0,20)||'玩家';
+      if (!pid) return Response.json({error:'pid required'},{status:400,headers:cors});
+      const now = Date.now();
+      await env.DB.prepare('DELETE FROM rps_rooms WHERE created_at < ?').bind(now-600000).run();
+      const existing = await env.DB.prepare("SELECT id,p1_id,p2_id,state FROM rps_rooms WHERE (p1_id=? OR p2_id=?) AND state!='done' LIMIT 1").bind(pid,pid).first();
+      if (existing) { const role=existing.p1_id===pid?'p1':'p2'; return Response.json({room_id:existing.id,role,state:existing.state},{headers:cors}); }
+      const waiting = await env.DB.prepare("SELECT id,p1_id,p1_name FROM rps_rooms WHERE state='waiting' LIMIT 1").first();
+      if (waiting && waiting.p1_id !== pid) {
+        const rs = now+3500, re = rs+10000;
+        await env.DB.prepare('UPDATE rps_rooms SET p2_id=?,p2_name=?,state=?,round_start=?,round_end=? WHERE id=?').bind(pid,name,'starting',rs,re,waiting.id).run();
+        return Response.json({room_id:waiting.id,role:'p2',state:'starting',opp_name:waiting.p1_name},{headers:cors});
+      }
+      const countRow = await env.DB.prepare("SELECT COUNT(*) as c FROM rps_rooms WHERE state!='done'").first();
+      if ((countRow?.c||0)>=10) return Response.json({error:'伺服器已滿，請稍後再試'},{status:503,headers:cors});
+      const id = Math.random().toString(36).slice(2,8).toUpperCase();
+      await env.DB.prepare('INSERT INTO rps_rooms (id,p1_id,p1_name,state,created_at) VALUES (?,?,?,?,?)').bind(id,pid,name,'waiting',now).run();
+      return Response.json({room_id:id,role:'p1',state:'waiting'},{headers:cors});
+    }
+
+    // GET /rps/:id?pid=
+    const rpsGet = url.pathname.match(/^\/rps\/([A-Z0-9]{6})$/);
+    if (rpsGet && request.method === 'GET') {
+      const room_id = rpsGet[1], pid = url.searchParams.get('pid')||'', now = Date.now();
+      const room = await env.DB.prepare('SELECT * FROM rps_rooms WHERE id=?').bind(room_id).first();
+      if (!room) return Response.json({error:'room not found'},{status:404,headers:cors});
+      let {state,round,p1_wins,p2_wins,round_start,round_end,p1_choice,p2_choice,winner} = room;
+
+      if (state==='starting' && now>=round_start) {
+        state='choosing'; round_end = round_start+10000;
+        await env.DB.prepare("UPDATE rps_rooms SET state='choosing',round_end=? WHERE id=? AND state='starting'").bind(round_end,room_id).run();
+      } else if (state==='choosing') {
+        const bothChose = p1_choice&&p2_choice;
+        if (bothChose || now>=round_end) {
+          const eff_p1 = p1_choice||'forfeit', eff_p2 = p2_choice||'forfeit';
+          let rw;
+          if (eff_p1==='forfeit'&&eff_p2==='forfeit') rw='draw';
+          else if (eff_p1==='forfeit') rw='p2';
+          else if (eff_p2==='forfeit') rw='p1';
+          else rw = rpsWinner(eff_p1,eff_p2);
+          if (rw==='p1') p1_wins++; else if (rw==='p2') p2_wins++;
+          const reveal_end = now+2500;
+          if (p1_wins>=2||p2_wins>=2) {
+            winner = p1_wins>=2?'p1':'p2'; state='done';
+            await env.DB.prepare("UPDATE rps_rooms SET state='done',p1_wins=?,p2_wins=?,winner=? WHERE id=? AND state='choosing'").bind(p1_wins,p2_wins,winner,room_id).run();
+          } else {
+            state='revealing'; round_start=reveal_end;
+            await env.DB.prepare("UPDATE rps_rooms SET state='revealing',round_start=?,p1_wins=?,p2_wins=? WHERE id=? AND state='choosing'").bind(reveal_end,p1_wins,p2_wins,room_id).run();
+          }
+        }
+      } else if (state==='revealing' && now>=round_start) {
+        round++; const rs=now+3500, re=rs+10000;
+        state='starting'; p1_choice=''; p2_choice=''; round_start=rs; round_end=re;
+        await env.DB.prepare("UPDATE rps_rooms SET state='starting',round=?,p1_choice='',p2_choice='',round_start=?,round_end=? WHERE id=? AND state='revealing'").bind(round,rs,re,room_id).run();
+      }
+
+      const role = room.p1_id===pid?'p1':'p2';
+      const time_left = state==='choosing' ? Math.max(0,round_end-now) : state==='starting' ? Math.max(0,round_start-now) : 0;
+      return Response.json({
+        state, round, p1_wins, p2_wins, winner, role,
+        p1_name:room.p1_name, p2_name:room.p2_name||null,
+        p1_chosen:!!(state==='choosing'||state==='revealing'||state==='done'?p1_choice:''),
+        p2_chosen:!!(state==='choosing'||state==='revealing'||state==='done'?p2_choice:''),
+        p1_choice: (state==='revealing'||state==='done')?p1_choice:'',
+        p2_choice: (state==='revealing'||state==='done')?p2_choice:'',
+        time_left
+      },{headers:cors});
+    }
+
+    // POST /rps/:id/choose
+    const rpsChoose = url.pathname.match(/^\/rps\/([A-Z0-9]{6})\/choose$/);
+    if (rpsChoose && request.method === 'POST') {
+      const room_id = rpsChoose[1];
+      let body; try { body = await request.json(); } catch { return Response.json({ok:false},{headers:cors}); }
+      const pid=(body.pid||'').slice(0,40), choice=(body.choice||'');
+      if (!['rock','paper','scissors'].includes(choice)) return Response.json({ok:false},{headers:cors});
+      const room = await env.DB.prepare('SELECT p1_id,p2_id,state,p1_choice,p2_choice FROM rps_rooms WHERE id=?').bind(room_id).first();
+      if (!room||room.state!=='choosing') return Response.json({ok:false},{headers:cors});
+      if (room.p1_id===pid && !room.p1_choice) {
+        await env.DB.prepare('UPDATE rps_rooms SET p1_choice=? WHERE id=?').bind(choice,room_id).run();
+      } else if (room.p2_id===pid && !room.p2_choice) {
+        await env.DB.prepare('UPDATE rps_rooms SET p2_choice=? WHERE id=?').bind(choice,room_id).run();
+      }
+      return Response.json({ok:true},{headers:cors});
+    }
+
+    // ── 水豚問答PK Quiz API ─────────────────────────────────────
+
+    // POST /quiz/join
+    if (url.pathname === '/quiz/join' && request.method === 'POST') {
+      let body; try { body = await request.json(); } catch { return Response.json({error:'bad request'},{status:400,headers:cors}); }
+      const pid=(body.pid||'').slice(0,40), name=(body.name||'玩家').trim().slice(0,20)||'玩家';
+      if (!pid) return Response.json({error:'pid required'},{status:400,headers:cors});
+      const now = Date.now();
+      await env.DB.prepare('DELETE FROM quiz_rooms WHERE created_at < ?').bind(now-600000).run();
+      const existing = await env.DB.prepare("SELECT id,p1_id,p2_id,state FROM quiz_rooms WHERE (p1_id=? OR p2_id=?) AND state!='done' LIMIT 1").bind(pid,pid).first();
+      if (existing) { const role=existing.p1_id===pid?'p1':'p2'; return Response.json({room_id:existing.id,role,state:existing.state},{headers:cors}); }
+      const waiting = await env.DB.prepare("SELECT id,p1_id,p1_name FROM quiz_rooms WHERE state='waiting' LIMIT 1").first();
+      if (waiting && waiting.p1_id !== pid) {
+        const rs=now+3500, re=rs+8000;
+        await env.DB.prepare('UPDATE quiz_rooms SET p2_id=?,p2_name=?,state=?,round_start=?,round_end=? WHERE id=?').bind(pid,name,'starting',rs,re,waiting.id).run();
+        return Response.json({room_id:waiting.id,role:'p2',state:'starting',opp_name:waiting.p1_name},{headers:cors});
+      }
+      const countRow = await env.DB.prepare("SELECT COUNT(*) as c FROM quiz_rooms WHERE state!='done'").first();
+      if ((countRow?.c||0)>=10) return Response.json({error:'伺服器已滿，請稍後再試'},{status:503,headers:cors});
+      const id = Math.random().toString(36).slice(2,8).toUpperCase();
+      const qidx = Math.floor(Math.random()*QUIZ_Q.length);
+      await env.DB.prepare('INSERT INTO quiz_rooms (id,p1_id,p1_name,state,question_idx,created_at) VALUES (?,?,?,?,?,?)').bind(id,pid,name,'waiting',qidx,now).run();
+      return Response.json({room_id:id,role:'p1',state:'waiting'},{headers:cors});
+    }
+
+    // GET /quiz/:id?pid=
+    const quizGet = url.pathname.match(/^\/quiz\/([A-Z0-9]{6})$/);
+    if (quizGet && request.method === 'GET') {
+      const room_id=quizGet[1], pid=url.searchParams.get('pid')||'', now=Date.now();
+      const room = await env.DB.prepare('SELECT * FROM quiz_rooms WHERE id=?').bind(room_id).first();
+      if (!room) return Response.json({error:'room not found'},{status:404,headers:cors});
+      let {state,round,p1_wins,p2_wins,round_start,round_end,p1_answer,p2_answer,question_idx,winner} = room;
+
+      if (state==='starting' && now>=round_start) {
+        state='answering'; round_end=round_start+8000;
+        await env.DB.prepare("UPDATE quiz_rooms SET state='answering',round_end=? WHERE id=? AND state='starting'").bind(round_end,room_id).run();
+      } else if (state==='answering') {
+        const bothAnswered = p1_answer>0 && p2_answer>0;
+        if (bothAnswered || now>=round_end) {
+          const q = QUIZ_Q[question_idx%QUIZ_Q.length];
+          const p1c = p1_answer-1, p2c = p2_answer-1; // convert to 0-indexed
+          const p1right = p1_answer>0 && p1c===q.c, p2right = p2_answer>0 && p2c===q.c;
+          if (p1right && !p2right) p1_wins++;
+          else if (p2right && !p1right) p2_wins++;
+          const reveal_end = now+3000;
+          const maxWins = 3, total_rounds = 5;
+          if (p1_wins>=maxWins || p2_wins>=maxWins || round>=total_rounds) {
+            winner = p1_wins>p2_wins?'p1':p2_wins>p1_wins?'p2':'draw'; state='done';
+            await env.DB.prepare("UPDATE quiz_rooms SET state='done',p1_wins=?,p2_wins=?,winner=? WHERE id=? AND state='answering'").bind(p1_wins,p2_wins,winner,room_id).run();
+          } else {
+            state='revealing'; round_start=reveal_end;
+            await env.DB.prepare("UPDATE quiz_rooms SET state='revealing',round_start=?,p1_wins=?,p2_wins=? WHERE id=? AND state='answering'").bind(reveal_end,p1_wins,p2_wins,room_id).run();
+          }
+        }
+      } else if (state==='revealing' && now>=round_start) {
+        round++; const new_qidx=(question_idx+1)%QUIZ_Q.length, rs=now+3500, re=rs+8000;
+        state='starting'; p1_answer=0; p2_answer=0; round_start=rs; round_end=re; question_idx=new_qidx;
+        await env.DB.prepare("UPDATE quiz_rooms SET state='starting',round=?,question_idx=?,p1_answer=0,p2_answer=0,round_start=?,round_end=? WHERE id=? AND state='revealing'").bind(round,new_qidx,rs,re,room_id).run();
+      }
+
+      const role=room.p1_id===pid?'p1':'p2';
+      const q=QUIZ_Q[question_idx%QUIZ_Q.length];
+      const time_left = state==='answering'?Math.max(0,round_end-now):state==='starting'?Math.max(0,round_start-now):0;
+      return Response.json({
+        state, round, p1_wins, p2_wins, winner, role,
+        p1_name:room.p1_name, p2_name:room.p2_name||null,
+        question_idx, question:q.q, choices:q.a,
+        correct_idx: (state==='revealing'||state==='done')?q.c:-1,
+        p1_answer: (state==='revealing'||state==='done')?p1_answer:0,
+        p2_answer: (state==='revealing'||state==='done')?p2_answer:0,
+        time_left
+      },{headers:cors});
+    }
+
+    // POST /quiz/:id/answer
+    const quizAnswer = url.pathname.match(/^\/quiz\/([A-Z0-9]{6})\/answer$/);
+    if (quizAnswer && request.method === 'POST') {
+      const room_id=quizAnswer[1];
+      let body; try { body=await request.json(); } catch { return Response.json({ok:false},{headers:cors}); }
+      const pid=(body.pid||'').slice(0,40), answer=parseInt(body.answer)||0;
+      if (answer<1||answer>4) return Response.json({ok:false},{headers:cors});
+      const room = await env.DB.prepare('SELECT p1_id,p2_id,state,p1_answer,p2_answer FROM quiz_rooms WHERE id=?').bind(room_id).first();
+      if (!room||room.state!=='answering') return Response.json({ok:false},{headers:cors});
+      if (room.p1_id===pid && !room.p1_answer) {
+        await env.DB.prepare('UPDATE quiz_rooms SET p1_answer=? WHERE id=?').bind(answer,room_id).run();
+      } else if (room.p2_id===pid && !room.p2_answer) {
+        await env.DB.prepare('UPDATE quiz_rooms SET p2_answer=? WHERE id=?').bind(answer,room_id).run();
+      }
+      return Response.json({ok:true},{headers:cors});
     }
 
     return env.ASSETS.fetch(request);

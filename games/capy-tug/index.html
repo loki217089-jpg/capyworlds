@@ -119,7 +119,6 @@
     .countdown-num {
       font-size: 8rem; font-weight: 900; line-height: 1;
       color: var(--accent); text-shadow: 0 0 40px rgba(200,164,86,0.7);
-      animation: pop 0.4s ease;
     }
     .countdown-label { font-size: 1.2rem; color: #907a60; }
     @keyframes pop { 0%{transform:scale(1.4);opacity:0} 100%{transform:scale(1);opacity:1} }
@@ -320,6 +319,8 @@ function onAgainTap(e) {
   localTaps = 0;
   lastSentTaps = 0;
   isPlaying = false;
+  lastState = null;
+  prevRound = 1;
   showScreen('screen-lobby');
 }
 
@@ -452,9 +453,6 @@ function showCountdown(sec) {
   overlay.classList.remove('hidden');
   if (sec > 0) {
     numEl.textContent = sec;
-    numEl.style.animation = 'none';
-    void numEl.offsetWidth;
-    numEl.style.animation = 'pop 0.4s ease';
     labelEl.textContent = '準備好了嗎？';
   } else {
     numEl.textContent = 'GO!';

@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>水豚猜拳！— CapyWorlds</title>
+  <style>
+    :root {
+      --bg: #13100c; --bg2: #1e1812; --accent: #c8a456;
+      --text: #e8ddd0; --cyan: #00e5ff; --orange: #ff8040;
+      --green: #44ee88; --red: #ff4444; --purple: #aa44ff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;
+      height: 100dvh; overflow: hidden; display: flex;
+      flex-direction: column; align-items: center; justify-content: center;
+      user-select: none; -webkit-user-select: none;
+    }
+    .screen { display: none; width: 100%; max-width: 480px; padding: 24px 20px; }
+    .screen.active { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .game-title { font-size: 2.4rem; font-weight: 900; color: var(--accent);
+      text-shadow: 0 0 24px rgba(200,164,86,0.5); letter-spacing: 2px; }
+    .game-sub { font-size: 1rem; color: #907a60; text-align: center; line-height: 1.5; }
+    .name-input {
+      width: 100%; padding: 14px 18px; font-size: 1.1rem;
+      background: var(--bg2); border: 2px solid #3d3020; border-radius: 12px;
+      color: var(--text); outline: none; text-align: center; transition: border-color 0.2s;
+    }
+    .name-input:focus { border-color: var(--accent); }
+    .btn {
+      width: 100%; padding: 16px; font-size: 1.2rem; font-weight: 700;
+      border: none; border-radius: 14px; cursor: pointer;
+      transition: transform 0.1s, opacity 0.2s; letter-spacing: 1px;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn-primary { background: linear-gradient(135deg, var(--accent), #e8c060); color: #1a0e00; }
+    .btn-secondary { background: #2a2018; color: var(--text); border: 1px solid #3d3020; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .spinner {
+      width: 64px; height: 64px; border-radius: 50%;
+      border: 4px solid #3d3020; border-top-color: var(--accent);
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .match-status { font-size: 1.1rem; color: var(--accent); text-align: center; }
+    .waiting-hint { font-size: 0.85rem; color: #6a5a48; text-align: center; }
+    .back-link { font-size: 0.85rem; color: #907a60; text-decoration: none;
+      border-bottom: 1px solid #3d3020; padding-bottom: 2px; }
+    .back-link:hover { color: var(--accent); }
+
+    /* ── Game Screen ── */
+    #screen-game { gap: 12px; justify-content: space-between; height: 100dvh;
+      padding: 16px 20px 24px; }
+    .scoreboard {
+      width: 100%; display: flex; justify-content: space-between; align-items: center;
+      background: var(--bg2); border-radius: 12px; padding: 10px 16px; gap: 8px;
+    }
+    .player-info { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .player-name { font-size: 0.85rem; color: #907a60; max-width: 100px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .player-wins { font-size: 1.6rem; font-weight: 900; }
+    .p1-color { color: var(--cyan); }
+    .p2-color { color: var(--orange); }
+    .round-info { text-align: center; }
+    .round-label { font-size: 0.75rem; color: #6a5a48; }
+    .round-num { font-size: 1.3rem; font-weight: 700; color: var(--accent); }
+
+    /* ── Timer ── */
+    .timer-row { width: 100%; display: flex; align-items: center; gap: 12px; }
+    .timer-bar-wrap { flex: 1; background: #1a1510; border-radius: 8px;
+      overflow: hidden; height: 8px; border: 1px solid #3d3020; }
+    .timer-bar { height: 100%; background: var(--accent); transition: width 0.3s linear; border-radius: 8px; }
+    .timer-text { font-size: 1.6rem; font-weight: 900; color: var(--accent); min-width: 50px; text-align: right; }
+
+    /* ── Main Area ── */
+    .main-area {
+      flex: 1; width: 100%; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px;
+    }
+    .phase-label { font-size: 1rem; color: #907a60; letter-spacing: 1px; }
+    .choices-row { display: flex; gap: 12px; width: 100%; }
+    .choice-btn {
+      flex: 1; height: 90px; border-radius: 20px; border: 3px solid #3d3020;
+      background: var(--bg2); font-size: 2.6rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.1s, border-color 0.15s, box-shadow 0.15s;
+    }
+    .choice-btn:active { transform: scale(0.93); }
+    .choice-btn.selected {
+      border-color: var(--accent); box-shadow: 0 0 20px rgba(200,164,86,0.4);
+      background: rgba(200,164,86,0.1);
+    }
+    .choice-btn:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+
+    /* ── Reveal Area ── */
+    .reveal-area { width: 100%; display: flex; align-items: center; justify-content: space-around; gap: 8px; }
+    .reveal-card {
+      flex: 1; background: var(--bg2); border-radius: 16px;
+      padding: 20px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+      border: 2px solid #3d3020;
+    }
+    .reveal-card.winner-card { border-color: var(--accent); box-shadow: 0 0 20px rgba(200,164,86,0.3); }
+    .reveal-choice { font-size: 3rem; }
+    .reveal-name { font-size: 0.8rem; font-weight: 700; }
+    .vs-text { font-size: 1.4rem; font-weight: 900; color: #6a5a48; }
+    .round-result { font-size: 1.3rem; font-weight: 900; text-align: center; }
+    .waiting-choice { font-size: 1.6rem; color: #6a5a48; }
+
+    /* ── Countdown Overlay ── */
+    .countdown-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 12px; z-index: 100;
+    }
+    .countdown-overlay.hidden { display: none; }
+    .countdown-num { font-size: 8rem; font-weight: 900; line-height: 1;
+      color: var(--accent); text-shadow: 0 0 40px rgba(200,164,86,0.7); }
+    .countdown-label { font-size: 1.2rem; color: #907a60; }
+
+    /* ── Result Overlay ── */
+    .result-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 16px; z-index: 200; padding: 24px;
+    }
+    .result-overlay.hidden { display: none; }
+    .result-emoji { font-size: 5rem; }
+    .result-title { font-size: 2rem; font-weight: 900; text-align: center; }
+    .result-score { font-size: 3rem; font-weight: 900; color: var(--accent); }
+    .result-sub { font-size: 1rem; color: #907a60; text-align: center; }
+    .win-text { color: var(--green); } .lose-text { color: var(--red); } .draw-text { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<!-- Lobby -->
+<div id="screen-lobby" class="screen active">
+  <div class="game-title">✂️ 水豚猜拳！</div>
+  <div class="game-sub">隨機配對 1v1 猜拳對戰<br>🪨 石頭  📄 布  ✂️ 剪刀 — 先贏兩局！</div>
+  <input class="name-input" id="name-input" type="text" maxlength="16"
+    placeholder="輸入你的暱稱" autocomplete="off" spellcheck="false">
+  <button class="btn btn-primary" id="btn-find"
+    ontouchend="onFindTap(event)" onclick="onFindTap(event)">尋找對手</button>
+  <a href="../battle.html" class="back-link">← 返回對戰遊戲</a>
+</div>
+
+<!-- Matchmaking -->
+<div id="screen-match" class="screen">
+  <div class="spinner"></div>
+  <div class="match-status" id="match-status">尋找對手中…</div>
+  <div class="waiting-hint">通常不到 30 秒</div>
+  <button class="btn btn-secondary" id="btn-cancel"
+    ontouchend="onCancelTap(event)" onclick="onCancelTap(event)">取消</button>
+</div>
+
+<!-- Game -->
+<div id="screen-game" class="screen">
+  <div class="scoreboard">
+    <div class="player-info">
+      <div class="player-name p1-color" id="p1-name">玩家1</div>
+      <div class="player-wins p1-color" id="p1-wins">0</div>
+    </div>
+    <div class="round-info">
+      <div class="round-label">第</div>
+      <div class="round-num" id="round-num">1</div>
+      <div class="round-label">局</div>
+    </div>
+    <div class="player-info">
+      <div class="player-name p2-color" id="p2-name">玩家2</div>
+      <div class="player-wins p2-color" id="p2-wins">0</div>
+    </div>
+  </div>
+
+  <div class="timer-row">
+    <div class="timer-bar-wrap"><div class="timer-bar" id="timer-bar"></div></div>
+    <div class="timer-text" id="timer-text">10</div>
+  </div>
+
+  <div class="main-area" id="main-area">
+    <div class="phase-label" id="phase-label">選擇你的出招</div>
+    <!-- choosing mode -->
+    <div class="choices-row" id="choices-row">
+      <button class="choice-btn" id="btn-rock"
+        ontouchend="onChoice(event,'rock')" onclick="onChoice(event,'rock')">🪨</button>
+      <button class="choice-btn" id="btn-paper"
+        ontouchend="onChoice(event,'paper')" onclick="onChoice(event,'paper')">📄</button>
+      <button class="choice-btn" id="btn-scissors"
+        ontouchend="onChoice(event,'scissors')" onclick="onChoice(event,'scissors')">✂️</button>
+    </div>
+    <!-- waiting indicator -->
+    <div id="wait-msg" style="display:none;text-align:center;color:#6a5a48;font-size:0.9rem;">等待對手出招…</div>
+    <!-- reveal mode -->
+    <div class="reveal-area" id="reveal-area" style="display:none;">
+      <div class="reveal-card" id="p1-reveal-card">
+        <div class="reveal-choice" id="p1-reveal-choice">❓</div>
+        <div class="reveal-name p1-color" id="p1-reveal-name">玩家1</div>
+      </div>
+      <div class="vs-text">VS</div>
+      <div class="reveal-card" id="p2-reveal-card">
+        <div class="reveal-choice" id="p2-reveal-choice">❓</div>
+        <div class="reveal-name p2-color" id="p2-reveal-name">玩家2</div>
+      </div>
+    </div>
+    <div class="round-result" id="round-result" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- Countdown Overlay -->
+<div class="countdown-overlay hidden" id="countdown-overlay">
+  <div class="countdown-num" id="countdown-num">3</div>
+  <div class="countdown-label" id="countdown-label">準備好了嗎？</div>
+</div>
+
+<!-- Result Overlay -->
+<div class="result-overlay hidden" id="result-overlay">
+  <div class="result-emoji" id="result-emoji">🎉</div>
+  <div class="result-title" id="result-title">你贏了！</div>
+  <div class="result-score" id="result-score"></div>
+  <div class="result-sub" id="result-sub"></div>
+  <button class="btn btn-primary" id="btn-again" style="max-width:320px"
+    ontouchend="onAgainTap(event)" onclick="onAgainTap(event)">再玩一局</button>
+  <a href="../battle.html" class="back-link">返回對戰遊戲</a>
+</div>
+
+<script>
+const API = '';
+const POLL_MS = 300;
+const CHOOSE_SEC = 10;
+const CHOICE_EMOJI = { rock:'🪨', paper:'📄', scissors:'✂️', forfeit:'⏱️', '':'❓' };
+
+let pid = localStorage.getItem('capy_rps_pid') || (() => {
+  const id = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  localStorage.setItem('capy_rps_pid', id);
+  return id;
+})();
+
+let roomId=null, myRole=null, pollTimer=null, gameState=null;
+let myChoice=null, lastState=null, isChoosing=false;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const el=document.getElementById(id); if(el) el.classList.add('active');
+}
+
+document.getElementById('name-input').value = localStorage.getItem('capy_rps_name')||'';
+
+function onFindTap(e) {
+  if(e.type==='touchend') e.preventDefault();
+  const name=document.getElementById('name-input').value.trim()||'水豚玩家';
+  localStorage.setItem('capy_rps_name', name);
+  startMatchmaking(name);
+}
+function onCancelTap(e) {
+  if(e.type==='touchend') e.preventDefault();
+  stopPolling(); roomId=null; showScreen('screen-lobby');
+}
+function onAgainTap(e) {
+  if(e.type==='touchend') e.preventDefault();
+  document.getElementById('result-overlay').classList.add('hidden');
+  roomId=null; myRole=null; myChoice=null; lastState=null; isChoosing=false; gameState=null;
+  showScreen('screen-lobby');
+}
+
+async function startMatchmaking(name) {
+  showScreen('screen-match');
+  document.getElementById('match-status').textContent = '尋找對手中…';
+  try {
+    const res=await fetch(`${API}/rps/join`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pid,name})});
+    const data=await res.json();
+    if(data.error){document.getElementById('match-status').textContent=data.error;return;}
+    roomId=data.room_id; myRole=data.role;
+    document.getElementById('match-status').textContent = data.state==='waiting'?'等待對手加入… 房間碼：'+roomId:'配對成功！';
+    startPolling();
+  } catch { document.getElementById('match-status').textContent='連線失敗，請重試'; }
+}
+
+function startPolling(){stopPolling();pollOnce();pollTimer=setInterval(pollOnce,POLL_MS);}
+function stopPolling(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;}}
+
+async function pollOnce(){
+  if(!roomId) return;
+  try {
+    const res=await fetch(`${API}/rps/${roomId}?pid=${pid}`);
+    if(!res.ok) return;
+    const st=await res.json();
+    handleState(st);
+  } catch {}
+}
+
+function handleState(st) {
+  gameState=st;
+  if(st.state==='waiting'){
+    document.getElementById('match-status').textContent='等待對手加入… 房間碼：'+roomId; return;
+  }
+  if(lastState==='waiting'||lastState===null){showScreen('screen-game');updateNames(st);}
+  lastState=st.state;
+  updateScoreboard(st);
+
+  if(st.state==='starting'){
+    isChoosing=false; myChoice=null;
+    setChoiceButtons(false); showCountdown(Math.ceil(st.time_left/1000));
+    hideReveal(); showChoiceRow();
+    document.getElementById('wait-msg').style.display='none';
+  } else if(st.state==='choosing'){
+    hideCountdown();
+    isChoosing=!myChoice; // still choosable if not chosen
+    setChoiceButtons(!myChoice);
+    document.getElementById('phase-label').textContent='選擇你的出招！';
+    document.getElementById('wait-msg').style.display = myChoice ? 'block' : 'none';
+    showChoiceRow(); hideReveal();
+    updateTimer(st, CHOOSE_SEC);
+    // Show waiting status for opponent
+    updateOpponentChosenStatus(st);
+  } else if(st.state==='revealing'){
+    hideCountdown(); isChoosing=false; setChoiceButtons(false);
+    showReveal(st);
+    document.getElementById('timer-bar').style.width='0%';
+    document.getElementById('timer-text').textContent='';
+  } else if(st.state==='done'){
+    stopPolling(); isChoosing=false;
+    hideCountdown(); showGameOver(st);
+  }
+}
+
+function updateNames(st){
+  document.getElementById('p1-name').textContent=st.p1_name||'玩家1';
+  document.getElementById('p2-name').textContent=st.p2_name||'玩家2';
+  document.getElementById('p1-reveal-name').textContent=st.p1_name||'玩家1';
+  document.getElementById('p2-reveal-name').textContent=st.p2_name||'玩家2';
+  const myNameEl=document.getElementById(myRole+'-name');
+  if(myNameEl) myNameEl.style.fontWeight='900';
+}
+function updateScoreboard(st){
+  document.getElementById('p1-wins').textContent=st.p1_wins;
+  document.getElementById('p2-wins').textContent=st.p2_wins;
+  document.getElementById('round-num').textContent=st.round;
+}
+function updateTimer(st, totalSec){
+  const left=Math.max(0,st.time_left), pct=(left/(totalSec*1000))*100;
+  document.getElementById('timer-bar').style.width=pct+'%';
+  document.getElementById('timer-text').textContent=Math.ceil(left/1000);
+  const col=pct>50?'var(--accent)':pct>25?'#ff9900':'var(--red)';
+  document.getElementById('timer-bar').style.background=col;
+  document.getElementById('timer-text').style.color=col;
+}
+function updateOpponentChosenStatus(st){
+  const oppChosen = myRole==='p1' ? st.p2_chosen : st.p1_chosen;
+  if(oppChosen && myChoice) {
+    document.getElementById('phase-label').textContent='雙方已出招，揭曉中…';
+  } else if(oppChosen) {
+    document.getElementById('phase-label').textContent='對手已出招，快選！';
+  } else {
+    document.getElementById('phase-label').textContent='選擇你的出招！';
+  }
+}
+
+function showChoiceRow(){
+  document.getElementById('choices-row').style.display='flex';
+  document.getElementById('reveal-area').style.display='none';
+  document.getElementById('round-result').style.display='none';
+}
+function hideReveal(){
+  document.getElementById('reveal-area').style.display='none';
+  document.getElementById('round-result').style.display='none';
+}
+function setChoiceButtons(enabled){
+  ['rock','paper','scissors'].forEach(c=>{
+    const btn=document.getElementById('btn-'+c);
+    if(enabled){btn.disabled=false; if(myChoice!==c) btn.classList.remove('selected');}
+    else btn.disabled=true;
+  });
+}
+
+function showReveal(st){
+  document.getElementById('choices-row').style.display='none';
+  document.getElementById('wait-msg').style.display='none';
+  document.getElementById('reveal-area').style.display='flex';
+  document.getElementById('p1-reveal-choice').textContent=CHOICE_EMOJI[st.p1_choice]||'❓';
+  document.getElementById('p2-reveal-choice').textContent=CHOICE_EMOJI[st.p2_choice]||'❓';
+
+  // Determine round winner from choices
+  const c1=st.p1_choice, c2=st.p2_choice;
+  let rw=null;
+  if(c1&&c2){
+    if(c1===c2) rw='draw';
+    else if((c1==='rock'&&c2==='scissors')||(c1==='paper'&&c2==='rock')||(c1==='scissors'&&c2==='paper')) rw='p1';
+    else rw='p2';
+  }
+
+  const p1card=document.getElementById('p1-reveal-card'), p2card=document.getElementById('p2-reveal-card');
+  p1card.classList.remove('winner-card'); p2card.classList.remove('winner-card');
+  const rrEl=document.getElementById('round-result');
+  rrEl.style.display='block';
+  if(rw==='draw'){
+    rrEl.textContent='平手！'; rrEl.style.color='var(--accent)';
+  } else if(rw){
+    const winCard=rw==='p1'?p1card:p2card;
+    winCard.classList.add('winner-card');
+    const winName=rw==='p1'?(st.p1_name||'玩家1'):(st.p2_name||'玩家2');
+    rrEl.textContent=(rw===myRole?'你':'對手')+' '+winName+' 贏了這局！';
+    rrEl.style.color=rw===myRole?'var(--green)':'var(--red)';
+  }
+}
+
+function showCountdown(sec){
+  const overlay=document.getElementById('countdown-overlay');
+  const numEl=document.getElementById('countdown-num');
+  const labelEl=document.getElementById('countdown-label');
+  overlay.classList.remove('hidden');
+  if(sec>0){ numEl.textContent=sec; numEl.style.color='var(--accent)'; labelEl.textContent='準備好了嗎？'; }
+  else { numEl.textContent='GO!'; numEl.style.color='var(--green)'; labelEl.textContent='出招！'; }
+}
+function hideCountdown(){ document.getElementById('countdown-overlay').classList.add('hidden'); }
+
+function onChoice(e, choice){
+  if(e.type==='touchend') e.preventDefault();
+  if(!isChoosing||myChoice) return;
+  myChoice=choice;
+  ['rock','paper','scissors'].forEach(c=>{
+    const btn=document.getElementById('btn-'+c);
+    btn.disabled=true;
+    if(c===choice) btn.classList.add('selected');
+  });
+  isChoosing=false;
+  document.getElementById('wait-msg').style.display='block';
+  document.getElementById('phase-label').textContent='等待對手出招…';
+  sendChoice(choice);
+}
+
+async function sendChoice(choice){
+  if(!roomId) return;
+  try {
+    await fetch(`${API}/rps/${roomId}/choose`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pid,choice})});
+  } catch {}
+}
+
+function showGameOver(st){
+  const myWins=myRole==='p1'?st.p1_wins:st.p2_wins;
+  const oppWins=myRole==='p1'?st.p2_wins:st.p1_wins;
+  const iWon=st.winner===myRole, isDraw=st.winner==='draw';
+  document.getElementById('result-emoji').textContent=isDraw?'🤝':iWon?'🎉':'😢';
+  document.getElementById('result-title').textContent=isDraw?'平手！':iWon?'你贏了！':'你輸了…';
+  document.getElementById('result-title').className='result-title '+(isDraw?'draw-text':iWon?'win-text':'lose-text');
+  document.getElementById('result-score').textContent=myWins+' : '+oppWins;
+  const oppName=myRole==='p1'?(st.p2_name||'對手'):(st.p1_name||'對手');
+  document.getElementById('result-sub').textContent=isDraw?'勢均力敵，再來一局！':iWon?'恭喜擊敗 '+oppName+'！':'敗給了 '+oppName+'，加油！';
+  document.getElementById('result-overlay').classList.remove('hidden');
+}
+
+document.getElementById('name-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter') onFindTap({type:'click',preventDefault:()=>{}});
+});
+</script>
+</body>
+</html>

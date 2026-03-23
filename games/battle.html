@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6193561251326215"
+     crossorigin="anonymous"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>對戰遊戲 - CapyWorlds</title>
+  <style>
+    :root {
+      --bg: #13100c; --bg-hero: #0d1a2a; --bg2: #1e1812; --bg4: #181410;
+      --border: #3d3020; --border2: #2a2018; --accent: #00e5ff; --accent-rgb: 0,229,255;
+      --text: #e8ddd0; --text2: #907a60; --text3: #6a5a48;
+      --h1: #ffffff;
+    }
+    [data-theme="light"] {
+      --bg: #f5f0e8; --bg-hero: #dceeff; --bg2: #ffffff; --bg4: #f0ebe0;
+      --border: #d4c4a0; --border2: #e0d4b8; --accent: #0080aa; --accent-rgb: 0,128,170;
+      --text: #2a1e0e; --text2: #5a4828; --text3: #6a5a48; --h1: #1a0e06;
+    }
+    [data-theme="light"] .tag { filter: brightness(0.52) saturate(1.3); }
+    [data-theme="pink"] {
+      --bg: #1a0810; --bg-hero: #0a1830; --bg2: #260a18; --bg4: #200c14;
+      --border: #6a2050; --border2: #481840; --accent: #00e5ff; --accent-rgb: 0,229,255;
+      --text: #f8d8ec; --text2: #c06898; --text3: #a05880; --h1: #fff0f8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; transition: background 0.3s, color 0.3s;
+    }
+    .page-header {
+      display: flex; flex-direction: column;
+      align-items: center; text-align: center;
+      padding: 44px 24px 36px;
+      background: radial-gradient(ellipse at 50% -10%, var(--bg-hero) 0%, var(--bg) 68%);
+      position: relative;
+    }
+    .page-header::after {
+      content: ''; position: absolute; bottom: 0; left: 10%; right: 10%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent) 40%, var(--accent) 60%, transparent);
+    }
+    .header-icon { font-size: 72px; margin-bottom: 16px;
+      filter: drop-shadow(0 6px 20px rgba(var(--accent-rgb), 0.4)); }
+    .page-header h1 {
+      font-size: clamp(26px, 5vw, 40px); font-weight: 900;
+      color: var(--h1); letter-spacing: 3px;
+    }
+    .page-header h1 .accent { color: var(--accent); }
+    .page-header p { margin-top: 8px; color: var(--text2); font-size: 14px; }
+    .back-btn {
+      position: absolute; top: 20px; left: 20px;
+      color: var(--text2); text-decoration: none; font-size: 14px;
+      display: flex; align-items: center; gap: 6px; transition: color 0.2s;
+    }
+    .back-btn:hover { color: var(--accent); }
+    .theme-btn {
+      position: absolute; top: 20px; right: 20px;
+      background: var(--bg2); border: 1px solid var(--border);
+      color: var(--text); padding: 6px 12px; border-radius: 20px;
+      cursor: pointer; font-size: 13px; transition: border-color 0.2s;
+    }
+    .theme-btn:hover { border-color: var(--accent); }
+    .content { max-width: 1080px; margin: 0 auto; padding: 48px 24px 60px; }
+    .section-title {
+      font-size: 13px; font-weight: 700; letter-spacing: 3px;
+      text-transform: uppercase; color: var(--accent);
+      margin-bottom: 24px; display: flex; align-items: center; gap: 12px;
+    }
+    .section-title::after {
+      content: ''; flex: 1; height: 1px;
+      background: linear-gradient(90deg, var(--border), transparent);
+    }
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 20px;
+    }
+    .game-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 18px; text-decoration: none; color: inherit;
+      overflow: hidden; transition: transform 0.22s, border-color 0.22s, box-shadow 0.22s;
+      display: flex; flex-direction: column;
+    }
+    .game-card:hover {
+      transform: translateY(-6px);
+      border-color: var(--card-accent, var(--accent));
+      box-shadow: 0 12px 36px rgba(0,0,0,0.5), 0 0 0 1px var(--card-accent, var(--accent)) inset;
+    }
+    .card-banner {
+      height: 90px; background: var(--banner-bg, #2a2018);
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+    }
+    .card-banner::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% 100%, var(--banner-glow, rgba(0,229,255,0.25)) 0%, transparent 70%);
+    }
+    .card-banner .game-emoji {
+      font-size: 52px; position: relative; z-index: 1;
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6));
+    }
+    .badge-new {
+      position: absolute; top: 10px; right: 12px; z-index: 2;
+      background: #ff4444; color: #fff; font-size: 10px; font-weight: 700;
+      padding: 2px 8px; border-radius: 20px; letter-spacing: 1px;
+    }
+    .card-body {
+      padding: 22px 22px 18px; flex: 1;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .game-title { font-size: 18px; font-weight: 700; color: var(--h1); letter-spacing: 0.5px; }
+    .game-desc { font-size: 13px; color: var(--text2); line-height: 1.6; flex: 1; }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .tag {
+      font-size: 11px; font-weight: 600; padding: 3px 10px;
+      border-radius: 20px; border: 1px solid; letter-spacing: 0.5px;
+    }
+    .card-footer {
+      padding: 14px 22px; border-top: 1px solid var(--border2);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .play-btn { font-size: 13px; font-weight: 700; color: var(--accent); letter-spacing: 1px; }
+    .online-badge { font-size: 11px; color: var(--text3); display: flex; align-items: center; gap: 4px; }
+
+    /* Tips banner */
+    .tips-banner {
+      background: linear-gradient(135deg, rgba(var(--accent-rgb),0.06), transparent);
+      border: 1px solid rgba(var(--accent-rgb),0.2);
+      border-radius: 14px; padding: 20px 24px;
+      margin-bottom: 40px; display: flex; gap: 16px; align-items: flex-start;
+    }
+    .tips-icon { font-size: 28px; flex-shrink: 0; }
+    .tips-text h3 { font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+    .tips-text p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+    @media (max-width: 480px) {
+      .games-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+      .card-banner { height: 70px; }
+      .card-banner .game-emoji { font-size: 36px; }
+      .card-body { padding: 14px 14px 12px; }
+      .game-title { font-size: 15px; }
+      .game-desc { display: none; }
+      .card-footer { padding: 10px 14px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page-header">
+  <a class="back-btn" href="../">← 回首頁</a>
+  <button class="theme-btn" onclick="cycleTheme()">🎨 主題</button>
+  <div class="header-icon">⚔️</div>
+  <h1>對戰<span class="accent">遊戲</span></h1>
+  <p>即時 1v1 連線對戰 · 隨機配對 · 手機電腦皆可</p>
+</div>
+
+<div class="content">
+
+  <div class="tips-banner">
+    <div class="tips-icon">⚡</div>
+    <div class="tips-text">
+      <h3>對戰說明</h3>
+      <p>點擊「開始對戰」自動配對，通常 30 秒內找到對手。也可複製房間碼邀請朋友加入。手機、電腦皆支援！</p>
+    </div>
+  </div>
+
+  <div class="section-title">⚔️ 即時對戰遊戲</div>
+  <div class="games-grid">
+
+    <!-- 水豚拔河 -->
+    <a class="game-card" href="capy-tug/"
+       style="--card-accent:#00e5ff; --banner-bg:#001a22; --banner-glow:rgba(0,229,255,0.28);">
+      <div class="card-banner">
+        <div class="game-emoji">🦫</div>
+        <div class="badge-new">NEW</div>
+      </div>
+      <div class="card-body">
+        <div class="game-title">水豚拔河！</div>
+        <div class="game-desc">瘋狂點擊把對手的水豚拉過來！隨機配對 1v1，30 秒手速大比拼，先贏 2 局勝出！</div>
+        <div class="tags">
+          <span class="tag" style="color:#00e5ff;border-color:rgba(0,229,255,0.4);background:rgba(0,229,255,0.1);">點擊</span>
+          <span class="tag" style="color:#00e5ff;border-color:rgba(0,229,255,0.4);background:rgba(0,229,255,0.1);">手速</span>
+          <span class="tag" style="color:#ff8040;border-color:rgba(255,128,64,0.4);background:rgba(255,128,64,0.1);">1v1</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="play-btn" style="color:#00e5ff;">▶ 開始對戰</span>
+        <span class="online-badge">🌐 連線對戰</span>
+      </div>
+    </a>
+
+    <!-- 水豚猜拳 -->
+    <a class="game-card" href="capy-rps/"
+       style="--card-accent:#aa44ff; --banner-bg:#1a0028; --banner-glow:rgba(170,68,255,0.28);">
+      <div class="card-banner">
+        <div class="game-emoji">✂️</div>
+        <div class="badge-new">NEW</div>
+      </div>
+      <div class="card-body">
+        <div class="game-title">水豚猜拳！</div>
+        <div class="game-desc">🪨石頭 📄布 ✂️剪刀！雙方同時出招，10 秒內決定生死，先贏 2 局稱王！</div>
+        <div class="tags">
+          <span class="tag" style="color:#aa44ff;border-color:rgba(170,68,255,0.4);background:rgba(170,68,255,0.1);">猜拳</span>
+          <span class="tag" style="color:#aa44ff;border-color:rgba(170,68,255,0.4);background:rgba(170,68,255,0.1);">策略</span>
+          <span class="tag" style="color:#ff8040;border-color:rgba(255,128,64,0.4);background:rgba(255,128,64,0.1);">1v1</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="play-btn" style="color:#aa44ff;">▶ 開始對戰</span>
+        <span class="online-badge">🌐 連線對戰</span>
+      </div>
+    </a>
+
+    <!-- 水豚問答PK -->
+    <a class="game-card" href="capy-quiz/"
+       style="--card-accent:#ffd700; --banner-bg:#1a1400; --banner-glow:rgba(255,215,0,0.28);">
+      <div class="card-banner">
+        <div class="game-emoji">📚</div>
+        <div class="badge-new">NEW</div>
+      </div>
+      <div class="card-body">
+        <div class="game-title">水豚問答PK！</div>
+        <div class="game-desc">知識問答雙人對決！每題 8 秒搶答，答對就得分，先拿 3 分就是智識王！</div>
+        <div class="tags">
+          <span class="tag" style="color:#ffd700;border-color:rgba(255,215,0,0.4);background:rgba(255,215,0,0.1);">益智</span>
+          <span class="tag" style="color:#ffd700;border-color:rgba(255,215,0,0.4);background:rgba(255,215,0,0.1);">問答</span>
+          <span class="tag" style="color:#ff8040;border-color:rgba(255,128,64,0.4);background:rgba(255,128,64,0.1);">1v1</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="play-btn" style="color:#ffd700;">▶ 開始對戰</span>
+        <span class="online-badge">🌐 連線對戰</span>
+      </div>
+    </a>
+
+  </div>
+</div>
+
+<script>
+  const themes = ['', 'light', 'pink'];
+  let ti = themes.indexOf(localStorage.getItem('theme') || '');
+  if (ti < 0) ti = 0;
+  applyTheme(themes[ti]);
+  function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('theme', t);
+  }
+  function cycleTheme() { ti = (ti+1)%themes.length; applyTheme(themes[ti]); }
+</script>
+</body>
+</html>
