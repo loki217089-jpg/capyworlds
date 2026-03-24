@@ -227,6 +227,225 @@
 <button id="shopBtn" onclick="openShop()">🧪 鍊化 [S]</button>
 
 <script>
+// ── 雙語 i18n ─────────────────────────────────
+const i18n={
+  zh:{
+    diff_normal_label:'普　通',diff_normal_desc:'適合初次挑戰',
+    diff_hard_label:'困　難',diff_hard_desc:'蚊子更快、更多',
+    diff_hell_label:'地　獄',diff_hell_desc:'警告：心臟不好勿選',
+    title_main:'進化蚊子',title_sub:'EVOLUTION  MOSQUITO',
+    title_features:'5種蚊子 · 首領來襲 · 鍊化升級 · 電蚊拍',
+    title_select_diff:'── 選擇難度 ──',
+    title_blood:'🩸 蚊子血：',title_blood_carry:'（跨局保留）',
+    title_hint:'點擊難度按鈕開始  ·  [S] 開啟鍊化商店',
+    title_quit:'✕  離開遊戲',
+    go_title:'遊戲結束',go_difficulty:'難度：',
+    go_score:'最終分數　',go_combo:'最高連擊　',go_combo_unit:' 連',
+    go_boss:'首領擊殺　',go_boss_unit:' 次',
+    go_survive:'存活時間　',go_survive_unit:' 秒',
+    go_blood:'蚊子血累積　',go_blood_unit:' 滴',
+    go_rank:'評　　級',go_restart:'▶ 重新開始',go_quit:'✕ 離開遊戲',
+    pause_title:'⏸ 遊戲暫停中',pause_hint:'[P]/[Esc] 繼續  ·  [S] 商店  ·  ✕ 離開',
+    pause_quit:'✕ 離開遊戲',
+    ft_evolved:'進化了！',ft_summoned:'⚠ 召喚！',
+    ft_stung:'被叮了！',ft_blood_hit:'🩸 被吸血！',
+    ft_shield_on:'🛡 護盾啟動！',ft_freeze_on:'❄ 蚊子凍結！',
+    ft_thaw:'❄ 解凍！',ft_shield_off:'護盾消失！',
+    ft_boss_alert:'⚠ 首領來了！',ft_coil:'🌀 煙燻！',
+    ft_blood_auto:'💧 +1',ft_heal:'💉 +1 血',
+    ft_heal_recover:'💉 回復 1 血！',ft_miss:'打空了',
+    zap_kill:'⚡ 電死 ',zap_kill_unit:' 隻！',
+    bomb_kill:'💣 炸彈！殲滅 ',bomb_kill_unit:' 隻',
+    ba_warning:'隻蚊子正在吸血！每 3 秒 -1 HP',
+    combo_label:' 連擊',hud_time_unit:'秒',
+    hud_score:'分數',hud_boss_cd:'首領 ',hud_boss_cd_unit:'s',
+    blood_hint:'滑過收集 ',blood_hint_unit:' 個血珠',
+    zap_click:'⚡ 點擊釋放',hint_shop:'[S]商店  [P]暫停',
+    kill_boss:'首領擊殺！+',kill_combo:'連擊！+',
+    stat_count:'場上蚊子',stat_combo:'最高連擊',stat_boss:'擊殺首領',
+    stat_next_boss:'首領倒數',stat_blood:'🩸 蚊子血',stat_next_boss_unit:'秒',
+    leg_normal:'普通蚊 +10',leg_fast:'快速蚊 +20',leg_invisible:'隱形蚊 +30',
+    leg_mutant:'變異蚊 +40',leg_boss:'首領蚊 +200',leg_shop:'⚡[S]鍊化商店',
+    shop_title:'🧪 鍊化升級',shop_sub:'消耗蚊子血購買強化道具　·　跨局保留',
+    shop_blood:'🩸 當前蚊子血：',
+    shop_sec_attack:'⚔ 攻擊類',shop_sec_defense:'🛡 防禦 / 輔助類',
+    shop_sec_perm:'📈 永久強化類',shop_sec_passive:'🌀 被動技能',
+    shop_close:'關　閉　[S]',shop_btn:'🧪 鍊化 [S]',
+    zap_name:'電蚊拍',zap_desc:'購買後移到目標位置按<b>[空白鍵]</b>或點 HUD ⚡ 鈕釋放大範圍閃電（充能 8 秒）',
+    bomb_name:'蚊子炸彈',bomb_desc:'瞬間清空全場所有蚊子（最多持有 2 顆）按 <b>[F]</b> 引爆',
+    boots_name:'攻擊強化',boots_desc:'擴大點擊攻擊範圍（每級 +18px，最多 3 級）',
+    crit_name:'暴擊強化',crit_desc:'每次攻擊有機率造成雙倍傷害（Lv1：20% / Lv2：40%）',
+    shield_name:'防蚊護盾',shield_desc:'購買後按 <b>[E]</b> 或點 HUD 🛡 鈕啟動，10 秒內完全免疫叮咬（充能 20 秒）',
+    freeze_name:'冰凍噴霧',freeze_desc:'購買後按 <b>[R]</b> 或點 HUD ❄ 鈕，凍結全場蚊子 4 秒（充能 18 秒）',
+    heal_name:'驅蚊液',heal_desc:'立即回復 1 滴血（最多持有 3 份），遊戲中按 <b>[Q]</b> 使用',
+    maxhp_name:'強化體質',maxhp_desc:'永久增加最大生命值（每局開始+1HP，最多 +3）',
+    bloodmag_name:'血珠感應',bloodmag_desc:'永久擴大滑鼠收集血珠的感應範圍（每級 +15px，最多 3 級）',
+    magnet_name:'吸血磁鐵',magnet_desc:'購買後按 <b>[T]</b> 啟動，5 秒自動吸收全場血珠（充能 15 秒）',
+    bloodflow_name:'血流加速',bloodflow_desc:'蚊子掉落更多血珠（+1/+2/+3），Lv2 起每 8 秒自動產生 1 滴血珠，Lv3 縮短至 5 秒',
+    coil_name:'蚊香爐',coil_desc:'自動燃燒蚊香，每 10 秒擊殺最近一隻蚊子（升級縮短間隔，最多 3 級）',
+    ui_not_owned:'未購買',ui_owned:'已購買',ui_maxed:'已滿級',
+    ui_ready:'✅ 就緒，遊戲中點擊使用',ui_ready_e:'✅ 就緒，點此或按 [E] 啟動',
+    ui_ready_r:'✅ 就緒，點此或按 [R] 使用',ui_ready_t:'✅ 就緒，點此或按 [T] 啟動',
+    ui_active:'啟動',ui_in_effect:'生效中',ui_charging:'充能中',
+    ui_charging_sec:'充能中 ',ui_shield_active:'🟢 護盾啟動中！',
+    ui_magnet_active:'🧲 磁鐵啟動中！',ui_freeze_active:'❄ 凍結中！',
+    lang_toggle:'EN',ver:'G哥企劃 × C哥開發',
+    msg_blood_low:'蚊子血不足！需要 ',msg_blood_unit:' 滴',
+    msg_zap_buy:'⚡ 電蚊拍購買成功！點擊使用',
+    msg_heal_full:'驅蚊液已達上限',msg_heal_buy:'💉 驅蚊液補充成功！',
+    msg_shield_active:'護盾已在生效中！',
+    msg_shield_charging:'護盾充能中，還需 ',msg_shield_charging_unit:' 秒',
+    msg_shield_buy:'🛡 護盾購買成功！遊戲中按 [E] 啟動',
+    msg_bomb_full:'炸彈已達上限',msg_bomb_buy:'💣 蚊子炸彈 +1！遊戲中按 [F] 引爆',
+    msg_boots_max:'攻擊範圍已滿級',msg_boots_upgrade:'👟 攻擊範圍升到 ',msg_boots_upgrade_unit:' 級！',
+    msg_magnet_active:'磁鐵已在生效中！',
+    msg_magnet_charging:'磁鐵充能中，還需 ',msg_magnet_charging_unit:' 秒',
+    msg_magnet_buy:'🧲 吸血磁鐵購買成功！按 [T] 啟動，自動吸收血珠',
+    msg_crit_max:'暴擊已滿級',msg_crit_upgrade:'🎯 暴擊率提升！目前 ',msg_crit_upgrade_unit:'% 機率雙倍傷害',
+    msg_coil_max:'蚊香爐已滿級',msg_coil_upgrade:'🌀 蚊香爐升到 Lv',
+    msg_coil_upgrade_mid:'！每 ',msg_coil_upgrade_sec:' 秒自動擊殺',
+    msg_bloodflow_max:'血流加速已滿級',msg_bloodflow_upgrade:'💧 血流加速 Lv',
+    msg_bloodflow_upgrade_mid:'！每次擊殺 +',msg_bloodflow_upgrade_unit:' 血珠',
+    msg_bloodflow_auto:'，每 ',msg_bloodflow_auto_unit:' 秒自動生成 1 血珠',
+    msg_hp_full:'血量已滿！',msg_no_heal:'沒有驅蚊液！',
+    msg_no_bomb:'沒有炸彈！',msg_no_zap:'尚未購買電蚊拍！',
+    msg_zap_charging:'電蚊拍充能中… ',msg_zap_charging_unit:'s',
+  },
+  en:{
+    diff_normal_label:'Normal',diff_normal_desc:'Perfect for beginners',
+    diff_hard_label:'Hard',diff_hard_desc:'Faster & more mosquitoes',
+    diff_hell_label:'Hell',diff_hell_desc:'Warning: not for the faint-hearted',
+    title_main:'Evo Mosquito',title_sub:'EVOLUTION  MOSQUITO',
+    title_features:'5 Types · Boss Wave · Upgrades · Zapper',
+    title_select_diff:'── Select Difficulty ──',
+    title_blood:'🩸 Blood: ',title_blood_carry:'(persists)',
+    title_hint:'Click difficulty to start  ·  [S] Open Shop',
+    title_quit:'✕  Quit Game',
+    go_title:'Game Over',go_difficulty:'Difficulty: ',
+    go_score:'Final Score  ',go_combo:'Best Combo  ',go_combo_unit:'x',
+    go_boss:'Boss Kills  ',go_boss_unit:'',
+    go_survive:'Survived  ',go_survive_unit:'s',
+    go_blood:'Total Blood  ',go_blood_unit:'',
+    go_rank:'Rank',go_restart:'▶ Play Again',go_quit:'✕ Quit',
+    pause_title:'⏸ Paused',pause_hint:'[P]/[Esc] Resume  ·  [S] Shop  ·  ✕ Quit',
+    pause_quit:'✕ Quit Game',
+    ft_evolved:'Evolved!',ft_summoned:'⚠ Summoned!',
+    ft_stung:'Ouch!',ft_blood_hit:'🩸 Blood drained!',
+    ft_shield_on:'🛡 Shield activated!',ft_freeze_on:'❄ Mosquitoes frozen!',
+    ft_thaw:'❄ Thawed!',ft_shield_off:'Shield faded!',
+    ft_boss_alert:'⚠ Boss incoming!',ft_coil:'🌀 Fumigated!',
+    ft_blood_auto:'💧 +1',ft_heal:'💉 +1 HP',
+    ft_heal_recover:'💉 Recovered 1 HP!',ft_miss:'Miss!',
+    zap_kill:'⚡ Zapped ',zap_kill_unit:'!',
+    bomb_kill:'💣 Bomb! Killed ',bomb_kill_unit:'',
+    ba_warning:' mosquitoes draining -1 HP / 3s',
+    combo_label:' Combo',hud_time_unit:'s',
+    hud_score:'Score',hud_boss_cd:'Boss ',hud_boss_cd_unit:'s',
+    blood_hint:'Hover to collect ',blood_hint_unit:' drops',
+    zap_click:'⚡ Click to fire',hint_shop:'[S]Shop  [P]Pause',
+    kill_boss:'Boss Killed! +',kill_combo:' Combo! +',
+    stat_count:'On Screen',stat_combo:'Best Combo',stat_boss:'Boss Kills',
+    stat_next_boss:'Next Boss',stat_blood:'🩸 Blood',stat_next_boss_unit:'s',
+    leg_normal:'Normal +10',leg_fast:'Fast +20',leg_invisible:'Stealth +30',
+    leg_mutant:'Mutant +40',leg_boss:'Boss +200',leg_shop:'⚡[S]Upgrade Shop',
+    shop_title:'🧪 Upgrade Shop',shop_sub:'Spend blood to buy upgrades  ·  Persists between runs',
+    shop_blood:'🩸 Blood: ',
+    shop_sec_attack:'⚔ Attack',shop_sec_defense:'🛡 Defense / Utility',
+    shop_sec_perm:'📈 Permanent',shop_sec_passive:'🌀 Passive Skills',
+    shop_close:'Close  [S]',shop_btn:'🧪 Shop [S]',
+    zap_name:'Bug Zapper',zap_desc:'Move to target, press <b>[Space]</b> or click HUD ⚡ to release a wide lightning strike (8s cooldown)',
+    bomb_name:'Mosquito Bomb',bomb_desc:'Instantly clears all mosquitoes (max 2). Press <b>[F]</b> to detonate',
+    boots_name:'Attack Range',boots_desc:'Expand click attack radius (+18px per level, max 3)',
+    crit_name:'Critical Hit',crit_desc:'Chance to deal double damage (Lv1: 20% / Lv2: 40%)',
+    shield_name:'Bite Shield',shield_desc:'Press <b>[E]</b> or click HUD 🛡 to activate — immune to bites for 10s (20s cooldown)',
+    freeze_name:'Freeze Spray',freeze_desc:'Press <b>[R]</b> or click HUD ❄ to freeze all mosquitoes for 4s (18s cooldown)',
+    heal_name:'Repellent',heal_desc:'Instantly restore 1 HP (max 3 charges). Press <b>[Q]</b> to use',
+    maxhp_name:'Constitution',maxhp_desc:'Permanently increase max HP (+1 per run, max +3)',
+    bloodmag_name:'Blood Sense',bloodmag_desc:'Permanently expand blood drop collection range (+15px/level, max 3)',
+    magnet_name:'Blood Magnet',magnet_desc:'Press <b>[T]</b> to auto-collect all blood drops for 5s (15s cooldown)',
+    bloodflow_name:'Blood Flow',bloodflow_desc:'Mosquitoes drop more blood (+1/+2/+3). Lv2+: auto-generate 1 drop every 8s (5s at Lv3)',
+    coil_name:'Incense Coil',coil_desc:'Auto-kills nearest mosquito every 10s (upgrade reduces interval, max 3)',
+    ui_not_owned:'Not owned',ui_owned:'Owned',ui_maxed:'Max level',
+    ui_ready:'✅ Ready — click to use',ui_ready_e:'✅ Ready — click or [E]',
+    ui_ready_r:'✅ Ready — click or [R]',ui_ready_t:'✅ Ready — click or [T]',
+    ui_active:'Activate',ui_in_effect:'Active',ui_charging:'Charging',
+    ui_charging_sec:'Charging ',ui_shield_active:'🟢 Shield active!',
+    ui_magnet_active:'🧲 Magnet active!',ui_freeze_active:'❄ Frozen!',
+    lang_toggle:'繁中',ver:'Design: G  ·  Code: C',
+    msg_blood_low:'Not enough blood! Need ',msg_blood_unit:'',
+    msg_zap_buy:'⚡ Bug Zapper purchased!',
+    msg_heal_full:'Repellent stock full',msg_heal_buy:'💉 Repellent restocked!',
+    msg_shield_active:'Shield already active!',
+    msg_shield_charging:'Shield charging, ',msg_shield_charging_unit:'s left',
+    msg_shield_buy:'🛡 Shield purchased! Press [E] to activate',
+    msg_bomb_full:'Bomb stock full',msg_bomb_buy:'💣 Bomb +1! Press [F] to detonate',
+    msg_boots_max:'Attack range maxed',msg_boots_upgrade:'👟 Attack range Lv',msg_boots_upgrade_unit:'!',
+    msg_magnet_active:'Magnet already active!',
+    msg_magnet_charging:'Magnet charging, ',msg_magnet_charging_unit:'s left',
+    msg_magnet_buy:'🧲 Blood Magnet purchased! Press [T] to activate',
+    msg_crit_max:'Crit maxed',msg_crit_upgrade:'🎯 Crit rate: ',msg_crit_upgrade_unit:'% double damage',
+    msg_coil_max:'Incense Coil maxed',msg_coil_upgrade:'🌀 Incense Coil Lv',
+    msg_coil_upgrade_mid:'! Every ',msg_coil_upgrade_sec:'s auto-kill',
+    msg_bloodflow_max:'Blood Flow maxed',msg_bloodflow_upgrade:'💧 Blood Flow Lv',
+    msg_bloodflow_upgrade_mid:'! +',msg_bloodflow_upgrade_unit:' drops/kill',
+    msg_bloodflow_auto:', auto ',msg_bloodflow_auto_unit:'s/drop',
+    msg_hp_full:'HP full!',msg_no_heal:'No repellent!',
+    msg_no_bomb:'No bombs!',msg_no_zap:'Bug Zapper not purchased!',
+    msg_zap_charging:'Zapper charging… ',msg_zap_charging_unit:'s',
+  }
+};
+let lang=localStorage.getItem('mosquitoLang')||'zh';
+function T(k){return i18n[lang][k]??k;}
+function applyLang(){
+  // Stats bar
+  const sl=document.querySelectorAll('.stat-label');
+  if(sl[0])sl[0].textContent=T('stat_count');
+  if(sl[1])sl[1].textContent=T('stat_combo');
+  if(sl[2])sl[2].textContent=T('stat_boss');
+  if(sl[3])sl[3].textContent=T('stat_next_boss');
+  if(sl[4])sl[4].textContent=T('stat_blood');
+  // Next boss unit
+  const nb=document.getElementById('statNextBoss');
+  if(nb&&nb.textContent){const n=nb.textContent.replace(/[^0-9]/g,'');nb.textContent=n+T('stat_next_boss_unit');}
+  // Legend
+  const legs=document.querySelectorAll('.leg');
+  const legKeys=['leg_normal','leg_fast','leg_invisible','leg_mutant','leg_boss','leg_shop'];
+  legs.forEach((l,i)=>{if(legKeys[i]){const dot=l.querySelector('.dot');l.textContent=T(legKeys[i]);if(dot){l.insertBefore(dot,l.firstChild);}}});
+  // Shop panel
+  const sh2=document.querySelector('#shopPanel h2');
+  if(sh2)sh2.textContent=T('shop_title');
+  const shSub=document.querySelector('#shopPanel .shop-sub');
+  if(shSub)shSub.textContent=T('shop_sub');
+  const shBd=document.querySelector('#shopPanel .blood-display');
+  if(shBd)shBd.innerHTML=T('shop_blood')+'<span id="shopBlood">'+totalBlood+'</span>';
+  // Shop section titles
+  const sst=document.querySelectorAll('.shop-section-title');
+  const sstKeys=['shop_sec_attack','shop_sec_defense','shop_sec_perm','shop_sec_passive'];
+  sst.forEach((s,i)=>{if(sstKeys[i])s.textContent=T(sstKeys[i]);});
+  // Shop item names
+  const nameMap={shopZap:'zap_name',shopBomb:'bomb_name',shopBoots:'boots_name',shopCrit:'crit_name',
+    shopShield:'shield_name',shopFreeze:'freeze_name',shopHeal:'heal_name',shopMaxHp:'maxhp_name',
+    shopBloodMag:'bloodmag_name',shopMagnet:'magnet_name',shopBloodFlow:'bloodflow_name',shopCoil:'coil_name'};
+  const descMap={shopZap:'zap_desc',shopBomb:'bomb_desc',shopBoots:'boots_desc',shopCrit:'crit_desc',
+    shopShield:'shield_desc',shopFreeze:'freeze_desc',shopHeal:'heal_desc',shopMaxHp:'maxhp_desc',
+    shopBloodMag:'bloodmag_desc',shopMagnet:'magnet_desc',shopBloodFlow:'bloodflow_desc',shopCoil:'coil_desc'};
+  Object.keys(nameMap).forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    const nm=el.querySelector('.name'); if(nm)nm.textContent=T(nameMap[id]);
+    const ds=el.querySelector('.desc'); if(ds)ds.innerHTML=T(descMap[id]);
+  });
+  // Shop close & btn
+  const sc=document.getElementById('shopClose');if(sc)sc.textContent=T('shop_close');
+  const sb=document.getElementById('shopBtn');if(sb)sb.textContent=T('shop_btn');
+  // Lang toggle button
+  const lb=document.getElementById('langBtn');if(lb)lb.textContent=T('lang_toggle');
+  // Update shop UI levels (re-run after lang change)
+  if(typeof updateShopUI==='function')updateShopUI();
+  // html lang attribute
+  document.documentElement.lang=lang==='zh'?'zh-TW':'en';
+}
+
 const canvas=document.getElementById('canvas');
 const ctx=canvas.getContext('2d');
 const W=960,H=660;
@@ -237,9 +456,9 @@ const BLEED_ATTACK_INTERVAL=3000; // 每3秒攻擊一次
 
 // ── 難度設定 ──────────────────────────────────
 const DIFFICULTY={
-  normal:{label:'普　通',color:'#7ecf6e',desc:'適合初次挑戰',spawnInterval:2000,maxMosq:12,evolveTime:10000,bossInterval:60,speedMult:1.0,mutantProb:0.05,invisProb:0.10,fastProb:0.15},
-  hard:  {label:'困　難',color:'#f0d060',desc:'蚊子更快、更多',spawnInterval:1400,maxMosq:15,evolveTime:7000,bossInterval:45,speedMult:1.35,mutantProb:0.08,invisProb:0.13,fastProb:0.18},
-  hell:  {label:'地　獄',color:'#e03050',desc:'警告：心臟不好勿選',spawnInterval:900,maxMosq:18,evolveTime:4000,bossInterval:30,speedMult:1.75,mutantProb:0.12,invisProb:0.16,fastProb:0.22},
+  normal:{diffKey:'normal',color:'#7ecf6e',spawnInterval:2000,maxMosq:12,evolveTime:10000,bossInterval:60,speedMult:1.0,mutantProb:0.05,invisProb:0.10,fastProb:0.15},
+  hard:  {diffKey:'hard', color:'#f0d060',spawnInterval:1400,maxMosq:15,evolveTime:7000,bossInterval:45,speedMult:1.35,mutantProb:0.08,invisProb:0.13,fastProb:0.18},
+  hell:  {diffKey:'hell', color:'#e03050',spawnInterval:900,maxMosq:18,evolveTime:4000,bossInterval:30,speedMult:1.75,mutantProb:0.12,invisProb:0.16,fastProb:0.22},
 };
 let currentDiff=DIFFICULTY.normal;
 
@@ -575,12 +794,12 @@ function spawnParticles(x,y,color,count){
 }
 function spawnEvolveParticles(x,y){
   for(let i=0;i<18;i++){const a=Math.random()*Math.PI*2,s=2+Math.random()*3;state.particles.push(new Particle(x,y,C.fast.body,Math.cos(a)*s,Math.sin(a)*s,600,3));}
-  state.floatingTexts.push(new FloatingText(x,y-20,'進化了！',C.fast.body,18));
+  state.floatingTexts.push(new FloatingText(x,y-20,T('ft_evolved'),C.fast.body,18));
 }
 function summonMinions(x,y){
   for(let i=0;i<3;i++) if(state.mosquitoes.filter(m=>m.alive).length<currentDiff.maxMosq)
     state.mosquitoes.push(new Mosquito('normal',x+(Math.random()-.5)*60,y+(Math.random()-.5)*60));
-  state.floatingTexts.push(new FloatingText(x,y-30,'⚠ 召喚！',C.boss.body,17));
+  state.floatingTexts.push(new FloatingText(x,y-30,T('ft_summoned'),C.boss.body,17));
 }
 
 function stingPlayer(mq,isBleedAttack){
@@ -589,7 +808,7 @@ function stingPlayer(mq,isBleedAttack){
   state.hp--;state.combo=0;
   Audio.SFX.sting();
   spawnParticles(mq.x,mq.y,C.blood,8);
-  const msg=isBleedAttack?'🩸 被吸血！':'被叮了！';
+  const msg=isBleedAttack?T('ft_blood_hit'):T('ft_stung');
   state.floatingTexts.push(new FloatingText(W/2,H/2,msg,C.blood,24));
   if(state.hp<=0){Audio.SFX.gameOver();Audio.stopBGM();state.phase='gameover';requestAnimationFrame(gameoverLoop);}
 }
@@ -613,7 +832,7 @@ function updateBleedAttacks(dt){
       stingPlayer(attacker,true);
       // 顯示吸血數量
       if(attackers.length>1){
-        state.floatingTexts.push(new FloatingText(attacker.x,attacker.y-30,`${attackers.length}隻蚊子吸血！`,C.blood,16));
+        state.floatingTexts.push(new FloatingText(attacker.x,attacker.y-30,`${attackers.length}${lang==='zh'?'隻蚊子吸血！':' mosquitoes!'}`,C.blood,16));
       }
     }
   }
@@ -637,8 +856,8 @@ function killMosquito(mq){
   Audio.SFX[sfxMap[mq.type]]?.();
   if(state.combo>=3) Audio.SFX.combo(Math.min(state.combo,10));
   let bonus=mq.score,label=`+${bonus}`;
-  if(state.combo>1){bonus=Math.floor(bonus*(1+state.combo*0.1));label=`${state.combo}連擊！+${bonus}`;}
-  if(mq.type==='boss'){state.bossKills++;label=`首領擊殺！+${bonus}`;}
+  if(state.combo>1){bonus=Math.floor(bonus*(1+state.combo*0.1));label=`${state.combo}${T('kill_combo')}${bonus}`;}
+  if(mq.type==='boss'){state.bossKills++;label=`${T('kill_boss')}${bonus}`;}
   state.score+=bonus;
   state.floatingTexts.push(new FloatingText(mq.x,mq.y-20,label,mq.type==='boss'?C.boss.body:mq.color,mq.type==='boss'?24:19));
 }
@@ -666,7 +885,7 @@ function useZap(mx,my){
       killed++;
     }
   });
-  if(killed>0) state.floatingTexts.push(new FloatingText(mx,my-30,`⚡ 電死 ${killed} 隻！`,C.zap,22));
+  if(killed>0) state.floatingTexts.push(new FloatingText(mx,my-30,`${T('zap_kill')}${killed}${T('zap_kill_unit')}`,C.zap,22));
   return true;
 }
 
@@ -674,85 +893,84 @@ function useZap(mx,my){
 function buyUpgrade(type){
   if(type==='zap'){
     if(upgrades.zap.owned){
-      if(totalBlood>=0) return; // 已購買
+      if(totalBlood>=0) return;
     }
-    if(totalBlood<30){showMsg('蚊子血不足！需要 30 滴');return;}
+    if(totalBlood<30){showMsg(T('msg_blood_low')+'30'+T('msg_blood_unit'));return;}
     totalBlood-=30; upgrades.zap.owned=true;
     Audio.SFX.upgradeBuy();
-    showMsg('⚡ 電蚊拍購買成功！點擊使用');
+    showMsg(T('msg_zap_buy'));
   } else if(type==='heal'){
-    if(upgrades.heal.stock>=upgrades.heal.maxStock){showMsg('驅蚊液已達上限');return;}
-    if(totalBlood<20){showMsg('蚊子血不足！需要 20 滴');return;}
+    if(upgrades.heal.stock>=upgrades.heal.maxStock){showMsg(T('msg_heal_full'));return;}
+    if(totalBlood<20){showMsg(T('msg_blood_low')+'20'+T('msg_blood_unit'));return;}
     totalBlood-=20; upgrades.heal.stock++;
-    if(state.phase==='playing'&&state.hp<5){state.hp++;state.floatingTexts.push(new FloatingText(W/2,H/2-30,'💉 +1 血',C.zap,24));}
+    if(state.phase==='playing'&&state.hp<5){state.hp++;state.floatingTexts.push(new FloatingText(W/2,H/2-30,T('ft_heal'),C.zap,24));}
     Audio.SFX.upgradeBuy();
-    showMsg('💉 驅蚊液補充成功！');
+    showMsg(T('msg_heal_buy'));
   } else if(type==='shield'){
     if(upgrades.shield.owned){
-      // 已購買：手動啟動（若就緒）
-      if(upgrades.shield.active){showMsg('護盾已在生效中！');return;}
-      if(upgrades.shield.cooldown>0){showMsg(`護盾充能中，還需 ${Math.ceil(upgrades.shield.cooldown/1000)} 秒`);return;}
+      if(upgrades.shield.active){showMsg(T('msg_shield_active'));return;}
+      if(upgrades.shield.cooldown>0){showMsg(`${T('msg_shield_charging')}${Math.ceil(upgrades.shield.cooldown/1000)}${T('msg_shield_charging_unit')}`);return;}
       activateShield(); return;
     }
-    if(totalBlood<50){showMsg('蚊子血不足！需要 50 滴');return;}
+    if(totalBlood<50){showMsg(T('msg_blood_low')+'50'+T('msg_blood_unit'));return;}
     totalBlood-=50; upgrades.shield.owned=true;
     Audio.SFX.upgradeBuy();
-    showMsg('🛡 護盾購買成功！遊戲中按 [E] 啟動');
+    showMsg(T('msg_shield_buy'));
   } else if(type==='bomb'){
-    if(upgrades.bomb.stock>=upgrades.bomb.maxStock){showMsg('炸彈已達上限');return;}
-    if(totalBlood<45){showMsg('蚊子血不足！需要 45 滴');return;}
+    if(upgrades.bomb.stock>=upgrades.bomb.maxStock){showMsg(T('msg_bomb_full'));return;}
+    if(totalBlood<45){showMsg(T('msg_blood_low')+'45'+T('msg_blood_unit'));return;}
     totalBlood-=45; upgrades.bomb.stock++;
     Audio.SFX.upgradeBuy();
-    showMsg('💣 蚊子炸彈 +1！遊戲中按 [F] 引爆');
+    showMsg(T('msg_bomb_buy'));
   } else if(type==='boots'){
-    if(upgrades.boots.level>=upgrades.boots.maxLevel){showMsg('攻擊範圍已滿級');return;}
+    if(upgrades.boots.level>=upgrades.boots.maxLevel){showMsg(T('msg_boots_max'));return;}
     const cost=[25,35,50][upgrades.boots.level];
-    if(totalBlood<cost){showMsg(`蚊子血不足！需要 ${cost} 滴`);return;}
+    if(totalBlood<cost){showMsg(T('msg_blood_low')+cost+T('msg_blood_unit'));return;}
     totalBlood-=cost; upgrades.boots.level++;
     if(!upgrades.boots.owned) upgrades.boots.owned=true;
     Audio.SFX.upgradeBuy();
-    showMsg(`👟 攻擊範圍升到 ${upgrades.boots.level} 級！`);
+    showMsg(`${T('msg_boots_upgrade')}${upgrades.boots.level}${T('msg_boots_upgrade_unit')}`);
   } else if(type==='magnet'){
     if(upgrades.magnet.owned){
-      if(upgrades.magnet.active){showMsg('磁鐵已在生效中！');return;}
-      if(upgrades.magnet.cooldown>0){showMsg(`磁鐵充能中，還需 ${Math.ceil(upgrades.magnet.cooldown/1000)} 秒`);return;}
+      if(upgrades.magnet.active){showMsg(T('msg_magnet_active'));return;}
+      if(upgrades.magnet.cooldown>0){showMsg(`${T('msg_magnet_charging')}${Math.ceil(upgrades.magnet.cooldown/1000)}${T('msg_magnet_charging_unit')}`);return;}
       activateMagnet(); return;
     }
-    if(totalBlood<40){showMsg('蚊子血不足！需要 40 滴');return;}
+    if(totalBlood<40){showMsg(T('msg_blood_low')+'40'+T('msg_blood_unit'));return;}
     totalBlood-=40; upgrades.magnet.owned=true;
     Audio.SFX.upgradeBuy();
-    showMsg('🧲 吸血磁鐵購買成功！按 [T] 啟動，自動吸收血珠');
+    showMsg(T('msg_magnet_buy'));
   } else if(type==='crit'){
-    if(upgrades.crit.level>=upgrades.crit.maxLevel){showMsg('暴擊已滿級');return;}
+    if(upgrades.crit.level>=upgrades.crit.maxLevel){showMsg(T('msg_crit_max'));return;}
     const cost=[35,55][upgrades.crit.level];
-    if(totalBlood<cost){showMsg(`蚊子血不足！需要 ${cost} 滴`);return;}
+    if(totalBlood<cost){showMsg(T('msg_blood_low')+cost+T('msg_blood_unit'));return;}
     totalBlood-=cost; upgrades.crit.level++;
     if(!upgrades.crit.owned) upgrades.crit.owned=true;
     Audio.SFX.upgradeBuy();
-    showMsg(`🎯 暴擊率提升！目前 ${upgrades.crit.level*20}% 機率雙倍傷害`);
+    showMsg(`${T('msg_crit_upgrade')}${upgrades.crit.level*20}${T('msg_crit_upgrade_unit')}`);
   } else if(type==='coil'){
     const costs=[35,50,70];
-    if(upgrades.coil.level>=upgrades.coil.maxLevel){showMsg('蚊香爐已滿級');return;}
+    if(upgrades.coil.level>=upgrades.coil.maxLevel){showMsg(T('msg_coil_max'));return;}
     const cost=costs[upgrades.coil.level];
-    if(totalBlood<cost){showMsg(`蚊子血不足！需要 ${cost} 滴`);return;}
+    if(totalBlood<cost){showMsg(T('msg_blood_low')+cost+T('msg_blood_unit'));return;}
     totalBlood-=cost; upgrades.coil.level++;
     if(!upgrades.coil.owned) upgrades.coil.owned=true;
     const intervals=[10000,7000,5000];
     upgrades.coil.interval=intervals[upgrades.coil.level-1];
     Audio.SFX.upgradeBuy();
-    showMsg(`🌀 蚊香爐升到 Lv${upgrades.coil.level}！每 ${upgrades.coil.interval/1000} 秒自動擊殺`);
+    showMsg(`${T('msg_coil_upgrade')}${upgrades.coil.level}${T('msg_coil_upgrade_mid')}${upgrades.coil.interval/1000}${T('msg_coil_upgrade_sec')}`);
   } else if(type==='bloodflow'){
     const costs=[30,45,65];
-    if(upgrades.bloodflow.level>=upgrades.bloodflow.maxLevel){showMsg('血流加速已滿級');return;}
+    if(upgrades.bloodflow.level>=upgrades.bloodflow.maxLevel){showMsg(T('msg_bloodflow_max'));return;}
     const cost=costs[upgrades.bloodflow.level];
-    if(totalBlood<cost){showMsg(`蚊子血不足！需要 ${cost} 滴`);return;}
+    if(totalBlood<cost){showMsg(T('msg_blood_low')+cost+T('msg_blood_unit'));return;}
     totalBlood-=cost; upgrades.bloodflow.level++;
     if(!upgrades.bloodflow.owned) upgrades.bloodflow.owned=true;
     const intervals=[99999,8000,5000];
     upgrades.bloodflow.interval=intervals[upgrades.bloodflow.level-1];
     Audio.SFX.upgradeBuy();
-    const bonus=upgrades.bloodflow.level>=2?`，每 ${upgrades.bloodflow.interval/1000} 秒自動生成 1 血珠`:'';
-    showMsg(`💧 血流加速 Lv${upgrades.bloodflow.level}！每次擊殺 +${upgrades.bloodflow.level} 血珠${bonus}`);
+    const bonus=upgrades.bloodflow.level>=2?`${T('msg_bloodflow_auto')}${upgrades.bloodflow.interval/1000}${T('msg_bloodflow_auto_unit')}`:'';
+    showMsg(`${T('msg_bloodflow_upgrade')}${upgrades.bloodflow.level}${T('msg_bloodflow_upgrade_mid')}${upgrades.bloodflow.level}${T('msg_bloodflow_upgrade_unit')}${bonus}`);
   }
   updateShopUI();
 }
@@ -761,7 +979,7 @@ function activateShield(){
   if(!upgrades.shield.owned||upgrades.shield.active||upgrades.shield.cooldown>0) return;
   upgrades.shield.active=true; upgrades.shield.activeTimer=10000;
   Audio.SFX.upgradeBuy();
-  if(state.phase==='playing') state.floatingTexts.push(new FloatingText(W/2,H/2-40,'🛡 護盾啟動！',C.zap,22));
+  if(state.phase==='playing') state.floatingTexts.push(new FloatingText(W/2,H/2-40,T('ft_shield_on'),C.zap,22));
   updateShopUI();
 }
 function activateFreeze(){
@@ -770,7 +988,7 @@ function activateFreeze(){
   upgrades.freeze.cooldown=upgrades.freeze.maxCooldown;
   Audio.SFX.upgradeBuy();
   if(state.phase==='playing'){
-    state.floatingTexts.push(new FloatingText(W/2,H/2-40,'❄ 蚊子凍結！',C.zap,22));
+    state.floatingTexts.push(new FloatingText(W/2,H/2-40,T('ft_freeze_on'),C.zap,22));
     // 凍結所有蚊子速度
     state.mosquitoes.forEach(m=>{m._frozenVx=m.vx;m._frozenVy=m.vy;m.vx=0;m.vy=0;m._frozen=true;});
   }
@@ -780,7 +998,7 @@ function thawFreeze(){
   if(!upgrades.freeze.active) return;
   upgrades.freeze.active=false;
   state.mosquitoes.forEach(m=>{if(m._frozen){m.vx=m._frozenVx||m.speed;m.vy=m._frozenVy||m.speed;m._frozen=false;}});
-  if(state.phase==='playing') state.floatingTexts.push(new FloatingText(W/2,H/2,'❄ 解凍！',C.zap,16));
+  if(state.phase==='playing') state.floatingTexts.push(new FloatingText(W/2,H/2,T('ft_thaw'),C.zap,16));
 }
 function showMsg(txt){
   const el=document.createElement('div');
@@ -799,15 +1017,15 @@ function updateShopUI(){
   if(upgrades.zap.owned){
     zapEl.classList.add('maxed');
     const cd=Math.ceil(upgrades.zap.cooldown/1000);
-    zapLv.textContent=cd>0?`充能中 ${cd}秒`:'✅ 就緒，遊戲中點擊使用';
-    zapCost.textContent='已購買';
+    zapLv.textContent=cd>0?`${T('ui_charging_sec')}${cd}s`:T('ui_ready');
+    zapCost.textContent=T('ui_owned');
   } else {
     zapEl.classList.remove('maxed');
-    zapLv.textContent='未購買'; zapCost.textContent='🩸 30';
+    zapLv.textContent=T('ui_not_owned'); zapCost.textContent='🩸 30';
   }
   // 驅蚊液
   const healLv=document.getElementById('healLevel');
-  healLv.textContent=`持有：${upgrades.heal.stock} / ${upgrades.heal.maxStock}`;
+  healLv.textContent=lang==='zh'?`持有：${upgrades.heal.stock} / ${upgrades.heal.maxStock}`:`Stock: ${upgrades.heal.stock} / ${upgrades.heal.maxStock}`;
   if(upgrades.heal.stock>=upgrades.heal.maxStock) document.getElementById('shopHeal').classList.add('maxed');
   else document.getElementById('shopHeal').classList.remove('maxed');
   // 護盾
@@ -816,12 +1034,12 @@ function updateShopUI(){
   const shieldCost=document.getElementById('shieldCost');
   if(upgrades.shield.owned){
     const cd=Math.ceil(upgrades.shield.cooldown/1000);
-    if(upgrades.shield.active){shieldEl.classList.add('maxed');shieldLv.textContent='🟢 護盾啟動中！';shieldCost.textContent='生效中';}
-    else if(cd>0){shieldEl.classList.add('maxed');shieldLv.textContent=`充能中 ${cd}秒`;shieldCost.textContent='充能中';}
-    else{shieldEl.classList.remove('maxed');shieldLv.textContent='✅ 就緒，點此或按 [E] 啟動';shieldCost.textContent='啟動';}
+    if(upgrades.shield.active){shieldEl.classList.add('maxed');shieldLv.textContent=T('ui_shield_active');shieldCost.textContent=T('ui_in_effect');}
+    else if(cd>0){shieldEl.classList.add('maxed');shieldLv.textContent=`${T('ui_charging_sec')}${cd}s`;shieldCost.textContent=T('ui_charging');}
+    else{shieldEl.classList.remove('maxed');shieldLv.textContent=T('ui_ready_e');shieldCost.textContent=T('ui_active');}
   } else {
     shieldEl.classList.remove('maxed');
-    shieldLv.textContent='未購買'; shieldCost.textContent='🩸 50';
+    shieldLv.textContent=T('ui_not_owned'); shieldCost.textContent='🩸 50';
   }
   // 冰凍噴霧
   const freezeEl=document.getElementById('shopFreeze');
@@ -829,23 +1047,23 @@ function updateShopUI(){
   const freezeCost=document.getElementById('freezeCost');
   if(upgrades.freeze.owned){
     const cd=Math.ceil(upgrades.freeze.cooldown/1000);
-    if(upgrades.freeze.active){freezeEl.classList.add('maxed');freezeLv.textContent='❄ 凍結中！';freezeCost.textContent='生效中';}
-    else if(cd>0){freezeEl.classList.add('maxed');freezeLv.textContent=`充能中 ${cd}秒`;freezeCost.textContent='充能中';}
-    else{freezeEl.classList.remove('maxed');freezeLv.textContent='✅ 就緒，點此或按 [R] 使用';freezeCost.textContent='使用';}
-  } else { freezeEl.classList.remove('maxed'); freezeLv.textContent='未購買'; freezeCost.textContent='🩸 40'; }
+    if(upgrades.freeze.active){freezeEl.classList.add('maxed');freezeLv.textContent=T('ui_freeze_active');freezeCost.textContent=T('ui_in_effect');}
+    else if(cd>0){freezeEl.classList.add('maxed');freezeLv.textContent=`${T('ui_charging_sec')}${cd}s`;freezeCost.textContent=T('ui_charging');}
+    else{freezeEl.classList.remove('maxed');freezeLv.textContent=T('ui_ready_r');freezeCost.textContent=T('ui_active');}
+  } else { freezeEl.classList.remove('maxed'); freezeLv.textContent=T('ui_not_owned'); freezeCost.textContent='🩸 40'; }
   // 強化體質
   const maxhpEl=document.getElementById('shopMaxHp');
   const maxhpLv=document.getElementById('maxhpLevel');
   const maxhpCost=document.getElementById('maxhpCost');
   maxhpLv.textContent=`+${upgrades.maxhp.level} / +${upgrades.maxhp.maxLevel}`;
-  if(upgrades.maxhp.level>=upgrades.maxhp.maxLevel){maxhpEl.classList.add('maxed');maxhpCost.textContent='已滿級';}
+  if(upgrades.maxhp.level>=upgrades.maxhp.maxLevel){maxhpEl.classList.add('maxed');maxhpCost.textContent=T('ui_maxed');}
   else{maxhpEl.classList.remove('maxed');maxhpCost.textContent=`🩸 ${60+upgrades.maxhp.level*20}`;}
   // 血珠感應
   const magEl=document.getElementById('shopBloodMag');
   const magLv=document.getElementById('bloodmagLevel');
   const magCost=document.getElementById('bloodmagCost');
   magLv.textContent=`Lv ${upgrades.bloodmag.level} / ${upgrades.bloodmag.maxLevel}`;
-  if(upgrades.bloodmag.level>=upgrades.bloodmag.maxLevel){magEl.classList.add('maxed');magCost.textContent='已滿級';}
+  if(upgrades.bloodmag.level>=upgrades.bloodmag.maxLevel){magEl.classList.add('maxed');magCost.textContent=T('ui_maxed');}
   else{magEl.classList.remove('maxed');magCost.textContent=`🩸 ${25+upgrades.bloodmag.level*15}`;}
   // 吸血磁鐵（主動技能）
   const mgnEl=document.getElementById('shopMagnet');
@@ -853,10 +1071,10 @@ function updateShopUI(){
   const mgnCost=document.getElementById('magnetCost');
   if(upgrades.magnet.owned){
     const cd=Math.ceil(upgrades.magnet.cooldown/1000);
-    if(upgrades.magnet.active){mgnEl.classList.add('maxed');mgnLv.textContent='🧲 磁鐵啟動中！';mgnCost.textContent='生效中';}
-    else if(cd>0){mgnEl.classList.add('maxed');mgnLv.textContent=`充能中 ${cd}秒`;mgnCost.textContent='充能中';}
-    else{mgnEl.classList.remove('maxed');mgnLv.textContent='✅ 就緒，點此或按 [T] 啟動';mgnCost.textContent='啟動';}
-  } else {mgnEl.classList.remove('maxed');mgnLv.textContent='未購買';mgnCost.textContent='🩸 40';}
+    if(upgrades.magnet.active){mgnEl.classList.add('maxed');mgnLv.textContent=T('ui_magnet_active');mgnCost.textContent=T('ui_in_effect');}
+    else if(cd>0){mgnEl.classList.add('maxed');mgnLv.textContent=`${T('ui_charging_sec')}${cd}s`;mgnCost.textContent=T('ui_charging');}
+    else{mgnEl.classList.remove('maxed');mgnLv.textContent=T('ui_ready_t');mgnCost.textContent=T('ui_active');}
+  } else {mgnEl.classList.remove('maxed');mgnLv.textContent=T('ui_not_owned');mgnCost.textContent='🩸 40';}
   // 蚊香爐
   const coilEl=document.getElementById('shopCoil');
   const coilLv=document.getElementById('coilLevel');
@@ -864,16 +1082,17 @@ function updateShopUI(){
   const costs=[35,50,70];
   if(upgrades.coil.owned){
     const remaining=Math.max(0,Math.ceil((upgrades.coil.interval-(upgrades.coil.timer||0))/1000));
+    const everyWord=lang==='zh'?'每':'every ';
     if(upgrades.coil.level>=upgrades.coil.maxLevel){
       coilEl.classList.add('maxed');
-      coilLv.textContent=`Lv 3 (每${upgrades.coil.interval/1000}秒) 下次 ${remaining}s`;
-      coilCost.textContent='已滿級';
+      coilLv.textContent=`Lv 3 (${everyWord}${upgrades.coil.interval/1000}s) ${remaining}s`;
+      coilCost.textContent=T('ui_maxed');
     } else {
       coilEl.classList.remove('maxed');
-      coilLv.textContent=`Lv ${upgrades.coil.level} (每${upgrades.coil.interval/1000}秒) 下次 ${remaining}s`;
+      coilLv.textContent=`Lv ${upgrades.coil.level} (${everyWord}${upgrades.coil.interval/1000}s) ${remaining}s`;
       coilCost.textContent=`🩸 ${costs[upgrades.coil.level]}`;
     }
-  } else { coilEl.classList.remove('maxed'); coilLv.textContent='未購買'; coilCost.textContent='🩸 35'; }
+  } else { coilEl.classList.remove('maxed'); coilLv.textContent=T('ui_not_owned'); coilCost.textContent='🩸 35'; }
   // 血流加速
   const bfEl=document.getElementById('shopBloodFlow');
   const bfLv=document.getElementById('bloodflowLevel');
@@ -884,19 +1103,21 @@ function updateShopUI(){
     if(lv>=upgrades.bloodflow.maxLevel){
       bfEl.classList.add('maxed');
       const rem=Math.max(0,Math.ceil((upgrades.bloodflow.interval-(upgrades.bloodflow.timer||0))/1000));
-      bfLv.textContent=`Lv 3 | 每擊殺 +3 血珠，每 5 秒自動 +1 (${rem}s)`;
-      bfCost.textContent='已滿級';
+      const bfMaxTxt=lang==='zh'?`Lv 3 | 每擊殺 +3 血珠，每 5 秒自動 +1 (${rem}s)`:`Lv 3 | +3/kill, auto +1 every 5s (${rem}s)`;
+      bfLv.textContent=bfMaxTxt;
+      bfCost.textContent=T('ui_maxed');
     } else {
       bfEl.classList.remove('maxed');
-      const autoTxt=lv>=2?`，自動 ${upgrades.bloodflow.interval/1000}s/珠`:'';
-      bfLv.textContent=`Lv ${lv} | 每擊殺 +${lv} 血珠${autoTxt}`;
+      const autoTxt=lv>=2?(lang==='zh'?`，自動 ${upgrades.bloodflow.interval/1000}s/珠`:`, auto ${upgrades.bloodflow.interval/1000}s/drop`):'';
+      const killTxt=lang==='zh'?`Lv ${lv} | 每擊殺 +${lv} 血珠${autoTxt}`:`Lv ${lv} | +${lv}/kill${autoTxt}`;
+      bfLv.textContent=killTxt;
       bfCost.textContent=`🩸 ${bfCosts[lv]}`;
     }
-  } else { bfEl.classList.remove('maxed'); bfLv.textContent='未購買'; bfCost.textContent='🩸 30'; }
+  } else { bfEl.classList.remove('maxed'); bfLv.textContent=T('ui_not_owned'); bfCost.textContent='🩸 30'; }
 }
 
 function useBomb(){
-  if(upgrades.bomb.stock<=0){showMsg('沒有炸彈！');return;}
+  if(upgrades.bomb.stock<=0){showMsg(T('msg_no_bomb'));return;}
   upgrades.bomb.stock--;
   Audio.SFX.zapFire();
   let killed=0;
@@ -906,7 +1127,7 @@ function useBomb(){
   });
   // 全畫面閃光
   state.zapEffects.push(new ZapEffect(W/2,H/2,320));
-  state.floatingTexts.push(new FloatingText(W/2,H/2-60,`💣 炸彈！殲滅 ${killed} 隻`,C.amber,24));
+  state.floatingTexts.push(new FloatingText(W/2,H/2-60,`${T('bomb_kill')}${killed}${T('bomb_kill_unit')}`,C.amber,24));
   updateShopUI();
 }
 
@@ -1019,7 +1240,7 @@ canvas.addEventListener('click',e=>{
   }
   if(!hit&&state.combo>0){
     Audio.SFX.miss();
-    state.floatingTexts.push(new FloatingText(mx,my-10,'打空了',C.dim,16));
+    state.floatingTexts.push(new FloatingText(mx,my-10,T('ft_miss'),C.dim,16));
     state.combo=Math.max(0,state.combo-1);
   }
 });
@@ -1043,10 +1264,10 @@ document.addEventListener('keydown',e=>{
     if(upgrades.heal.stock>0&&state.hp<maxHp){
       upgrades.heal.stock--; state.hp++;
       Audio.SFX.upgradeBuy();
-      state.floatingTexts.push(new FloatingText(W/2,H*0.5,'💉 回復 1 血！',C.zap,24));
+      state.floatingTexts.push(new FloatingText(W/2,H*0.5,T('ft_heal_recover'),C.zap,24));
       updateShopUI();
-    } else if(state.hp>=maxHp){ showMsg('血量已滿！'); }
-    else{ showMsg('沒有驅蚊液！'); }
+    } else if(state.hp>=maxHp){ showMsg(T('msg_hp_full')); }
+    else{ showMsg(T('msg_no_heal')); }
     return;
   }
   // E：護盾
@@ -1060,8 +1281,8 @@ document.addEventListener('keydown',e=>{
     e.preventDefault();
     if(upgrades.zap.owned&&upgrades.zap.cooldown<=0&&state.mouseX!==undefined){
       useZap(state.mouseX,state.mouseY);
-    } else if(!upgrades.zap.owned){ showMsg('尚未購買電蚊拍！'); }
-    else{ showMsg(`電蚊拍充能中… ${Math.ceil(upgrades.zap.cooldown/1000)}s`); }
+    } else if(!upgrades.zap.owned){ showMsg(T('msg_no_zap')); }
+    else{ showMsg(`${T('msg_zap_charging')}${Math.ceil(upgrades.zap.cooldown/1000)}${T('msg_zap_charging_unit')}`); }
     return;
   }
 
@@ -1091,7 +1312,7 @@ function startGame(){
     mosquitoes:[],particles:[],floatingTexts:[],bloodDrops:[],
     zapEffects:[],bleedAttackEffects:[],
     swatEffect:null,spawnTimer:0,lastTime:performance.now(),bg:state.bg,
-    diffLabel:currentDiff.label.replace(/\u3000/g,''),
+    diffLabel:T(`diff_${currentDiff.diffKey}_label`).replace(/\u3000/g,''),
     bleedAttackTimer:0,
   };
   Audio.startBGM();
@@ -1106,7 +1327,7 @@ function drawHUD(){
 
   ctx.fillStyle=C.amber;ctx.font=`bold 21px 'Share Tech Mono'`;
   ctx.textAlign='left';ctx.shadowColor=C.amber;ctx.shadowBlur=10;
-  ctx.fillText(`分數 ${String(state.score).padStart(6,'0')}`,16,30);ctx.shadowBlur=0;
+  ctx.fillText(`${T('hud_score')} ${String(state.score).padStart(6,'0')}`,16,30);ctx.shadowBlur=0;
 
   ctx.fillStyle=currentDiff.color+'cc';ctx.font=`14px 'Share Tech Mono'`;
   ctx.fillText(`[${state.diffLabel}]`,142,30);
@@ -1126,10 +1347,10 @@ function drawHUD(){
 
   ctx.fillStyle='#9a8a6a';ctx.font=`bold 18px 'Share Tech Mono'`;
   ctx.textAlign='right';
-  ctx.fillText(`${Math.floor(state.time)}秒`,W-108,30);
+  ctx.fillText(`${Math.floor(state.time)}${T('hud_time_unit')}`,W-108,30);
   const nb=Math.max(0,Math.ceil(state.nextBoss));
   ctx.fillStyle=nb<10?C.boss.body:'#4a3a1a';ctx.font=`14px 'Share Tech Mono'`;
-  ctx.fillText(`首領 ${nb}s`,W-10,30);
+  ctx.fillText(`${T('hud_boss_cd')}${nb}${T('hud_boss_cd_unit')}`,W-10,30);
 
   // 右上快捷道具按鈕
   let btnX=W-14;
@@ -1191,7 +1412,7 @@ function drawHUD(){
     ctx.save();ctx.translate(W/2,64);ctx.scale(p,p);
     ctx.fillStyle=C.amber;ctx.font=`bold ${Math.min(28,16+state.combo)}px 'Noto Serif TC',serif`;
     ctx.textAlign='center';ctx.shadowColor=C.amber;ctx.shadowBlur=14;
-    ctx.fillText(`${state.combo} 連擊`,0,0);ctx.shadowBlur=0;ctx.restore();
+    ctx.fillText(`${state.combo}${T('combo_label')}`,0,0);ctx.shadowBlur=0;ctx.restore();
   }
 
 
@@ -1221,7 +1442,7 @@ function drawHUD(){
     const flash=Math.sin(Date.now()*0.008)>0;
     if(flash){
       ctx.fillStyle=C.blood+'cc';ctx.font=`bold 15px 'Share Tech Mono'`;ctx.textAlign='center';
-      ctx.fillText(`⚠ ${excess}隻蚊子正在吸血！每 3 秒 -1 HP`,W/2,H-12);
+      ctx.fillText(`⚠ ${excess}${T('ba_warning')}`,W/2,H-12);
     }
   }
 
@@ -1229,14 +1450,15 @@ function drawHUD(){
   ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(0,H-26,W,26);
   ctx.font=`11px 'Share Tech Mono'`;ctx.textAlign='left';
   const hints=[];
+  const rdy=T('hint_ready');
   if(upgrades.heal.stock>0) hints.push(`[Q]💉×${upgrades.heal.stock}`);
-  if(upgrades.zap.owned) hints.push(upgrades.zap.cooldown>0?`[空白]⚡${Math.ceil(upgrades.zap.cooldown/1000)}s`:'[空白]⚡就緒');
-  if(upgrades.shield.owned) hints.push(upgrades.shield.active?'[E]🛡生效中':upgrades.shield.cooldown>0?`[E]🛡${Math.ceil(upgrades.shield.cooldown/1000)}s`:'[E]🛡就緒');
-  if(upgrades.freeze&&upgrades.freeze.owned) hints.push(upgrades.freeze.active?'[R]❄生效中':upgrades.freeze.cooldown>0?`[R]❄${Math.ceil(upgrades.freeze.cooldown/1000)}s`:'[R]❄就緒');
+  if(upgrades.zap.owned) hints.push(upgrades.zap.cooldown>0?`[SP]⚡${Math.ceil(upgrades.zap.cooldown/1000)}s`:`[SP]⚡${rdy}`);
+  if(upgrades.shield.owned) hints.push(upgrades.shield.active?`[E]🛡${T('ui_in_effect')}`:upgrades.shield.cooldown>0?`[E]🛡${Math.ceil(upgrades.shield.cooldown/1000)}s`:`[E]🛡${rdy}`);
+  if(upgrades.freeze&&upgrades.freeze.owned) hints.push(upgrades.freeze.active?`[R]❄${T('ui_in_effect')}`:upgrades.freeze.cooldown>0?`[R]❄${Math.ceil(upgrades.freeze.cooldown/1000)}s`:`[R]❄${rdy}`);
   if(upgrades.bomb.stock>0) hints.push(`[F]💣×${upgrades.bomb.stock}`);
-  if(upgrades.magnet.owned) hints.push(upgrades.magnet.active?'[T]🧲生效中':upgrades.magnet.cooldown>0?`[T]🧲${Math.ceil(upgrades.magnet.cooldown/1000)}s`:'[T]🧲就緒');
+  if(upgrades.magnet.owned) hints.push(upgrades.magnet.active?`[T]🧲${T('ui_in_effect')}`:upgrades.magnet.cooldown>0?`[T]🧲${Math.ceil(upgrades.magnet.cooldown/1000)}s`:`[T]🧲${rdy}`);
   if(upgrades.coil.owned){const rem=Math.max(0,Math.ceil((upgrades.coil.interval-(upgrades.coil.timer||0))/1000));hints.push(`🌀${rem}s`);}
-  hints.push('[S]商店  [P]暫停');
+  hints.push(T('hint_shop'));
   ctx.fillStyle='#5a4a2a';
   ctx.fillText(hints.join('  '),12,H-8);
 
@@ -1244,7 +1466,7 @@ function drawHUD(){
   const hasDrops=state.bloodDrops.filter(b=>!b.collected&&b.life>0).length;
   if(hasDrops>0){
     ctx.fillStyle=C.blood+'aa';ctx.font=`13px 'Share Tech Mono'`;ctx.textAlign='right';
-    ctx.fillText(`滑過收集 ${hasDrops} 個血珠`,W-14,H-28);
+    ctx.fillText(`${T('blood_hint')}${hasDrops}${T('blood_hint_unit')}`,W-14,H-28);
   }
 }
 
@@ -1278,7 +1500,7 @@ function drawZapPreview(){
   // 就緒文字
   ctx.fillStyle=`rgba(68,204,255,${pulse})`;
   ctx.font=`bold 13px 'Share Tech Mono'`;ctx.textAlign='center';
-  ctx.fillText('⚡ 點擊釋放',state.mouseX,state.mouseY-r-8);
+  ctx.fillText(T('zap_click'),state.mouseX,state.mouseY-r-8);
   ctx.restore();
 }
 function drawSwatEffect(){
@@ -1308,24 +1530,25 @@ function drawTitle(){
   const t=Date.now()/1000;ctx.textAlign='center';
   const em=1+Math.sin(t*1.2)*0.04;
   ctx.save();ctx.translate(W/2,py+76);ctx.scale(em,em);ctx.font='56px serif';ctx.fillText('🦟',0,0);ctx.restore();
-  ctx.fillStyle=C.amber;ctx.font=`900 42px 'Noto Serif TC',serif`;ctx.shadowColor=C.amber;ctx.shadowBlur=22;ctx.fillText('進化蚊子',W/2,py+158);ctx.shadowBlur=0;
-  ctx.fillStyle='#5a4828';ctx.font=`14px 'Share Tech Mono'`;ctx.fillText('EVOLUTION  MOSQUITO',W/2,py+184);
+  ctx.fillStyle=C.amber;ctx.font=`900 42px 'Noto Serif TC',serif`;ctx.shadowColor=C.amber;ctx.shadowBlur=22;ctx.fillText(T('title_main'),W/2,py+158);ctx.shadowBlur=0;
+  ctx.fillStyle='#5a4828';ctx.font=`14px 'Share Tech Mono'`;ctx.fillText(T('title_sub'),W/2,py+184);
   ctx.strokeStyle=C.amber+'44';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px+50,py+200);ctx.lineTo(px+pw-50,py+200);ctx.stroke();
   ctx.fillStyle='#8a7a58';ctx.font=`15px 'Share Tech Mono'`;
-  ctx.fillText('5種蚊子 · 首領來襲 · 鍊化升級 · 電蚊拍',W/2,py+228);
-  ctx.fillStyle='#6a5a38';ctx.font=`15px 'Share Tech Mono'`;ctx.fillText('── 選擇難度 ──',W/2,py+260);
+  ctx.fillText(T('title_features'),W/2,py+228);
+  ctx.fillStyle='#6a5a38';ctx.font=`15px 'Share Tech Mono'`;ctx.fillText(T('title_select_diff'),W/2,py+260);
   const btns=getDiffButtons(),dkeys=['normal','hard','hell'],diffs=dkeys.map(k=>DIFFICULTY[k]);
   btns.forEach((b,i)=>{
     const d=diffs[i],isHover=(titleHover===i);
+    const dlabel=T(`diff_${d.diffKey}_label`),ddesc=T(`diff_${d.diffKey}_desc`);
     ctx.fillStyle=isHover?d.color+'44':'rgba(30,20,8,0.8)';ctx.beginPath();ctx.roundRect(b.x,b.y,b.w,b.h,4);ctx.fill();
     ctx.strokeStyle=isHover?d.color:d.color+'55';ctx.lineWidth=isHover?2:1;ctx.beginPath();ctx.roundRect(b.x,b.y,b.w,b.h,4);ctx.stroke();
     ctx.fillStyle=isHover?d.color:'#9a8a6a';ctx.font=`bold 19px 'Noto Serif TC',serif`;ctx.textAlign='center';
-    if(isHover){ctx.shadowColor=d.color;ctx.shadowBlur=12;}ctx.fillText(d.label,b.x+b.w/2,b.y+26);ctx.shadowBlur=0;
-    ctx.fillStyle=isHover?d.color+'cc':'#5a4a28';ctx.font=`12px 'Share Tech Mono'`;ctx.fillText(d.desc,b.x+b.w/2,b.y+44);
+    if(isHover){ctx.shadowColor=d.color;ctx.shadowBlur=12;}ctx.fillText(dlabel,b.x+b.w/2,b.y+26);ctx.shadowBlur=0;
+    ctx.fillStyle=isHover?d.color+'cc':'#5a4a28';ctx.font=`12px 'Share Tech Mono'`;ctx.fillText(ddesc,b.x+b.w/2,b.y+44);
   });
   // 血量顯示（累積）
-  if(totalBlood>0){ctx.fillStyle=C.blood+'88';ctx.font=`14px 'Share Tech Mono'`;ctx.fillText(`🩸 蚊子血：${totalBlood}（跨局保留）`,W/2,py+ph-68);}
-  ctx.fillStyle='#4a3a18';ctx.font=`14px 'Share Tech Mono'`;ctx.fillText('點擊難度按鈕開始  ·  [S] 開啟鍊化商店',W/2,py+ph-48);
+  if(totalBlood>0){ctx.fillStyle=C.blood+'88';ctx.font=`14px 'Share Tech Mono'`;ctx.fillText(`${T('title_blood')}${totalBlood} ${T('title_blood_carry')}`,W/2,py+ph-68);}
+  ctx.fillStyle='#4a3a18';ctx.font=`14px 'Share Tech Mono'`;ctx.fillText(T('title_hint'),W/2,py+ph-48);
   // 離開按鈕
   const qx=W/2,qy=py+ph-22;
   const isQHover=(titleHover===99);
@@ -1334,7 +1557,7 @@ function drawTitle(){
   ctx.strokeStyle=isQHover?'#c03040':'#4a2020';ctx.lineWidth=1;
   ctx.beginPath();ctx.roundRect(qx-70,qy-14,140,26,3);ctx.stroke();
   ctx.fillStyle=isQHover?'#e05060':'#6a3030';ctx.font=`12px 'Share Tech Mono'`;ctx.textAlign='center';
-  ctx.fillText('✕  離開遊戲',qx,qy+5);
+  ctx.fillText(T('title_quit'),qx,qy+5);
 }
 
 // ── 遊戲結束畫面 ──────────────────────────────
@@ -1348,30 +1571,30 @@ function drawGameOver(){
   ctx.fillText('◆',px+16,py+22);ctx.fillText('◆',px+pw-24,py+22);
   ctx.fillText('◆',px+16,py+ph-6);ctx.fillText('◆',px+pw-24,py+ph-6);
   ctx.textAlign='center';
-  ctx.font=`900 46px 'Noto Serif TC',serif`;ctx.fillStyle=C.boss.body;ctx.shadowColor=C.boss.body;ctx.shadowBlur=25;ctx.fillText('遊戲結束',W/2,py+80);ctx.shadowBlur=0;
-  ctx.fillStyle=currentDiff.color+'aa';ctx.font=`16px 'Share Tech Mono'`;ctx.fillText(`難度：${state.diffLabel}`,W/2,py+112);
+  ctx.font=`900 46px 'Noto Serif TC',serif`;ctx.fillStyle=C.boss.body;ctx.shadowColor=C.boss.body;ctx.shadowBlur=25;ctx.fillText(T('go_title'),W/2,py+80);ctx.shadowBlur=0;
+  ctx.fillStyle=currentDiff.color+'aa';ctx.font=`16px 'Share Tech Mono'`;ctx.fillText(`${T('go_difficulty')}${state.diffLabel}`,W/2,py+112);
   ctx.strokeStyle=C.boss.body+'44';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px+50,py+130);ctx.lineTo(px+pw-50,py+130);ctx.stroke();
-  ctx.font=`bold 21px 'Share Tech Mono'`;ctx.fillStyle=C.amber;ctx.fillText(`最終分數　${state.score}`,W/2,py+170);
+  ctx.font=`bold 21px 'Share Tech Mono'`;ctx.fillStyle=C.amber;ctx.fillText(`${T('go_score')}${state.score}`,W/2,py+170);
   ctx.fillStyle='#9a8a6a';ctx.font=`18px 'Share Tech Mono'`;
-  ctx.fillText(`最高連擊　${state.maxCombo} 連`,W/2,py+204);
-  ctx.fillText(`首領擊殺　${state.bossKills} 次`,W/2,py+236);
-  ctx.fillText(`存活時間　${Math.floor(state.time)} 秒`,W/2,py+268);
-  ctx.fillStyle=C.blood+'aa';ctx.fillText(`蚊子血累積　${totalBlood} 滴`,W/2,py+300);
+  ctx.fillText(`${T('go_combo')}${state.maxCombo}${T('go_combo_unit')}`,W/2,py+204);
+  ctx.fillText(`${T('go_boss')}${state.bossKills}${T('go_boss_unit')}`,W/2,py+236);
+  ctx.fillText(`${T('go_survive')}${Math.floor(state.time)}${T('go_survive_unit')}`,W/2,py+268);
+  ctx.fillStyle=C.blood+'aa';ctx.fillText(`${T('go_blood')}${totalBlood}${T('go_blood_unit')}`,W/2,py+300);
   ctx.strokeStyle=C.amber+'33';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px+70,py+318);ctx.lineTo(px+pw-70,py+318);ctx.stroke();
   let rank='F';
   if(state.score>=2000)rank='S';else if(state.score>=1000)rank='A';else if(state.score>=500)rank='B';else if(state.score>=200)rank='C';else if(state.score>=50)rank='D';
   const rc={S:'#f0d060',A:'#7ecf6e',B:'#8090e8',C:'#c0b090',D:'#e07840',F:'#4a3a2a'}[rank];
-  ctx.fillStyle='#4a3a1a';ctx.font=`14px 'Share Tech Mono'`;ctx.fillText('評　　級',W/2,py+348);
+  ctx.fillStyle='#4a3a1a';ctx.font=`14px 'Share Tech Mono'`;ctx.fillText(T('go_rank'),W/2,py+348);
   ctx.font=`900 68px 'Noto Serif TC',serif`;ctx.fillStyle=rc;ctx.shadowColor=rc;ctx.shadowBlur=26;ctx.fillText(rank,W/2,py+424);ctx.shadowBlur=0;
   const bx=W/2,by=py+ph-46;
   // 重新開始（左）
   ctx.fillStyle=C.amber;ctx.beginPath();ctx.roundRect(bx-248,by-22,230,44,4);ctx.fill();
   ctx.fillStyle='#1a0e00';ctx.font=`bold 20px 'Noto Serif TC',serif`;ctx.textAlign='center';
-  ctx.fillText('▶ 重新開始',bx-133,by+8);
+  ctx.fillText(T('go_restart'),bx-133,by+8);
   // 離開遊戲（右）
   ctx.fillStyle='rgba(160,30,50,0.85)';ctx.beginPath();ctx.roundRect(bx+18,by-22,230,44,4);ctx.fill();
   ctx.fillStyle='#ffcccc';ctx.font=`bold 20px 'Noto Serif TC',serif`;
-  ctx.fillText('✕ 離開遊戲',bx+133,by+8);
+  ctx.fillText(T('go_quit'),bx+133,by+8);
 }
 
 // ── 主迴圈 ────────────────────────────────────
@@ -1389,14 +1612,14 @@ function loop(ts){
     ctx.fillStyle='rgba(232,160,32,0.92)';
     ctx.font=`900 28px 'Noto Serif TC',serif`;
     ctx.textAlign='center';ctx.shadowColor=C.amber;ctx.shadowBlur=18;
-    ctx.fillText('⏸ 遊戲暫停中',W/2,H/2-20);ctx.shadowBlur=0;
+    ctx.fillText(T('pause_title'),W/2,H/2-20);ctx.shadowBlur=0;
     ctx.fillStyle='#6a5a38';ctx.font=`14px 'Share Tech Mono'`;
-    ctx.fillText('[P]/[Esc] 繼續  ·  [S] 商店  ·  ✕ 離開',W/2,H/2+18);
+    ctx.fillText(T('pause_hint'),W/2,H/2+18);
     // 暫停時的離開按鈕
     ctx.fillStyle='rgba(140,25,40,0.82)';ctx.beginPath();ctx.roundRect(W/2-80,H/2+40,160,34,4);ctx.fill();
     ctx.strokeStyle='#c03040';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(W/2-80,H/2+40,160,34,4);ctx.stroke();
     ctx.fillStyle='#ffcccc';ctx.font=`bold 15px 'Noto Serif TC',serif`;ctx.textAlign='center';
-    ctx.fillText('✕ 離開遊戲',W/2,H/2+63);
+    ctx.fillText(T('pause_quit'),W/2,H/2+63);
     requestAnimationFrame(loop);
     return;
   }
@@ -1416,7 +1639,7 @@ function loop(ts){
   if(upgrades.shield.owned){
     if(upgrades.shield.active){
       upgrades.shield.activeTimer-=dt;
-      if(upgrades.shield.activeTimer<=0){upgrades.shield.active=false;upgrades.shield.cooldown=upgrades.shield.maxCooldown;state.floatingTexts.push(new FloatingText(W/2,H/2,'護盾消失！',C.zap,20));}
+      if(upgrades.shield.activeTimer<=0){upgrades.shield.active=false;upgrades.shield.cooldown=upgrades.shield.maxCooldown;state.floatingTexts.push(new FloatingText(W/2,H/2,T('ft_shield_off'),C.zap,20));}
     } else if(upgrades.shield.cooldown>0){
       upgrades.shield.cooldown=Math.max(0,upgrades.shield.cooldown-dt);
     }
@@ -1428,7 +1651,7 @@ function loop(ts){
     state.nextBoss=currentDiff.bossInterval;
     state.mosquitoes.push(new Mosquito('boss',W/2,80));
     Audio.SFX.bossAlert();
-    state.floatingTexts.push(new FloatingText(W/2,H/2-20,'⚠ 首領來了！',C.boss.body,26));
+    state.floatingTexts.push(new FloatingText(W/2,H/2-20,T('ft_boss_alert'),C.boss.body,26));
   }
 
   // 扣血攻擊
@@ -1446,7 +1669,7 @@ function loop(ts){
         tgt.alive=false;
         killMosquito(tgt);
         spawnParticles(tgt.x,tgt.y,'#c8ff80',14);
-        state.floatingTexts.push(new FloatingText(tgt.x,tgt.y-20,'🌀 煙燻！','#a8e060',17));
+        state.floatingTexts.push(new FloatingText(tgt.x,tgt.y-20,T('ft_coil'),'#a8e060',17));
       }
     }
   }
@@ -1457,7 +1680,7 @@ function loop(ts){
     if(upgrades.bloodflow.timer>=upgrades.bloodflow.interval){
       upgrades.bloodflow.timer=0;
       state.bloodDrops.push(new BloodDrop(W/2+(Math.random()-.5)*80, H/2+(Math.random()-.5)*60, 1));
-      state.floatingTexts.push(new FloatingText(W/2, H/2-30,'💧 +1','#ff6090',14));
+      state.floatingTexts.push(new FloatingText(W/2, H/2-30,T('ft_blood_auto'),'#ff6090',14));
     }
   }
 
@@ -1487,7 +1710,7 @@ function loop(ts){
     ctx.fillRect(0,0,W,H);
     ctx.strokeStyle=`rgba(150,210,255,0.4)`;ctx.lineWidth=3;ctx.strokeRect(2,2,W-4,H-4);
     ctx.fillStyle=`rgba(150,210,255,0.7)`;ctx.font=`bold 16px 'Share Tech Mono'`;ctx.textAlign='center';
-    ctx.fillText(`❄ 凍結中 ${Math.ceil(upgrades.freeze.activeTimer/1000)}s`,W/2,H/2);
+    ctx.fillText(`${T('ui_freeze_active')} ${Math.ceil(upgrades.freeze.activeTimer/1000)}s`,W/2,H/2);
     ctx.restore();
   }
   state.floatingTexts.forEach(t=>t.draw());
@@ -1496,7 +1719,7 @@ function loop(ts){
   document.getElementById('statCount').textContent=state.mosquitoes.filter(m=>m.alive).length;
   document.getElementById('statCombo').textContent=state.maxCombo;
   document.getElementById('statBoss').textContent=state.bossKills;
-  document.getElementById('statNextBoss').textContent=Math.max(0,Math.ceil(state.nextBoss))+'秒';
+  document.getElementById('statNextBoss').textContent=Math.max(0,Math.ceil(state.nextBoss))+T('stat_next_boss_unit');
   document.getElementById('statBlood').textContent=totalBlood;
   requestAnimationFrame(loop);
 }
@@ -1547,13 +1770,25 @@ const Audio=(()=>{
   return{init,resume,SFX,startBGM,stopBGM,toggleMute,isMuted:()=>muted};
 })();
 
-// ── 靜音按鈕 ──────────────────────────────────
+// ── 靜音按鈕 + 語言切換 ────────────────────────
 (function(){
-  const btn=document.createElement('button');
-  btn.textContent='🔊';
-  btn.style.cssText='position:fixed;top:10px;right:12px;z-index:999;background:rgba(20,14,6,0.88);border:1px solid #8a5c0a;color:#e8a020;font-size:15px;width:34px;height:34px;border-radius:4px;cursor:pointer;';
-  btn.addEventListener('click',e=>{e.stopPropagation();Audio.init();Audio.resume();btn.textContent=Audio.toggleMute()?'🔇':'🔊';});
-  document.body.appendChild(btn);
+  const muteBtn=document.createElement('button');
+  muteBtn.textContent='🔊';
+  muteBtn.style.cssText='position:fixed;top:10px;right:12px;z-index:999;background:rgba(20,14,6,0.88);border:1px solid #8a5c0a;color:#e8a020;font-size:15px;width:34px;height:34px;border-radius:4px;cursor:pointer;';
+  muteBtn.addEventListener('click',e=>{e.stopPropagation();Audio.init();Audio.resume();muteBtn.textContent=Audio.toggleMute()?'🔇':'🔊';});
+  document.body.appendChild(muteBtn);
+
+  const langBtn=document.createElement('button');
+  langBtn.id='langBtn';
+  langBtn.textContent=T('lang_toggle');
+  langBtn.style.cssText='position:fixed;top:10px;right:54px;z-index:999;background:rgba(20,14,6,0.88);border:1px solid #8a5c0a;color:#e8a020;font-family:Share Tech Mono,monospace;font-size:12px;width:38px;height:34px;border-radius:4px;cursor:pointer;letter-spacing:1px;';
+  langBtn.addEventListener('click',e=>{
+    e.stopPropagation();
+    lang=lang==='zh'?'en':'zh';
+    localStorage.setItem('mosquitoLang',lang);
+    applyLang();
+  });
+  document.body.appendChild(langBtn);
 })();
 
 function quitGame(){
@@ -1592,6 +1827,7 @@ window.addEventListener('resize',applyScale);
 
 // ── 初始化 ────────────────────────────────────
 state.bg=createBG();
+applyLang();
 titleLoop();
 </script>
 </body>
