@@ -296,6 +296,11 @@ export default {
       let b; try{b=await request.json();}catch{return Response.json({error:'bad request'},{status:400,headers:cors});}
       const pid=(b.pid||'').slice(0,40), name=(b.name||'').trim().slice(0,20)||'匿名', gender=b.gender;
       if (!pid||!['male','female'].includes(gender)) return Response.json({error:'pid/gender required'},{status:400,headers:cors});
+      // ensure tables exist (idempotent)
+      await env.DB.prepare("CREATE TABLE IF NOT EXISTS chat_rooms (id TEXT PRIMARY KEY, p1_id TEXT NOT NULL, p2_id TEXT, p1_name TEXT NOT NULL, p2_name TEXT, p1_gender TEXT NOT NULL, p2_gender TEXT, state TEXT NOT NULL DEFAULT 'waiting', scenario_id INTEGER NOT NULL DEFAULT 0, scenario_req TEXT, timer_end INTEGER, created_at INTEGER NOT NULL)").run();
+      await env.DB.prepare("CREATE TABLE IF NOT EXISTS chat_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, room_id TEXT NOT NULL, role TEXT NOT NULL, name TEXT NOT NULL, msg_type TEXT NOT NULL DEFAULT 'text', content TEXT NOT NULL, created_at INTEGER NOT NULL)").run();
+      await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_cm_room ON chat_messages(room_id, id)").run();
+      await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_cr_state ON chat_rooms(state)").run();
       const now=Date.now();
       // clean up stale rooms
       await env.DB.prepare("DELETE FROM chat_rooms WHERE created_at<?").bind(now-3600000).run();
