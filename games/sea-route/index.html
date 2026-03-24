@@ -120,7 +120,7 @@ const I18N = {
   zh:{
     upgrade:'升級', sail:'啟航！', unlocked:'解鎖',
     newRoute:'新航道開通，準備出發！',
-    clickHint:'點擊畫面手動蒐集 ×2 倍率',
+    clickHint:'移動滑鼠引導船隻 · 點擊金色文物獲得稀有素材',
     bossHit:'✅ 命中！', bossMiss:'❌ 失誤！', bossClear:'🎉 通關！',
     bossBtn:'⚡ 點擊！', bossHits:'命中次數',
     km:'km', upg:'⚓ 升級', upgTitle:'⚓ 船艦強化',
@@ -139,7 +139,7 @@ const I18N = {
   en:{
     upgrade:'Upgrade', sail:'Set Sail!', unlocked:'Unlocked',
     newRoute:'New route opened. Ready to sail!',
-    clickHint:'Click screen to manually collect ×2 rate',
+    clickHint:'Move mouse to steer · Click gold artifacts for rare items',
     bossHit:'✅ Hit!', bossMiss:'❌ Miss!', bossClear:'🎉 Cleared!',
     bossBtn:'⚡ Click!', bossHits:'Hits',
     km:'km', upg:'⚓ Upgrade', upgTitle:'⚓ Ship Upgrades',
@@ -280,12 +280,25 @@ const STATE={
   totalCoins:0, spent:0, countriesCleared:0,
   particles:[], floatItems:[], spawnTimer:0,
   boss:null, waveTime:0, cloudOff:0,
-  lastSave:0, clickCooldown:0
+  lastSave:0, clickCooldown:0,
+  shipY:0           // dynamic ship Y offset (follows mouse)
 };
+
+// ─── Mouse tracking ───────────────────────────────────────
+let _mouseRawY=0, _mousePrevY=0, mouseMoveSpeed=0;
+window.addEventListener('mousemove',e=>{_mousePrevY=_mouseRawY;_mouseRawY=e.clientY;mouseMoveSpeed=Math.abs(_mouseRawY-_mousePrevY);});
+window.addEventListener('touchmove',e=>{const t=e.touches[0];_mousePrevY=_mouseRawY;_mouseRawY=t.clientY;mouseMoveSpeed=Math.abs(_mouseRawY-_mousePrevY);},{passive:true});
 
 // Derived stats
 function getSpeed(){  return 0.00035*(1+STATE.upgLevels[0][0]*0.25+STATE.upgLevels[0][1]*0.1); }
-function getRange(){  return 65+STATE.upgLevels[1][0]*30; }
+function getRange(){
+  let base=65+STATE.upgLevels[1][0]*30;
+  // 組合技：漂移撈取 — Speed S2 + Haul H2 → 移動時蒐集範圍擴張 1.5×
+  if(STATE.upgLevels[0][1]>=1 && STATE.upgLevels[1][1]>=1 && mouseMoveSpeed>3){
+    base*=1.5;
+  }
+  return base;
+}
 function getAutoRate(){ return 1+STATE.upgLevels[1][1]*0.3; }
 function getManualMult(){ return 2+STATE.upgLevels[1][2]*0.5; }
 function getArmor(){  return STATE.upgLevels[2][0]*0.15+STATE.upgLevels[2][1]*0.08; }
@@ -604,7 +617,7 @@ function drawPine(x,y,color,s){
 // ─── Drawing: Ship (paperdoll system) ────────────────────
 // Ship upgrades: speed lv→bigger engine, collect lv→more flags, hull lv→reinforced hull, special lv→glow
 function drawShip(){
-  const sx=W*.24, sy=H*.63;
+  const sx=W*.24, sy=H*.63+STATE.shipY;
   const sp=STATE.upgLevels[0][0], co=STATE.upgLevels[1][0], hu=STATE.upgLevels[2][0], sp2=STATE.upgLevels[3][0];
   const bob=Math.sin(STATE.waveTime*1.2)*(2+sp*.5); // gentle bobbing
   ctx.save(); ctx.translate(sx, sy+bob);
@@ -689,12 +702,27 @@ function drawFloatItems(){
     const floatY=fi.y+Math.sin(now*1.5+fi.phase)*5;
     ctx.save();
     ctx.globalAlpha=Math.min(1,fi.age*3);
-    ctx.fillText(it.e, fi.x, floatY);
-    // Item glow (rare items)
+    // 稀有文物 (r=1)：脈衝光環 + 點擊提示
     if(it.r===1){
-      ctx.shadowBlur=12; ctx.shadowColor='#ffd700';
-      ctx.fillText(it.e, fi.x, floatY);
+      const pulse=0.35+Math.sin(now*5)*0.25;
+      ctx.save();
+      ctx.globalAlpha=pulse*Math.min(1,fi.age*3);
+      ctx.strokeStyle='#ffd700'; ctx.lineWidth=2.5;
+      ctx.shadowBlur=10; ctx.shadowColor='#ffd700';
+      ctx.beginPath(); ctx.arc(fi.x,floatY,20,0,Math.PI*2); ctx.stroke();
+      ctx.restore();
+      // 點擊提示文字
+      if(Math.sin(now*3)>0){
+        ctx.save();
+        ctx.globalAlpha=0.85*Math.min(1,fi.age*3);
+        ctx.font='bold 9px sans-serif'; ctx.textAlign='center';
+        ctx.fillStyle='#ffd700';
+        ctx.fillText(lang==='zh'?'✦ 點擊':'✦ Click',fi.x,floatY-26);
+        ctx.restore();
+      }
+      ctx.shadowBlur=14; ctx.shadowColor='#ffd700';
     }
+    ctx.fillText(it.e, fi.x, floatY);
     ctx.restore();
   }
 }
@@ -745,7 +773,9 @@ function updateItems(dt){
     // Distance to ship
     const dx=fi.x-sx, dy=fi.y-sy, dist=Math.sqrt(dx*dx+dy*dy);
     if(dist<range){
-      // Auto-collect
+      const itData=ITEMS[fi.id];
+      // 稀有文物 (r=1) 不自動蒐集，必須手動點擊
+      if(itData && itData.r===1) continue;
       if(Math.random()<.04*autoMult){ doCollect(fi,false); }
     }
   }
@@ -1061,6 +1091,13 @@ function loop(ts){
     updateItems(dt);
     updateParts(dt);
     STATE.cloudOff+=dt*18;
+    // Smooth ship Y: follows mouse within ±H*0.12
+    if(_mouseRawY>0){
+      const targetOff=Math.max(-H*.12,Math.min(H*.12,_mouseRawY-H*.63));
+      STATE.shipY+=(targetOff-STATE.shipY)*.06;
+    }
+    // Decay mouseMoveSpeed
+    mouseMoveSpeed=Math.max(0,mouseMoveSpeed-1.5);
   }
   draw();
   save();
