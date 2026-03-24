@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Evo Mosquito — CG Cover Generator</title>
+<style>
+  body{background:#0a0806;font-family:monospace;color:#e8a020;padding:20px;}
+  h2{color:#e8a020;margin:32px 0 8px;font-size:14px;letter-spacing:2px;}
+  .info{color:#5a4020;font-size:12px;margin-bottom:8px;}
+  canvas{display:block;border:1px solid #3a2408;}
+  .btn{margin-top:8px;padding:8px 18px;background:rgba(232,160,32,0.15);border:1px solid #e8a020;
+    color:#e8a020;cursor:pointer;font-family:monospace;font-size:13px;letter-spacing:1px;}
+  .btn:hover{background:rgba(232,160,32,0.3);}
+</style>
+</head>
+<body>
+<div style="color:#e8a020;font-size:18px;font-weight:bold;letter-spacing:3px;">🦟 EVO MOSQUITO — CG COVER GENERATOR</div>
+<div style="color:#5a4020;font-size:12px;margin-top:4px;">Right-click each canvas → "Save image as" to export PNG</div>
+
+<h2>① 1920 × 1080 — Landscape (Main Cover)</h2>
+<div class="info">cg-cover-1920x1080.png</div>
+<canvas id="c1" width="1920" height="1080" style="width:960px;height:540px;"></canvas>
+<button class="btn" onclick="save('c1','evo-mosquito-1920x1080.png')">⬇ Download PNG</button>
+
+<h2>② 800 × 1200 — Portrait (Mobile List)</h2>
+<div class="info">cg-cover-800x1200.png</div>
+<canvas id="c2" width="800" height="1200" style="width:320px;height:480px;"></canvas>
+<button class="btn" onclick="save('c2','evo-mosquito-800x1200.png')">⬇ Download PNG</button>
+
+<h2>③ 800 × 800 — Square (Thumbnail)</h2>
+<div class="info">cg-cover-800x800.png</div>
+<canvas id="c3" width="800" height="800" style="width:400px;height:400px;"></canvas>
+<button class="btn" onclick="save('c3','evo-mosquito-800x800.png')">⬇ Download PNG</button>
+
+<script>
+function save(id,name){
+  const a=document.createElement('a');
+  a.download=name;
+  a.href=document.getElementById(id).toDataURL('image/png');
+  a.click();
+}
+
+// ── Shared drawing helpers ───────────────────────────────────
+function drawBg(ctx,W,H){
+  // dark gradient bg
+  const g=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*0.8);
+  g.addColorStop(0,'#1a1006');g.addColorStop(0.5,'#0e0904');g.addColorStop(1,'#050302');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  // scanlines
+  for(let y=0;y<H;y+=4){ctx.fillStyle='rgba(0,0,0,0.08)';ctx.fillRect(0,y,W,1);}
+  // amber vignette glow at center-bottom
+  const vg=ctx.createRadialGradient(W/2,H,0,W/2,H,W*0.7);
+  vg.addColorStop(0,'rgba(232,160,32,0.12)');vg.addColorStop(1,'transparent');
+  ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+}
+
+function drawBloodSplats(ctx,W,H,count){
+  for(let i=0;i<count;i++){
+    const x=Math.random()*W,y=Math.random()*H;
+    const r=4+Math.random()*8;
+    const g=ctx.createRadialGradient(x,y,0,x,y,r*2);
+    g.addColorStop(0,'rgba(180,20,50,0.25)');g.addColorStop(1,'transparent');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r*2,0,Math.PI*2);ctx.fill();
+  }
+}
+
+function drawMosquito(ctx,x,y,size,color,alpha){
+  ctx.save();ctx.globalAlpha=alpha||1;ctx.translate(x,y);
+  // glow
+  const gs=size*3;
+  const gr=ctx.createRadialGradient(0,0,0,0,0,gs);
+  gr.addColorStop(0,color+'88');gr.addColorStop(1,'transparent');
+  ctx.fillStyle=gr;ctx.beginPath();ctx.arc(0,0,gs,0,Math.PI*2);ctx.fill();
+  // wings
+  ctx.fillStyle='rgba(200,220,255,0.28)';
+  ctx.beginPath();ctx.ellipse(-size*0.9,-size*0.5,size*1.1,size*0.45,-0.24,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(size*0.9,-size*0.5,size*1.1,size*0.45,0.24,0,Math.PI*2);ctx.fill();
+  // body
+  ctx.fillStyle=color;
+  ctx.beginPath();ctx.ellipse(0,0,size*0.52,size,0,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(0,-size*0.9,size*0.38,0,Math.PI*2);ctx.fill();
+  // proboscis
+  ctx.strokeStyle=color;ctx.lineWidth=size*0.15;
+  ctx.beginPath();ctx.moveTo(0,-size*1.2);ctx.lineTo(0,-size*2.1);ctx.stroke();
+  ctx.restore();
+}
+
+function drawBloodDrop(ctx,x,y,r,alpha){
+  ctx.save();ctx.globalAlpha=alpha||1;
+  const g=ctx.createRadialGradient(x,y,0,x,y,r*2);
+  g.addColorStop(0,'rgba(200,30,60,0.35)');g.addColorStop(1,'transparent');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r*2,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#cc2244';ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='rgba(255,100,120,0.6)';
+  ctx.beginPath();ctx.arc(x-r*0.28,y-r*0.28,r*0.38,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+}
+
+function drawZapBolt(ctx,x1,y1,x2,y2,alpha){
+  ctx.save();ctx.globalAlpha=alpha||0.8;
+  ctx.strokeStyle='#44ccff';ctx.lineWidth=3;ctx.shadowColor='#44ccff';ctx.shadowBlur=16;
+  ctx.beginPath();ctx.moveTo(x1,y1);
+  const mx=(x1+x2)/2+(Math.random()-.5)*40;
+  const my=(y1+y2)/2+(Math.random()-.5)*40;
+  ctx.lineTo(mx,my);ctx.lineTo(x2,y2);ctx.stroke();
+  ctx.shadowBlur=0;ctx.restore();
+}
+
+function drawTitle(ctx,W,H,mosqSize){
+  // "EVO" large
+  ctx.save();
+  ctx.textAlign='center';
+  ctx.shadowColor='#e8a020';ctx.shadowBlur=40;
+  ctx.fillStyle='#e8a020';
+  ctx.font=`900 ${mosqSize*1.1}px 'Arial Black',Arial,sans-serif`;
+  ctx.fillText('EVO',W/2,H*0.52);
+  // "MOSQUITO"
+  ctx.shadowBlur=28;
+  ctx.font=`900 ${mosqSize*0.58}px 'Arial Black',Arial,sans-serif`;
+  ctx.fillText('MOSQUITO',W/2,H*0.52+mosqSize*0.72);
+  ctx.shadowBlur=0;
+  // subtitle
+  ctx.fillStyle='#8a6a38';
+  ctx.font=`${mosqSize*0.22}px monospace`;
+  ctx.letterSpacing='4px';
+  ctx.fillText('SWAT · UPGRADE · SURVIVE',W/2,H*0.52+mosqSize*1.1);
+  ctx.restore();
+}
+
+function drawBadge(ctx,x,y,text,color,size){
+  ctx.save();
+  ctx.fillStyle=color+'33';ctx.strokeStyle=color;ctx.lineWidth=2;
+  const w=size*3.8,h=size*1.4;
+  ctx.beginPath();ctx.roundRect(x-w/2,y-h/2,w,h,h/2);ctx.fill();ctx.stroke();
+  ctx.fillStyle=color;ctx.font=`bold ${size}px monospace`;ctx.textAlign='center';
+  ctx.fillText(text,x,y+size*0.36);
+  ctx.restore();
+}
+
+// ── CANVAS 1: 1920×1080 Landscape ───────────────────────────
+(function(){
+  const canvas=document.getElementById('c1');
+  const ctx=canvas.getContext('2d');
+  const W=1920,H=1080;
+  Math.seedrandom_=Math.random;// deterministic-ish
+  drawBg(ctx,W,H);
+  drawBloodSplats(ctx,W,H,30);
+
+  // decorative small mosquitoes scattered
+  const mosqData=[
+    {x:0.08,y:0.18,s:28,c:'#7ecf6e',a:0.35},
+    {x:0.18,y:0.72,s:20,c:'#f0d060',a:0.28},
+    {x:0.82,y:0.15,s:32,c:'#e07840',a:0.32},
+    {x:0.92,y:0.68,s:22,c:'#8090e8',a:0.25},
+    {x:0.12,y:0.45,s:18,c:'#7ecf6e',a:0.22},
+    {x:0.88,y:0.42,s:24,c:'#f0d060',a:0.3},
+  ];
+  mosqData.forEach(m=>drawMosquito(ctx,W*m.x,H*m.y,m.s,m.c,m.a));
+
+  // blood drops scattered
+  [[0.25,0.82,18,0.6],[0.75,0.78,14,0.5],[0.35,0.88,10,0.4],[0.65,0.85,12,0.45]].forEach(([rx,ry,r,a])=>drawBloodDrop(ctx,W*rx,H*ry,r,a));
+
+  // zap bolts
+  drawZapBolt(ctx,W*0.3,H*0.25,W*0.55,H*0.45,0.5);
+  drawZapBolt(ctx,W*0.7,H*0.3,W*0.52,H*0.5,0.4);
+
+  // BOSS mosquito – large, centered-left
+  drawMosquito(ctx,W*0.28,H*0.42,80,'#e03050',0.85);
+
+  // Main mosquito – huge center
+  drawMosquito(ctx,W*0.5,H*0.38,120,'#e8a020',1.0);
+
+  // Title text
+  drawTitle(ctx,W,H,160);
+
+  // Badges bottom
+  drawBadge(ctx,W*0.28,H*0.87,'⚡ BUG ZAPPER','#44ccff',22);
+  drawBadge(ctx,W*0.44,H*0.87,'❄ FREEZE SPRAY','#88ccff',22);
+  drawBadge(ctx,W*0.60,H*0.87,'🛡 SHIELD','#44ccff',22);
+  drawBadge(ctx,W*0.75,H*0.87,'💣 BOMB','#e8a020',22);
+
+  // Border frame
+  ctx.strokeStyle='rgba(232,160,32,0.35)';ctx.lineWidth=8;ctx.strokeRect(20,20,W-40,H-40);
+  ctx.strokeStyle='rgba(232,160,32,0.12)';ctx.lineWidth=2;ctx.strokeRect(38,38,W-76,H-76);
+
+  // CrazyGames watermark hint
+  ctx.fillStyle='rgba(90,70,32,0.6)';ctx.font='bold 22px monospace';ctx.textAlign='right';
+  ctx.fillText('PLAY FREE ON CRAZYGAMES.COM',W-50,H-30);
+})();
+
+// ── CANVAS 2: 800×1200 Portrait ─────────────────────────────
+(function(){
+  const canvas=document.getElementById('c2');
+  const ctx=canvas.getContext('2d');
+  const W=800,H=1200;
+  drawBg(ctx,W,H);
+  drawBloodSplats(ctx,W,H,20);
+
+  // small scattered
+  [{x:0.1,y:0.12,s:16,c:'#7ecf6e',a:0.3},{x:0.9,y:0.1,s:14,c:'#f0d060',a:0.28},
+   {x:0.85,y:0.55,s:18,c:'#8090e8',a:0.25},{x:0.1,y:0.58,s:14,c:'#e07840',a:0.22}]
+  .forEach(m=>drawMosquito(ctx,W*m.x,H*m.y,m.s,m.c,m.a));
+
+  // Boss mosquito upper-left
+  drawMosquito(ctx,W*0.22,H*0.25,50,'#e03050',0.75);
+
+  // Main mosquito center
+  drawMosquito(ctx,W*0.5,H*0.3,90,'#e8a020',1.0);
+
+  // Mutant right
+  drawMosquito(ctx,W*0.78,H*0.27,40,'#e07840',0.65);
+
+  // blood drops
+  [[0.3,0.72,14,0.55],[0.7,0.68,10,0.5],[0.5,0.78,12,0.45]].forEach(([rx,ry,r,a])=>drawBloodDrop(ctx,W*rx,H*ry,r,a));
+
+  // Zap
+  drawZapBolt(ctx,W*0.2,H*0.35,W*0.5,H*0.45,0.45);
+
+  // Title — centered, lower
+  drawTitle(ctx,W,H,100);
+
+  // Badges
+  drawBadge(ctx,W*0.3,H*0.82,'⚡ ZAPPER','#44ccff',18);
+  drawBadge(ctx,W*0.7,H*0.82,'❄ FREEZE','#88ccff',18);
+  drawBadge(ctx,W*0.3,H*0.88,'🛡 SHIELD','#44ccff',18);
+  drawBadge(ctx,W*0.7,H*0.88,'💣 BOMB','#e8a020',18);
+
+  // Difficulty labels
+  ctx.save();ctx.textAlign='center';ctx.font='bold 16px monospace';
+  ctx.fillStyle='#7ecf6e';ctx.fillText('NORMAL',W*0.25,H*0.94);
+  ctx.fillStyle='#f0d060';ctx.fillText('HARD',W*0.5,H*0.94);
+  ctx.fillStyle='#e03050';ctx.fillText('HELL',W*0.75,H*0.94);
+  ctx.restore();
+
+  // Border
+  ctx.strokeStyle='rgba(232,160,32,0.35)';ctx.lineWidth=6;ctx.strokeRect(14,14,W-28,H-28);
+  ctx.strokeStyle='rgba(232,160,32,0.12)';ctx.lineWidth=2;ctx.strokeRect(28,28,W-56,H-56);
+})();
+
+// ── CANVAS 3: 800×800 Square ─────────────────────────────────
+(function(){
+  const canvas=document.getElementById('c3');
+  const ctx=canvas.getContext('2d');
+  const W=800,H=800;
+  drawBg(ctx,W,H);
+  drawBloodSplats(ctx,W,H,18);
+
+  // corner mosquitoes
+  [{x:0.12,y:0.12,s:20,c:'#7ecf6e',a:0.35},{x:0.88,y:0.12,s:18,c:'#f0d060',a:0.3},
+   {x:0.12,y:0.88,s:16,c:'#8090e8',a:0.28},{x:0.88,y:0.88,s:20,c:'#e07840',a:0.32}]
+  .forEach(m=>drawMosquito(ctx,W*m.x,H*m.y,m.s,m.c,m.a));
+
+  // Boss left
+  drawMosquito(ctx,W*0.25,H*0.38,44,'#e03050',0.72);
+  // Main center — iconic
+  drawMosquito(ctx,W*0.5,H*0.35,80,'#e8a020',1.0);
+  // Fast right
+  drawMosquito(ctx,W*0.76,H*0.4,30,'#f0d060',0.65);
+
+  // blood drops
+  [[0.3,0.72,12,0.6],[0.7,0.7,10,0.5],[0.5,0.8,14,0.5]].forEach(([rx,ry,r,a])=>drawBloodDrop(ctx,W*rx,H*ry,r,a));
+
+  // zap
+  drawZapBolt(ctx,W*0.22,H*0.28,W*0.5,H*0.42,0.5);
+
+  // Title compact
+  drawTitle(ctx,W,H,90);
+
+  // Bottom badge row
+  ctx.save();ctx.textAlign='center';
+  ['⚡','❄','🛡','💣','🌀'].forEach((e,i)=>{
+    const x=W*(0.18+i*0.16),y=H*0.9;
+    ctx.font='28px serif';ctx.fillText(e,x,y);
+  });
+  ctx.restore();
+
+  // Border
+  ctx.strokeStyle='rgba(232,160,32,0.4)';ctx.lineWidth=6;ctx.strokeRect(14,14,W-28,H-28);
+  ctx.strokeStyle='rgba(232,160,32,0.12)';ctx.lineWidth=2;ctx.strokeRect(28,28,W-56,H-56);
+})();
+</script>
+</body>
+</html>
