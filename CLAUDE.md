@@ -228,6 +228,168 @@ JS: `document.documentElement.setAttribute('data-theme', t)` + `localStorage.set
 
 ---
 
+## 新遊戲建置：素材配置清單
+
+> 開一款新遊戲時，先從這張表決定要用哪些素材，路徑都以 `../../assets/` 為根目錄。
+
+---
+
+### 🎵 背景音樂（BGM）配置
+
+| 遊戲氛圍 | 推薦音樂包 | 代表曲目 | 格式 |
+|----------|-----------|---------|------|
+| 輕鬆 / 休閒 / 農村 | `JDSherbert - Minigame Music Pack [FREE]/` | Beach Vibes, Refreshing Dawn | .ogg |
+| 奇幻 / RPG | `Fantasy RPG Music Pack Vol.3/Loops/ogg/` | Action 1~5 Loop, Ambient 1~10 Loop | .ogg |
+| 中世紀 / 冒險 | `Medieval Vol. 2/ogg/` | Medieval Vol. 2 1~8.ogg | .ogg |
+| 環境 / 海洋 / 放置 | `10 Ambient RPG Tracks/ogg/` | Ambient 1~10.ogg | .ogg |
+| 賽博龐克 / 現代 | `Urban Modern/` | urban-light-bed-loop, modern-electronic-waves | .mp3 |
+| 恐怖 / 末日 | `retroindiejosh_mp06-horror_ogg/` | — | .ogg |
+| 🎹 鋼琴輕音樂 | `Game Piano Music/` | — | — |
+| 科幻 / 太空 | ❌ **缺少** | 需補充 | — |
+| 節日 / 歡慶 | ❌ **缺少** | 需補充 | — |
+| 戰鬥 / Action | ❌ **缺少**（目前只有 RPG 循環） | 需補充 | — |
+
+**BGM 使用模板：**
+```javascript
+// 遊戲路徑：games/<game>/index.html → 素材根：../../assets/
+startBGM('../../assets/music/JDSherbert - Minigame Music Pack [FREE]/JDSherbert - Minigame Music Pack - Beach Vibes.ogg');
+```
+
+---
+
+### 🔊 音效（SFX）配置
+
+> 規則：即時動作音效 ≤ 300ms，超過需傳 maxMs 截斷
+
+#### 常見事件對應表
+
+| 觸發事件 | 推薦音效檔 | 路徑 | maxMs |
+|----------|-----------|------|-------|
+| 撿道具 / 收集 | `coin_collect.wav` | `sfx/400 Sounds Pack/Items/` | 280 |
+| 稀有道具 / 手動收集 | `gem_collect.wav` | `sfx/400 Sounds Pack/Items/` | 280 |
+| 購買 / 確認 | `synth_confirmation.wav` | `sfx/400 Sounds Pack/UI/` | 260 |
+| 取消 / 返回 | `cancel.wav` | `sfx/400 Sounds Pack/UI/` | 200 |
+| 錯誤 / 不可操作 | `8_bit_negative.wav` | `sfx/400 Sounds Pack/Musical Effects/` | 300 |
+| 升級 / 強化 | `Retro PowerUP 09.wav` | `sfx/GameSFX3/PowerUp/` | 280 |
+| 進度上升提示 | `Retro Ascending Short 20.wav` | `sfx/GameSFX0/Ascending/` | 250 |
+| 跳躍 | `Retro Jump 01.wav` | `sfx/GameSFX1/Bounce Jump/` | 200 |
+| 攻擊 / 受傷 | `Retro Impact Punch 07.wav` | `sfx/GameSFX2/Impact/` | 200 |
+| 射擊 | `Retro Gun SingleShot 04.wav` | `sfx/GameSFX3/Weapon/` | 200 |
+| 魔法技能 | `Retro Magic 06.wav` | `sfx/GameSFX2/Magic/` | 250 |
+| 爆炸 | `（GameSFX1/Explosion/ 內取用）` | `sfx/GameSFX1/Explosion/` | 不截斷 |
+| 關卡完成 / 通關 | `brass_level_complete.wav` | `sfx/400 Sounds Pack/Musical Effects/` | 不截斷 |
+| 解鎖新內容 | `8_bit_level_complete.wav` | `sfx/400 Sounds Pack/Musical Effects/` | 不截斷 |
+| Boss 擊中 | `vibraphone_chime_positive.wav` | `sfx/400 Sounds Pack/Musical Effects/` | 200 |
+| Boss 失誤 | `8_bit_negative.wav` | `sfx/400 Sounds Pack/Musical Effects/` | 300 |
+| UI 按鈕 hover | `select_1.wav` | `sfx/400 Sounds Pack/UI/` | 150 |
+| Popup 開啟 | `JDSherbert - Ultimate UI SFX Pack - Popup Open - 1.ogg` | `sfx/JDSherbert - Ultimate UI SFX Pack (FREE)/…/Stereo/ogg/` | 不截斷 |
+| Popup 關閉 | `JDSherbert - Ultimate UI SFX Pack - Popup Close - 1.ogg` | 同上 | 不截斷 |
+
+**SFX 使用模板（複製進新遊戲）：**
+```javascript
+const AUDIO_CTX = new (window.AudioContext||window.webkitAudioContext)();
+const AUDIO_BUFS = {};
+let audioMuted = (localStorage.getItem('<game>Muted')==='1');
+let bgmSource = null, bgmGain = null, bgmLoaded = false;
+
+function loadAudio(name, url){
+  fetch(url).then(r=>r.arrayBuffer()).then(ab=>AUDIO_CTX.decodeAudioData(ab))
+    .then(buf=>{ AUDIO_BUFS[name]=buf; }).catch(()=>{});
+}
+function playAudio(name, vol=0.7, rate=1, maxMs=0){
+  if(audioMuted) return;
+  const buf=AUDIO_BUFS[name]; if(!buf) return;
+  if(AUDIO_CTX.state==='suspended') AUDIO_CTX.resume();
+  const src=AUDIO_CTX.createBufferSource();
+  src.buffer=buf; src.playbackRate.value=rate;
+  const gain=AUDIO_CTX.createGain(); gain.gain.value=vol;
+  src.connect(gain); gain.connect(AUDIO_CTX.destination);
+  src.start(0,0,maxMs>0?maxMs/1000:buf.duration);
+}
+function startBGM(url){
+  if(bgmLoaded||audioMuted) return; bgmLoaded=true;
+  fetch(url).then(r=>r.arrayBuffer()).then(ab=>AUDIO_CTX.decodeAudioData(ab)).then(buf=>{
+    if(AUDIO_CTX.state==='suspended') AUDIO_CTX.resume();
+    bgmSource=AUDIO_CTX.createBufferSource();
+    bgmSource.buffer=buf; bgmSource.loop=true;
+    bgmGain=AUDIO_CTX.createGain(); bgmGain.gain.value=0.22;
+    bgmSource.connect(bgmGain); bgmGain.connect(AUDIO_CTX.destination);
+    bgmSource.start();
+  }).catch(()=>{});
+}
+function toggleMute(){
+  audioMuted=!audioMuted;
+  if(bgmGain) bgmGain.gain.value=audioMuted?0:0.22;
+  document.getElementById('mute-btn').textContent=audioMuted?'🔇':'🔊';
+  localStorage.setItem('<game>Muted',audioMuted?'1':'0');
+  if(!audioMuted&&!bgmLoaded) startBGM(BGM_URL);
+}
+// 在 init() 裡加：
+// if(audioMuted) document.getElementById('mute-btn').textContent='🔇';
+// const startOnce=()=>{ startBGM(BGM_URL); document.removeEventListener('click',startOnce); document.removeEventListener('touchend',startOnce); };
+// document.addEventListener('click',startOnce); document.addEventListener('touchend',startOnce);
+```
+
+---
+
+### 🎨 圖片 / Sprite 配置
+
+| 遊戲類型 | 推薦素材包 | 路徑 | 內容 |
+|----------|-----------|------|------|
+| 農場 / 村落 | Sunnyside World | `images/Sunnyside World/` | 建築、NPC、地板、植物、農業 |
+| 末日 / 生存 | PostApocalypse | `packs/PostApocalypse_AssetPack_v1.1.2/` | 主角、殭屍3種、廢墟 tile |
+| 機甲 / 戰爭 | Robot Warfare | `packs/Robot Warfare Asset Pack 24-11-21/` | 士兵×7、機器人×5、子彈、爆炸 |
+| RPG / 地城 | Pixel Crawler | `images/Pixel Crawler - Free Pack 2.0.4/` | 怪物、地板、效果 |
+| 奇幻角色 | Tiny RPG Character | `images/Tiny RPG Character Asset Pack v1.03b…/` | 士兵、獸人 spritesheet |
+| 農夫 / 人物 | Mana Seed Farmer | `images/Mana Seed Farmer Sprite Free Sample/` | 農夫動畫 |
+| 森林 / 奇幻環境 | mystic_woods | `images/mystic_woods_free_2.2/` | 樹木、灌木、環境 |
+| Roguelike 綜合 | 32rogues | `images/32rogues-1/` `images/32rogues-2/` | 多樣素材 |
+| 小動物 | critters | `images/critters/` | 動物 sprite |
+| 寶石 / 礦物 | Pixel Art Gem Pack | `Pixel Art Gem Pack - Animated/` | 10種×8色寶石動畫 + 火花 |
+| 物品圖標（商店用） | Pixel_Mart | `Pixel_Mart/` | 150個物品 PNG |
+| UI 通用圖標 | Icons_Essential | `images/Icons_Essential/Icons/` | 80個像素 icon（Coin, Book, Chest…） |
+| 魔法 / 技能特效 | Free Pixel Effects | `images/Free Pixel Effects Pack/` | 22種特效 spritesheet |
+| 天氣特效 | Weather Elements | `images/Weather Elements Freebie/` | 雨、雪、雷 |
+| 等距地板 | isometric tileset | `images/isometric tileset/` | 等距視角地板 |
+| 海洋 / 航海 | ❌ **缺少** | 需補充 | 海浪、船隻、港口 |
+| 太空 / 科幻 | ❌ **缺少** | 需補充 | 太空背景、星球、飛船 |
+| 水豚角色 sprite | ❌ **缺少** | 需補充 | 吉祥物動畫 spritesheet |
+
+---
+
+### 🖼️ UI 元件配置
+
+| UI 元件 | 現有做法 | 素材 | 狀態 |
+|---------|---------|------|------|
+| 按鈕 / 面板 | 純 CSS（border-radius + backdrop-filter） | — | ✅ CSS 即可 |
+| 血條 / 進度條 | 純 CSS div + width 動畫 | — | ✅ CSS 即可 |
+| 道具 / 通用圖標 | Icons_Essential / Pixel_Mart PNG | `images/Icons_Essential/Icons/` | ✅ 現有 |
+| 金幣圖示 | `Coin.png` / `Coin2.png` | `images/Icons_Essential/Icons/` | ✅ 現有 |
+| 寶箱 / 稀有物 | `ChestTreasure.png` | `images/Icons_Essential/Icons/` | ✅ 現有 |
+| 特效動畫 | Free Pixel Effects spritesheet | `images/Free Pixel Effects Pack/` | ✅ 現有 |
+| 字型（像素風） | Google Fonts CDN（VT323 / Press Start 2P） | — | ⚠️ 靠 CDN，無本地檔 |
+| 9-slice 面板框 | ❌ 缺少，目前全靠 CSS | 需補充 | ❌ 缺 |
+| 虛擬搖桿（手機） | Canvas 繪製圓形 | — | ⚠️ 無圖片，靠 canvas |
+| 對話框 / 氣泡框 | 純 CSS | — | ✅ CSS 即可 |
+
+---
+
+### ❗ 目前素材庫缺少（需補充）
+
+| 優先 | 類型 | 說明 | 建議來源 |
+|------|------|------|---------|
+| 🔴 高 | 字型檔（本地） | 目前靠 CDN，離線環境或 CrazyGames 上架可能失效 | Google Fonts 下載 .woff2（VT323, Press Start 2P, Noto Sans TC） |
+| 🔴 高 | 戰鬥 / Action BGM | 現有音樂全是環境/RPG 迴圈，缺乏激烈戰鬥感 | itch.io 免費音樂包 |
+| 🔴 高 | 科幻 / 太空 BGM | 虛空領航員等太空遊戲無合適 BGM | itch.io: synthwave/space music |
+| 🟡 中 | 海洋 / 航海 Sprite | 世界航道全靠 canvas 畫，沒有真實船隻/海浪素材 | OpenGameArt.org 搜 "ocean tileset" |
+| 🟡 中 | 水豚角色 sprite | 吉祥物有 emoji 但沒有動畫 spritesheet | 自製或委外像素藝術師 |
+| 🟡 中 | 節日 / 歡慶 BGM | 節日活動缺 BGM | itch.io 免費 |
+| 🟢 低 | 9-slice UI 面板 | 現在 CSS 夠用，但像素風遊戲有面板更有質感 | Kenney.nl UI Pack |
+| 🟢 低 | 太空 / 科幻 Sprite | 虛空領航員星空全靠 canvas 繪製 | Kenney.nl Space Shooter |
+| 🟢 低 | 虛擬搖桿圖片 | 目前用 canvas 畫圓，無圖片質感 | Kenney.nl Game Input |
+
+---
+
 ## 現有遊戲清單（2026/3/22 同步）
 
 | 目錄 | 遊戲名稱 | 類型 | 行數 |
