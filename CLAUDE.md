@@ -305,11 +305,26 @@ JS: `document.documentElement.setAttribute('data-theme', t)` + `localStorage.set
 ### 辨認方式
 ```cmd
 echo %COMPUTERNAME%
+echo %USERPROFILE%
 ```
 
 ### 筆電（已確認）
+- COMPUTERNAME：`USER`（推測）
 - Git repo：`C:\Users\User\capyworlds`
 - 素材落地：`C:\Users\User\Desktop\capyworlds\assets\`
+
+### 桌機 ALICE（已確認 2026/3/24）
+- COMPUTERNAME：`ALICE`
+- Git repo：`C:\Users\alice\OneDrive\桌面\capyworlds`
+- wrangler deploy 指令：
+  ```cmd
+  cd C:\Users\alice\OneDrive\桌面\capyworlds
+  git pull origin main
+  npx wrangler deploy
+  ```
+
+### 手機
+- 路徑待確認（第一次使用時補充）
 
 ### ACER 主機（路徑待確認）
 第一次用 ACER 時請先跑 `echo %COMPUTERNAME%` 和 `echo %USERPROFILE%`
