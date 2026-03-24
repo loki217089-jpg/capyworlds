@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>世界航道 Sea Route</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a1628;overflow:hidden;font-family:'Segoe UI','PingFang TC',sans-serif;user-select:none;-webkit-user-select:none}
+canvas{display:block;position:fixed;top:0;left:0}
+/* HUD top */
+#hud-top{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;align-items:center;gap:10px;padding:10px 14px;background:linear-gradient(180deg,rgba(0,0,0,.52) 0%,transparent 100%);pointer-events:none}
+#hud-flag{font-size:24px;line-height:1}
+.hud-names .hud-cn{font-size:14px;font-weight:700;color:#fff;text-shadow:0 2px 5px rgba(0,0,0,.6);line-height:1}
+.hud-names .hud-en{font-size:10px;color:rgba(255,255,255,.5);margin-top:1px}
+.prog-wrap{flex:1;height:6px;background:rgba(255,255,255,.14);border-radius:3px;overflow:hidden}
+.prog-bar{height:100%;border-radius:3px;background:linear-gradient(90deg,#4af8ff,#00e0b0);box-shadow:0 0 6px rgba(74,248,255,.45);transition:width .5s}
+#dist-lbl{font-size:10px;color:rgba(255,255,255,.55);white-space:nowrap;min-width:48px;text-align:right}
+/* HUD bottom */
+#hud-bot{position:fixed;bottom:0;left:0;right:0;z-index:10;display:flex;align-items:flex-end;justify-content:space-between;padding:8px 14px 12px;background:linear-gradient(0deg,rgba(0,0,0,.52) 0%,transparent 100%);pointer-events:none}
+#cargo-display{display:flex;gap:5px;flex-wrap:wrap;max-width:68%;pointer-events:all}
+.ci{background:rgba(0,0,0,.48);border:1px solid rgba(255,255,255,.16);border-radius:7px;padding:3px 8px;font-size:12px;color:#fff;display:flex;align-items:center;gap:3px;backdrop-filter:blur(4px)}
+.ci-val{font-weight:700;color:#4af8ff}
+#upg-btn{pointer-events:all;background:rgba(74,248,255,.13);border:1px solid rgba(74,248,255,.32);border-radius:9px;padding:8px 14px;color:#4af8ff;font-size:12px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px);transition:background .2s,transform .1s;letter-spacing:.5px}
+#upg-btn:hover{background:rgba(74,248,255,.22);transform:scale(1.03)}
+#upg-dot{display:none;width:6px;height:6px;background:#f44;border-radius:50%;margin-left:4px;vertical-align:middle}
+/* Click hint */
+#click-hint{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);z-index:9;font-size:11px;color:rgba(255,255,255,.35);pointer-events:none;transition:opacity .5s;white-space:nowrap}
+/* Upgrade Panel */
+#upg-panel{position:fixed;bottom:0;right:0;z-index:20;width:min(360px,100vw);max-height:78vh;background:rgba(6,16,32,.97);border:1px solid rgba(74,248,255,.18);border-bottom:none;border-right:none;border-radius:16px 0 0 0;padding:16px;overflow-y:auto;transform:translateX(100%);transition:transform .28s;backdrop-filter:blur(14px)}
+#upg-panel.open{transform:translateX(0)}
+.up-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.up-ttl{font-size:14px;font-weight:700;color:#4af8ff}
+.up-x{background:none;border:none;color:rgba(255,255,255,.38);font-size:18px;cursor:pointer;padding:2px 6px}
+.up-x:hover{color:#fff}
+.up-tab-bar{display:flex;gap:4px;margin-bottom:12px}
+.up-tab{flex:1;padding:5px 0;border:1px solid rgba(255,255,255,.1);border-radius:6px;background:none;color:rgba(255,255,255,.4);font-size:11px;cursor:pointer;transition:all .15s}
+.up-tab.active{border-color:rgba(74,248,255,.4);background:rgba(74,248,255,.1);color:#4af8ff}
+.up-row{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.up-ico{font-size:19px;width:26px;text-align:center}
+.up-inf{flex:1}
+.up-nm{font-size:12px;font-weight:700;color:#e8ddd0}
+.up-ds{font-size:10px;color:rgba(255,255,255,.38);margin-top:1px}
+.up-lv{font-size:10px;color:#4af8ff;margin-top:2px}
+.up-buy{background:rgba(74,248,255,.11);border:1px solid rgba(74,248,255,.26);border-radius:6px;padding:4px 9px;color:#4af8ff;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s}
+.up-buy:hover{background:rgba(74,248,255,.2)}
+.up-buy:disabled{opacity:.28;cursor:not-allowed}
+/* Boss Overlay */
+#boss-ov{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:30;display:none;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:20px}
+#boss-ov.show{display:flex}
+.boss-ttl{font-size:22px;font-weight:900;color:#fff;margin-bottom:4px}
+.boss-sub{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:14px;max-width:280px;line-height:1.5}
+#boss-hp{display:flex;gap:6px;margin-bottom:12px;justify-content:center}
+.bh{font-size:18px;transition:opacity .3s}
+.boss-mw{width:260px;height:24px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:12px;overflow:hidden;position:relative;margin-bottom:12px}
+.boss-gz{position:absolute;top:0;height:100%;background:rgba(68,255,136,.32)}
+.boss-cur{position:absolute;top:0;height:100%;width:4px;background:#fff;border-radius:2px}
+.boss-btn{padding:12px 36px;background:#4af8ff;border:none;border-radius:10px;font-size:14px;font-weight:700;color:#0a1628;cursor:pointer;transition:transform .1s}
+.boss-btn:active{transform:scale(.95)}
+.boss-res{font-size:18px;margin-top:10px;min-height:24px}
+#boss-progress{font-size:11px;color:rgba(255,255,255,.4);margin-top:6px}
+/* Unlock Overlay */
+#unlock-ov{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:35;display:none;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:20px}
+#unlock-ov.show{display:flex}
+.ul-flag{font-size:60px;margin-bottom:8px;animation:ulp .8s infinite alternate}
+@keyframes ulp{from{transform:scale(1)}to{transform:scale(1.1)}}
+.ul-ttl{font-size:24px;font-weight:900;color:#fff;margin-bottom:4px}
+.ul-sub{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:20px}
+.ul-btn{padding:12px 40px;background:linear-gradient(135deg,#4af8ff,#00c8a0);border:none;border-radius:12px;font-size:14px;font-weight:700;color:#0a1628;cursor:pointer;transition:transform .1s}
+.ul-btn:active{transform:scale(.96)}
+/* Misc */
+#lang-btn{position:fixed;top:10px;right:10px;z-index:50;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.13);border-radius:13px;padding:4px 9px;color:rgba(255,255,255,.6);font-size:11px;cursor:pointer;backdrop-filter:blur(6px)}
+#lang-btn:hover{color:#fff}
+#back-link{position:fixed;bottom:54px;left:14px;z-index:10;color:rgba(255,255,255,.28);font-size:11px;text-decoration:none;transition:color .2s}
+#back-link:hover{color:rgba(255,255,255,.6)}
+/* Collect flash */
+.flash{position:fixed;pointer-events:none;z-index:9;font-size:14px;font-weight:700;color:#4af8ff;text-shadow:0 0 8px rgba(74,248,255,.8);animation:cf .8s forwards}
+@keyframes cf{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-40px)}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<button id="lang-btn" onclick="toggleLang()">EN</button>
+<a id="back-link" href="/games/">← 遊戲列表</a>
+<div id="hud-top">
+  <div id="hud-flag">🇹🇼</div>
+  <div class="hud-names"><div class="hud-cn" id="hud-cn">台灣</div><div class="hud-en" id="hud-en">Taiwan</div></div>
+  <div class="prog-wrap"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div>
+  <div id="dist-lbl">0 km</div>
+</div>
+<div id="hud-bot">
+  <div id="cargo-display"></div>
+  <button id="upg-btn" onclick="toggleUpg()">⚓ <span id="upg-lbl">升級</span><span id="upg-dot"></span></button>
+</div>
+<div id="click-hint" id="click-hint">點擊畫面手動蒐集 ×2 倍率</div>
+<div id="upg-panel">
+  <div class="up-hd"><span class="up-ttl" id="up-ttl">⚓ 船艦強化</span><button class="up-x" onclick="toggleUpg()">✕</button></div>
+  <div class="up-tab-bar" id="up-tabs"></div>
+  <div id="up-list"></div>
+</div>
+<div id="boss-ov">
+  <div class="boss-ttl" id="boss-ttl">⛈ 颱風女神</div>
+  <div class="boss-sub" id="boss-sub">點擊讓指針停在綠色區域！</div>
+  <div id="boss-hp"></div>
+  <div class="boss-mw"><div class="boss-gz" id="boss-gz"></div><div class="boss-cur" id="boss-cur"></div></div>
+  <button class="boss-btn" id="boss-btn" onclick="bossClick()">⚡ <span id="boss-btn-lbl">點擊！</span></button>
+  <div class="boss-res" id="boss-res"></div>
+  <div id="boss-progress"></div>
+</div>
+<div id="unlock-ov">
+  <div class="ul-flag" id="ul-flag">🇯🇵</div>
+  <div class="ul-ttl" id="ul-ttl">解鎖 日本！</div>
+  <div class="ul-sub" id="ul-sub">新航道已開通，準備出發！</div>
+  <button class="ul-btn" onclick="nextCountry()">⛵ <span id="ul-btn-lbl">啟航！</span></button>
+</div>
+<script>
+'use strict';
+// ─── i18n ───────────────────────────────────────────────
+const I18N = {
+  zh:{
+    upgrade:'升級', sail:'啟航！', unlocked:'解鎖',
+    newRoute:'新航道開通，準備出發！',
+    clickHint:'點擊畫面手動蒐集 ×2 倍率',
+    bossHit:'✅ 命中！', bossMiss:'❌ 失誤！', bossClear:'🎉 通關！',
+    bossBtn:'⚡ 點擊！', bossHits:'命中次數',
+    km:'km', upg:'⚓ 升級', upgTitle:'⚓ 船艦強化',
+    tabs:['⚡航速','🔭蒐集','🛡船體','⭐特技'],
+    maxLv:'已滿級', notEnough:'素材不足',
+    cargoFull:'貨艙已滿！升級貨艙容量',
+    bossUnlock:'打敗 Boss 後解鎖下一國',
+    needItems:'還需要 N 種素材',
+    trees:[
+      [{n:'引擎升級',d:'增加航速，蒐集更多素材'},{n:'燃油效率',d:'維持高速消耗更少資源'},{n:'急速衝刺',d:'手動觸發短暫爆速'}],
+      [{n:'蒐集範圍',d:'自動吸取更大範圍的素材'},{n:'自動頻率',d:'自動蒐集觸發更快'},{n:'手動倍率',d:'點擊手動蒐集倍率提升'}],
+      [{n:'船體強化',d:'提升 Boss 戰抗傷害能力'},{n:'緊急修復',d:'Boss 戰中有機會自動回血'},{n:'防禦陣形',d:'減少 Boss 特殊攻擊效果'}],
+      [{n:'特殊技能',d:'解鎖該國專屬被動技能'},{n:'技能強化',d:'強化已解鎖的特殊技能'},{n:'終極技能',d:'解鎖大招，戰鬥與蒐集均大幅提升'}]
+    ]
+  },
+  en:{
+    upgrade:'Upgrade', sail:'Set Sail!', unlocked:'Unlocked',
+    newRoute:'New route opened. Ready to sail!',
+    clickHint:'Click screen to manually collect ×2 rate',
+    bossHit:'✅ Hit!', bossMiss:'❌ Miss!', bossClear:'🎉 Cleared!',
+    bossBtn:'⚡ Click!', bossHits:'Hits',
+    km:'km', upg:'⚓ Upgrade', upgTitle:'⚓ Ship Upgrades',
+    tabs:['⚡Speed','🔭Collect','🛡Hull','⭐Special'],
+    maxLv:'Max Level', notEnough:'Not enough items',
+    cargoFull:'Cargo full! Upgrade cargo hold.',
+    bossUnlock:'Defeat Boss to unlock next country',
+    needItems:'Need N more item types',
+    trees:[
+      [{n:'Engine',d:'Increase sailing speed'},{n:'Fuel Efficiency',d:'Maintain speed with less fuel'},{n:'Sprint',d:'Manual burst speed boost'}],
+      [{n:'Collect Range',d:'Auto-collect wider radius'},{n:'Auto Rate',d:'Faster auto-collection'},{n:'Manual Bonus',d:'Increased manual click rate'}],
+      [{n:'Hull Armor',d:'Reduce boss battle damage'},{n:'Emergency Repair',d:'Chance to self-heal in boss'},{n:'Defense Formation',d:'Reduce boss special effects'}],
+      [{n:'Special Skill',d:"Unlock country's unique passive"},{n:'Skill Boost',d:'Enhance unlocked special skill'},{n:'Ultimate',d:'Unlock ultimate ability'}]
+    ]
+  }
+};
+let lang='zh';
+function t(k){return I18N[lang][k];}
+function toggleLang(){
+  lang=lang==='zh'?'en':'zh';
+  document.getElementById('lang-btn').textContent=lang==='zh'?'EN':'繁中';
+  renderUpgPanel(); updateHUD();
+  document.getElementById('click-hint').textContent=t('clickHint');
+}
+
+// ─── COUNTRIES ──────────────────────────────────────────
+const COUNTRIES=[
+  {id:'tw',flag:'🇹🇼',name:'台灣',nameEn:'Taiwan',
+   sky:['#89d4f5','#5cb8a0'],ocean:['#1b7ea8','#0d4a6e'],wave:'#1a6898',accent:'#f09040',
+   items:['boba','cake','lantern','coin_tw'],needCount:30,
+   boss:{name:'颱風女神',nameEn:'Storm Goddess',type:'timing',
+     hint:'逆風減速——速度不夠就無法通關！',hintEn:'Too slow — upgrade speed to break through!',speed:1.2}},
+  {id:'jp',flag:'🇯🇵',name:'日本',nameEn:'Japan',
+   sky:['#ffd4ea','#c86090'],ocean:['#1a4e9e','#0d2e6e'],wave:'#1a3e8e',accent:'#e05880',
+   items:['sushi','torii','snowflake','fan_jp'],needCount:35,
+   boss:{name:'海賊船長',nameEn:'Pirate Captain',type:'parry',
+     hint:'搶奪素材——手動點擊格擋！',hintEn:'Stealing items — click to parry!',speed:1.4}},
+  {id:'kr',flag:'🇰🇷',name:'韓國',nameEn:'Korea',
+   sky:['#d8eeff','#6898d8'],ocean:['#1a5aae','#0d3a7e'],wave:'#1a4a9e',accent:'#4870c8',
+   items:['kimchi','kpop','hanbok','drum_kr'],needCount:40,
+   boss:{name:'幽靈鯊魚',nameEn:'Ghost Shark',type:'timing',
+     hint:'潛水攻擊——船體強化才能撐住！',hintEn:'Underwater attack — need hull upgrades!',speed:1.5}},
+  {id:'cn',flag:'🇨🇳',name:'中國',nameEn:'China',
+   sky:['#ffa060','#cc3020'],ocean:['#8B1010','#5a0808'],wave:'#7a0808',accent:'#ffd700',
+   items:['dragon','tea','porcelain','wall_cn'],needCount:45,
+   boss:{name:'龍王',nameEn:'Dragon King',type:'parry',
+     hint:'波浪打亂貨艙——手動整理蒐集節奏！',hintEn:'Waves scramble cargo — click to reorganize!',speed:1.5}},
+  {id:'vn',flag:'🇻🇳',name:'越南',nameEn:'Vietnam',
+   sky:['#fff0a0','#80c060'],ocean:['#1a8e6e','#0d5a48'],wave:'#1a7858',accent:'#d8a820',
+   items:['hat','pho','lotus','boat_vn'],needCount:50,
+   boss:{name:'迷霧水鬼',nameEn:'Fog Wraith',type:'timing',
+     hint:'視野被遮——靠之前蒐集的燈籠才能驅散！',hintEn:'Fog blocks vision — use lanterns from Taiwan!',speed:1.6}},
+  {id:'in',flag:'🇮🇳',name:'印度',nameEn:'India',
+   sky:['#ffa860','#9e3080'],ocean:['#1a5e9e','#0d3a6e'],wave:'#1a508e',accent:'#ff9028',
+   items:['spice','elephant','flower','gem_in'],needCount:55,
+   boss:{name:'大象神',nameEn:'Elephant God',type:'combo',
+     hint:'需要特定素材組合作「祭祀」才能通關！',hintEn:'Need specific item combos for the ritual!',speed:1.6}},
+  {id:'gr',flag:'🇬🇷',name:'希臘',nameEn:'Greece',
+   sky:['#d0f0ff','#408ad8'],ocean:['#0a6aae','#063a6e'],wave:'#0a5a9e',accent:'#ffffff',
+   items:['olive','shell','vase','column'],needCount:60,
+   boss:{name:'克拉肯',nameEn:'Kraken',type:'timing',
+     hint:'觸手封鎖蒐集格——廣度升級越高越容易！',hintEn:'Tentacles block slots — broad upgrades help!',speed:1.7}},
+  {id:'it',flag:'🇮🇹',name:'義大利',nameEn:'Italy',
+   sky:['#ffe0b0','#d86040'],ocean:['#1a5a9e','#0d3a6e'],wave:'#1a4a8e',accent:'#e06040',
+   items:['pasta','pizza','grape','tower_it'],needCount:65,
+   boss:{name:'海盜聯盟',nameEn:'Pirate Alliance',type:'wave',
+     hint:'多波海盜輪流來——攻防升級要均衡！',hintEn:'Multiple pirate waves — balance offense and defense!',speed:1.8}},
+  {id:'no',flag:'🇳🇴',name:'挪威',nameEn:'Norway',
+   sky:['#0a1a40','#1a4060'],ocean:['#0a3060','#062040'],wave:'#0a2850',accent:'#60d8ff',
+   items:['fjord','aurora','viking','whale'],needCount:70,
+   boss:{name:'冰山艦隊',nameEn:'Iceberg Fleet',type:'timing',
+     hint:'速度考驗——船速不夠就被包圍！',hintEn:'Speed test — too slow and you\'re surrounded!',speed:2.0}},
+  {id:'ca',flag:'🇨🇦',name:'加拿大',nameEn:'Canada',
+   sky:['#c0e0ff','#4068b8'],ocean:['#1a3e6e','#0d2848'],wave:'#1a3060',accent:'#e83020',
+   items:['maple','salmon','moose','ice_ca'],needCount:80,
+   boss:{name:'極光巨獸',nameEn:'Aurora Beast',type:'final',
+     hint:'融合所有機制的終極 Boss——全船裝備最強才能取勝！',hintEn:'Final boss — all mechanics combined, max out everything!',speed:2.2}}
+];
+
+// ─── ITEMS ──────────────────────────────────────────────
+const ITEMS={
+  boba:{e:'🧋',n:'珍珠奶茶',en:'Boba Tea',v:1,h:.48,r:3},
+  cake:{e:'🍰',n:'鳳梨酥',en:'Pineapple Cake',v:2,h:.52,r:2},
+  lantern:{e:'🏮',n:'燈籠',en:'Lantern',v:1,h:.38,r:3},
+  coin_tw:{e:'💰',n:'金幣',en:'Gold Coin',v:5,h:.46,r:1},
+  sushi:{e:'🍣',n:'壽司',en:'Sushi',v:1,h:.50,r:3},
+  torii:{e:'⛩',n:'鳥居',en:'Torii Gate',v:3,h:.42,r:2},
+  snowflake:{e:'❄️',n:'雪片',en:'Snowflake',v:2,h:.35,r:2},
+  fan_jp:{e:'🪭',n:'扇子',en:'Fan',v:2,h:.50,r:2},
+  kimchi:{e:'🥬',n:'泡菜',en:'Kimchi',v:1,h:.50,r:3},
+  kpop:{e:'🎵',n:'K-POP',en:'K-POP Star',v:2,h:.42,r:2},
+  hanbok:{e:'👘',n:'韓服',en:'Hanbok',v:3,h:.45,r:2},
+  drum_kr:{e:'🥁',n:'鼓',en:'Drum',v:2,h:.50,r:2},
+  dragon:{e:'🐉',n:'龍鱗',en:'Dragon Scale',v:4,h:.40,r:1},
+  tea:{e:'🍵',n:'茶葉',en:'Tea Leaf',v:2,h:.50,r:3},
+  porcelain:{e:'🏺',n:'瓷器',en:'Porcelain',v:3,h:.48,r:2},
+  wall_cn:{e:'🧱',n:'長城磚',en:'Great Wall Brick',v:2,h:.55,r:2},
+  hat:{e:'🪖',n:'斗笠',en:'Conical Hat',v:1,h:.45,r:3},
+  pho:{e:'🍜',n:'河粉',en:'Pho',v:2,h:.50,r:3},
+  lotus:{e:'🪷',n:'蓮花',en:'Lotus',v:3,h:.38,r:2},
+  boat_vn:{e:'⛵',n:'舢板',en:'Junk Boat',v:3,h:.55,r:1},
+  spice:{e:'🌶',n:'香料',en:'Spice',v:2,h:.50,r:3},
+  elephant:{e:'🐘',n:'大象',en:'Elephant',v:4,h:.55,r:1},
+  flower:{e:'💐',n:'花環',en:'Flower Crown',v:2,h:.45,r:2},
+  gem_in:{e:'💎',n:'寶石',en:'Gem',v:4,h:.48,r:1},
+  olive:{e:'🫒',n:'橄欖',en:'Olive',v:2,h:.50,r:3},
+  shell:{e:'🐚',n:'海螺',en:'Sea Shell',v:1,h:.55,r:3},
+  vase:{e:'🏺',n:'陶罐',en:'Greek Vase',v:3,h:.48,r:2},
+  column:{e:'🏛',n:'柱廊',en:'Column',v:4,h:.42,r:1},
+  pasta:{e:'🍝',n:'義大利麵',en:'Pasta',v:2,h:.50,r:3},
+  pizza:{e:'🍕',n:'披薩',en:'Pizza',v:2,h:.50,r:3},
+  grape:{e:'🍇',n:'葡萄',en:'Grape',v:1,h:.45,r:3},
+  tower_it:{e:'🗼',n:'斜塔',en:'Leaning Tower',v:5,h:.42,r:1},
+  fjord:{e:'🏔',n:'峽灣石',en:'Fjord Rock',v:3,h:.45,r:2},
+  aurora:{e:'✨',n:'極光',en:'Aurora',v:4,h:.30,r:1},
+  viking:{e:'🛡',n:'維京盾',en:'Viking Shield',v:3,h:.48,r:2},
+  whale:{e:'🐋',n:'鯨魚',en:'Whale',v:4,h:.58,r:1},
+  maple:{e:'🍁',n:'楓糖漿',en:'Maple Syrup',v:2,h:.45,r:3},
+  salmon:{e:'🐟',n:'鮭魚',en:'Salmon',v:3,h:.52,r:2},
+  moose:{e:'🦌',n:'麋鹿',en:'Moose',v:4,h:.48,r:1},
+  ice_ca:{e:'🧊',n:'冰晶',en:'Ice Crystal',v:2,h:.42,r:2}
+};
+
+// ─── UPGRADE TREES (4 branches × 3 tiers each) ──────────
+// tree[0]=Speed, [1]=Collect, [2]=Hull, [3]=Special
+const UPG_ICONS=[['⚡','🔋','💨'],['🔭','⏩','✋'],['🛡','🩹','🔰'],['🌟','💫','👑']];
+const UPG_COSTS=[[80,200,450],[100,250,550],[120,280,600],[300,700,1500]];
+// Max level 3 per skill, 3 skills per tree = 9 levels per tree
+// State stores upgLevels[4 trees][3 skills] = 0-3
+
+const STATE={
+  country:0, progress:0, scroll:0,
+  paused:false, bossActive:false, upgPanelOpen:false,
+  activeTab:0,
+  upgLevels:[[0,0,0],[0,0,0],[0,0,0],[0,0,0]],
+  cargo:{},         // {itemId: count}
+  cargoTypes:0,     // distinct item types collected this country
+  totalCoins:0, spent:0, countriesCleared:0,
+  particles:[], floatItems:[], spawnTimer:0,
+  boss:null, waveTime:0, cloudOff:0,
+  lastSave:0, clickCooldown:0
+};
+
+// Derived stats
+function getSpeed(){  return 0.00035*(1+STATE.upgLevels[0][0]*0.25+STATE.upgLevels[0][1]*0.1); }
+function getRange(){  return 65+STATE.upgLevels[1][0]*30; }
+function getAutoRate(){ return 1+STATE.upgLevels[1][1]*0.3; }
+function getManualMult(){ return 2+STATE.upgLevels[1][2]*0.5; }
+function getArmor(){  return STATE.upgLevels[2][0]*0.15+STATE.upgLevels[2][1]*0.08; }
+function getCargoMax(){ return 6+STATE.upgLevels[1][0]*2; } // distinct types before full
+function coins(){
+  let c=0;
+  for(const[id,cnt]of Object.entries(STATE.cargo)) if(ITEMS[id]) c+=ITEMS[id].v*cnt;
+  return c;
+}
+function canAfford(treeIdx, skillIdx){
+  const lv=STATE.upgLevels[treeIdx][skillIdx];
+  if(lv>=3) return false;
+  return coins()>=UPG_COSTS[treeIdx][lv];
+}
+function buyUpg(treeIdx, skillIdx){
+  const lv=STATE.upgLevels[treeIdx][skillIdx];
+  if(lv>=3) return;
+  const cost=UPG_COSTS[treeIdx][lv];
+  if(coins()<cost) return;
+  spendCoins(cost);
+  STATE.upgLevels[treeIdx][skillIdx]++;
+  renderUpgPanel();
+  updateHUD();
+  save();
+}
+function spendCoins(amount){
+  let rem=amount;
+  const ids=Object.keys(STATE.cargo).filter(id=>ITEMS[id]);
+  ids.sort((a,b)=>ITEMS[a].v-ITEMS[b].v);
+  for(const id of ids){
+    if(rem<=0)break;
+    const v=ITEMS[id].v, take=Math.min(Math.ceil(rem/v),STATE.cargo[id]);
+    STATE.cargo[id]-=take;
+    if(STATE.cargo[id]<=0)delete STATE.cargo[id];
+    rem-=take*v;
+  }
+  STATE.spent+=amount;
+}
+function collectItem(id, manual=false){
+  const it=ITEMS[id]; if(!it) return;
+  const types=Object.keys(STATE.cargo).length;
+  if(!STATE.cargo[id] && types>=getCargoMax()){ showCargoFull(); return; }
+  const mult=manual?getManualMult():1;
+  const cnt=Math.round(mult*(STATE.upgLevels[3][0]>0?1.2:1));
+  STATE.cargo[id]=(STATE.cargo[id]||0)+cnt;
+  STATE.totalCoins+=it.v*cnt;
+  // Track distinct types this country
+  STATE.cargoTypes=Object.keys(STATE.cargo).length;
+}
+let cargoFullTimer=0;
+function showCargoFull(){ cargoFullTimer=120; }
+
+// ─── Save / Load ─────────────────────────────────────────
+function save(){
+  if(Date.now()-STATE.lastSave<4000)return;
+  STATE.lastSave=Date.now();
+  try{ localStorage.setItem('seaRoute_v1',JSON.stringify({
+    country:STATE.country, progress:STATE.progress,
+    upgLevels:STATE.upgLevels, cargo:STATE.cargo,
+    totalCoins:STATE.totalCoins, spent:STATE.spent,
+    countriesCleared:STATE.countriesCleared
+  }));}catch(e){}
+}
+function load(){
+  try{
+    const d=JSON.parse(localStorage.getItem('seaRoute_v1')||'null');
+    if(!d)return;
+    STATE.country=Math.min(d.country||0,COUNTRIES.length-1);
+    STATE.progress=d.progress||0;
+    if(d.upgLevels)STATE.upgLevels=d.upgLevels;
+    if(d.cargo)STATE.cargo=d.cargo;
+    STATE.totalCoins=d.totalCoins||0;
+    STATE.spent=d.spent||0;
+    STATE.countriesCleared=d.countriesCleared||0;
+  }catch(e){}
+}
+
+// ─── Canvas ───────────────────────────────────────────────
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+let W=0,H=0;
+function resize(){
+  W=window.innerWidth; H=window.innerHeight;
+  canvas.width=W; canvas.height=H;
+}
+window.addEventListener('resize',resize);
+
+// Color helper
+function hexRGB(h){ return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]; }
+function lerpC(a,b,t){
+  const[r1,g1,b1]=hexRGB(a),[r2,g2,b2]=hexRGB(b);
+  return `rgb(${Math.round(r1+(r2-r1)*t)},${Math.round(g1+(g2-g1)*t)},${Math.round(b1+(b2-b1)*t)})`;
+}
+
+// Particles
+function addPart(x,y,txt){ STATE.particles.push({x,y,txt,vx:(Math.random()-.5)*2,vy:-2,life:1}); }
+function updateParts(dt){
+  STATE.particles=STATE.particles.filter(p=>{ p.x+=p.vx; p.y+=p.vy; p.vy+=0.05; p.life-=dt; return p.life>0; });
+}
+function drawParts(){
+  ctx.save(); ctx.textAlign='center'; ctx.font='bold 13px sans-serif';
+  for(const p of STATE.particles){
+    ctx.globalAlpha=Math.max(0,p.life);
+    ctx.fillStyle='#4af8ff'; ctx.fillText(p.txt,p.x,p.y);
+  }
+  ctx.restore();
+}
+
+// ─── Drawing: Sky + Clouds + Waves ───────────────────────
+const CLOUDS=Array.from({length:7},(_,i)=>({x:i*(W/7+40),y:.06+Math.random()*.18,w:60+Math.random()*100,h:18+Math.random()*22,s:.15+Math.random()*.25}));
+
+function drawSky(ci){
+  const c=COUNTRIES[ci];
+  const g=ctx.createLinearGradient(0,0,0,H*.62);
+  g.addColorStop(0,c.sky[0]); g.addColorStop(1,c.sky[1]);
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H*.62);
+  if(ci===8) drawAurora(); // Norway aurora
+  drawClouds(ci);
+}
+
+function drawClouds(ci){
+  ctx.save();
+  ctx.globalAlpha=ci===8?.25:.55;
+  ctx.fillStyle=ci===8?'#a0c8e8':'rgba(255,255,255,.9)';
+  for(const cl of CLOUDS){
+    const x=((cl.x-STATE.cloudOff*cl.s)%(W+cl.w+80)+W+cl.w+80)%(W+cl.w+80)-cl.w;
+    const y=cl.y*H;
+    ctx.beginPath(); ctx.ellipse(x,y,cl.w/2,cl.h/2,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(x-cl.w*.25,y+cl.h*.12,cl.w*.32,cl.h*.42,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(x+cl.w*.22,y+cl.h*.1,cl.w*.28,cl.h*.36,0,0,Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawAurora(){
+  const colors=['#00ff88','#00c8ff','#aa44ff'];
+  ctx.save();
+  for(let i=0;i<3;i++){
+    ctx.globalAlpha=.1+Math.sin(STATE.waveTime*.3+i)*.04;
+    ctx.strokeStyle=colors[i]; ctx.lineWidth=28+i*12; ctx.lineCap='round';
+    ctx.beginPath();
+    for(let x=0;x<=W;x+=12){
+      const y=H*(.1+i*.05)+Math.sin(x*.007+STATE.waveTime*.4+i*1.1)*H*.07;
+      x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawOcean(ci){
+  const c=COUNTRIES[ci];
+  // Ocean base gradient
+  const g=ctx.createLinearGradient(0,H*.5,0,H);
+  g.addColorStop(0,c.ocean[0]); g.addColorStop(1,c.ocean[1]);
+  ctx.fillStyle=g; ctx.fillRect(0,H*.48,W,H*.52);
+  // 3 wave layers
+  drawWaveLayer(H*.56,H*.055,STATE.waveTime*.35,c.wave+'66',2);
+  drawWaveLayer(H*.62,H*.07, STATE.waveTime*.6, c.wave+'aa',3);
+  drawWaveLayer(H*.68,H*.09, STATE.waveTime,    c.wave,     4);
+  // Foam highlights on top wave
+  drawFoam(H*.68,STATE.waveTime);
+}
+
+function drawWaveLayer(y,amp,phase,color,count){
+  ctx.beginPath();
+  for(let x=0;x<=W+12;x+=8){
+    const wy=y+Math.sin(x*.011+phase)*amp+Math.sin(x*.022+phase*1.4)*amp*.45;
+    x===0?ctx.moveTo(x,wy):ctx.lineTo(x,wy);
+  }
+  ctx.lineTo(W+12,H+4); ctx.lineTo(-4,H+4); ctx.closePath();
+  ctx.fillStyle=color; ctx.fill();
+}
+
+function drawFoam(baseY,phase){
+  ctx.save(); ctx.globalAlpha=.22;
+  ctx.strokeStyle='#ffffff'; ctx.lineWidth=1.5;
+  for(let i=0;i<5;i++){
+    const ox=((i*180-STATE.cloudOff*8)%(W+200)+W+200)%(W+200)-200;
+    const y=baseY+Math.sin(ox*.011+phase)*H*.09+Math.sin(ox*.022+phase*1.4)*H*.045;
+    ctx.beginPath();
+    ctx.arc(ox,y,10+Math.sin(phase+i)*4,0,Math.PI);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ─── Drawing: Landmarks (parallax at 30% scroll speed) ───
+function drawLandmarks(ci){
+  const off=-(STATE.scroll*.28)%W;
+  drawLM(ci,off); drawLM(ci,off+W);
+}
+function drawLM(ci,ox){
+  ctx.save(); ctx.translate(ox,0);
+  switch(ci){
+    case 0: // Taiwan
+      drawHills(H*.44,'#3a7a50','#2a6040');
+      draw101(W*.62,H*.28); break;
+    case 1: // Japan
+      drawMountain(W*.3,H*.25,W*.3,'#b8b8cc','#e8e8f8');
+      drawTorii(W*.68,H*.36,'#cc2044'); break;
+    case 2: // Korea
+      drawRoofBldg(W*.28,H*.38,'#2a4898',1);
+      drawRoofBldg(W*.6,H*.42,'#1a3888',.8); break;
+    case 3: // China
+      drawPagoda(W*.42,H*.28,'#cc2020','#ffd700');
+      drawWallSeg(W*.68,H*.44); break;
+    case 4: // Vietnam
+      drawKarst(W*.18,H*.34,'#508030',1);
+      drawKarst(W*.48,H*.37,'#406028',.85);
+      drawKarst(W*.72,H*.3,'#608040',1.1); break;
+    case 5: // India
+      drawTaj(W*.42,H*.3); break;
+    case 6: // Greece
+      drawColumns(W*.3,H*.37,'#d0d8e8',5);
+      drawDome(W*.68,H*.34,'#fff','#4898e8'); break;
+    case 7: // Italy
+      drawLeaning(W*.42,H*.26);
+      drawCypress(W*.2,H*.42,'#2a5010',1);
+      drawCypress(W*.65,H*.44,'#2a5010',.85); break;
+    case 8: // Norway
+      drawFjord(W*.22,H*.28,'#1a3a5a',1);
+      drawFjord(W*.62,H*.24,'#1a4060',.88); break;
+    case 9: // Canada
+      drawMountain(W*.38,H*.28,W*.38,'#6888a8','#8898c0');
+      drawPine(W*.14,H*.44,'#1a4020',1);
+      drawPine(W*.58,H*.46,'#1a4020',.85); break;
+  }
+  ctx.restore();
+}
+function drawHills(y,c1,c2){
+  [[W*.0,c1],[W*.35,c2],[W*.65,c1]].forEach(([x,c],i)=>{
+    ctx.beginPath();
+    ctx.moveTo(x-60,H*.58); ctx.bezierCurveTo(x+W*.06,y+i*18,x+W*.18,y+i*12,x+W*.42,H*.58);
+    ctx.fillStyle=c; ctx.fill();
+  });
+}
+function draw101(x,y){
+  ctx.fillStyle='#2a4a6a';
+  ctx.fillRect(x-16,y+50,32,H*.58-y-50);
+  for(let i=0;i<5;i++){const w=32-i*5;ctx.fillRect(x-w/2,y+i*12,w,10);}
+  ctx.beginPath(); ctx.moveTo(x,y-38); ctx.lineTo(x-3,y+2); ctx.lineTo(x+3,y+2); ctx.fill();
+}
+function drawMountain(cx,py,w,c1,c2){
+  ctx.beginPath(); ctx.moveTo(cx-w/2,H*.58); ctx.lineTo(cx,py); ctx.lineTo(cx+w/2,H*.58); ctx.fillStyle=c1; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(cx,py); ctx.lineTo(cx-w*.09,py+w*.09); ctx.lineTo(cx+w*.09,py+w*.09); ctx.fillStyle=c2; ctx.fill();
+}
+function drawTorii(x,y,color){
+  ctx.strokeStyle=color; ctx.lineWidth=5;
+  [[x-28,x-28],[x+28,x+28]].forEach(([x1])=>{ctx.beginPath();ctx.moveTo(x1,y+55);ctx.lineTo(x1,y);ctx.stroke();});
+  ctx.lineWidth=7;
+  ctx.beginPath();ctx.moveTo(x-38,y-6);ctx.lineTo(x+38,y-6);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x-34,y+7);ctx.lineTo(x+34,y+7);ctx.stroke();
+}
+function drawRoofBldg(x,y,color,s){
+  ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+  ctx.fillStyle=color; ctx.fillRect(-28,0,56,48);
+  ctx.beginPath();ctx.moveTo(-38,0);ctx.lineTo(0,-28);ctx.lineTo(38,0);ctx.fill();
+  ctx.restore();
+}
+function drawPagoda(x,y,bc,rc){
+  for(let i=0;i<4;i++){
+    const w=48-i*9,h=16,py=y+i*19;
+    ctx.fillStyle=bc; ctx.fillRect(x-w/2,py,w,h);
+    ctx.fillStyle=rc; ctx.beginPath();ctx.moveTo(x-(w/2+7),py);ctx.lineTo(x,py-11);ctx.lineTo(x+(w/2+7),py);ctx.fill();
+  }
+}
+function drawWallSeg(x,y){
+  ctx.fillStyle='#c8a870'; ctx.fillRect(x-75,y,150,22);
+  for(let i=0;i<7;i++)ctx.fillRect(x-75+i*22,y-9,13,11);
+}
+function drawKarst(x,y,color,s){
+  ctx.save();ctx.translate(x,y);ctx.scale(s,s);ctx.fillStyle=color;
+  ctx.beginPath();ctx.moveTo(-18,H*.58-y);ctx.bezierCurveTo(-20,-18,-9,-58,0,-75);ctx.bezierCurveTo(9,-58,20,-18,18,H*.58-y);ctx.fill();
+  ctx.restore();
+}
+function drawTaj(x,y){
+  ctx.fillStyle='#e8e0d0';
+  ctx.beginPath();ctx.arc(x,y+8,28,Math.PI,0);ctx.lineTo(x+28,y+48);ctx.lineTo(x-28,y+48);ctx.fill();
+  ctx.beginPath();ctx.moveTo(x,y-20);ctx.lineTo(x-3,y-8);ctx.lineTo(x+3,y-8);ctx.fill();
+  [x-58,x+58].forEach(mx=>{ctx.fillRect(mx-4,y,8,48);ctx.beginPath();ctx.arc(mx,y,7,Math.PI,0);ctx.fill();});
+  ctx.fillRect(x-78,y+48,156,18);
+}
+function drawColumns(x,y,color,n){
+  ctx.fillStyle=color;
+  ctx.beginPath();ctx.moveTo(x-n*13,y);ctx.lineTo(x,y-28);ctx.lineTo(x+n*13,y);ctx.fill();
+  for(let i=0;i<n;i++)ctx.fillRect(x-n*13+i*26+13-4,y,8,55);
+  ctx.fillRect(x-n*13-4,y+55,n*26+8,7);
+}
+function drawDome(x,y,wc,dc){
+  ctx.fillStyle=wc; ctx.fillRect(x-28,y+18,56,38);
+  ctx.fillStyle=dc; ctx.beginPath();ctx.arc(x,y+18,28,Math.PI,0);ctx.fill();
+}
+function drawLeaning(x,y){
+  ctx.save();ctx.translate(x,y);ctx.rotate(.07);ctx.fillStyle='#e8e0cc';ctx.fillRect(-18,0,36,75);
+  ctx.strokeStyle='#c8b8a0';ctx.lineWidth=2.5;
+  for(let i=0;i<4;i++){ctx.beginPath();ctx.moveTo(-20,i*17+16);ctx.lineTo(20,i*17+16);ctx.stroke();}
+  ctx.restore();
+}
+function drawCypress(x,y,color,s){
+  ctx.save();ctx.translate(x,y);ctx.scale(s,s);ctx.fillStyle=color;
+  ctx.beginPath();ctx.moveTo(0,-55);ctx.lineTo(-11,0);ctx.lineTo(11,0);ctx.fill();
+  ctx.fillStyle='#5a3010';ctx.fillRect(-3,0,6,18);ctx.restore();
+}
+function drawFjord(x,y,color,s){
+  ctx.save();ctx.translate(x,y);ctx.scale(s,s);ctx.fillStyle=color;
+  ctx.beginPath();ctx.moveTo(-38,H*.58-y);ctx.lineTo(-28,0);ctx.lineTo(0,-18);ctx.lineTo(28,0);ctx.lineTo(38,H*.58-y);ctx.fill();
+  ctx.restore();
+}
+function drawPine(x,y,color,s){
+  ctx.save();ctx.translate(x,y);ctx.scale(s,s);ctx.fillStyle=color;
+  for(let i=0;i<3;i++){const w=28-i*3;ctx.beginPath();ctx.moveTo(0,-i*15-w*.7);ctx.lineTo(-w,-i*15);ctx.lineTo(w,-i*15);ctx.fill();}
+  ctx.fillStyle='#5a3010';ctx.fillRect(-3,0,6,16);ctx.restore();
+}
+
+// ─── Drawing: Ship (paperdoll system) ────────────────────
+// Ship upgrades: speed lv→bigger engine, collect lv→more flags, hull lv→reinforced hull, special lv→glow
+function drawShip(){
+  const sx=W*.24, sy=H*.63;
+  const sp=STATE.upgLevels[0][0], co=STATE.upgLevels[1][0], hu=STATE.upgLevels[2][0], sp2=STATE.upgLevels[3][0];
+  const bob=Math.sin(STATE.waveTime*1.2)*(2+sp*.5); // gentle bobbing
+  ctx.save(); ctx.translate(sx, sy+bob);
+
+  // Glow for special upgrade
+  if(sp2>0){ ctx.save(); ctx.shadowBlur=18+sp2*8; ctx.shadowColor='#4af8ff'; }
+
+  // Hull (grows with hull upgrade)
+  const hw=38+hu*8, hh=20+hu*4;
+  ctx.fillStyle=hu>=2?'#2a5a8a':hu>=1?'#1a4a7a':'#1a3a6a';
+  ctx.beginPath(); ctx.moveTo(-hw,0); ctx.lineTo(hw,0); ctx.lineTo(hw-10,hh); ctx.lineTo(-hw+6,hh); ctx.closePath(); ctx.fill();
+  // Hull highlight
+  ctx.strokeStyle='rgba(255,255,255,.2)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(-hw+4,-1); ctx.lineTo(hw-4,-1); ctx.stroke();
+  // Hull armor plating (hull upgrade 2+)
+  if(hu>=2){
+    ctx.fillStyle='rgba(74,248,255,.15)';
+    for(let i=0;i<3;i++) ctx.fillRect(-hw+10+i*22,2,16,hh-4);
+  }
+
+  // Deck
+  ctx.fillStyle=hu>=1?'#3a6a8a':'#2a5a7a';
+  ctx.fillRect(-hw+4,-8,hw*2-8,9);
+
+  // Cabin (grows with speed upgrade)
+  const cw=18+sp*4, ch=14+sp*3;
+  ctx.fillStyle='#1a2a4a';
+  ctx.fillRect(-cw/2,-8-ch,cw,ch);
+  // Porthole
+  ctx.fillStyle='#4af8ff'; ctx.globalAlpha=.7;
+  ctx.beginPath(); ctx.arc(0,-8-ch/2,3,0,Math.PI*2); ctx.fill();
+  ctx.globalAlpha=1;
+
+  // Mast
+  ctx.strokeStyle='#8a7a60'; ctx.lineWidth=2+sp*.5;
+  ctx.beginPath(); ctx.moveTo(6,-8-ch); ctx.lineTo(6,-8-ch-35-sp*8); ctx.stroke();
+
+  // Sail (grows with speed upgrade, billows with motion)
+  const sailH=28+sp*7, sailW=20+sp*5;
+  const sailBulge=3+sp*2+Math.sin(STATE.waveTime*2)*(1+sp*.5);
+  ctx.fillStyle=sp>=2?'rgba(255,240,180,.92)':sp>=1?'rgba(255,255,220,.88)':'rgba(255,255,255,.85)';
+  ctx.beginPath();
+  ctx.moveTo(6,-8-ch);
+  ctx.quadraticCurveTo(6+sailW+sailBulge,-8-ch-sailH/2,6,-8-ch-sailH);
+  ctx.closePath(); ctx.fill();
+
+  // Country flag at mast top
+  const fc=COUNTRIES[STATE.country];
+  ctx.font=(12+sp)+'px sans-serif'; ctx.textAlign='center';
+  ctx.fillText(fc.flag,6+8+sp,-8-ch-sailH-2);
+
+  // Engine smoke (speed upgrade 3)
+  if(sp>=3){
+    ctx.globalAlpha=.3;
+    ctx.fillStyle='#aaa';
+    for(let i=0;i<3;i++){
+      const a=((STATE.waveTime*60+i*40)%100)/100;
+      ctx.beginPath(); ctx.arc(-hw+5,-(a*22),4+a*4,0,Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }
+
+  // Collect range ring (collect upgrade 1+)
+  if(co>=1){
+    ctx.save(); ctx.globalAlpha=.1+Math.sin(STATE.waveTime*3)*.04;
+    ctx.strokeStyle='#4af8ff'; ctx.lineWidth=1.5; ctx.setLineDash([4,6]);
+    ctx.beginPath(); ctx.arc(0,0,getRange(),0,Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]); ctx.restore();
+  }
+
+  if(sp2>0) ctx.restore(); // end glow shadow
+  ctx.restore();
+}
+
+// ─── Drawing: Floating Items ──────────────────────────────
+function drawFloatItems(){
+  const now=STATE.waveTime;
+  ctx.font='22px sans-serif'; ctx.textAlign='center';
+  for(const fi of STATE.floatItems){
+    if(fi.collected) continue;
+    const it=ITEMS[fi.id]; if(!it) continue;
+    const floatY=fi.y+Math.sin(now*1.5+fi.phase)*5;
+    ctx.save();
+    ctx.globalAlpha=Math.min(1,fi.age*3);
+    ctx.fillText(it.e, fi.x, floatY);
+    // Item glow (rare items)
+    if(it.r===1){
+      ctx.shadowBlur=12; ctx.shadowColor='#ffd700';
+      ctx.fillText(it.e, fi.x, floatY);
+    }
+    ctx.restore();
+  }
+}
+
+// ─── Drawing: Collection Range Effect ────────────────────
+function drawCollectEffect(fi){
+  if(!fi.collectAnim) return;
+  const sx=W*.24, sy=H*.63;
+  const p=1-fi.collectAnim/8;
+  ctx.save();
+  ctx.globalAlpha=(1-p)*.7;
+  ctx.strokeStyle='#4af8ff'; ctx.lineWidth=1;
+  const dx=sx-fi.x, dy=sy-fi.y;
+  const len=Math.sqrt(dx*dx+dy*dy);
+  ctx.beginPath();
+  ctx.moveTo(fi.x+dx*p, fi.y+dy*p);
+  ctx.lineTo(fi.x+dx*(p+.2), fi.y+dy*(p+.2));
+  ctx.stroke();
+  ctx.restore();
+  fi.collectAnim--;
+}
+
+// ─── Game Logic: Spawn Items ──────────────────────────────
+function spawnItem(){
+  const c=COUNTRIES[STATE.country];
+  // Weighted random item from current country
+  const pool=[]; c.items.forEach(id=>{ const it=ITEMS[id]; if(it) for(let i=0;i<it.r;i++) pool.push(id); });
+  const id=pool[Math.floor(Math.random()*pool.length)];
+  if(!id) return;
+  const it=ITEMS[id];
+  STATE.floatItems.push({
+    id, x:W+50, y:H*(.32+it.h*.35)+Math.random()*H*.12,
+    speed:1.8+getSpeed()*1800+Math.random()*.8,
+    phase:Math.random()*Math.PI*2,
+    age:0, collected:false, collectAnim:0
+  });
+}
+
+// ─── Game Logic: Update Items + Auto-Collect ─────────────
+function updateItems(dt){
+  const sx=W*.24, sy=H*.63;
+  const range=getRange();
+  const autoMult=getAutoRate();
+  for(const fi of STATE.floatItems){
+    if(fi.collected){ if(fi.collectAnim>0) fi.collectAnim--; continue; }
+    fi.x-=fi.speed; fi.age+=dt;
+    if(fi.collectAnim>0) fi.collectAnim--;
+    // Distance to ship
+    const dx=fi.x-sx, dy=fi.y-sy, dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist<range){
+      // Auto-collect
+      if(Math.random()<.04*autoMult){ doCollect(fi,false); }
+    }
+  }
+  // Remove off-screen
+  STATE.floatItems=STATE.floatItems.filter(fi=>fi.x>-60||fi.collectAnim>0);
+}
+
+function doCollect(fi, manual){
+  if(fi.collected) return;
+  fi.collected=true; fi.collectAnim=8;
+  collectItem(fi.id, manual);
+  const it=ITEMS[fi.id];
+  const mult=manual?getManualMult():1;
+  const cnt=Math.round(mult*(STATE.upgLevels[3][0]>0?1.2:1));
+  addPart(fi.x, fi.y, (manual?'×':'+')+cnt+it.e);
+  // Flash text element
+  showFlash(fi.x, fi.y, '+'+cnt, it.e);
+  updateHUD();
+}
+
+function showFlash(x,y,txt,emoji){
+  const el=document.createElement('div');
+  el.className='flash';
+  el.style.left=Math.min(W-60,Math.max(10,x-20))+'px';
+  el.style.top=Math.max(40,y-10)+'px';
+  el.textContent=txt+emoji;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),900);
+}
+
+// ─── Game Logic: Manual Click Collect ────────────────────
+canvas.addEventListener('click',onCanvasClick);
+canvas.addEventListener('touchend',e=>{e.preventDefault();const t=e.changedTouches[0];onCanvasClick({clientX:t.clientX,clientY:t.clientY});},{passive:false});
+
+function onCanvasClick(e){
+  if(STATE.bossActive||STATE.paused) return;
+  if(STATE.upgPanelOpen) return;
+  const mx=e.clientX, my=e.clientY;
+  // Find closest item within manual range (wider than auto)
+  const manualRange=getRange()*1.8;
+  let best=null, bestDist=manualRange;
+  for(const fi of STATE.floatItems){
+    if(fi.collected) continue;
+    const dx=fi.x-mx, dy=fi.y-my, d=Math.sqrt(dx*dx+dy*dy);
+    if(d<bestDist){ best=fi; bestDist=d; }
+  }
+  if(best){ doCollect(best,true); }
+  else {
+    // Click near ship = collect all in range
+    const sx=W*.24, sy=H*.63;
+    const dx=mx-sx, dy=my-sy;
+    if(Math.sqrt(dx*dx+dy*dy)<80){
+      const range=getRange()*1.3;
+      STATE.floatItems.filter(fi=>!fi.collected).forEach(fi=>{
+        const d=Math.sqrt((fi.x-sx)**2+(fi.y-sy)**2);
+        if(d<range) doCollect(fi,true);
+      });
+    }
+  }
+}
+
+// ─── Game Logic: Progress ────────────────────────────────
+function updateProgress(dt){
+  if(STATE.bossActive) return;
+  const spd=getSpeed();
+  STATE.progress+=spd*dt*60;
+  STATE.scroll+=spd*dt*60*W*.8;
+  STATE.waveTime+=dt;
+  STATE.cloudOff+=dt*30*(1+STATE.upgLevels[0][0]*.2);
+
+  const c=COUNTRIES[STATE.country];
+  if(STATE.progress>=1){
+    // Reached end of country — check if can fight boss
+    const types=Object.keys(STATE.cargo).length;
+    const need=c.needCount;
+    const totalCargo=Object.values(STATE.cargo).reduce((s,v)=>s+v,0);
+    if(totalCargo>=need && !STATE.bossActive){
+      STATE.progress=1;
+      startBoss();
+    } else {
+      STATE.progress=0.98; // hold back
+    }
+  }
+}
+
+// ─── Spawn Timer ─────────────────────────────────────────
+let spawnAccum=0;
+function tickSpawn(dt){
+  if(STATE.bossActive) return;
+  const interval=2.2/(1+STATE.upgLevels[1][1]*.3);
+  spawnAccum+=dt;
+  if(spawnAccum>=interval){ spawnAccum=0; spawnItem(); }
+  // Spawn extra near ship when items are few
+  if(STATE.floatItems.filter(f=>!f.collected).length<3) spawnItem();
+}
+
+// ─── Upgrade Panel ────────────────────────────────────────
+function toggleUpg(){
+  STATE.upgPanelOpen=!STATE.upgPanelOpen;
+  document.getElementById('upg-panel').classList.toggle('open',STATE.upgPanelOpen);
+  if(STATE.upgPanelOpen) renderUpgPanel();
+}
+function renderUpgPanel(){
+  // Tabs
+  const tabs=document.getElementById('up-tabs');
+  tabs.innerHTML='';
+  t('tabs').forEach((lbl,i)=>{
+    const btn=document.createElement('button');
+    btn.className='up-tab'+(i===STATE.activeTab?' active':'');
+    btn.textContent=lbl; btn.onclick=()=>{STATE.activeTab=i;renderUpgPanel();};
+    tabs.appendChild(btn);
+  });
+  document.getElementById('up-ttl').textContent=t('upgTitle');
+  const list=document.getElementById('up-list');
+  list.innerHTML='';
+  const tree=t('trees')[STATE.activeTab];
+  tree.forEach((skill,si)=>{
+    const lv=STATE.upgLevels[STATE.activeTab][si];
+    const maxed=lv>=3;
+    const cost=maxed?0:UPG_COSTS[STATE.activeTab][lv];
+    const affordable=!maxed&&coins()>=cost;
+    const row=document.createElement('div'); row.className='up-row';
+    row.innerHTML=`
+      <div class="up-ico">${UPG_ICONS[STATE.activeTab][si]}</div>
+      <div class="up-inf">
+        <div class="up-nm">${skill.n}</div>
+        <div class="up-ds">${skill.d}</div>
+        <div class="up-lv">${'★'.repeat(lv)}${'☆'.repeat(3-lv)} Lv${lv}/3</div>
+      </div>
+      <button class="up-buy" ${maxed||!affordable?'disabled':''}
+        onclick="buyUpg(${STATE.activeTab},${si})">
+        ${maxed?t('maxLv'):'💰'+cost}
+      </button>`;
+    list.appendChild(row);
+  });
+  document.getElementById('upg-lbl').textContent=t('upg').replace('⚓ ','');
+}
+
+// ─── Boss System ──────────────────────────────────────────
+let bossState={hits:0,needed:3,cursorPos:.1,cursorDir:1,greenStart:.35,greenEnd:.65,cooldown:0,waveNum:0,maxWaves:1};
+
+function startBoss(){
+  STATE.bossActive=true; STATE.paused=true;
+  const c=COUNTRIES[STATE.country];
+  const b=c.boss;
+  // Armor reduces needed hits
+  const armor=STATE.upgLevels[2][0];
+  bossState={hits:0,needed:Math.max(1,3-armor),cursorPos:.1,cursorDir:1,
+    greenStart:.3,greenEnd:.6,cooldown:0,waveNum:0,
+    maxWaves:b.type==='wave'?3:1,speed:b.speed*(1-STATE.upgLevels[2][2]*.12)};
+  document.getElementById('boss-ttl').textContent=(lang==='zh'?b.name:b.nameEn);
+  document.getElementById('boss-sub').textContent=lang==='zh'?b.hint:b.hintEn;
+  renderBossHP();
+  document.getElementById('boss-res').textContent='';
+  document.getElementById('boss-progress').textContent='';
+  document.getElementById('boss-btn').textContent=t('bossBtn');
+  document.getElementById('boss-btn').disabled=false;
+  document.getElementById('boss-ov').classList.add('show');
+  animBossCursor();
+}
+function renderBossHP(){
+  const hp=document.getElementById('boss-hp');
+  hp.innerHTML='';
+  for(let i=0;i<bossState.needed;i++){
+    const s=document.createElement('span'); s.className='bh';
+    s.textContent=i<bossState.hits?'💧':'🔥'; hp.appendChild(s);
+  }
+}
+let bossCursorRAF=null;
+function animBossCursor(){
+  if(!STATE.bossActive) return;
+  bossState.cursorPos+=bossState.cursorDir*bossState.speed*.015;
+  if(bossState.cursorPos>1){bossState.cursorPos=1;bossState.cursorDir=-1;}
+  if(bossState.cursorPos<0){bossState.cursorPos=0;bossState.cursorDir=1;}
+  const gz=document.getElementById('boss-gz');
+  const cur=document.getElementById('boss-cur');
+  const mw=document.getElementById('boss-mw');
+  gz.style.left=(bossState.greenStart*100)+'%';
+  gz.style.width=((bossState.greenEnd-bossState.greenStart)*100)+'%';
+  cur.style.left=(bossState.cursorPos*100)+'%';
+  bossCursorRAF=requestAnimationFrame(animBossCursor);
+}
+function bossClick(){
+  if(!STATE.bossActive) return;
+  const p=bossState.cursorPos;
+  const hit=p>=bossState.greenStart&&p<=bossState.greenEnd;
+  const res=document.getElementById('boss-res');
+  if(hit){
+    bossState.hits++;
+    res.textContent=t('bossHit');
+    renderBossHP();
+    if(bossState.hits>=bossState.needed){
+      bossState.waveNum++;
+      if(bossState.waveNum>=bossState.maxWaves){
+        bossClear(); return;
+      } else {
+        // Next wave — reset but harder green zone
+        bossState.hits=0; bossState.greenStart+=.05; bossState.greenEnd-=.05;
+        bossState.speed*=1.25;
+        document.getElementById('boss-progress').textContent='Wave '+(bossState.waveNum+1)+'/'+bossState.maxWaves;
+        renderBossHP();
+        res.textContent='⚡ 下一波！';
+      }
+    }
+  } else {
+    res.textContent=t('bossMiss');
+    // Miss penalty: slight green zone shrink
+    bossState.greenEnd=Math.max(bossState.greenStart+.12,bossState.greenEnd-.04);
+  }
+}
+function bossClear(){
+  if(bossCursorRAF) cancelAnimationFrame(bossCursorRAF);
+  document.getElementById('boss-res').textContent=t('bossClear');
+  document.getElementById('boss-btn').disabled=true;
+  setTimeout(()=>{
+    document.getElementById('boss-ov').classList.remove('show');
+    STATE.bossActive=false; STATE.paused=false;
+    showUnlock();
+  },1400);
+}
+function showUnlock(){
+  const next=STATE.country+1;
+  if(next>=COUNTRIES.length){
+    // Game complete!
+    document.getElementById('ul-flag').textContent='🏆';
+    document.getElementById('ul-ttl').textContent=lang==='zh'?'恭喜！完成世界航道！':'Congratulations! World Route Complete!';
+    document.getElementById('ul-sub').textContent=lang==='zh'?'你已環遊世界十國！':'You\'ve sailed through all 10 countries!';
+    document.getElementById('unlock-ov').classList.add('show');
+    return;
+  }
+  const nc=COUNTRIES[next];
+  document.getElementById('ul-flag').textContent=nc.flag;
+  document.getElementById('ul-ttl').textContent=(lang==='zh'?t('unlocked')+' ':t('unlocked')+' ')+nc.name+(lang==='zh'?'！':'!');
+  document.getElementById('ul-sub').textContent=t('newRoute');
+  document.getElementById('ul-btn-lbl').textContent=t('sail');
+  document.getElementById('unlock-ov').classList.add('show');
+}
+function nextCountry(){
+  document.getElementById('unlock-ov').classList.remove('show');
+  STATE.country=Math.min(STATE.country+1,COUNTRIES.length-1);
+  STATE.progress=0; STATE.scroll=0; STATE.countriesCleared++;
+  STATE.cargo={}; STATE.floatItems=[]; spawnAccum=0;
+  updateHUD(); save();
+}
+
+// ─── HUD Update ───────────────────────────────────────────
+function updateHUD(){
+  const c=COUNTRIES[STATE.country];
+  document.getElementById('hud-flag').textContent=c.flag;
+  document.getElementById('hud-cn').textContent=c.name;
+  document.getElementById('hud-en').textContent=c.nameEn;
+  const pct=Math.min(100,Math.round(STATE.progress*100));
+  document.getElementById('prog-bar').style.width=pct+'%';
+  const totalCargo=Object.values(STATE.cargo).reduce((s,v)=>s+v,0);
+  document.getElementById('dist-lbl').textContent=totalCargo+'/'+c.needCount;
+
+  // Cargo display
+  const cd=document.getElementById('cargo-display');
+  cd.innerHTML='';
+  Object.entries(STATE.cargo).slice(0,8).forEach(([id,cnt])=>{
+    const it=ITEMS[id]; if(!it)return;
+    const div=document.createElement('div'); div.className='ci';
+    div.innerHTML=`<span>${it.e}</span><span class="ci-val">${cnt}</span>`;
+    cd.appendChild(div);
+  });
+
+  // Cargo full hint
+  if(cargoFullTimer>0){
+    cargoFullTimer--;
+    cd.title=t('cargoFull');
+  }
+
+  // Upgrade badge (can afford something)
+  let canBuyAny=false;
+  for(let ti=0;ti<4;ti++) for(let si=0;si<3;si++) if(canAfford(ti,si)){canBuyAny=true;break;}
+  const dot=document.getElementById('upg-dot');
+  dot.style.display=canBuyAny?'inline-block':'none';
+  if(STATE.upgPanelOpen) renderUpgPanel();
+}
+
+// ─── Main Draw ────────────────────────────────────────────
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  const ci=STATE.country;
+  drawSky(ci);
+  drawLandmarks(ci);
+  drawOcean(ci);
+  for(const fi of STATE.floatItems) drawCollectEffect(fi);
+  drawFloatItems();
+  drawShip();
+  drawParts();
+  // Fog overlay for Vietnam boss
+  if(STATE.bossActive&&COUNTRIES[ci].boss.type==='timing'&&ci===4){
+    ctx.save(); ctx.fillStyle='rgba(200,220,180,.35)';
+    ctx.fillRect(0,0,W,H); ctx.restore();
+  }
+  // Cargo full toast
+  if(cargoFullTimer>60){
+    ctx.save(); ctx.fillStyle='rgba(0,0,0,.7)';
+    ctx.fillRect(W/2-120,H*.35-16,240,32);
+    ctx.fillStyle='#ff9944'; ctx.font='bold 13px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(t('cargoFull'),W/2,H*.35+6); ctx.restore();
+  }
+}
+
+// ─── Main Loop ────────────────────────────────────────────
+let lastT=0;
+function loop(ts){
+  const dt=Math.min((ts-lastT)/1000,.05); lastT=ts;
+  if(!STATE.paused){
+    updateProgress(dt);
+    tickSpawn(dt);
+    updateItems(dt);
+    updateParts(dt);
+    STATE.cloudOff+=dt*18;
+  }
+  draw();
+  save();
+  requestAnimationFrame(loop);
+}
+
+// ─── Init ─────────────────────────────────────────────────
+function init(){
+  resize();
+  // Init clouds with current W
+  CLOUDS.forEach((cl,i)=>{cl.x=i*(W/7+40)+Math.random()*100;});
+  load();
+  updateHUD();
+  document.getElementById('click-hint').textContent=t('clickHint');
+  document.getElementById('upg-lbl').textContent=t('upg').replace('⚓ ','');
+  // Fade out click hint after 4s
+  setTimeout(()=>{
+    const h=document.getElementById('click-hint');
+    h.style.opacity='0';
+    setTimeout(()=>h.style.display='none',600);
+  },4000);
+  requestAnimationFrame(ts=>{lastT=ts;requestAnimationFrame(loop);});
+}
+
+window.addEventListener('load',init);
+</script>
+</body>
+</html>
