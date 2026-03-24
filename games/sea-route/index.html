@@ -26,9 +26,21 @@ canvas{display:block;position:fixed;top:0;left:0}
 #upg-dot{display:none;width:6px;height:6px;background:#f44;border-radius:50%;margin-left:4px;vertical-align:middle}
 /* Click hint */
 #click-hint{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);z-index:9;font-size:11px;color:rgba(255,255,255,.35);pointer-events:none;transition:opacity .5s;white-space:nowrap}
-/* Upgrade Panel */
-#upg-panel{position:fixed;bottom:0;right:0;z-index:20;width:min(360px,100vw);max-height:78vh;background:rgba(6,16,32,.97);border:1px solid rgba(74,248,255,.18);border-bottom:none;border-right:none;border-radius:16px 0 0 0;padding:16px;overflow-y:auto;transform:translateX(100%);transition:transform .28s;backdrop-filter:blur(14px)}
-#upg-panel.open{transform:translateX(0)}
+/* Upgrade Panel – center modal */
+#upg-overlay{position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:19;display:none;backdrop-filter:blur(4px)}
+#upg-overlay.open{display:block}
+#upg-panel{position:fixed;top:50%;left:50%;z-index:20;width:min(480px,94vw);max-height:86vh;background:rgba(6,16,32,.97);border:1px solid rgba(74,248,255,.25);border-radius:16px;padding:18px;overflow-y:auto;transform:translate(-50%,-48%) scale(.95);opacity:0;transition:transform .22s,opacity .22s;backdrop-filter:blur(16px);pointer-events:none}
+#upg-panel.open{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:all}
+/* ESC Menu */
+#esc-menu{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:45;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;backdrop-filter:blur(5px)}
+#esc-menu.show{display:flex}
+.esc-ttl{font-size:22px;font-weight:900;color:#fff;margin-bottom:10px;letter-spacing:1px}
+.esc-btn{min-width:220px;padding:12px 28px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:10px;color:#fff;font-size:14px;cursor:pointer;transition:background .15s;text-align:center}
+.esc-btn:hover{background:rgba(255,255,255,.16)}
+.esc-btn.primary{border-color:rgba(74,248,255,.4);color:#4af8ff}
+.esc-btn.primary:hover{background:rgba(74,248,255,.12)}
+.esc-btn.danger{border-color:rgba(255,80,80,.3);color:#ff9090}
+.esc-btn.danger:hover{background:rgba(255,80,80,.12)}
 .up-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .up-ttl{font-size:14px;font-weight:700;color:#4af8ff}
 .up-x{background:none;border:none;color:rgba(255,255,255,.38);font-size:18px;cursor:pointer;padding:2px 6px}
@@ -96,10 +108,19 @@ canvas{display:block;position:fixed;top:0;left:0}
   <button id="upg-btn" onclick="toggleUpg()">⚓ <span id="upg-lbl">升級</span><span id="upg-dot"></span></button>
 </div>
 <div id="click-hint" id="click-hint">點擊畫面手動蒐集 ×2 倍率</div>
+<div id="upg-overlay" onclick="toggleUpg()"></div>
 <div id="upg-panel">
   <div class="up-hd"><span class="up-ttl" id="up-ttl">⚓ 船艦強化</span><button class="up-x" onclick="toggleUpg()">✕</button></div>
   <div class="up-tab-bar" id="up-tabs"></div>
   <div id="up-list"></div>
+</div>
+<div id="esc-menu">
+  <div class="esc-ttl">⏸ 已暫停</div>
+  <button class="esc-btn primary" onclick="resumeGame()">▶ 繼續遊戲</button>
+  <button class="esc-btn" onclick="toggleMute();document.getElementById('esc-mute-lbl').textContent=audioMuted?'🔇 解除靜音':'🔊 靜音'">
+    <span id="esc-mute-lbl">🔊 靜音</span>
+  </button>
+  <button class="esc-btn danger" onclick="window.location.href='/games/'">🏠 回到遊戲列表</button>
 </div>
 <div id="boss-ov">
   <div class="boss-ttl" id="boss-ttl">⛈ 颱風女神</div>
@@ -172,52 +193,52 @@ function toggleLang(){
 const COUNTRIES=[
   {id:'tw',flag:'🇹🇼',name:'台灣',nameEn:'Taiwan',
    sky:['#89d4f5','#5cb8a0'],ocean:['#1b7ea8','#0d4a6e'],wave:'#1a6898',accent:'#f09040',
-   items:['boba','cake','lantern','coin_tw'],needCount:30,
+   items:['boba','cake','lantern','coin_tw'],ocean_items:['coral','tropical'],needCount:30,
    boss:{name:'颱風女神',nameEn:'Storm Goddess',type:'timing',
      hint:'逆風減速——速度不夠就無法通關！',hintEn:'Too slow — upgrade speed to break through!',speed:1.2}},
   {id:'jp',flag:'🇯🇵',name:'日本',nameEn:'Japan',
    sky:['#ffd4ea','#c86090'],ocean:['#1a4e9e','#0d2e6e'],wave:'#1a3e8e',accent:'#e05880',
-   items:['sushi','torii','snowflake','fan_jp'],needCount:35,
+   items:['sushi','torii','snowflake','fan_jp'],ocean_items:['blowfish','squid_u'],needCount:35,
    boss:{name:'海賊船長',nameEn:'Pirate Captain',type:'parry',
      hint:'搶奪素材——手動點擊格擋！',hintEn:'Stealing items — click to parry!',speed:1.4}},
   {id:'kr',flag:'🇰🇷',name:'韓國',nameEn:'Korea',
    sky:['#d8eeff','#6898d8'],ocean:['#1a5aae','#0d3a7e'],wave:'#1a4a9e',accent:'#4870c8',
-   items:['kimchi','kpop','hanbok','drum_kr'],needCount:40,
+   items:['kimchi','kpop','hanbok','drum_kr'],ocean_items:['crab_u','octopus'],needCount:40,
    boss:{name:'幽靈鯊魚',nameEn:'Ghost Shark',type:'timing',
      hint:'潛水攻擊——船體強化才能撐住！',hintEn:'Underwater attack — need hull upgrades!',speed:1.5}},
   {id:'cn',flag:'🇨🇳',name:'中國',nameEn:'China',
    sky:['#ffa060','#cc3020'],ocean:['#8B1010','#5a0808'],wave:'#7a0808',accent:'#ffd700',
-   items:['dragon','tea','porcelain','wall_cn'],needCount:45,
+   items:['dragon','tea','porcelain','wall_cn'],ocean_items:['lobster','pearl'],needCount:45,
    boss:{name:'龍王',nameEn:'Dragon King',type:'parry',
      hint:'波浪打亂貨艙——手動整理蒐集節奏！',hintEn:'Waves scramble cargo — click to reorganize!',speed:1.5}},
   {id:'vn',flag:'🇻🇳',name:'越南',nameEn:'Vietnam',
    sky:['#fff0a0','#80c060'],ocean:['#1a8e6e','#0d5a48'],wave:'#1a7858',accent:'#d8a820',
-   items:['hat','pho','lotus','boat_vn'],needCount:50,
+   items:['hat','pho','lotus','boat_vn'],ocean_items:['jellyfish','shrimp'],needCount:50,
    boss:{name:'迷霧水鬼',nameEn:'Fog Wraith',type:'timing',
      hint:'視野被遮——靠之前蒐集的燈籠才能驅散！',hintEn:'Fog blocks vision — use lanterns from Taiwan!',speed:1.6}},
   {id:'in',flag:'🇮🇳',name:'印度',nameEn:'India',
    sky:['#ffa860','#9e3080'],ocean:['#1a5e9e','#0d3a6e'],wave:'#1a508e',accent:'#ff9028',
-   items:['spice','elephant','flower','gem_in'],needCount:55,
+   items:['spice','elephant','flower','gem_in'],ocean_items:['shark','tropical'],needCount:55,
    boss:{name:'大象神',nameEn:'Elephant God',type:'combo',
      hint:'需要特定素材組合作「祭祀」才能通關！',hintEn:'Need specific item combos for the ritual!',speed:1.6}},
   {id:'gr',flag:'🇬🇷',name:'希臘',nameEn:'Greece',
    sky:['#d0f0ff','#408ad8'],ocean:['#0a6aae','#063a6e'],wave:'#0a5a9e',accent:'#ffffff',
-   items:['olive','shell','vase','column'],needCount:60,
+   items:['olive','shell','vase','column'],ocean_items:['octopus','lobster'],needCount:60,
    boss:{name:'克拉肯',nameEn:'Kraken',type:'timing',
      hint:'觸手封鎖蒐集格——廣度升級越高越容易！',hintEn:'Tentacles block slots — broad upgrades help!',speed:1.7}},
   {id:'it',flag:'🇮🇹',name:'義大利',nameEn:'Italy',
    sky:['#ffe0b0','#d86040'],ocean:['#1a5a9e','#0d3a6e'],wave:'#1a4a8e',accent:'#e06040',
-   items:['pasta','pizza','grape','tower_it'],needCount:65,
+   items:['pasta','pizza','grape','tower_it'],ocean_items:['squid_u','crab_u'],needCount:65,
    boss:{name:'海盜聯盟',nameEn:'Pirate Alliance',type:'wave',
      hint:'多波海盜輪流來——攻防升級要均衡！',hintEn:'Multiple pirate waves — balance offense and defense!',speed:1.8}},
   {id:'no',flag:'🇳🇴',name:'挪威',nameEn:'Norway',
    sky:['#0a1a40','#1a4060'],ocean:['#0a3060','#062040'],wave:'#0a2850',accent:'#60d8ff',
-   items:['fjord','aurora','viking','whale'],needCount:70,
+   items:['fjord','aurora','viking','whale'],ocean_items:['seal','fish_n'],needCount:70,
    boss:{name:'冰山艦隊',nameEn:'Iceberg Fleet',type:'timing',
      hint:'速度考驗——船速不夠就被包圍！',hintEn:'Speed test — too slow and you\'re surrounded!',speed:2.0}},
   {id:'ca',flag:'🇨🇦',name:'加拿大',nameEn:'Canada',
    sky:['#c0e0ff','#4068b8'],ocean:['#1a3e6e','#0d2848'],wave:'#1a3060',accent:'#e83020',
-   items:['maple','salmon','moose','ice_ca'],needCount:80,
+   items:['maple','salmon','moose','ice_ca'],ocean_items:['seal','shark'],needCount:80,
    boss:{name:'極光巨獸',nameEn:'Aurora Beast',type:'final',
      hint:'融合所有機制的終極 Boss——全船裝備最強才能取勝！',hintEn:'Final boss — all mechanics combined, max out everything!',speed:2.2}}
 ];
@@ -263,7 +284,21 @@ const ITEMS={
   maple:{e:'🍁',n:'楓糖漿',en:'Maple Syrup',v:2,h:.45,r:3},
   salmon:{e:'🐟',n:'鮭魚',en:'Salmon',v:3,h:.52,r:2},
   moose:{e:'🦌',n:'麋鹿',en:'Moose',v:4,h:.48,r:1},
-  ice_ca:{e:'🧊',n:'冰晶',en:'Ice Crystal',v:2,h:.42,r:2}
+  ice_ca:{e:'🧊',n:'冰晶',en:'Ice Crystal',v:2,h:.42,r:2},
+  // ── 水下/海洋素材 ──
+  coral:  {e:'🪸',n:'珊瑚',en:'Coral',      v:3,h:.82,r:2},
+  tropical:{e:'🐠',n:'熱帶魚',en:'Tropical Fish',v:2,h:.78,r:3},
+  blowfish:{e:'🐡',n:'河豚',en:'Blowfish',  v:3,h:.80,r:2},
+  squid_u:{e:'🦑',n:'魷魚',en:'Squid',      v:2,h:.76,r:2},
+  crab_u: {e:'🦀',n:'螃蟹',en:'Crab',       v:3,h:.78,r:2},
+  octopus:{e:'🐙',n:'章魚',en:'Octopus',    v:4,h:.82,r:1},
+  jellyfish:{e:'🪼',n:'水母',en:'Jellyfish',v:3,h:.80,r:2},
+  shrimp: {e:'🦐',n:'明蝦',en:'Shrimp',     v:2,h:.74,r:3},
+  lobster:{e:'🦞',n:'龍蝦',en:'Lobster',    v:4,h:.78,r:1},
+  shark:  {e:'🦈',n:'鯊魚牙',en:'Shark Tooth',v:5,h:.85,r:1},
+  pearl:  {e:'🫧',n:'珍珠',en:'Pearl',       v:5,h:.82,r:1},
+  seal:   {e:'🦭',n:'海豹',en:'Seal',        v:3,h:.76,r:2},
+  fish_n: {e:'🐟',n:'北極魚',en:'Arctic Fish',v:2,h:.74,r:3}
 };
 
 // ─── UPGRADE TREES (4 branches × 3 tiers each) ──────────
@@ -684,12 +719,26 @@ function drawShip(){
     ctx.globalAlpha=1;
   }
 
-  // Collect range ring (collect upgrade 1+)
-  if(co>=1){
-    ctx.save(); ctx.globalAlpha=.1+Math.sin(STATE.waveTime*3)*.04;
-    ctx.strokeStyle='#4af8ff'; ctx.lineWidth=1.5; ctx.setLineDash([4,6]);
-    ctx.beginPath(); ctx.arc(0,0,getRange(),0,Math.PI*2); ctx.stroke();
-    ctx.setLineDash([]); ctx.restore();
+  // Collection range ring – always visible
+  {
+    const rng=getRange();
+    const pulse=0.38+Math.sin(STATE.waveTime*2.5)*0.1;
+    ctx.save();
+    ctx.globalAlpha=pulse;
+    ctx.strokeStyle='#4af8ff';
+    ctx.lineWidth=co>=1?2.5:1.5;
+    ctx.shadowBlur=co>=1?16:6;
+    ctx.shadowColor='#4af8ff';
+    ctx.setLineDash([8,6]);
+    ctx.beginPath(); ctx.arc(0,0,rng,0,Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+    // Label
+    ctx.globalAlpha=0.55;
+    ctx.shadowBlur=0;
+    ctx.font='bold 9px sans-serif'; ctx.textAlign='left';
+    ctx.fillStyle='#4af8ff';
+    ctx.fillText(lang==='zh'?'蒐集範圍':'Range',6,-rng+14);
+    ctx.restore();
   }
 
   if(sp2>0) ctx.restore(); // end glow shadow
@@ -726,6 +775,11 @@ function drawFloatItems(){
       }
       ctx.shadowBlur=14; ctx.shadowColor='#ffd700';
     }
+    // 水下素材：藍色光暈 + 透明度降低
+    if(fi.underwater){
+      ctx.shadowBlur=10; ctx.shadowColor='rgba(74,180,255,0.7)';
+      ctx.globalAlpha*=0.78;
+    }
     ctx.fillText(it.e, fi.x, floatY);
     ctx.restore();
   }
@@ -752,16 +806,22 @@ function drawCollectEffect(fi){
 // ─── Game Logic: Spawn Items ──────────────────────────────
 function spawnItem(){
   const c=COUNTRIES[STATE.country];
-  // Weighted random item from current country
-  const pool=[]; c.items.forEach(id=>{ const it=ITEMS[id]; if(it) for(let i=0;i<it.r;i++) pool.push(id); });
+  // 30% 機率生成水下素材
+  const useOcean=c.ocean_items&&Math.random()<0.30;
+  const src=useOcean?c.ocean_items:c.items;
+  const pool=[]; src.forEach(id=>{ const it=ITEMS[id]; if(it) for(let i=0;i<it.r;i++) pool.push(id); });
   const id=pool[Math.floor(Math.random()*pool.length)];
   if(!id) return;
   const it=ITEMS[id];
+  // 水下素材固定生成在海面以下
+  const baseY=useOcean?H*.52:H*.32;
+  const rangeY=useOcean?H*.20:H*.12;
   STATE.floatItems.push({
-    id, x:W+50, y:H*(.32+it.h*.35)+Math.random()*H*.12,
+    id, x:W+50, y:baseY+it.h*rangeY+Math.random()*rangeY*.5,
     speed:1.8+getSpeed()*1800+Math.random()*.8,
     phase:Math.random()*Math.PI*2,
-    age:0, collected:false, collectAnim:0
+    age:0, collected:false, collectAnim:0,
+    underwater:useOcean
   });
 }
 
@@ -881,11 +941,9 @@ function tickSpawn(dt){
 // ─── Upgrade Panel ────────────────────────────────────────
 function toggleUpg(){
   STATE.upgPanelOpen=!STATE.upgPanelOpen;
-  // 開升級面板時暫停，關閉時恢復（Boss 戰中不影響）
-  if(!STATE.bossActive){
-    STATE.paused=STATE.upgPanelOpen;
-  }
+  if(!STATE.bossActive) STATE.paused=STATE.upgPanelOpen;
   document.getElementById('upg-panel').classList.toggle('open',STATE.upgPanelOpen);
+  document.getElementById('upg-overlay').classList.toggle('open',STATE.upgPanelOpen);
   if(STATE.upgPanelOpen) renderUpgPanel();
 }
 function renderUpgPanel(){
@@ -1096,6 +1154,24 @@ function draw(){
     ctx.fillText(t('cargoFull'),W/2,H*.35+6); ctx.restore();
   }
 }
+
+// ─── ESC Pause Menu ───────────────────────────────────────
+function pauseGame(){
+  if(STATE.bossActive||STATE.upgPanelOpen) return;
+  STATE.paused=true;
+  document.getElementById('esc-menu').classList.add('show');
+  document.getElementById('esc-mute-lbl').textContent=audioMuted?'🔇 解除靜音':'🔊 靜音';
+}
+function resumeGame(){
+  STATE.paused=false;
+  document.getElementById('esc-menu').classList.remove('show');
+}
+window.addEventListener('keydown',e=>{
+  if(e.key!=='Escape') return;
+  if(STATE.upgPanelOpen){ toggleUpg(); return; }
+  if(document.getElementById('esc-menu').classList.contains('show')) resumeGame();
+  else pauseGame();
+});
 
 // ─── Main Loop ────────────────────────────────────────────
 let lastT=0;
