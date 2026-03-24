@@ -487,6 +487,51 @@
     }
     .dm-send:hover   { background:rgba(var(--accent-rgb),.28); }
     .dm-send:disabled { opacity:.4; cursor:not-allowed; }
+    /* ── Danmaku Admin Panel ── */
+    #dm-admin-panel {
+      position:fixed; top:60px; right:16px; width:310px; max-height:460px;
+      background:var(--bg2,#1e1812); border:1px solid rgba(var(--accent-rgb),.55);
+      border-radius:12px; z-index:600; display:none; flex-direction:column;
+      box-shadow:0 8px 32px rgba(0,0,0,.65); overflow:hidden;
+    }
+    #dm-admin-panel.show { display:flex; }
+    .dm-adm-hd {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:9px 13px; background:rgba(var(--accent-rgb),.1);
+      border-bottom:1px solid rgba(var(--accent-rgb),.25);
+      font-size:12px; font-weight:700; color:var(--accent); flex-shrink:0;
+    }
+    .dm-adm-hd span { display:flex; gap:6px; }
+    .dm-adm-list { overflow-y:auto; flex:1; padding:6px; }
+    .dm-adm-row {
+      display:flex; align-items:center; gap:6px; padding:5px 7px;
+      border-radius:6px; font-size:12px; border-bottom:1px solid rgba(255,255,255,.04);
+    }
+    .dm-adm-row:hover { background:rgba(255,255,255,.04); }
+    .dm-adm-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .dm-adm-txt { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .dm-adm-id  { font-size:10px; color:var(--text3); flex-shrink:0; }
+    .dm-adm-del {
+      background:rgba(200,50,50,.15); border:1px solid rgba(200,50,50,.3);
+      color:#ff7070; border-radius:4px; padding:2px 7px; font-size:11px;
+      cursor:pointer; flex-shrink:0; transition:background .12s;
+    }
+    .dm-adm-del:hover { background:rgba(200,50,50,.3); }
+    .dm-adm-ft {
+      display:flex; gap:6px; padding:8px 10px;
+      border-top:1px solid rgba(255,255,255,.07); flex-shrink:0;
+    }
+    .dm-adm-btn {
+      flex:1; padding:6px 4px; border-radius:6px; font-size:11px;
+      font-weight:600; cursor:pointer; border:1px solid; transition:background .12s;
+      font-family:inherit;
+    }
+    .dm-adm-btn.danger { background:rgba(200,50,50,.1); border-color:rgba(200,50,50,.35); color:#ff7070; }
+    .dm-adm-btn.danger:hover { background:rgba(200,50,50,.25); }
+    .dm-adm-btn.neu { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.15); color:var(--text); }
+    .dm-adm-btn.neu:hover { background:rgba(255,255,255,.1); }
+    .dm-adm-btn.warn { background:rgba(255,165,0,.1); border-color:rgba(255,165,0,.3); color:#ffaa44; }
+    .dm-adm-btn.warn:hover { background:rgba(255,165,0,.2); }
     .pts-popup {
       position:fixed; right:16px; bottom:110px; z-index:500;
       background:rgba(10,6,22,.85); border:1px solid rgba(var(--accent-rgb),.5);
@@ -880,6 +925,24 @@
     <button class="dm-send" id="dm-send">發送</button>
   </div>
 
+  <!-- ── Danmaku Admin Panel ── -->
+  <div id="dm-admin-panel">
+    <div class="dm-adm-hd">
+      🛡️ 彈幕管理
+      <span>
+        <button class="dm-adm-btn warn" style="padding:3px 10px;flex:0" onclick="dmAdminRefresh()">重新整理</button>
+        <button class="dm-adm-btn neu"  style="padding:3px 10px;flex:0;margin-left:4px" onclick="exitDmAdmin()">退出</button>
+      </span>
+    </div>
+    <div class="dm-adm-list" id="dm-admin-list">
+      <div style="text-align:center;color:var(--text3);padding:20px;font-size:12px">載入中…</div>
+    </div>
+    <div class="dm-adm-ft">
+      <button class="dm-adm-btn danger" onclick="dmAdminClearAll()">🗑 清除全部彈幕</button>
+      <button class="dm-adm-btn neu"    onclick="dmAdminPauseToggle()" id="dm-pause-btn">⏸ 暫停顯示</button>
+    </div>
+  </div>
+
   <script>
   // ── Points System ──────────────────────────────────────────
   const PTS_KEY = 'capyPoints';
@@ -921,7 +984,8 @@
   setPoints(getPoints());
 
   // ── Danmaku System ─────────────────────────────────────────
-  let dmOn = false, dmLastId = 0, dmPollTimer = null, dmColor = '#ffffff';
+  let dmOn = true, dmLastId = 0, dmPollTimer = null, dmColor = '#ffffff';
+  let dmPaused = false;
 
   const dmLayer  = document.getElementById('danmaku-layer');
   const dmToggle = document.getElementById('dm-toggle');
@@ -964,7 +1028,7 @@
   }
 
   function dmShow(text, color) {
-    if (!dmOn) return;
+    if (!dmOn || dmPaused) return;
     const el    = document.createElement('div');
     el.className = 'dm';
     el.textContent = text;
@@ -976,9 +1040,11 @@
     el.addEventListener('animationend', () => el.remove());
   }
 
-  // 管理員模式：點 "✦ X 積分" 徽章 5 下可輸入管理員密碼，解鎖免費彈幕
+  // ── Danmaku Admin ──────────────────────────────────────────
+  const DM_ADMIN_PW = '66520';
   let dmAdminMode = false;
   let dmBadgeClicks = 0, dmBadgeTimer = null;
+
   document.querySelector('.pts-badge').addEventListener('click', () => {
     dmBadgeClicks++;
     clearTimeout(dmBadgeTimer);
@@ -986,20 +1052,73 @@
     if (dmBadgeClicks >= 5) {
       dmBadgeClicks = 0;
       if (dmAdminMode) {
-        const action = prompt('管理員選項：\n1 → 退出管理員模式\n2 → 重置我的積分為 0\n\n輸入數字：');
-        if (action === '1') { dmAdminMode = false; showPtsPopup('已退出管理員模式'); }
-        else if (action === '2') { setPoints(0); showPtsPopup('積分已重置 ✓'); }
+        openDmAdmin();
       } else {
-        const pw = prompt('輸入管理員密碼：');
-        if (pw && pw === '66520') {
+        const pw = prompt('🛡️ 輸入彈幕管理員密碼：');
+        if (pw === DM_ADMIN_PW) {
           dmAdminMode = true;
-          showPtsPopup('管理員模式：彈幕免費 ✓');
+          showPtsPopup('管理員模式已開啟 ✓');
+          openDmAdmin();
         } else if (pw !== null) {
           showPtsPopup('密碼錯誤');
         }
       }
     }
   });
+
+  async function openDmAdmin() {
+    document.getElementById('dm-admin-panel').classList.add('show');
+    await dmAdminRefresh();
+  }
+
+  function exitDmAdmin() {
+    dmAdminMode = false;
+    document.getElementById('dm-admin-panel').classList.remove('show');
+    showPtsPopup('已退出管理員模式');
+  }
+
+  async function dmAdminRefresh() {
+    const list = document.getElementById('dm-admin-list');
+    list.innerHTML = '<div style="text-align:center;color:var(--text3);padding:18px;font-size:12px">載入中…</div>';
+    try {
+      const res  = await fetch(API + '/danmaku?admin=1', { headers:{ 'Authorization':'Bearer ' + DM_ADMIN_PW } });
+      const data = await res.json();
+      if (!data.length) { list.innerHTML = '<div style="text-align:center;color:var(--text3);padding:18px;font-size:12px">目前沒有彈幕</div>'; return; }
+      list.innerHTML = data.map(d => `
+        <div class="dm-adm-row" id="dm-item-${d.id}">
+          <div class="dm-adm-dot" style="background:${d.color}"></div>
+          <div class="dm-adm-txt" style="color:${d.color}">${esc(d.text)}</div>
+          <div class="dm-adm-id">#${d.id}</div>
+          <button class="dm-adm-del" onclick="dmAdminDelete(${d.id})">刪除</button>
+        </div>`).join('');
+    } catch { list.innerHTML = '<div style="text-align:center;color:#f66;padding:18px;font-size:12px">載入失敗</div>'; }
+  }
+
+  async function dmAdminDelete(id) {
+    try {
+      const res = await fetch(API + '/danmaku/' + id, { method:'DELETE', headers:{ 'Authorization':'Bearer ' + DM_ADMIN_PW } });
+      const d   = await res.json();
+      if (d.ok) { const el = document.getElementById('dm-item-' + id); if (el) el.remove(); }
+      else showPtsPopup(d.error || '刪除失敗');
+    } catch { showPtsPopup('網路錯誤'); }
+  }
+
+  async function dmAdminClearAll() {
+    if (!confirm('確定要清除所有彈幕記錄？')) return;
+    try {
+      const res = await fetch(API + '/danmaku/all', { method:'DELETE', headers:{ 'Authorization':'Bearer ' + DM_ADMIN_PW } });
+      const d   = await res.json();
+      if (d.ok) { dmLayer.innerHTML = ''; showPtsPopup('全部彈幕已清除 ✓'); await dmAdminRefresh(); }
+      else showPtsPopup(d.error || '清除失敗');
+    } catch { showPtsPopup('網路錯誤'); }
+  }
+
+  function dmAdminPauseToggle() {
+    dmPaused = !dmPaused;
+    const btn = document.getElementById('dm-pause-btn');
+    btn.textContent = dmPaused ? '▶ 恢復顯示' : '⏸ 暫停顯示';
+    showPtsPopup(dmPaused ? '彈幕已暫停' : '彈幕已恢復');
+  }
 
   async function doSendDanmaku() {
     const text = dmInput.value.trim();
@@ -1026,6 +1145,17 @@
 
   dmSend.addEventListener('click', doSendDanmaku);
   dmInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSendDanmaku(); });
+
+  // 預設開啟彈幕
+  dmToggle.classList.add('on');
+  dmToggle.textContent = '💬 彈幕 ON';
+  dmBar.classList.add('open');
+  fetchDanmaku(true);
+  dmPollTimer = setInterval(() => fetchDanmaku(false), 15000);
+
+  // 冷笑話彈幕（本地，不送出伺服器）
+  setTimeout(() => dmShow('一山還有一山高，雞蛋還有雞蛋糕 🥚', '#ffd700'), 3000);
+  setTimeout(() => dmShow('我跟太陽說早安，太陽說：你好大膽 ☀️', '#00ffff'), 7500);
   </script>
 
 </body>

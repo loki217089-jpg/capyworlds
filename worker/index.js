@@ -124,6 +124,11 @@ export default {
 
     // ── 彈幕 ──────────────────────────────────────────────────────
     if (url.pathname==='/danmaku' && request.method==='GET') {
+      const auth=(request.headers.get('Authorization')||'').replace('Bearer ','');
+      if (url.searchParams.get('admin')==='1' && auth==='66520') {
+        const {results}=await env.DB.prepare('SELECT id,text,color,created_at FROM danmaku ORDER BY id DESC LIMIT 100').all();
+        return Response.json(results,{headers:cors});
+      }
       const since=parseInt(url.searchParams.get('since')||'0');
       const {results}=await env.DB.prepare('SELECT id,text,color,created_at FROM danmaku WHERE id>? ORDER BY id ASC LIMIT 60').bind(since).all();
       return Response.json(results,{headers:cors});
@@ -135,6 +140,19 @@ export default {
       const color=allowed.includes(b.color)?b.color:'#ffffff';
       if (!text) return Response.json({error:'彈幕不能為空'},{status:400,headers:cors});
       await env.DB.prepare('INSERT INTO danmaku (text,color,created_at) VALUES (?,?,?)').bind(text,color,new Date().toISOString()).run();
+      return Response.json({ok:true},{headers:cors});
+    }
+    if (url.pathname==='/danmaku/all' && request.method==='DELETE') {
+      const auth=(request.headers.get('Authorization')||'').replace('Bearer ','');
+      if (auth!=='66520') return Response.json({error:'未授權'},{status:401,headers:cors});
+      await env.DB.prepare('DELETE FROM danmaku').run();
+      return Response.json({ok:true},{headers:cors});
+    }
+    const dmDel=url.pathname.match(/^\/danmaku\/(\d+)$/);
+    if (dmDel && request.method==='DELETE') {
+      const auth=(request.headers.get('Authorization')||'').replace('Bearer ','');
+      if (auth!=='66520') return Response.json({error:'未授權'},{status:401,headers:cors});
+      await env.DB.prepare('DELETE FROM danmaku WHERE id=?').bind(parseInt(dmDel[1])).run();
       return Response.json({ok:true},{headers:cors});
     }
 
