@@ -605,6 +605,193 @@ Step 9｜迭代 & 長尾運營
 
 ---
 
+## CrazyGames 上架表單內容（英文版）
+
+> 封面產生器：`tools/cover-gen.html`（本地打開，3種尺寸一鍵下載）
+> 每次上架前把下方對應遊戲的內容複製貼入 CG 表單即可。
+
+### 表單欄位說明
+
+| 欄位 | 字數限制 | 說明 |
+|------|---------|------|
+| Category | — | 單選，從 CG 清單選 |
+| Tags | 最多 5 個 | 從 CG 標籤庫選 |
+| Description | 無 HTML | 遊戲說明，純文字 |
+| Controls | 無 HTML | 操作說明，純文字 |
+
+---
+
+### 🦫 Capy Village（水豚小村）
+- **Category:** Idle
+- **Tags:** `1 Player` `Mouse` `Animal` `Village` `Clicker`
+- **Description:**
+  Build and grow your very own capybara village! Assign villagers to gather wood, stone, and food. Unlock new buildings, discover villager stories, and watch your cozy settlement thrive. Each capybara has a unique personality revealed through friendship milestones.
+- **Controls:**
+  Mouse – Click to collect resources and interact with villagers. Click buildings to assign tasks. Use the upgrade panel to improve your village.
+
+---
+
+### 🦫 Capy Runner（水豚跑酷）
+- **Category:** Running
+- **Tags:** `1 Player` `Mobile` `Animal` `Endless Runner` `Swipe`
+- **Description:**
+  Guide your capybara through an endless obstacle course! Swipe up to jump, swipe down to slide. Collect coins, grab power-ups like shields and magnets, and see how far you can run before the barrels and walls stop you. Speed increases over time!
+- **Controls:**
+  Mobile – Swipe up to jump, swipe down to slide.
+  Desktop – Arrow Up / W to jump, Arrow Down / S to slide.
+
+---
+
+### 📚 Daily Quiz RPG（每日一題 RPG）
+- **Category:** Trivia
+- **Tags:** `1 Player` `Mobile` `Educational` `RPG` `Daily Challenge`
+- **Description:**
+  Answer daily trivia questions to power up your hero! Every correct answer earns XP and gold. Level up your character, unlock new skills, and battle monsters using knowledge as your weapon. A new question arrives every day — keep your streak going!
+- **Controls:**
+  Mouse / Tap – Select your answer. Click skill buttons to use abilities in battle.
+
+---
+
+### 🦟 Mosquito Evolution（進化蚊子）
+- **Category:** Clicker
+- **Tags:** `1 Player` `Animal` `Mouse` `Idle` `Evolution`
+- **Description:**
+  Click to swat evolving mosquitoes before they drain your blood! As you survive, mosquitoes grow stronger and smarter — upgrade your reflexes, unlock passive abilities, and discover evolution branches that change how the swarm behaves. How long can you last?
+- **Controls:**
+  Mouse – Click mosquitoes to swat them. Click upgrade buttons to spend coins. Passive upgrades activate automatically.
+
+---
+
+### ⛏️ Deep Diggers（深地探掘者）
+- **Category:** Idle
+- **Tags:** `1 Player` `Mouse` `Mining` `Roguelike` `Upgrade`
+- **Description:**
+  Dig deeper into the earth, discover rare ores, and battle underground creatures! Explore 5 distinct biomes as you descend. Spend gems on 7 upgrade trees to enhance your drill speed, inventory, and combat power. How deep can you go?
+- **Controls:**
+  Mouse – Click to drill. Click upgrade panels to spend resources. Hover over items for details.
+
+---
+
+### 🌍 Earth Reborn（地球再生）
+- **Category:** Idle
+- **Tags:** `1 Player` `Mouse` `Civilization` `Strategy` `Idle`
+- **Description:**
+  Rebuild civilization from scratch after the apocalypse! Progress through 5 eras — from Stone Age to Space Age — by gathering resources, researching technologies, and constructing wonders. Connects with Void Navigator: research from Earth powers your space fleet!
+- **Controls:**
+  Mouse – Click to collect resources. Click buildings to produce goods. Use the tech tree to unlock new eras.
+
+---
+
+### 🧟 Zombie Idle（殭屍蔓延）
+- **Category:** Idle
+- **Tags:** `1 Player` `Mouse` `Zombie` `Clicker` `Idle`
+- **Description:**
+  Spread your zombie horde across the city! Click to infect survivors, place auto-spreading units, and unlock DNA upgrades through Prestige resets. Each prestige run makes your horde exponentially stronger. Can you infect the entire world?
+- **Controls:**
+  Mouse – Click the map to spread infection. Click upgrade buttons to evolve your horde. Use the Prestige button to reset and multiply your power.
+
+---
+
+### ☣ Last Stand（末日求生）
+- **Category:** Shooter
+- **Tags:** `1 Player` `Keyboard` `Zombie` `Survival` `Wave Defense`
+- **Description:**
+  Survive endless waves of the undead in a post-apocalyptic wasteland! Face 3 types of zombies — walkers, runners, and tanks — with authentic pixel art sprites. Earn points per wave to buy weapons and upgrades. How many waves can you endure?
+- **Controls:**
+  WASD – Move. Mouse – Aim. Left Click – Shoot. R – Reload. 1/2/3 – Switch weapon. Space – Dash.
+
+---
+
+### 🦠 VIRUS.EXE（系統清除）
+- **Category:** Strategy
+- **Tags:** `1 Player` `Mouse` `Hacker` `Tower Defense` `Cyberpunk`
+- **Description:**
+  Your system is under attack — deploy firewalls, launch counter-viruses, and purge malware before it corrupts your core files! Master 3 layers of defense in a neon cyberpunk interface. Each virus type requires a different strategy. Can you keep your system clean?
+- **Controls:**
+  Mouse – Click to place defense nodes. Right-click to sell. Click virus nodes to target manually. Use hotkeys 1–5 for quick deploy.
+
+---
+
+### 🚀 Void Navigator（虛空領航員）
+- **Category:** Space
+- **Tags:** `1 Player` `Keyboard` `Space` `Roguelike` `Exploration`
+- **Description:**
+  Navigate the void between stars, mine asteroid fields, and battle alien fleets in this deep-space roguelike! Manage fuel, choose your route through 8 star systems, and unlock 8 weapon types — from laser beams to plasma chains. Meta upgrades persist between runs.
+- **Controls:**
+  WASD / Arrow Keys – Fly. Mouse – Aim. Left Click – Fire. Tab – Map. E – Interact. Esc – Pause.
+
+---
+
+### ⚔️ Hero Legend（勇者傳說）
+- **Category:** RPG
+- **Tags:** `1 Player` `Mouse` `RPG` `Fantasy` `Idle`
+- **Description:**
+  Embark on an epic RPG adventure! Choose your class, master skills, forge equipment, and conquer multi-floor dungeons. Face challenging boss encounters, unlock talent trees, and build the ultimate hero. A full RPG experience in your browser — no download needed.
+- **Controls:**
+  Mouse – Click to attack, select skills, and navigate menus. Hotkeys 1–6 to use skills in battle. Auto-battle toggle available.
+
+---
+
+### ⚔ Beat Warrior（節拍戰士）
+- **Category:** Music
+- **Tags:** `1 Player` `Keyboard` `Rhythm` `RPG` `Music`
+- **Description:**
+  Fight enemies to the beat! Time your attacks with the music for Perfect hits that deal massive damage. Miss the rhythm and your defense crumbles. Progress through stages, level up your warrior, and face rhythm-based bosses with unique attack patterns.
+- **Controls:**
+  Z / X / C or Arrow Keys – Hit notes in time with the beat. Space – Special skill. Esc – Pause.
+
+---
+
+### 🌀 Burst Arena（戰鬥陀螺）
+- **Category:** Sports
+- **Tags:** `1 Player` `2 Players` `Physics` `Battle` `Arena`
+- **Description:**
+  Customize your spinning top and battle opponents in the arena! Combine Attack, Defense, and Stamina parts for unique builds. Random environmental events — magnetic fields, ice floors, and wind storms — shake up every match. First to knock the opponent out wins!
+- **Controls:**
+  Mouse – Drag to aim and release to launch. Click ability buttons during battle. Press Space to activate special move.
+
+---
+
+### 🐛 Bug Crisis（機甲蟲蟲危機）
+- **Category:** Strategy
+- **Tags:** `1 Player` `Mouse` `Tower Defense` `Mech` `Sci-Fi`
+- **Description:**
+  Command your mech army across 3 battle lanes to stop the mutant insect invasion! Deploy 5 unit types — each with distinct roles — before the bugs overwhelm your base. Earn scraps to upgrade your units and unlock powerful support abilities. Survive 20 waves!
+- **Controls:**
+  Mouse – Click a unit card then click a lane to deploy. Click the upgrade button to strengthen units in the field.
+
+---
+
+### 🌾 Farm Match（農場三消）
+- **Category:** Puzzle
+- **Tags:** `1 Player` `Mouse` `Match 3` `Farm` `Gacha`
+- **Description:**
+  Match colorful crops to earn points and summon rare farm helpers! With N / R / SR / SSR rarity tiers, every gacha pull is exciting. Build combos to trigger chain reactions and unlock helper abilities. How many SSR cards can you collect?
+- **Controls:**
+  Mouse – Click or drag to swap adjacent tiles. Click Gacha button to spend coins on summons.
+
+---
+
+### 🔫 FPS Shooter（FPS 射擊）
+- **Category:** Shooting
+- **Tags:** `1 Player` `Keyboard` `FPS` `Shooter` `Action`
+- **Description:**
+  A browser-based first-person shooter with a full raycasting engine! Explore maze-like maps, score headshots for bonus damage, and switch between 3 weapons. Enemies patrol and chase on detection. Survive as long as possible or clear every enemy to win.
+- **Controls:**
+  WASD – Move. Mouse – Look. Left Click – Shoot. R – Reload. 1/2/3 – Switch weapon. Shift – Sprint.
+
+---
+
+### ⛵ Sea Route（世界航道）
+- **Category:** Idle
+- **Tags:** `1 Player` `Mouse` `Nautical` `Idle` `Exploration`
+- **Description:**
+  Set sail and discover the world's great trade routes! Upgrade your fleet, unlock 10 nation ports, and automate cargo collection for passive income. Encounter sea events and time-limited boss ships for rare rewards. The ocean is yours to conquer!
+- **Controls:**
+  Mouse – Click to collect cargo, select routes, and upgrade your ship. Toggle auto-collect for hands-free sailing.
+
+---
+
 ## 週開發節奏（$100 MAX 方案）
 
 ### 標準週排程
