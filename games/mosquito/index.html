@@ -1547,7 +1547,7 @@ function drawTitle(){
     ctx.strokeStyle=isHover?d.color:d.color+'55';ctx.lineWidth=isHover?2:1;ctx.beginPath();ctx.roundRect(b.x,b.y,b.w,b.h,4);ctx.stroke();
     ctx.fillStyle=isHover?d.color:'#9a8a6a';ctx.font=`bold 19px 'Noto Serif TC',serif`;ctx.textAlign='center';
     if(isHover){ctx.shadowColor=d.color;ctx.shadowBlur=12;}ctx.fillText(dlabel,b.x+b.w/2,b.y+26);ctx.shadowBlur=0;
-    ctx.fillStyle=isHover?d.color+'cc':'#5a4a28';ctx.font=`12px 'Share Tech Mono'`;ctx.fillText(ddesc,b.x+b.w/2,b.y+44);
+    ctx.fillStyle=isHover?d.color+'cc':'#5a4a28';ctx.font=`12px 'Share Tech Mono'`;ctx.fillText(ddesc,b.x+b.w/2,b.y+44,b.w-10);
   });
   // 血量顯示（累積）
   if(totalBlood>0){ctx.fillStyle=C.blood+'88';ctx.font=`14px 'Share Tech Mono'`;ctx.fillText(`${T('title_blood')}${totalBlood} ${T('title_blood_carry')}`,W/2,py+ph-68);}
