@@ -635,6 +635,57 @@ function sub(text) {
   return text.replace(/\[NAME\]/g, G.playerName).replace(/\[VILLAGE\]/g, G.villageName);
 }
 
+// ── 村民故事線：每位村民在 friendship 25/50/75/100 觸發獨特故事 ──
+const VLGR_STORIES = {
+  aju: [
+    {at:25, title:'阿橘的田地', msg:'阿橘帶你走到田的最深處，\n指著一棵老橘樹說：\n\n"這棵樹是我爺爺種的。\n你是第一個讓我想帶來看的人。"'},
+    {at:50, title:'豐收的秘密', msg:'阿橘湊近小聲說：\n\n"其實我的收成從來不是最好的。\n但自從你來了，\n每次看到你，我就想更努力一點。"'},
+    {at:75, title:'風雨後的早晨', msg:'昨晚下了大雨，阿橘一個人在田裡搶救作物。\n今早你發現他累倒在樹下——\n\n他睜開眼，看到你，笑了：\n"沒事就好。你在就夠了。"'},
+    {at:100, title:'阿橘的心願', msg:'阿橘把你帶到山頂，\n夕陽把整個村子染成橘色。\n\n"以後這片土地，\n我想和你一起守護。"'},
+  ],
+  lan: [
+    {at:25, title:'小藍的晨釣', msg:'小藍在你還沒睡醒時就去河邊了。\n等你找到他，他把一條大魚遞給你：\n\n"今天第一條。留給你。"'},
+    {at:50, title:'沉默的湖面', msg:'你和小藍並排坐在湖邊，\n一句話都沒說，卻覺得很安心。\n\n小藍最後開口：\n"以前我一個人來這裡。現在有點不同了。"'},
+    {at:75, title:'暴風雨前', msg:'小藍看著天色說要下雨了，\n然後把自己的漁夫帽扣到你頭上——\n\n"你常常不帶傘。我注意到了。"'},
+    {at:100, title:'河流的方向', msg:'小藍說，河水總是往前流，\n不回頭，不猶豫。\n\n"但如果你在這裡，\n我想，我可以停一下。"'},
+  ],
+  mao: [
+    {at:25, title:'毛球的麵包', msg:'毛球把剛出爐的麵包塞到你手裡：\n\n"試試看！我特地加了你說喜歡的口味。\n……你說過嗎？也許是我自己猜的。"'},
+    {at:50, title:'廚房裡的秘方', msg:'毛球讓你進了後廚——\n那是連村長都沒進過的地方。\n\n"你不一樣。我信任你。"'},
+    {at:75, title:'深夜的烤爐', msg:'你在深夜聞到香味，\n發現毛球還在烤麵包。\n\n"睡不著的時候就烤。\n……今天特別想讓你吃到新鮮的。"'},
+    {at:100, title:'毛球的願望', msg:'毛球說，他最大的願望\n是一輩子都能為喜歡的人做點心。\n\n然後轉過頭，紅著臉：\n"所以……你要常來。"'},
+  ],
+  dou: [
+    {at:25, title:'豆豆的秘密基地', msg:'豆豆拉著你的手跑進樹林，\n指著一棵空心大樹：\n\n"只有你知道這裡！\n我們是好朋友了對不對？"'},
+    {at:50, title:'豆豆的問題', msg:'豆豆仰頭問你：\n\n"你會一直在這個村子嗎？\n……我不希望你離開。\n你是我最好的朋友。"'},
+    {at:75, title:'第一次看星星', msg:'豆豆說他以前怕黑。\n但今晚，他拉你去廣場躺著看星星：\n\n"跟你在一起，我不怕了。"'},
+    {at:100, title:'豆豆長大了', msg:'豆豆認真地說：\n\n"等我長大，我要保護這個村子，\n保護所有我重要的人。\n\n……包括你。"'},
+  ],
+  rong: [
+    {at:25, title:'老榕的茶', msg:'老榕遞給你一杯深色的茶，\n說是三十年前的茶葉：\n\n"能請你喝這杯，\n說明你是個值得的人。"'},
+    {at:50, title:'村子的故事', msg:'老榕說，這個村子曾經差點消失。\n是幾個年輕人留下來，才有了今天。\n\n"我在等的，就是像你這樣的人。"'},
+    {at:75, title:'老榕的擔憂', msg:'老榕說，他年紀大了，\n不知道還能守護村子多久。\n\n然後看著你，眼神溫柔：\n"但現在——我放心多了。"'},
+    {at:100, title:'傳承', msg:'老榕把一顆榕樹種子放在你手心：\n\n"種下它。\n等它長大的那天，\n你就是這個村子真正的守護者了。"'},
+  ],
+};
+
+function checkVlgrStory(id) {
+  const v = vs(id); if (!v) return;
+  const d = vd(id);
+  const stories = VLGR_STORIES[id]; if (!stories) return;
+  for (const s of stories) {
+    const key = `story_${id}_${s.at}`;
+    if (v.friendship >= s.at && !G.flags[key]) {
+      G.flags[key] = true;
+      setTimeout(() => {
+        showFest(d.ic, s.title, s.msg);
+        addDiary(`和${d.name}之間發生了一些事。`, true);
+      }, 600);
+      break; // 一次只觸發一個
+    }
+  }
+}
+
 function vd(id) { return VLGR_DATA.find(v=>v.id===id); }
 function vs(id) { return G.villagers.find(v=>v.id===id); }
 function totalBond() { return G.villagers.reduce((a,v)=>a+v.friendship,0); }
@@ -1286,6 +1337,7 @@ function talkMore(id) {
   const curr = relInfo(v.friendship);
 
   if (prev !== curr.tier) onRelUp(id, curr);
+  checkVlgrStory(id);
 
   const pool = [...d.dialogues, ...(v.friendship>=20?d.friendDialogue:[])];
   const line = sub(pool[Math.floor(Math.random()*pool.length)]);
@@ -1349,6 +1401,7 @@ function giveGift(vlId, giftId) {
   v.friendship = Math.min(100, v.friendship + 8);
   const curr = relInfo(v.friendship);
   if (prev !== curr.tier) onRelUp(vlId, curr);
+  checkVlgrStory(vlId);
 
   G.flags[`gift_${G.day}`] = true;
   const resp = sub(d.giftResp);

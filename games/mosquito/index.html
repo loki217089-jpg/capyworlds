@@ -200,6 +200,16 @@
 
   <div class="shop-section-title">🌀 被動技能</div>
 
+  <div class="shop-item" id="shopBloodFlow" onclick="buyUpgrade('bloodflow')">
+    <div class="icon">💧</div>
+    <div class="info">
+      <div class="name">血流加速</div>
+      <div class="desc">蚊子掉落更多血珠（+1/+2/+3），Lv2 起每 8 秒自動產生 1 滴血珠，Lv3 縮短至 5 秒</div>
+      <div class="level" id="bloodflowLevel">未購買</div>
+    </div>
+    <div class="cost" id="bloodflowCost">🩸 30</div>
+  </div>
+
   <div class="shop-item" id="shopCoil" onclick="buyUpgrade('coil')">
     <div class="icon">🌀</div>
     <div class="info">
@@ -262,7 +272,8 @@ const upgrades={
   boots:   {owned:false,level:0,maxLevel:3},
   magnet:  {owned:false,cooldown:0,maxCooldown:15000,active:false,activeTimer:5000},
   crit:    {owned:false,level:0,maxLevel:2},
-  coil:    {owned:false,level:0,maxLevel:3,timer:0,interval:10000}, // 蚊香爐（被動自動攻擊）
+  coil:      {owned:false,level:0,maxLevel:3,timer:0,interval:10000}, // 蚊香爐（被動自動攻擊）
+  bloodflow: {owned:false,level:0,maxLevel:3,timer:0,interval:8000},  // 血流加速（被動血珠）
 };
 
 // ── 全域血量（跨局保留）──────────────────────
@@ -611,8 +622,8 @@ function updateBleedAttacks(dt){
 // ── 擊殺蚊子（加入血珠掉落）─────────────────
 function killMosquito(mq){
   spawnParticles(mq.x,mq.y,mq.glow,mq.type==='boss'?40:12);
-  // 掉落血珠
-  const drops=mq.bloodDrop+(mq.type==='boss'?5:0);
+  // 掉落血珠（血流加速加成）
+  const drops=mq.bloodDrop+(mq.type==='boss'?5:0)+(upgrades.bloodflow.level||0);
   for(let i=0;i<Math.min(drops,4);i++){
     state.bloodDrops.push(new BloodDrop(
       mq.x+(Math.random()-.5)*20,
@@ -730,6 +741,18 @@ function buyUpgrade(type){
     upgrades.coil.interval=intervals[upgrades.coil.level-1];
     Audio.SFX.upgradeBuy();
     showMsg(`🌀 蚊香爐升到 Lv${upgrades.coil.level}！每 ${upgrades.coil.interval/1000} 秒自動擊殺`);
+  } else if(type==='bloodflow'){
+    const costs=[30,45,65];
+    if(upgrades.bloodflow.level>=upgrades.bloodflow.maxLevel){showMsg('血流加速已滿級');return;}
+    const cost=costs[upgrades.bloodflow.level];
+    if(totalBlood<cost){showMsg(`蚊子血不足！需要 ${cost} 滴`);return;}
+    totalBlood-=cost; upgrades.bloodflow.level++;
+    if(!upgrades.bloodflow.owned) upgrades.bloodflow.owned=true;
+    const intervals=[99999,8000,5000];
+    upgrades.bloodflow.interval=intervals[upgrades.bloodflow.level-1];
+    Audio.SFX.upgradeBuy();
+    const bonus=upgrades.bloodflow.level>=2?`，每 ${upgrades.bloodflow.interval/1000} 秒自動生成 1 血珠`:'';
+    showMsg(`💧 血流加速 Lv${upgrades.bloodflow.level}！每次擊殺 +${upgrades.bloodflow.level} 血珠${bonus}`);
   }
   updateShopUI();
 }
@@ -851,6 +874,25 @@ function updateShopUI(){
       coilCost.textContent=`🩸 ${costs[upgrades.coil.level]}`;
     }
   } else { coilEl.classList.remove('maxed'); coilLv.textContent='未購買'; coilCost.textContent='🩸 35'; }
+  // 血流加速
+  const bfEl=document.getElementById('shopBloodFlow');
+  const bfLv=document.getElementById('bloodflowLevel');
+  const bfCost=document.getElementById('bloodflowCost');
+  const bfCosts=[30,45,65];
+  if(upgrades.bloodflow.owned){
+    const lv=upgrades.bloodflow.level;
+    if(lv>=upgrades.bloodflow.maxLevel){
+      bfEl.classList.add('maxed');
+      const rem=Math.max(0,Math.ceil((upgrades.bloodflow.interval-(upgrades.bloodflow.timer||0))/1000));
+      bfLv.textContent=`Lv 3 | 每擊殺 +3 血珠，每 5 秒自動 +1 (${rem}s)`;
+      bfCost.textContent='已滿級';
+    } else {
+      bfEl.classList.remove('maxed');
+      const autoTxt=lv>=2?`，自動 ${upgrades.bloodflow.interval/1000}s/珠`:'';
+      bfLv.textContent=`Lv ${lv} | 每擊殺 +${lv} 血珠${autoTxt}`;
+      bfCost.textContent=`🩸 ${bfCosts[lv]}`;
+    }
+  } else { bfEl.classList.remove('maxed'); bfLv.textContent='未購買'; bfCost.textContent='🩸 30'; }
 }
 
 function useBomb(){
@@ -1042,7 +1084,7 @@ function startGame(){
   // 護盾/蚊香爐重置
   upgrades.shield.active=false;
   upgrades.zap.cooldown=0;
-  upgrades.coil.timer=0;
+  upgrades.coil.timer=0; upgrades.bloodflow.timer=0;
   state={
     phase:'playing',score:0,hp:5+upgrades.maxhp.level,maxHp:5+upgrades.maxhp.level,time:0,combo:0,comboTimer:0,maxCombo:0,
     bossKills:0,nextBoss:currentDiff.bossInterval,
@@ -1406,6 +1448,16 @@ function loop(ts){
         spawnParticles(tgt.x,tgt.y,'#c8ff80',14);
         state.floatingTexts.push(new FloatingText(tgt.x,tgt.y-20,'🌀 煙燻！','#a8e060',17));
       }
+    }
+  }
+
+  // 血流加速 Lv2/3：定時自動在螢幕中央產生血珠
+  if(upgrades.bloodflow.level>=2){
+    upgrades.bloodflow.timer=(upgrades.bloodflow.timer||0)+dt;
+    if(upgrades.bloodflow.timer>=upgrades.bloodflow.interval){
+      upgrades.bloodflow.timer=0;
+      state.bloodDrops.push(new BloodDrop(W/2+(Math.random()-.5)*80, H/2+(Math.random()-.5)*60, 1));
+      state.floatingTexts.push(new FloatingText(W/2, H/2-30,'💧 +1','#ff6090',14));
     }
   }
 
