@@ -71,6 +71,8 @@ canvas{display:block;position:fixed;top:0;left:0}
 /* Misc */
 #lang-btn{position:fixed;top:10px;right:10px;z-index:50;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.13);border-radius:13px;padding:4px 9px;color:rgba(255,255,255,.6);font-size:11px;cursor:pointer;backdrop-filter:blur(6px)}
 #lang-btn:hover{color:#fff}
+#mute-btn{position:fixed;top:10px;right:62px;z-index:50;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.13);border-radius:13px;padding:4px 8px;color:rgba(255,255,255,.6);font-size:13px;cursor:pointer;backdrop-filter:blur(6px);line-height:1}
+#mute-btn:hover{color:#fff}
 #back-link{position:fixed;bottom:54px;left:14px;z-index:10;color:rgba(255,255,255,.28);font-size:11px;text-decoration:none;transition:color .2s}
 #back-link:hover{color:rgba(255,255,255,.6)}
 /* Collect flash */
@@ -80,6 +82,7 @@ canvas{display:block;position:fixed;top:0;left:0}
 </head>
 <body>
 <canvas id="c"></canvas>
+<button id="mute-btn" onclick="toggleMute()">🔊</button>
 <button id="lang-btn" onclick="toggleLang()">EN</button>
 <a id="back-link" href="/games/">← 遊戲列表</a>
 <div id="hud-top">
@@ -320,6 +323,7 @@ function buyUpg(treeIdx, skillIdx){
   if(coins()<cost) return;
   spendCoins(cost);
   STATE.upgLevels[treeIdx][skillIdx]++;
+  playAudio('buy', 0.6, 1, 260);
   renderUpgPanel();
   updateHUD();
   save();
@@ -786,6 +790,8 @@ function updateItems(dt){
 function doCollect(fi, manual){
   if(fi.collected) return;
   fi.collected=true; fi.collectAnim=8;
+  const isRare=ITEMS[fi.id]&&ITEMS[fi.id].r===1;
+  playAudio(isRare||manual?'collectRare':'collect', 0.6, 1, 280);
   collectItem(fi.id, manual);
   const it=ITEMS[fi.id];
   const mult=manual?getManualMult():1;
@@ -875,6 +881,10 @@ function tickSpawn(dt){
 // ─── Upgrade Panel ────────────────────────────────────────
 function toggleUpg(){
   STATE.upgPanelOpen=!STATE.upgPanelOpen;
+  // 開升級面板時暫停，關閉時恢復（Boss 戰中不影響）
+  if(!STATE.bossActive){
+    STATE.paused=STATE.upgPanelOpen;
+  }
   document.getElementById('upg-panel').classList.toggle('open',STATE.upgPanelOpen);
   if(STATE.upgPanelOpen) renderUpgPanel();
 }
@@ -965,6 +975,7 @@ function bossClick(){
   const res=document.getElementById('boss-res');
   if(hit){
     bossState.hits++;
+    playAudio('bossHit', 0.75, 1, 200);
     res.textContent=t('bossHit');
     renderBossHP();
     if(bossState.hits>=bossState.needed){
@@ -981,6 +992,7 @@ function bossClick(){
       }
     }
   } else {
+    playAudio('bossMiss', 0.55, 1, 300);
     res.textContent=t('bossMiss');
     // Miss penalty: slight green zone shrink
     bossState.greenEnd=Math.max(bossState.greenStart+.12,bossState.greenEnd-.04);
@@ -988,15 +1000,18 @@ function bossClick(){
 }
 function bossClear(){
   if(bossCursorRAF) cancelAnimationFrame(bossCursorRAF);
+  playAudio('bossClear', 0.8);
   document.getElementById('boss-res').textContent=t('bossClear');
   document.getElementById('boss-btn').disabled=true;
   setTimeout(()=>{
     document.getElementById('boss-ov').classList.remove('show');
-    STATE.bossActive=false; STATE.paused=false;
+    STATE.bossActive=false;
+    // 保持 paused=true，等玩家點「啟航！」再 unpause，防止 Boss 重複觸發
     showUnlock();
   },1400);
 }
 function showUnlock(){
+  playAudio('unlock', 0.75);
   const next=STATE.country+1;
   if(next>=COUNTRIES.length){
     // Game complete!
@@ -1018,6 +1033,7 @@ function nextCountry(){
   STATE.country=Math.min(STATE.country+1,COUNTRIES.length-1);
   STATE.progress=0; STATE.scroll=0; STATE.countriesCleared++;
   STATE.cargo={}; STATE.floatItems=[]; spawnAccum=0;
+  STATE.paused=false; // 在這裡才 unpause，避免解鎖畫面期間遊戲繼續跑
   updateHUD(); save();
 }
 
@@ -1104,6 +1120,61 @@ function loop(ts){
   requestAnimationFrame(loop);
 }
 
+// ─── Audio System ─────────────────────────────────────────
+const AUDIO_CTX = new (window.AudioContext||window.webkitAudioContext)();
+const AUDIO_BUFS = {};
+let audioMuted = (localStorage.getItem('seaRouteMuted')==='1');
+let bgmSource = null, bgmGain = null;
+let bgmLoaded = false;
+
+function loadAudio(name, url){
+  fetch(url).then(r=>r.arrayBuffer()).then(ab=>AUDIO_CTX.decodeAudioData(ab)).then(buf=>{
+    AUDIO_BUFS[name]=buf;
+  }).catch(()=>{});
+}
+
+function playAudio(name, vol=0.7, rate=1, maxMs=0){
+  if(audioMuted) return;
+  const buf=AUDIO_BUFS[name]; if(!buf) return;
+  if(AUDIO_CTX.state==='suspended') AUDIO_CTX.resume();
+  const src=AUDIO_CTX.createBufferSource();
+  src.buffer=buf; src.playbackRate.value=rate;
+  const gain=AUDIO_CTX.createGain(); gain.gain.value=vol;
+  src.connect(gain); gain.connect(AUDIO_CTX.destination);
+  src.start(0,0,maxMs>0?maxMs/1000:buf.duration);
+}
+
+function startBGM(){
+  if(bgmLoaded||audioMuted) return;
+  bgmLoaded=true;
+  fetch('../../assets/music/10 Ambient RPG Tracks/ogg/Ambient 3.ogg')
+    .then(r=>r.arrayBuffer()).then(ab=>AUDIO_CTX.decodeAudioData(ab)).then(buf=>{
+      if(AUDIO_CTX.state==='suspended') AUDIO_CTX.resume();
+      bgmSource=AUDIO_CTX.createBufferSource();
+      bgmSource.buffer=buf; bgmSource.loop=true;
+      bgmGain=AUDIO_CTX.createGain(); bgmGain.gain.value=0.22;
+      bgmSource.connect(bgmGain); bgmGain.connect(AUDIO_CTX.destination);
+      bgmSource.start();
+    }).catch(()=>{});
+}
+
+function toggleMute(){
+  audioMuted=!audioMuted;
+  if(bgmGain) bgmGain.gain.value=audioMuted?0:0.22;
+  document.getElementById('mute-btn').textContent=audioMuted?'🔇':'🔊';
+  localStorage.setItem('seaRouteMuted',audioMuted?'1':'0');
+  if(!audioMuted && !bgmLoaded) startBGM();
+}
+
+// Preload SFX
+loadAudio('collect','../../assets/sfx/400 Sounds Pack/Items/coin_collect.wav');
+loadAudio('collectRare','../../assets/sfx/400 Sounds Pack/Items/gem_collect.wav');
+loadAudio('buy','../../assets/sfx/400 Sounds Pack/UI/synth_confirmation.wav');
+loadAudio('bossHit','../../assets/sfx/400 Sounds Pack/Musical Effects/vibraphone_chime_positive.wav');
+loadAudio('bossMiss','../../assets/sfx/400 Sounds Pack/Musical Effects/8_bit_negative.wav');
+loadAudio('bossClear','../../assets/sfx/400 Sounds Pack/Musical Effects/brass_level_complete.wav');
+loadAudio('unlock','../../assets/sfx/400 Sounds Pack/Musical Effects/8_bit_level_complete.wav');
+
 // ─── Init ─────────────────────────────────────────────────
 function init(){
   resize();
@@ -1119,6 +1190,12 @@ function init(){
     h.style.opacity='0';
     setTimeout(()=>h.style.display='none',600);
   },4000);
+  // Init mute button state
+  if(audioMuted) document.getElementById('mute-btn').textContent='🔇';
+  // Start BGM on first user interaction (autoplay policy)
+  const startBGMOnce=()=>{ startBGM(); document.removeEventListener('click',startBGMOnce); document.removeEventListener('touchend',startBGMOnce); };
+  document.addEventListener('click',startBGMOnce);
+  document.addEventListener('touchend',startBGMOnce);
   requestAnimationFrame(ts=>{lastT=ts;requestAnimationFrame(loop);});
 }
 
