@@ -395,9 +395,37 @@ export default {
 
     // GET /chat/admin  (requires Authorization: Bearer {ADMIN_KEY})
     if (url.pathname==='/chat/admin' && request.method==='GET') {
+      const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
       const auth=(request.headers.get('Authorization')||'').replace('Bearer ','');
-      if (!env.ADMIN_KEY||auth!==env.ADMIN_KEY) return Response.json({error:'unauthorized'},{status:401,headers:cors});
       const now=Date.now();
+      const twTime = new Date(now+8*3600000).toISOString().replace('T',' ').slice(0,19)+' (台灣)';
+
+      // 建立登入紀錄表（首次）
+      try { await env.DB.prepare("CREATE TABLE IF NOT EXISTS admin_login_log (id INTEGER PRIMARY KEY AUTOINCREMENT, ip TEXT, success INTEGER, created_at INTEGER)").run(); } catch(e){}
+
+      // 暴力破解防護：10分鐘內同 IP 失敗 >= 5 次 → 封鎖
+      let failCount=0;
+      try {
+        const fr=await env.DB.prepare("SELECT COUNT(*) as n FROM admin_login_log WHERE ip=? AND success=0 AND created_at>?").bind(ip,now-600000).first();
+        failCount=fr?fr.n:0;
+      } catch(e){}
+      if (failCount>=5) {
+        if(env.DISCORD_WEBHOOK) { try { await fetch(env.DISCORD_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:`🚫 **後台封鎖警告** | IP \`${ip}\` 短時間嘗試 ${failCount} 次，已鎖定 | ${twTime}`})}); } catch(e){} }
+        return Response.json({error:'too many attempts, blocked 10min'},{status:429,headers:cors});
+      }
+
+      if (!env.ADMIN_KEY||auth!==env.ADMIN_KEY) {
+        // 記錄失敗
+        try { await env.DB.prepare("INSERT INTO admin_login_log (ip,success,created_at) VALUES (?,0,?)").bind(ip,now).run(); } catch(e){}
+        const newFail=failCount+1;
+        if(newFail>=3 && env.DISCORD_WEBHOOK) { try { await fetch(env.DISCORD_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:`⚠️ **後台登入失敗** | IP \`${ip}\` 第 ${newFail} 次錯誤 | ${twTime}`})}); } catch(e){} }
+        return Response.json({error:'unauthorized'},{status:401,headers:cors});
+      }
+
+      // 登入成功
+      try { await env.DB.prepare("INSERT INTO admin_login_log (ip,success,created_at) VALUES (?,1,?)").bind(ip,now).run(); } catch(e){}
+      if(env.DISCORD_WEBHOOK) { try { await fetch(env.DISCORD_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:`✅ **後台登入成功** | IP \`${ip}\` | ${twTime}`})}); } catch(e){} }
+
       let rooms=[], totalWaiting=0, totalChatting=0;
       try {
         const res=await env.DB.prepare("SELECT * FROM chat_rooms WHERE created_at>? ORDER BY created_at DESC").bind(now-3600000).all();
