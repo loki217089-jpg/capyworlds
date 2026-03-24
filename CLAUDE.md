@@ -233,6 +233,9 @@ JS: `document.documentElement.setAttribute('data-theme', t)` + `localStorage.set
 
 ## 各遊戲優缺點
 
+> **優化規則**：每次優化完成後，從該遊戲條目刪除對應的缺點。
+> 若一款遊戲的缺點全部刪完（只剩優點描述），**立即停止優化**，等整個清單都清空後再重新分析一輪。
+
 ### 節拍戰士 `beat-warrior/`
 - 節奏判定清晰（Perfect/Good/Miss）、真實 sprite 動畫、螢幕震動回饋
 - 戰場畫面單調，音符 pattern 後期重複
