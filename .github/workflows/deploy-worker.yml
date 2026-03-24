@@ -2,10 +2,10 @@ name: Deploy Cloudflare Worker
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - 'worker/**'
+      - 'wrangler.jsonc'
       - 'wrangler.toml'
 
 jobs:
@@ -14,9 +14,7 @@ jobs:
     name: Deploy Worker
     steps:
       - uses: actions/checkout@v4
-
-      - name: Deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v3
+      - uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

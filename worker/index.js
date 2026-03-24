@@ -301,24 +301,35 @@ export default {
       await env.DB.prepare("CREATE TABLE IF NOT EXISTS chat_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, room_id TEXT NOT NULL, role TEXT NOT NULL, name TEXT NOT NULL, msg_type TEXT NOT NULL DEFAULT 'text', content TEXT NOT NULL, created_at INTEGER NOT NULL)").run();
       await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_cm_room ON chat_messages(room_id, id)").run();
       await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_cr_state ON chat_rooms(state)").run();
+      try { await env.DB.prepare("ALTER TABLE chat_rooms ADD COLUMN p1_ping INTEGER DEFAULT 0").run(); } catch(e){}
+      try { await env.DB.prepare("ALTER TABLE chat_rooms ADD COLUMN p2_ping INTEGER DEFAULT 0").run(); } catch(e){}
+      try { await env.DB.prepare("ALTER TABLE chat_rooms ADD COLUMN p1_ip TEXT DEFAULT ''").run(); } catch(e){}
+      try { await env.DB.prepare("ALTER TABLE chat_rooms ADD COLUMN p1_country TEXT DEFAULT ''").run(); } catch(e){}
+      try { await env.DB.prepare("ALTER TABLE chat_rooms ADD COLUMN p1_ua TEXT DEFAULT ''").run(); } catch(e){}
+      try { await env.DB.prepare("ALTER TABLE chat_rooms ADD COLUMN p2_ip TEXT DEFAULT ''").run(); } catch(e){}
+      try { await env.DB.prepare("ALTER TABLE chat_rooms ADD COLUMN p2_country TEXT DEFAULT ''").run(); } catch(e){}
+      try { await env.DB.prepare("ALTER TABLE chat_rooms ADD COLUMN p2_ua TEXT DEFAULT ''").run(); } catch(e){}
       const now=Date.now();
+      const joinIp=request.headers.get('CF-Connecting-IP')||'';
+      const joinCountry=request.headers.get('CF-IPCountry')||'';
+      const joinUa=request.headers.get('User-Agent')||'';
       // clean up stale rooms
       await env.DB.prepare("DELETE FROM chat_rooms WHERE created_at<?").bind(now-3600000).run();
       // check if already in a room
       const ex=await env.DB.prepare("SELECT id,p1_id,p2_id,state FROM chat_rooms WHERE (p1_id=? OR p2_id=?) AND state!='done' LIMIT 1").bind(pid,pid).first();
       if (ex) return Response.json({room_id:ex.id,role:ex.p1_id===pid?'p1':'p2',state:ex.state},{headers:cors});
-      // find opposite gender waiting room
+      // find opposite gender waiting room（跳過殭屍：60秒內沒ping且建立超過60秒）
       const opp=gender==='male'?'female':'male';
-      const wait=await env.DB.prepare("SELECT id,p1_id,p1_name FROM chat_rooms WHERE state='waiting' AND p1_gender=? LIMIT 1").bind(opp).first();
+      const wait=await env.DB.prepare("SELECT id,p1_id,p1_name FROM chat_rooms WHERE state='waiting' AND p1_gender=? AND NOT(p1_ping=0 AND created_at<?) AND (p1_ping=0 OR p1_ping>?) LIMIT 1").bind(opp,now-60000,now-90000).first();
       if (wait && wait.p1_id!==pid) {
         const timer_end=now+300000;
-        await env.DB.prepare("UPDATE chat_rooms SET p2_id=?,p2_name=?,p2_gender=?,state='chatting',timer_end=? WHERE id=?").bind(pid,name,gender,timer_end,wait.id).run();
+        await env.DB.prepare("UPDATE chat_rooms SET p2_id=?,p2_name=?,p2_gender=?,state='chatting',timer_end=?,p2_ip=?,p2_country=?,p2_ua=? WHERE id=?").bind(pid,name,gender,timer_end,joinIp,joinCountry,joinUa,wait.id).run();
         return Response.json({room_id:wait.id,role:'p2',state:'chatting',opp_name:wait.p1_name},{headers:cors});
       }
       const cnt=await env.DB.prepare("SELECT COUNT(*) as c FROM chat_rooms WHERE state='waiting'").first();
       if ((cnt?.c||0)>=20) return Response.json({error:'等待人數已滿，請稍後再試'},{status:503,headers:cors});
       const id=Math.random().toString(36).slice(2,8).toUpperCase();
-      await env.DB.prepare("INSERT INTO chat_rooms (id,p1_id,p1_name,p1_gender,state,created_at) VALUES (?,?,?,?,?,?)").bind(id,pid,name,gender,'waiting',now).run();
+      await env.DB.prepare("INSERT INTO chat_rooms (id,p1_id,p1_name,p1_gender,state,created_at,p1_ip,p1_country,p1_ua) VALUES (?,?,?,?,?,?,?,?,?)").bind(id,pid,name,gender,'waiting',now,joinIp,joinCountry,joinUa).run();
       return Response.json({room_id:id,role:'p1',state:'waiting'},{headers:cors});
     }
 
@@ -329,19 +340,26 @@ export default {
       const now=Date.now();
       const room=await env.DB.prepare('SELECT * FROM chat_rooms WHERE id=?').bind(room_id).first();
       if (!room) return Response.json({error:'room not found'},{status:404,headers:cors});
+      // 更新自己的心跳
+      const role=room.p1_id===pid?'p1':'p2';
+      if (role==='p1') { try{await env.DB.prepare("UPDATE chat_rooms SET p1_ping=? WHERE id=?").bind(now,room_id).run();}catch(e){} }
+      if (role==='p2') { try{await env.DB.prepare("UPDATE chat_rooms SET p2_ping=? WHERE id=?").bind(now,room_id).run();}catch(e){} }
       let {state,timer_end}=room;
       if (state==='chatting' && timer_end && now>=timer_end) {
         state='done';
         await env.DB.prepare("UPDATE chat_rooms SET state='done' WHERE id=? AND state='chatting'").bind(room_id).run();
       }
       const msgs=await env.DB.prepare('SELECT id,role,name,msg_type,content,created_at FROM chat_messages WHERE room_id=? AND id>? ORDER BY id ASC LIMIT 80').bind(room_id,last_msg).all();
-      const role=room.p1_id===pid?'p1':'p2';
+      // 判斷對方是否在線（90秒內有ping）
+      const oppPing = role==='p1'? room.p2_ping : room.p1_ping;
+      const opp_online = oppPing && oppPing > now-90000;
       return Response.json({
         state, role, scenario_id:room.scenario_id, scenario_req:room.scenario_req?JSON.parse(room.scenario_req):null,
         p1_name:room.p1_name, p2_name:room.p2_name||null,
         p1_gender:room.p1_gender, p2_gender:room.p2_gender||null,
         time_left:state==='chatting'?Math.max(0,timer_end-now):0,
         messages:(msgs.results||[]),
+        opp_online: !!opp_online,
       },{headers:cors});
     }
 
@@ -360,6 +378,22 @@ export default {
       const content=(b.content||'').trim().slice(0,200);
       if (!content) return Response.json({ok:false},{headers:cors});
       await env.DB.prepare('INSERT INTO chat_messages (room_id,role,name,msg_type,content,created_at) VALUES (?,?,?,?,?,?)').bind(room_id,role,name,msg_type,content,Date.now()).run();
+      return Response.json({ok:true},{headers:cors});
+    }
+
+    // POST /chat/:id/leave  { pid }
+    const chatLeave=url.pathname.match(/^\/chat\/([A-Z0-9]{6})\/leave$/);
+    if (chatLeave && request.method==='POST') {
+      const room_id=chatLeave[1];
+      let b; try{b=await request.json();}catch{b={};}
+      const pid=(b.pid||'').slice(0,40);
+      const room=await env.DB.prepare("SELECT p1_id,p2_id,state FROM chat_rooms WHERE id=?").bind(room_id).first();
+      if (!room) return Response.json({ok:false},{headers:cors});
+      if (room.state==='waiting' && room.p1_id===pid) {
+        await env.DB.prepare("DELETE FROM chat_rooms WHERE id=?").bind(room_id).run();
+      } else if (room.state==='chatting') {
+        await env.DB.prepare("UPDATE chat_rooms SET state='done' WHERE id=?").bind(room_id).run();
+      }
       return Response.json({ok:true},{headers:cors});
     }
 
@@ -391,6 +425,16 @@ export default {
         return Response.json({ok:true},{headers:cors});
       }
       return Response.json({ok:false},{headers:cors});
+    }
+
+    // DELETE /chat/admin/:room_id  (強制關閉房間)
+    const adminClose=url.pathname.match(/^\/chat\/admin\/([A-Z0-9]{6})$/);
+    if (adminClose && request.method==='DELETE') {
+      const auth=(request.headers.get('Authorization')||'').replace('Bearer ','');
+      if (!env.ADMIN_KEY||auth!==env.ADMIN_KEY) return Response.json({error:'unauthorized'},{status:401,headers:cors});
+      const room_id=adminClose[1];
+      await env.DB.prepare("UPDATE chat_rooms SET state='done' WHERE id=? AND state!='done'").bind(room_id).run();
+      return Response.json({ok:true},{headers:cors});
     }
 
     // GET /chat/admin  (requires Authorization: Bearer {ADMIN_KEY})

@@ -56,6 +56,20 @@ h1{font-size:18px;color:#69f0ae;margin-bottom:16px;display:flex;align-items:cent
 .msg-sticker{font-size:20px;}
 .no-msgs{font-size:12px;color:#3a5a3a;padding:4px 0;}
 .empty{text-align:center;color:#3a5a3a;font-size:14px;padding:40px;}
+/* Device info */
+.room-detail{display:none;border-top:1px solid #1a3a1a;padding:10px 14px;background:#111e11;}
+.room.open .room-detail{display:block;}
+.user-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.user-info-card{background:#0d180d;border:1px solid #1e3a1e;border-radius:8px;padding:8px 12px;font-size:12px;}
+.user-info-card .label{font-size:10px;color:#4a6a4a;margin-bottom:4px;}
+.user-info-card .val{color:#a8d8a8;word-break:break-all;}
+.user-info-card .ip{font-family:monospace;color:#69f0ae;}
+.user-info-card .device{color:#ffd54f;}
+.online-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:middle;}
+.online-dot.on{background:#69f0ae;}
+.online-dot.off{background:#ff5252;}
+.close-btn{background:rgba(255,82,82,.15);border:1px solid rgba(255,82,82,.4);color:#ff8080;border-radius:6px;padding:5px 14px;font-size:12px;cursor:pointer;float:right;}
+.close-btn:hover{background:rgba(255,82,82,.3);}
 </style>
 </head>
 <body>
@@ -138,18 +152,72 @@ function render(d){
     const p1 = `${room.p1_gender==='male'?'♂':'♀'} ${room.p1_name||'?'}`;
     const p2 = room.p2_name ? `${room.p2_gender==='male'?'♂':'♀'} ${room.p2_name}` : '等待中';
     const msgCount = (room.messages||[]).length;
+    const p1Online = room.p1_ping && room.p1_ping > d.now-90000;
+    const p2Online = room.p2_ping && room.p2_ping > d.now-90000;
+    const closeBtn = room.state!=='done' ? `<button class="close-btn" onclick="closeRoom('${room.id}',event)">⛔ 強制關閉</button>` : '';
     el.innerHTML = `
       <div class="room-header" onclick="toggleRoom('${room.id}',this)">
         <span class="room-id">${room.id}</span>
         <span class="badge ${room.state}">${room.state==='chatting'?'聊天中':room.state==='waiting'?'等待中':'已結束'}</span>
-        <span class="room-users">${p1} ↔ ${p2}</span>
+        <span class="room-users">
+          <span class="online-dot ${p1Online?'on':'off'}"></span>${p1} ↔
+          <span class="online-dot ${p2Online?'on':'off'}"></span>${p2}
+        </span>
         <span class="room-time">${timeStr}</span>
         <span class="room-msg-count">${msgCount ? msgCount+'則訊息' : ''}</span>
         <span class="chevron">▶</span>
       </div>
+      <div class="room-detail">${renderUserInfo(room, d.now)}${closeBtn}</div>
       <div class="room-msgs">${renderMsgs(room)}</div>`;
     list.appendChild(el);
   }
+}
+
+function parseDevice(ua){
+  if(!ua) return '❓ 未知';
+  if(/iPhone/.test(ua)) return '📱 iPhone';
+  if(/iPad/.test(ua)) return '📱 iPad';
+  if(/Android.*Mobile/.test(ua)) return '📱 Android';
+  if(/Android/.test(ua)) return '📟 Android平板';
+  if(/Windows/.test(ua)) return '💻 Windows';
+  if(/Macintosh/.test(ua)) return '🍎 Mac';
+  if(/Linux/.test(ua)) return '🖥 Linux';
+  return '❓ 未知';
+}
+function countryFlag(code){
+  if(!code||code==='XX'||code.length!==2) return '';
+  return String.fromCodePoint(...[...code.toUpperCase()].map(c=>0x1F1E6+c.charCodeAt(0)-65))+' ';
+}
+function pingAgo(ping, now){
+  if(!ping) return '從未';
+  const s = Math.floor((now-ping)/1000);
+  if(s<5) return '剛才';
+  if(s<60) return s+'秒前';
+  return Math.floor(s/60)+'分前';
+}
+
+function renderUserInfo(room, now){
+  const p1ping = room.p1_ping && room.p1_ping > now-90000;
+  const p2ping = room.p2_ping && room.p2_ping > now-90000;
+  return `<div class="user-info-grid">
+    <div class="user-info-card">
+      <div class="label">${room.p1_gender==='male'?'♂':'♀'} ${room.p1_name||'p1'} <span class="online-dot ${p1ping?'on':'off'}"></span>${p1ping?'在線':'離線'} · ${pingAgo(room.p1_ping,now)}</div>
+      <div class="val ip">${room.p1_ip||'—'} ${countryFlag(room.p1_country)}${room.p1_country||''}</div>
+      <div class="val device">${parseDevice(room.p1_ua)}</div>
+    </div>
+    <div class="user-info-card">
+      <div class="label">${room.p2_name?(room.p2_gender==='male'?'♂':'♀')+' '+room.p2_name:'p2（尚未加入）'} <span class="online-dot ${p2ping?'on':'off'}"></span>${room.p2_name?(p2ping?'在線':'離線'):''}</div>
+      <div class="val ip">${room.p2_ip||'—'} ${countryFlag(room.p2_country)}${room.p2_country||''}</div>
+      <div class="val device">${room.p2_ua?parseDevice(room.p2_ua):'—'}</div>
+    </div>
+  </div>`;
+}
+
+async function closeRoom(id, e){
+  e.stopPropagation();
+  if(!confirm(`確定強制關閉房間 ${id}？雙方將立即斷線。`)) return;
+  const r = await fetch(`${API}/chat/admin/${id}`, {method:'DELETE', headers:{Authorization:'Bearer '+adminKey}});
+  if(r.ok) { alert('已關閉'); loadData(); }
 }
 
 function renderMsgs(room){
