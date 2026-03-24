@@ -458,24 +458,24 @@ async function sendMsg(){
   const txt = document.getElementById('msgText').value.trim();
   if(!txt || !roomId) return;
   document.getElementById('msgText').value = '';
-  appendMsg('me', myName, 'text', txt);
   try {
     await fetch(`${API}/chat/${roomId}/msg`, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({pid:myPid, type:'text', content:txt})
     });
+    pollChat();
   } catch(e){}
 }
 
 async function sendSticker(s){
   if(!roomId) return;
-  appendMsg('me', myName, 'sticker', s);
   toggleStickers();
   try {
     await fetch(`${API}/chat/${roomId}/msg`, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({pid:myPid, type:'sticker', content:s})
     });
+    pollChat();
   } catch(e){}
 }
 

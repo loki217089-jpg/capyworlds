@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>💬 Chat Monitor — Admin</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI','PingFang TC',monospace;background:#0d0f0d;color:#c8e6c9;min-height:100vh;padding:16px;}
+h1{font-size:18px;color:#69f0ae;margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+.dot{width:10px;height:10px;border-radius:50%;background:#69f0ae;animation:blink 1s step-end infinite;flex-shrink:0;}
+@keyframes blink{50%{opacity:0;}}
+
+/* Login */
+#loginBox{max-width:340px;margin:80px auto;background:#1a2e1a;border:1px solid #2d5a2d;border-radius:12px;padding:28px;display:flex;flex-direction:column;gap:14px;}
+#loginBox h2{color:#fff;font-size:18px;text-align:center;}
+#loginBox p{font-size:13px;color:#88ab88;text-align:center;}
+.key-input{background:#0d1a0d;border:1px solid #2d5a2d;color:#c8e6c9;border-radius:8px;padding:11px 14px;font-size:14px;font-family:monospace;outline:none;width:100%;}
+.key-input:focus{border-color:#69f0ae;}
+.login-btn{background:#69f0ae;color:#0d1a0d;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;}
+.err{color:#ff5252;font-size:13px;text-align:center;min-height:18px;}
+
+/* Stats bar */
+.stats{display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;}
+.stat{background:#1a2e1a;border:1px solid #2d5a2d;border-radius:8px;padding:10px 18px;font-size:13px;}
+.stat b{font-size:20px;color:#69f0ae;display:block;}
+.stat span{color:#88ab88;}
+.refresh-info{margin-left:auto;font-size:12px;color:#4a6a4a;align-self:center;}
+
+/* Rooms */
+.rooms{display:flex;flex-direction:column;gap:12px;}
+.room{background:#1a2e1a;border:1px solid #2d5a2d;border-radius:10px;overflow:hidden;}
+.room-header{padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;}
+.room-header:hover{background:rgba(105,240,174,.06);}
+.room-id{font-size:13px;font-weight:700;color:#69f0ae;font-family:monospace;min-width:60px;}
+.badge{font-size:11px;padding:3px 8px;border-radius:20px;font-weight:600;}
+.badge.waiting{background:rgba(255,193,7,.15);color:#ffc107;border:1px solid rgba(255,193,7,.3);}
+.badge.chatting{background:rgba(105,240,174,.15);color:#69f0ae;border:1px solid rgba(105,240,174,.3);}
+.badge.done{background:rgba(100,100,100,.15);color:#888;border:1px solid rgba(100,100,100,.3);}
+.room-users{font-size:12px;color:#88ab88;flex:1;}
+.room-time{font-size:12px;color:#4a8a4a;font-family:monospace;}
+.room-msg-count{font-size:12px;color:#4a6a4a;margin-left:6px;}
+.chevron{font-size:12px;color:#4a6a4a;transition:transform .2s;}
+.room.open .chevron{transform:rotate(90deg);}
+
+/* Messages */
+.room-msgs{display:none;border-top:1px solid #1a3a1a;padding:10px 14px;max-height:320px;overflow-y:auto;}
+.room.open .room-msgs{display:block;}
+.msg-line{font-size:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);display:flex;gap:8px;align-items:baseline;}
+.msg-line:last-child{border-bottom:none;}
+.msg-role{font-weight:700;min-width:60px;flex-shrink:0;}
+.msg-role.p1{color:#60b8ff;}
+.msg-role.p2{color:#ff80c0;}
+.msg-time{font-size:10px;color:#3a5a3a;flex-shrink:0;}
+.msg-content{color:#c8e6c9;word-break:break-all;}
+.msg-sticker{font-size:20px;}
+.no-msgs{font-size:12px;color:#3a5a3a;padding:4px 0;}
+.empty{text-align:center;color:#3a5a3a;font-size:14px;padding:40px;}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="loginBox">
+  <h2>🔒 Chat Monitor</h2>
+  <p>輸入 ADMIN_KEY 以進入後台監控</p>
+  <input class="key-input" id="keyInput" type="password" placeholder="Admin Key" onkeydown="if(event.key==='Enter')login()">
+  <button class="login-btn" onclick="login()">進入</button>
+  <div class="err" id="errMsg"></div>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboard" style="display:none;">
+  <h1><div class="dot"></div> Chat Room Monitor <span style="font-size:13px;color:#4a6a4a;font-weight:400;">capyworlds.com</span></h1>
+  <div class="stats">
+    <div class="stat"><b id="sChatting">-</b><span>正在聊天（房間數）</span></div>
+    <div class="stat"><b id="sWaiting">-</b><span>等待配對中</span></div>
+    <div class="stat"><b id="sTotal">-</b><span>過去1小時房間數</span></div>
+    <div class="refresh-info" id="refreshInfo">每 5 秒更新</div>
+  </div>
+  <div class="rooms" id="roomList"></div>
+</div>
+
+<script>
+const API = 'https://capyworlds.loki217089.workers.dev';
+let adminKey = localStorage.getItem('chat_admin_key') || '';
+let refreshTimer = null;
+let openRooms = new Set();
+
+if(adminKey) tryAuto();
+
+function tryAuto(){
+  document.getElementById('loginBox').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  loadData();
+  refreshTimer = setInterval(loadData, 5000);
+}
+
+function login(){
+  const k = document.getElementById('keyInput').value.trim();
+  if(!k){ document.getElementById('errMsg').textContent='請輸入 Key'; return; }
+  adminKey = k;
+  fetch(`${API}/chat/admin`, {headers:{Authorization:'Bearer '+k}})
+    .then(r=>{
+      if(r.status===401){ document.getElementById('errMsg').textContent='Key 錯誤'; adminKey=''; return; }
+      localStorage.setItem('chat_admin_key', k);
+      tryAuto();
+    })
+    .catch(()=>{ document.getElementById('errMsg').textContent='連線失敗'; });
+}
+
+async function loadData(){
+  try {
+    const r = await fetch(`${API}/chat/admin`, {headers:{Authorization:'Bearer '+adminKey}});
+    if(r.status===401){ logout(); return; }
+    const d = await r.json();
+    if(d.error && d.error.includes('not yet')){ renderEmpty('尚無任何聊天記錄'); return; }
+    render(d);
+    const now = new Date();
+    document.getElementById('refreshInfo').textContent = `上次更新：${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  } catch(e){}
+}
+
+function render(d){
+  document.getElementById('sChatting').textContent = d.totalChatting || 0;
+  document.getElementById('sWaiting').textContent  = d.totalWaiting  || 0;
+  document.getElementById('sTotal').textContent    = (d.rooms||[]).length;
+  const list = document.getElementById('roomList');
+  if(!d.rooms||!d.rooms.length){ list.innerHTML='<div class="empty">目前無活躍房間</div>'; return; }
+  list.innerHTML='';
+  for(const room of d.rooms){
+    const el = document.createElement('div');
+    el.className = 'room' + (openRooms.has(room.id)?' open':'');
+    const timeLeft = room.timer_end ? Math.max(0, room.timer_end - d.now) : 0;
+    const mm = String(Math.floor(timeLeft/60000)).padStart(1,'0');
+    const ss = String(Math.floor((timeLeft%60000)/1000)).padStart(2,'0');
+    const timeStr = room.state==='chatting' ? `⏱ ${mm}:${ss}` : '';
+    const p1 = `${room.p1_gender==='male'?'♂':'♀'} ${room.p1_name||'?'}`;
+    const p2 = room.p2_name ? `${room.p2_gender==='male'?'♂':'♀'} ${room.p2_name}` : '等待中';
+    const msgCount = (room.messages||[]).length;
+    el.innerHTML = `
+      <div class="room-header" onclick="toggleRoom('${room.id}',this)">
+        <span class="room-id">${room.id}</span>
+        <span class="badge ${room.state}">${room.state==='chatting'?'聊天中':room.state==='waiting'?'等待中':'已結束'}</span>
+        <span class="room-users">${p1} ↔ ${p2}</span>
+        <span class="room-time">${timeStr}</span>
+        <span class="room-msg-count">${msgCount ? msgCount+'則訊息' : ''}</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="room-msgs">${renderMsgs(room)}</div>`;
+    list.appendChild(el);
+  }
+}
+
+function renderMsgs(room){
+  if(!room.messages||!room.messages.length) return '<div class="no-msgs">（尚無訊息）</div>';
+  return room.messages.map(m=>{
+    const t = new Date(m.created_at);
+    const ts = t.getHours()+':'+String(t.getMinutes()).padStart(2,'0');
+    const content = m.msg_type==='sticker'
+      ? `<span class="msg-sticker">${m.content}</span>`
+      : `<span class="msg-content">${esc(m.content)}</span>`;
+    const name = m.name || (m.role==='p1'?room.p1_name:room.p2_name) || m.role;
+    return `<div class="msg-line"><span class="msg-role ${m.role}">${name}</span>${content}<span class="msg-time">${ts}</span></div>`;
+  }).join('');
+}
+
+function toggleRoom(id, header){
+  const room = header.closest('.room');
+  if(openRooms.has(id)){ openRooms.delete(id); room.classList.remove('open'); }
+  else { openRooms.add(id); room.classList.add('open'); }
+}
+
+function renderEmpty(msg){
+  document.getElementById('sChatting').textContent = 0;
+  document.getElementById('sWaiting').textContent  = 0;
+  document.getElementById('sTotal').textContent    = 0;
+  document.getElementById('roomList').innerHTML = `<div class="empty">${msg}</div>`;
+}
+
+function logout(){
+  clearInterval(refreshTimer);
+  localStorage.removeItem('chat_admin_key');
+  location.reload();
+}
+
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>
