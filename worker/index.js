@@ -393,6 +393,28 @@ export default {
       return Response.json({ok:false},{headers:cors});
     }
 
+    // GET /chat/admin  (requires Authorization: Bearer {ADMIN_KEY})
+    if (url.pathname==='/chat/admin' && request.method==='GET') {
+      const auth=(request.headers.get('Authorization')||'').replace('Bearer ','');
+      if (!env.ADMIN_KEY||auth!==env.ADMIN_KEY) return Response.json({error:'unauthorized'},{status:401,headers:cors});
+      const now=Date.now();
+      let rooms=[], totalWaiting=0, totalChatting=0;
+      try {
+        const res=await env.DB.prepare("SELECT * FROM chat_rooms WHERE created_at>? ORDER BY created_at DESC").bind(now-3600000).all();
+        for (const room of (res.results||[])) {
+          if(room.state==='waiting') totalWaiting++;
+          if(room.state==='chatting') totalChatting++;
+          let msgs=[];
+          try {
+            const mr=await env.DB.prepare("SELECT id,role,name,msg_type,content,created_at FROM chat_messages WHERE room_id=? ORDER BY id DESC LIMIT 30").bind(room.id).all();
+            msgs=(mr.results||[]).reverse();
+          } catch(e){}
+          rooms.push({...room, messages:msgs});
+        }
+      } catch(e){ return Response.json({error:'tables not yet created, no chats yet'},{headers:cors}); }
+      return Response.json({rooms,totalWaiting,totalChatting,now},{headers:cors});
+    }
+
     return env.ASSETS.fetch(request);
   }
 };
