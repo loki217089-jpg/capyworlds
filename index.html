@@ -158,14 +158,41 @@
       letter-spacing: 1px;
     }
 
+    /* ── Nav Sections ── */
+    .nav-sections {
+      max-width: 900px;
+      margin: 52px auto 0;
+      padding: 0 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+    }
+    .nav-section {}
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-bottom: 14px;
+      padding-left: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+      opacity: 0.6;
+    }
+
     /* ── Nav Grid ── */
     .nav-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 20px;
-      max-width: 840px;
-      margin: 52px auto 0;
-      padding: 0 24px;
     }
 
     .nav-card {
@@ -620,63 +647,85 @@
     <p class="tagline">我的創作小宇宙 &nbsp;·&nbsp; Welcome to my creative world</p>
   </div>
 
-  <nav class="nav-grid">
-    <a class="nav-card" href="games/">
-      <div class="card-icon">🎮</div>
-      <div class="card-label">Games</div>
-      <div class="card-desc">獨立小遊戲收藏</div>
-    </a>
-    <a class="nav-card" href="games/mobile.html">
-      <div class="card-icon">📱</div>
-      <div class="card-label">手遊專區</div>
-      <div class="card-desc">觸控優化手機遊戲</div>
-    </a>
-    <a class="nav-card" href="games/battle.html">
-      <div class="card-icon">⚔️</div>
-      <div class="card-label">對戰遊戲</div>
-      <div class="card-desc">即時 1v1 連線對戰</div>
-    </a>
-    <a class="nav-card" href="games/chat-room/">
-      <div class="card-icon">💬</div>
-      <div class="card-label">情境聊天室</div>
-      <div class="card-desc">配對異性・5分鐘聊天</div>
-    </a>
-    <a class="nav-card" href="blog.html">
-      <div class="card-icon">📝</div>
-      <div class="card-label">Blog</div>
-      <div class="card-desc">文章與想法</div>
-    </a>
-    <a class="nav-card" href="fortune/">
-      <div class="card-icon">🌟</div>
-      <div class="card-label">每日運勢</div>
-      <div class="card-desc">輸入生日查看今日星座運勢</div>
-    </a>
-    <a class="nav-card" href="tarot/">
-      <div class="card-icon">🃏</div>
-      <div class="card-label">塔羅抽牌</div>
-      <div class="card-desc">三牌陣·探索過去現在未來</div>
-    </a>
-    <a class="nav-card" href="soul-match/">
-      <div class="card-icon">🌀</div>
-      <div class="card-label">靈魂配對</div>
-      <div class="card-desc">測試你與對方的靈魂契合度</div>
-    </a>
-    <a class="nav-card" href="books.html">
-      <div class="card-icon">📚</div>
-      <div class="card-label">Books</div>
-      <div class="card-desc">遊戲・書・影視推薦</div>
-    </a>
-    <a class="nav-card" href="tools.html">
-      <div class="card-icon">🛠</div>
-      <div class="card-label">Tools</div>
-      <div class="card-desc">常用工具與資源</div>
-    </a>
-    <a class="nav-card" href="about.html">
-      <div class="card-icon">🦫</div>
-      <div class="card-label">About</div>
-      <div class="card-desc">關於我</div>
-    </a>
-  </nav>
+  <div class="nav-sections">
+
+    <!-- 遊戲 -->
+    <div class="nav-section">
+      <div class="section-label">🎮 遊戲 · Games</div>
+      <nav class="nav-grid">
+        <a class="nav-card" href="games/">
+          <div class="card-icon">🎮</div>
+          <div class="card-label">Games</div>
+          <div class="card-desc">獨立小遊戲收藏</div>
+        </a>
+        <a class="nav-card" href="games/mobile.html">
+          <div class="card-icon">📱</div>
+          <div class="card-label">手遊專區</div>
+          <div class="card-desc">觸控優化手機遊戲</div>
+        </a>
+        <a class="nav-card" href="games/battle.html">
+          <div class="card-icon">⚔️</div>
+          <div class="card-label">對戰遊戲</div>
+          <div class="card-desc">即時 1v1 連線對戰</div>
+        </a>
+        <a class="nav-card" href="games/chat-room/">
+          <div class="card-icon">💬</div>
+          <div class="card-label">情境聊天室</div>
+          <div class="card-desc">配對異性・5分鐘聊天</div>
+        </a>
+      </nav>
+    </div>
+
+    <!-- 神祕工具 -->
+    <div class="nav-section">
+      <div class="section-label">🔮 神祕工具 · Mystical</div>
+      <nav class="nav-grid">
+        <a class="nav-card" href="fortune/">
+          <div class="card-icon">🌟</div>
+          <div class="card-label">每日運勢</div>
+          <div class="card-desc">輸入生日查看今日星座運勢</div>
+        </a>
+        <a class="nav-card" href="tarot/">
+          <div class="card-icon">🃏</div>
+          <div class="card-label">塔羅抽牌</div>
+          <div class="card-desc">三牌陣·探索過去現在未來</div>
+        </a>
+        <a class="nav-card" href="soul-match/">
+          <div class="card-icon">🌀</div>
+          <div class="card-label">靈魂配對</div>
+          <div class="card-desc">測試你與對方的靈魂契合度</div>
+        </a>
+      </nav>
+    </div>
+
+    <!-- 關於 -->
+    <div class="nav-section">
+      <div class="section-label">📖 關於 · About</div>
+      <nav class="nav-grid">
+        <a class="nav-card" href="blog.html">
+          <div class="card-icon">📝</div>
+          <div class="card-label">Blog</div>
+          <div class="card-desc">文章與想法</div>
+        </a>
+        <a class="nav-card" href="books.html">
+          <div class="card-icon">📚</div>
+          <div class="card-label">Books</div>
+          <div class="card-desc">遊戲・書・影視推薦</div>
+        </a>
+        <a class="nav-card" href="tools.html">
+          <div class="card-icon">🛠</div>
+          <div class="card-label">Tools</div>
+          <div class="card-desc">常用工具與資源</div>
+        </a>
+        <a class="nav-card" href="about.html">
+          <div class="card-icon">🦫</div>
+          <div class="card-label">About</div>
+          <div class="card-desc">關於我</div>
+        </a>
+      </nav>
+    </div>
+
+  </div>
 
   <!-- Contact -->
   <section class="contact-section">
