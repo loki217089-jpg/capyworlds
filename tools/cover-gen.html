@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CG 封面產生器 - CapyWorlds</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#13100c;color:#e8ddd0;font-family:system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+header{background:#1e1812;border-bottom:1px solid #3d3020;padding:14px 24px;display:flex;align-items:center;gap:12px}
+header h1{font-size:1.1rem;color:#c8a456}
+header span{font-size:.85rem;color:#7a6a58}
+.main{display:flex;flex:1;gap:0;min-height:0}
+.panel{background:#1a1510;border-right:1px solid #3d3020;width:320px;flex-shrink:0;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.panel h2{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:#7a6a58;padding-bottom:6px;border-bottom:1px solid #2d2518}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:.78rem;color:#b09880}
+.field input,.field textarea,.field select{background:#13100c;border:1px solid #3d3020;color:#e8ddd0;padding:7px 10px;border-radius:6px;font-size:.85rem;outline:none;width:100%}
+.field input:focus,.field textarea:focus{border-color:#c8a456}
+.field textarea{resize:vertical;min-height:60px;font-family:inherit}
+.color-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.field input[type=color]{padding:3px;height:36px;cursor:pointer}
+.preview-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:24px;gap:16px;overflow:auto}
+.size-tabs{display:flex;gap:8px}
+.size-tab{background:#1e1812;border:1px solid #3d3020;color:#b09880;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.82rem;transition:.15s}
+.size-tab.active{background:#c8a456;color:#13100c;border-color:#c8a456;font-weight:600}
+.canvas-wrap{position:relative;display:flex;align-items:center;justify-content:center}
+canvas{display:block;max-width:100%;max-height:65vh;object-fit:contain;border-radius:6px;box-shadow:0 4px 24px rgba(0,0,0,.6)}
+.dl-btn{background:#c8a456;color:#13100c;border:none;padding:10px 28px;border-radius:8px;font-size:.9rem;font-weight:700;cursor:pointer;letter-spacing:.03em;transition:.15s}
+.dl-btn:hover{background:#e0b870}
+.preset-row{display:flex;flex-wrap:wrap;gap:6px}
+.preset{border:1px solid #3d3020;background:#13100c;color:#b09880;padding:4px 9px;border-radius:5px;font-size:.75rem;cursor:pointer;transition:.1s}
+.preset:hover{border-color:#c8a456;color:#c8a456}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎨 CG 封面產生器</h1>
+  <span>CrazyGames 三尺寸自動輸出</span>
+</header>
+<div class="main">
+  <div class="panel">
+    <h2>遊戲資訊</h2>
+    <div class="field">
+      <label>遊戲名稱（中文）</label>
+      <input id="nameZh" type="text" value="進化蚊子" oninput="draw()">
+    </div>
+    <div class="field">
+      <label>遊戲名稱（英文）</label>
+      <input id="nameEn" type="text" value="Mosquito Evolution" oninput="draw()">
+    </div>
+    <div class="field">
+      <label>Emoji / 圖示</label>
+      <input id="emoji" type="text" value="🦟" oninput="draw()">
+    </div>
+    <div class="field">
+      <label>一句話說明（英文）</label>
+      <textarea id="tagline" rows="2" oninput="draw()">Click to swat evolving mosquitoes before they drain your blood!</textarea>
+    </div>
+    <div class="field">
+      <label>類型標籤（顯示在封面底部）</label>
+      <input id="genre" type="text" value="Clicker • Idle • Evolution" oninput="draw()">
+    </div>
+
+    <h2>配色</h2>
+    <div class="color-row">
+      <div class="field"><label>背景色</label><input id="bgColor" type="color" value="#0a0a0a" oninput="draw()"></div>
+      <div class="field"><label>強調色</label><input id="accentColor" type="color" value="#e8a020" oninput="draw()"></div>
+    </div>
+    <div class="color-row">
+      <div class="field"><label>副色</label><input id="subColor" type="color" value="#ff6600" oninput="draw()"></div>
+      <div class="field"><label>文字色</label><input id="textColor" type="color" value="#ffffff" oninput="draw()"></div>
+    </div>
+
+    <h2>快速套用遊戲</h2>
+    <div class="preset-row" id="presets"></div>
+  </div>
+
+  <div class="preview-area">
+    <div class="size-tabs">
+      <button class="size-tab active" onclick="setSize(0)">橫版 1920×1080</button>
+      <button class="size-tab" onclick="setSize(1)">直版 800×1200</button>
+      <button class="size-tab" onclick="setSize(2)">方形 800×800</button>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="cvs"></canvas>
+    </div>
+    <button class="dl-btn" onclick="download()">⬇ 下載此封面</button>
+  </div>
+</div>
+
+<script>
+const SIZES = [[1920,1080,'landscape'],[800,1200,'portrait'],[800,800,'square']];
+let curSize = 0;
+const cvs = document.getElementById('cvs');
+const ctx = cvs.getContext('2d');
+
+const PRESETS = [
+  {name:'水豚小村',zh:'水豚小村',en:'Capy Village',emoji:'🦫',bg:'#0d0a05',accent:'#f0c040',sub:'#c8a456',text:'#ffffff',genre:'Village • Idle • Simulation'},
+  {name:'水豚跑酷',zh:'水豚跑酷',en:'Capy Runner',emoji:'🦫',bg:'#0a0a14',accent:'#ffd700',sub:'#ff9900',text:'#ffffff',genre:'Runner • Mobile • Endless'},
+  {name:'每日一題RPG',zh:'每日一題 RPG',en:'Daily Quiz RPG',emoji:'📚',bg:'#050d14',accent:'#00e5ff',sub:'#0099cc',text:'#ffffff',genre:'Quiz • RPG • Daily'},
+  {name:'進化蚊子',zh:'進化蚊子',en:'Mosquito Evolution',emoji:'🦟',bg:'#0a0600',accent:'#e8a020',sub:'#ff6600',text:'#ffffff',genre:'Clicker • Idle • Evolution'},
+  {name:'Deep Diggers',zh:'深地探掘者',en:'Deep Diggers',emoji:'⛏️',bg:'#0a0800',accent:'#f5a623',sub:'#cc7700',text:'#ffffff',genre:'Mining • Roguelike • Upgrade'},
+  {name:'地球再生',zh:'地球再生',en:'Earth Reborn',emoji:'🌍',bg:'#020d05',accent:'#44ee88',sub:'#00aa44',text:'#ffffff',genre:'Civilization • Idle • Strategy'},
+  {name:'殭屍蔓延',zh:'殭屍蔓延',en:'Zombie Idle',emoji:'🧟',bg:'#020602',accent:'#3ddc58',sub:'#00aa22',text:'#ffffff',genre:'Idle • Clicker • Zombie'},
+  {name:'末日求生',zh:'末日求生',en:'Last Stand',emoji:'☣',bg:'#040a04',accent:'#44ff88',sub:'#00cc44',text:'#ffffff',genre:'Survival • Shooter • Zombie'},
+  {name:'VIRUS.EXE',zh:'VIRUS.EXE',en:'VIRUS.EXE',emoji:'🦠',bg:'#020a06',accent:'#00e060',sub:'#00aa44',text:'#ffffff',genre:'Hacker • Strategy • Cyber'},
+  {name:'虛空領航員',zh:'虛空領航員',en:'Void Navigator',emoji:'🚀',bg:'#020510',accent:'#4af8ff',sub:'#0099cc',text:'#ffffff',genre:'Space • Roguelike • Exploration'},
+  {name:'勇者傳說',zh:'勇者傳說',en:'Hero Legend',emoji:'⚔️',bg:'#07030f',accent:'#9060ff',sub:'#6633cc',text:'#ffffff',genre:'RPG • Adventure • Fantasy'},
+  {name:'節拍戰士',zh:'節拍戰士',en:'Beat Warrior',emoji:'⚔',bg:'#09030f',accent:'#a060ff',sub:'#7733cc',text:'#ffffff',genre:'Rhythm • RPG • Music'},
+  {name:'戰鬥陀螺',zh:'戰鬥陀螺',en:'Burst Arena',emoji:'🌀',bg:'#060314',accent:'#aa44ff',sub:'#7700ff',text:'#ffffff',genre:'Physics • Battle • Arena'},
+  {name:'機甲蟲蟲危機',zh:'機甲蟲蟲危機',en:'Bug Crisis',emoji:'🐛',bg:'#020a02',accent:'#60d040',sub:'#33aa00',text:'#ffffff',genre:'Tower Defense • Mech • Strategy'},
+  {name:'農場三消',zh:'農場三消',en:'Farm Match',emoji:'🌾',bg:'#0a0800',accent:'#f5a623',sub:'#cc7700',text:'#ffffff',genre:'Match-3 • Gacha • Farm'},
+  {name:'FPS射擊',zh:'FPS 射擊',en:'FPS Shooter',emoji:'🔫',bg:'#0a0202',accent:'#ff4444',sub:'#cc0000',text:'#ffffff',genre:'FPS • Shooter • Action'},
+  {name:'世界航道',zh:'世界航道',en:'Sea Route',emoji:'⛵',bg:'#020810',accent:'#00aaff',sub:'#0066cc',text:'#ffffff',genre:'Idle • Exploration • Nautical'},
+];
+
+// Build preset buttons
+const pr = document.getElementById('presets');
+PRESETS.forEach(p=>{
+  const btn = document.createElement('button');
+  btn.className='preset'; btn.textContent=p.name;
+  btn.onclick=()=>applyPreset(p);
+  pr.appendChild(btn);
+});
+
+function applyPreset(p){
+  document.getElementById('nameZh').value=p.zh;
+  document.getElementById('nameEn').value=p.en;
+  document.getElementById('emoji').value=p.emoji;
+  document.getElementById('bgColor').value=p.bg;
+  document.getElementById('accentColor').value=p.accent;
+  document.getElementById('subColor').value=p.sub;
+  document.getElementById('textColor').value=p.text;
+  document.getElementById('genre').value=p.genre;
+  // keep tagline as is, user can adjust
+  draw();
+}
+
+function setSize(i){
+  curSize=i;
+  document.querySelectorAll('.size-tab').forEach((t,j)=>t.classList.toggle('active',j===i));
+  draw();
+}
+
+function hexToRgb(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return [r,g,b];
+}
+
+function draw(){
+  const [W,H,mode] = SIZES[curSize];
+  cvs.width=W; cvs.height=H;
+
+  const bg = document.getElementById('bgColor').value;
+  const accent = document.getElementById('accentColor').value;
+  const sub = document.getElementById('subColor').value;
+  const textCol = document.getElementById('textColor').value;
+  const nameZh = document.getElementById('nameZh').value;
+  const nameEn = document.getElementById('nameEn').value;
+  const emoji = document.getElementById('emoji').value;
+  const tagline = document.getElementById('tagline').value;
+  const genre = document.getElementById('genre').value;
+
+  const [ar,ag,ab] = hexToRgb(accent);
+  const [sr,sg,sb] = hexToRgb(sub);
+
+  // Background gradient
+  const grd = ctx.createRadialGradient(W*0.5,H*0.35,0,W*0.5,H*0.35,Math.max(W,H)*0.7);
+  grd.addColorStop(0, bg+'dd');
+  grd.addColorStop(1, '#000000');
+  ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+
+  // Glow orb behind emoji
+  const oc = ctx.createRadialGradient(W/2, mode==='portrait'?H*0.38:H*0.42, 0, W/2, mode==='portrait'?H*0.38:H*0.42, W*0.4);
+  oc.addColorStop(0, `rgba(${ar},${ag},${ab},0.22)`);
+  oc.addColorStop(0.5,`rgba(${sr},${sg},${sb},0.10)`);
+  oc.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle=oc; ctx.fillRect(0,0,W,H);
+
+  // Decorative lines
+  ctx.strokeStyle=`rgba(${ar},${ag},${ab},0.12)`;
+  ctx.lineWidth=W*0.0015;
+  for(let i=0;i<6;i++){
+    const y=(H/(6))*i;
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y+H*0.15); ctx.stroke();
+  }
+
+  // Bottom accent bar
+  const barH = H*0.08;
+  const barGrd = ctx.createLinearGradient(0,H-barH,W,H);
+  barGrd.addColorStop(0,`rgba(${ar},${ag},${ab},0.35)`);
+  barGrd.addColorStop(1,`rgba(${sr},${sg},${sb},0.20)`);
+  ctx.fillStyle=barGrd; ctx.fillRect(0,H-barH,W,barH);
+
+  // Emoji
+  const emojiSize = mode==='landscape'? H*0.38 : W*0.42;
+  const emojiY = mode==='portrait'? H*0.35 : H*0.44;
+  ctx.font=`${emojiSize}px serif`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(emoji, W/2, emojiY);
+
+  // Title - ZH (big)
+  const titleSize = mode==='landscape'? H*0.095 : W*0.11;
+  ctx.font=`900 ${titleSize}px "PingFang TC","Microsoft JhengHei",sans-serif`;
+  ctx.textAlign='center'; ctx.textBaseline='alphabetic';
+  ctx.fillStyle=textCol;
+  const titleY = mode==='portrait'? H*0.62 : H*0.75;
+  ctx.fillText(nameZh, W/2, titleY);
+
+  // Title - EN (smaller, accent color)
+  const enSize = mode==='landscape'? H*0.052 : W*0.062;
+  ctx.font=`700 ${enSize}px "Arial","Helvetica",sans-serif`;
+  ctx.fillStyle=accent;
+  ctx.fillText(nameEn.toUpperCase(), W/2, titleY+enSize*1.4);
+
+  // Tagline
+  if(tagline){
+    const tlSize = mode==='landscape'? H*0.028 : W*0.038;
+    ctx.font=`400 ${tlSize}px "Arial","Helvetica",sans-serif`;
+    ctx.fillStyle=`rgba(255,255,255,0.72)`;
+    const maxW = W*0.78;
+    const words=tagline.split(' ');
+    let line='', lines=[];
+    words.forEach(w=>{
+      const test=line+w+' ';
+      if(ctx.measureText(test).width>maxW&&line){lines.push(line.trim());line=w+' ';}
+      else line=test;
+    });
+    if(line) lines.push(line.trim());
+    const tlY = titleY+enSize*1.4+tlSize*1.8;
+    lines.slice(0,2).forEach((l,i)=>ctx.fillText(l, W/2, tlY+i*tlSize*1.5));
+  }
+
+  // Genre tags at bottom
+  if(genre){
+    const gSize = mode==='landscape'? H*0.025 : W*0.032;
+    ctx.font=`600 ${gSize}px "Arial",sans-serif`;
+    ctx.fillStyle=`rgba(${ar},${ag},${ab},0.9)`;
+    ctx.fillText(genre, W/2, H-barH/2+gSize*0.4);
+  }
+
+  // CapyWorlds watermark
+  const wmSize = mode==='landscape'? H*0.022 : W*0.028;
+  ctx.font=`500 ${wmSize}px "Arial",sans-serif`;
+  ctx.fillStyle=`rgba(255,255,255,0.3)`;
+  ctx.textAlign='right';
+  ctx.fillText('capyworlds.com', W-W*0.02, wmSize*1.5);
+}
+
+function download(){
+  const [W,H] = SIZES[curSize];
+  const nameEn = document.getElementById('nameEn').value.replace(/\s+/g,'-').toLowerCase();
+  const label = ['1920x1080','800x1200','800x800'][curSize];
+  const a=document.createElement('a');
+  a.download=`${nameEn}-cover-${label}.png`;
+  a.href=cvs.toDataURL('image/png');
+  a.click();
+}
+
+draw();
+</script>
+</body>
+</html>

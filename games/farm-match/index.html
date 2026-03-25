@@ -274,21 +274,24 @@ body {
 #overlay .final-score { font-size:1.2rem; color:#ccc; }
 /* ---- Animations ---- */
 @keyframes popOut {
-  0%   { transform:scale(1); opacity:1; }
-  40%  { transform:scale(1.5); opacity:0.9; }
-  100% { transform:scale(0); opacity:0; }
+  0%   { transform:scale(1);    opacity:1; filter:brightness(1); }
+  18%  { transform:scale(1.5);  opacity:1; filter:brightness(3) saturate(3); }
+  55%  { transform:scale(1.25); opacity:0.75; filter:brightness(1.5); }
+  100% { transform:scale(0);    opacity:0; filter:brightness(1); }
 }
 @keyframes dropIn {
-  0%   { transform:translateY(-50px); opacity:0; }
-  100% { transform:translateY(0); opacity:1; }
+  0%   { transform:translateY(-46px) scaleY(0.7); opacity:0; }
+  70%  { transform:translateY(4px)  scaleY(1.05); opacity:1; }
+  100% { transform:translateY(0)    scaleY(1);    opacity:1; }
 }
 @keyframes comboFlash {
   0%   { color:#ffd700; transform:scale(1); }
   50%  { color:#ff4444; transform:scale(1.3); }
   100% { color:#ff6b6b; transform:scale(1); }
 }
-.cell.matched { animation:popOut 0.32s ease forwards; }
-.cell.dropping { animation:dropIn 0.22s ease; }
+.cell.matched  { animation:popOut 0.38s ease forwards; }
+.cell.dropping { animation:dropIn 0.26s cubic-bezier(.22,.61,.36,1) both; }
+.cell.swapping { z-index:10; }
 .combo-anim { animation:comboFlash 0.4s ease; }
 /* ---- Floating Score ---- */
 .float-score {
@@ -327,6 +330,15 @@ body {
   0%   { transform:translate(-50%,-50%) scale(0); opacity:1; }
   30%  { transform:translate(-50%,-58%) scale(1.4); opacity:1; }
   100% { transform:translate(-50%,-70%) scale(1.1); opacity:0; }
+}
+/* ---- Combo Timer Bar ---- */
+#comboBar {
+  height:3px; border-radius:2px;
+  background:linear-gradient(90deg,#ff4444,#ff9900,#ffd700);
+  transform-origin:left;
+  transform:scaleX(0);
+  transition:none;
+  margin-top:3px;
 }
 /* ---- Milestone Banner ---- */
 .milestone-banner {
@@ -399,7 +411,7 @@ body {
 <!-- ========== HUD ========== -->
 <div id="hudBar">
   <div class="hud-stat"><span class="lbl">分數</span><span class="val" id="hudScore">0</span></div>
-  <div class="hud-stat"><span class="lbl">連段</span><span class="val combo" id="hudCombo">x1</span></div>
+  <div class="hud-stat"><span class="lbl">連段</span><span class="val combo" id="hudCombo">x1</span><div id="comboBar"></div></div>
   <div class="hud-stat"><span class="lbl">步數</span><span class="val" id="hudMoves">30</span></div>
   <div class="hud-stat"><span class="lbl">金幣</span><span class="val coins" id="hudCoins">0 🪙</span></div>
 </div>
@@ -646,13 +658,14 @@ async function trySwap(r1,c1,r2,c2) {
   if (busy) return;
   busy = true;
 
+  await animateSwap(r1,c1,r2,c2);
   [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
   renderBoard();
 
   const matched = findAllMatches();
   if (!matched) {
-    // invalid swap — revert
-    await sleep(180);
+    // invalid swap — animate back
+    await animateSwap(r1,c1,r2,c2);
     [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
     renderBoard();
     busy = false;
@@ -665,10 +678,7 @@ async function trySwap(r1,c1,r2,c2) {
   busy = false;
 
   if (moves <= 0) { endGame(); return; }
-  // check no valid moves
-  if (!findHint()) {
-    await doShuffle();
-  }
+  if (!findHint()) { await doShuffle(); }
 }
 
 async function processMatches(matched) {
@@ -693,10 +703,15 @@ async function processMatches(matched) {
     total=0; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(matched[r][c])total++;
   }
 
+  // centroid of matched cells for score display
+  let _sR=0,_sC=0,_ct=0;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(matched[r][c]){_sR+=r;_sC+=c;_ct++;}
+  const _cR=_ct?_sR/_ct:3.5, _cC=_ct?_sC/_ct:3.5;
+
   // animate pop
   markCells(matched, 'matched');
   playSFX('match');
-  await sleep(340);
+  await sleep(400);
 
   // score
   let mult = combo * getScoreMult();
@@ -715,20 +730,35 @@ async function processMatches(matched) {
   if (combo > 1) playSFX('combo');
   if (combo >= 2) showComboFlash(combo);
   if (combo >= 3) showBigCombo(combo);
-  comboTimer = setTimeout(() => { combo = 1; updateHUD(); }, COMBO_DECAY_MS);
+  startComboBar();
+  comboTimer = setTimeout(() => { combo = 1; updateHUD(); stopComboBar(); }, COMBO_DECAY_MS);
 
-  // show float score on board center
-  showFloatScore(`+${gained}`, total, mult);
+  showFloatScore(`+${gained}`, total, mult, _cR, _cC);
   checkMilestone();
   updateHUD();
 
-  // clear matched cells
   for (let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(matched[r][c]) board[r][c]=-1;
-
   applyGravity();
+
+  // track which cells will be refilled (new gems)
+  const _new=[];
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(board[r][c]<0) _new.push({r,c});
+
   refillBoard();
-  renderBoard(true);
-  await sleep(260);
+  renderBoard();
+
+  // staggered drop-in only for new gems
+  for(const {r,c} of _new){
+    const _e=getCell(r,c);
+    _e.style.animationDelay=`${c*0.018}s`;
+    _e.classList.add('dropping');
+  }
+  await sleep(300);
+  for(const {r,c} of _new){
+    const _e=getCell(r,c);
+    _e.classList.remove('dropping');
+    _e.style.animationDelay='';
+  }
 
   // chain check
   const next = findAllMatches();
@@ -752,9 +782,8 @@ async function processMatches(matched) {
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function markCells(matched, cls) {
-  const cells = document.querySelectorAll('.cell');
   for (let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) {
-    if(matched[r][c]) cells[r*COLS+c].classList.add(cls);
+    if(matched[r][c]) getCell(r,c).classList.add(cls);
   }
 }
 
@@ -796,6 +825,24 @@ function showMilestoneBanner(m) {
   el.innerHTML = `🏆 達成 ${m.toLocaleString()} 分！&nbsp;<span style="font-size:0.82rem;opacity:0.85">+3步獎勵</span>`;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 2300);
+}
+
+let _comboBarRaf = null;
+let _comboBarStart = 0;
+function startComboBar() {
+  const bar = document.getElementById('comboBar');
+  cancelAnimationFrame(_comboBarRaf);
+  _comboBarStart = performance.now();
+  function tick(now) {
+    const frac = Math.max(0, 1 - (now - _comboBarStart) / COMBO_DECAY_MS);
+    bar.style.transform = `scaleX(${frac})`;
+    if (frac > 0) _comboBarRaf = requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+function stopComboBar() {
+  cancelAnimationFrame(_comboBarRaf);
+  document.getElementById('comboBar').style.transform = 'scaleX(0)';
 }
 </script>
 <script>
@@ -1044,13 +1091,14 @@ function closeGacha() {
 // ============================================================
 // SCORE FLOAT
 // ============================================================
-function showFloatScore(text, tiles, mult) {
+function showFloatScore(text, tiles, mult, cR=3.5, cC=3.5) {
   const boardEl = document.getElementById('board');
   const el = document.createElement('div');
   el.className = 'float-score';
   el.textContent = text + (mult>1 ? ` ×${mult.toFixed(1)}` : '');
-  el.style.left = '50%';
-  el.style.top  = '40%';
+  // 6px board padding, 61px per cell (58+3), center of cell = +29
+  el.style.left = (6 + cC * 61 + 29) + 'px';
+  el.style.top  = (6 + cR * 61 + 20) + 'px';
   el.style.transform = 'translateX(-50%)';
   el.style.fontSize = mult >= 3 ? '1.5rem' : mult >= 2 ? '1.2rem' : '1rem';
   el.style.color = mult >= 3 ? '#ff4444' : mult >= 2 ? '#ff9900' : '#ffd700';
@@ -1060,7 +1108,7 @@ function showFloatScore(text, tiles, mult) {
 }
 
 function highlightAllCells(on) {
-  document.querySelectorAll('.cell').forEach(el=>{
+  document.querySelectorAll('#board .cell').forEach(el=>{
     el.classList.toggle('hint-glow', on);
   });
 }
@@ -1069,21 +1117,50 @@ function highlightAllCells(on) {
 // ============================================================
 // RENDERING
 // ============================================================
-function renderBoard(dropping=false) {
+function initBoardDom() {
   const boardEl = document.getElementById('board');
   boardEl.innerHTML = '';
-  for (let r=0;r<ROWS;r++) {
-    for (let c=0;c<COLS;c++) {
-      const t = board[r][c];
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
       const el = document.createElement('div');
-      el.className = 'cell' + (dropping && t>=0 ? ' dropping' : '');
-      if (window._pendingEffect) el.classList.add('hint-glow');
-      if (t >= 0) el.classList.add(TILES[t]);
+      el.className = 'cell';
       el.dataset.r = r; el.dataset.c = c;
       el.addEventListener('click', onCellClick);
       boardEl.appendChild(el);
     }
   }
+}
+
+function getCell(r, c) {
+  return document.querySelectorAll('#board .cell')[r * COLS + c];
+}
+
+function renderBoard() {
+  const cells = document.querySelectorAll('#board .cell');
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const el = cells[r * COLS + c];
+      const t = board[r][c];
+      el.className = 'cell';
+      if (window._pendingEffect) el.classList.add('hint-glow');
+      if (t >= 0) el.classList.add(TILES[t]);
+    }
+  }
+}
+
+async function animateSwap(r1, c1, r2, c2) {
+  const STEP = 61; // 58px cell + 3px gap
+  const el1 = getCell(r1, c1), el2 = getCell(r2, c2);
+  const dx = (c2 - c1) * STEP, dy = (r2 - r1) * STEP;
+  el1.classList.add('swapping'); el2.classList.add('swapping');
+  el1.style.transition = 'transform 0.13s ease';
+  el2.style.transition = 'transform 0.13s ease';
+  el1.style.transform = `translate(${dx}px,${dy}px)`;
+  el2.style.transform = `translate(${-dx}px,${-dy}px)`;
+  await sleep(150);
+  el1.style.transition = ''; el2.style.transition = '';
+  el1.style.transform = ''; el2.style.transform = '';
+  el1.classList.remove('swapping'); el2.classList.remove('swapping');
 }
 
 function renderPanel() {
@@ -1174,24 +1251,22 @@ function onCellClick(e) {
 
   if (!selected) {
     selected = {r,c};
-    renderBoard(); // to apply selected class
-    document.querySelectorAll('.cell')[r*COLS+c].classList.add('selected');
+    getCell(r,c).classList.add('selected');
     return;
   }
 
   const {r:sr, c:sc} = selected;
   selected = null;
+  getCell(sr,sc).classList.remove('selected');
 
-  if (sr===r && sc===c) { renderBoard(); return; } // deselect
+  if (sr===r && sc===c) return; // deselect
 
   const dist = Math.abs(sr-r) + Math.abs(sc-c);
   if (dist === 1) {
     trySwap(sr,sc,r,c);
   } else {
-    // re-select new cell
     selected = {r,c};
-    renderBoard();
-    document.querySelectorAll('.cell')[r*COLS+c].classList.add('selected');
+    getCell(r,c).classList.add('selected');
   }
 }
 
@@ -1209,6 +1284,7 @@ function startGame() {
   window._pendingEffect=null;
   clearTimeout(comboTimer);
   pityR=0; pitySR=0;
+  stopComboBar();
 
   newBoard();
   // ensure no initial matches
@@ -1221,6 +1297,7 @@ function startGame() {
   document.getElementById('gameScreen').style.display='flex';
   document.getElementById('gachaResult').style.display='none';
 
+  initBoardDom();
   renderBoard();
   updateHUD();
   renderPanel();

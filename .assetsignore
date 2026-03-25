@@ -1,0 +1,7 @@
+.git
+node_modules
+worker
+migrations
+wrangler.jsonc
+wrangler.toml
+requirements.txt

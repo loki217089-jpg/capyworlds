@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>雙語 UI Demo</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #13100c; color: #e8ddd0; font-family: sans-serif; padding: 20px; }
+h2 { color: #c8a456; margin: 32px 0 12px; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; }
+.section { background: #1e1812; border: 1px solid #333; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+
+/* ── 方案 A：語言切換按鈕 ── */
+.lang-toggle { display: flex; gap: 8px; margin-bottom: 20px; }
+.lang-btn { padding: 6px 16px; border-radius: 20px; border: 1px solid #c8a456; background: transparent; color: #c8a456; cursor: pointer; font-size: 13px; }
+.lang-btn.active { background: #c8a456; color: #13100c; font-weight: bold; }
+
+.game-ui { text-align: center; }
+.game-title-text { font-size: 28px; font-weight: bold; color: #fff; margin-bottom: 8px; }
+.game-desc-text { color: #aaa; font-size: 14px; margin-bottom: 20px; line-height: 1.6; }
+.btn-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn { padding: 12px 28px; border-radius: 8px; border: none; cursor: pointer; font-size: 15px; font-weight: bold; }
+.btn-primary { background: #c8a456; color: #13100c; }
+.btn-secondary { background: transparent; border: 1px solid #555; color: #aaa; }
+
+/* ── 方案 B：雙語並列（主文+副文） ── */
+.bilingual-item { display: flex; align-items: center; gap: 16px; padding: 12px 0; border-bottom: 1px solid #2a2418; }
+.bilingual-item:last-child { border-bottom: none; }
+.icon { font-size: 24px; width: 40px; text-align: center; }
+.label-zh { font-size: 15px; color: #e8ddd0; }
+.label-en { font-size: 12px; color: #666; margin-top: 2px; }
+.value { margin-left: auto; color: #c8a456; font-weight: bold; }
+
+/* ── 方案 C：按鈕雙語 ── */
+.btn-bilingual {
+  padding: 14px 32px; border-radius: 10px; border: 1px solid #c8a456;
+  background: rgba(200,164,86,0.1); cursor: pointer; text-align: center; min-width: 140px;
+}
+.btn-bilingual .zh { color: #fff; font-size: 16px; font-weight: bold; }
+.btn-bilingual .en { color: #c8a456; font-size: 11px; margin-top: 2px; letter-spacing: 1px; }
+.btn-bilingual:hover { background: rgba(200,164,86,0.2); }
+.btn-row-c { display: flex; gap: 12px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+
+<h2>方案 A — 語言切換按鈕（最常見）</h2>
+<div class="section">
+  <div class="lang-toggle">
+    <button class="lang-btn active" onclick="setLang('zh')">繁中</button>
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+  </div>
+  <div class="game-ui">
+    <div class="game-title-text" id="title">虛空領航員</div>
+    <div class="game-desc-text" id="desc">探索無盡星系，蒐集資源，升級飛船。<br>每次航行都是全新冒險。</div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-start">▶ 開始遊戲</button>
+      <button class="btn btn-secondary" id="btn-load">繼續</button>
+    </div>
+  </div>
+</div>
+
+<h2>方案 B — 雙語並列（適合數值/屬性面板）</h2>
+<div class="section">
+  <div class="bilingual-item">
+    <div class="icon">⚔️</div>
+    <div><div class="label-zh">攻擊力</div><div class="label-en">Attack</div></div>
+    <div class="value">248</div>
+  </div>
+  <div class="bilingual-item">
+    <div class="icon">🛡️</div>
+    <div><div class="label-zh">防禦力</div><div class="label-en">Defense</div></div>
+    <div class="value">135</div>
+  </div>
+  <div class="bilingual-item">
+    <div class="icon">⚡</div>
+    <div><div class="label-zh">速度</div><div class="label-en">Speed</div></div>
+    <div class="value">72</div>
+  </div>
+  <div class="bilingual-item">
+    <div class="icon">💎</div>
+    <div><div class="label-zh">稀有度</div><div class="label-en">Rarity</div></div>
+    <div class="value" style="color:#a060ff;">SSR</div>
+  </div>
+</div>
+
+<h2>方案 C — 按鈕雙語（中文大＋英文小）</h2>
+<div class="section">
+  <div class="btn-row-c">
+    <button class="btn-bilingual">
+      <div class="zh">開始遊戲</div>
+      <div class="en">START GAME</div>
+    </button>
+    <button class="btn-bilingual">
+      <div class="zh">設定</div>
+      <div class="en">SETTINGS</div>
+    </button>
+    <button class="btn-bilingual">
+      <div class="zh">排行榜</div>
+      <div class="en">LEADERBOARD</div>
+    </button>
+    <button class="btn-bilingual">
+      <div class="zh">離開</div>
+      <div class="en">EXIT</div>
+    </button>
+  </div>
+</div>
+
+<script>
+const i18n = {
+  zh: {
+    title: '虛空領航員',
+    desc: '探索無盡星系，蒐集資源，升級飛船。\n每次航行都是全新冒險。',
+    start: '▶ 開始遊戲',
+    load: '繼續'
+  },
+  en: {
+    title: 'Void Navigator',
+    desc: 'Explore endless galaxies, gather resources, upgrade your ship.\nEvery voyage is a new adventure.',
+    start: '▶ Start Game',
+    load: 'Continue'
+  }
+};
+
+function setLang(lang) {
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  const t = i18n[lang];
+  document.getElementById('title').textContent = t.title;
+  document.getElementById('desc').innerHTML = t.desc.replace('\n','<br>');
+  document.getElementById('btn-start').textContent = t.start;
+  document.getElementById('btn-load').textContent = t.load;
+}
+</script>
+</body>
+</html>

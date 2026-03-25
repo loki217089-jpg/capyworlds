@@ -158,14 +158,41 @@
       letter-spacing: 1px;
     }
 
+    /* ── Nav Sections ── */
+    .nav-sections {
+      max-width: 900px;
+      margin: 52px auto 0;
+      padding: 0 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+    }
+    .nav-section {}
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-bottom: 14px;
+      padding-left: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+      opacity: 0.6;
+    }
+
     /* ── Nav Grid ── */
     .nav-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 20px;
-      max-width: 840px;
-      margin: 52px auto 0;
-      padding: 0 24px;
     }
 
     .nav-card {
@@ -216,6 +243,62 @@
       color: var(--text3);
       line-height: 1.5;
     }
+
+    /* ── Contact ── */
+    .contact-section {
+      max-width: 840px;
+      margin: 52px auto 0;
+      padding: 0 24px;
+      text-align: center;
+    }
+    .contact-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    .contact-title::before,
+    .contact-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border));
+    }
+    .contact-title::after {
+      background: linear-gradient(90deg, var(--border), transparent);
+    }
+    .contact-links {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .contact-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 11px 22px;
+      text-decoration: none;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s, background 0.3s;
+    }
+    .contact-link:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent);
+      box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.18);
+    }
+    .contact-link svg { flex-shrink: 0; }
 
     /* ── Footer ── */
     footer {
@@ -431,6 +514,51 @@
     }
     .dm-send:hover   { background:rgba(var(--accent-rgb),.28); }
     .dm-send:disabled { opacity:.4; cursor:not-allowed; }
+    /* ── Danmaku Admin Panel ── */
+    #dm-admin-panel {
+      position:fixed; top:60px; right:16px; width:310px; max-height:460px;
+      background:var(--bg2,#1e1812); border:1px solid rgba(var(--accent-rgb),.55);
+      border-radius:12px; z-index:600; display:none; flex-direction:column;
+      box-shadow:0 8px 32px rgba(0,0,0,.65); overflow:hidden;
+    }
+    #dm-admin-panel.show { display:flex; }
+    .dm-adm-hd {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:9px 13px; background:rgba(var(--accent-rgb),.1);
+      border-bottom:1px solid rgba(var(--accent-rgb),.25);
+      font-size:12px; font-weight:700; color:var(--accent); flex-shrink:0;
+    }
+    .dm-adm-hd span { display:flex; gap:6px; }
+    .dm-adm-list { overflow-y:auto; flex:1; padding:6px; }
+    .dm-adm-row {
+      display:flex; align-items:center; gap:6px; padding:5px 7px;
+      border-radius:6px; font-size:12px; border-bottom:1px solid rgba(255,255,255,.04);
+    }
+    .dm-adm-row:hover { background:rgba(255,255,255,.04); }
+    .dm-adm-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .dm-adm-txt { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .dm-adm-id  { font-size:10px; color:var(--text3); flex-shrink:0; }
+    .dm-adm-del {
+      background:rgba(200,50,50,.15); border:1px solid rgba(200,50,50,.3);
+      color:#ff7070; border-radius:4px; padding:2px 7px; font-size:11px;
+      cursor:pointer; flex-shrink:0; transition:background .12s;
+    }
+    .dm-adm-del:hover { background:rgba(200,50,50,.3); }
+    .dm-adm-ft {
+      display:flex; gap:6px; padding:8px 10px;
+      border-top:1px solid rgba(255,255,255,.07); flex-shrink:0;
+    }
+    .dm-adm-btn {
+      flex:1; padding:6px 4px; border-radius:6px; font-size:11px;
+      font-weight:600; cursor:pointer; border:1px solid; transition:background .12s;
+      font-family:inherit;
+    }
+    .dm-adm-btn.danger { background:rgba(200,50,50,.1); border-color:rgba(200,50,50,.35); color:#ff7070; }
+    .dm-adm-btn.danger:hover { background:rgba(200,50,50,.25); }
+    .dm-adm-btn.neu { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.15); color:var(--text); }
+    .dm-adm-btn.neu:hover { background:rgba(255,255,255,.1); }
+    .dm-adm-btn.warn { background:rgba(255,165,0,.1); border-color:rgba(255,165,0,.3); color:#ffaa44; }
+    .dm-adm-btn.warn:hover { background:rgba(255,165,0,.2); }
     .pts-popup {
       position:fixed; right:16px; bottom:110px; z-index:500;
       background:rgba(10,6,22,.85); border:1px solid rgba(var(--accent-rgb),.5);
@@ -444,6 +572,7 @@
       75%  { opacity:1; }
       100% { opacity:0; transform:translateY(-20px); }
     }
+
   </style>
 </head>
 <body>
@@ -518,38 +647,105 @@
     <p class="tagline">我的創作小宇宙 &nbsp;·&nbsp; Welcome to my creative world</p>
   </div>
 
-  <nav class="nav-grid">
-    <a class="nav-card" href="games/">
-      <div class="card-icon">🎮</div>
-      <div class="card-label">Games</div>
-      <div class="card-desc">獨立小遊戲收藏</div>
-    </a>
-    <a class="nav-card" href="games/mobile.html">
-      <div class="card-icon">📱</div>
-      <div class="card-label">手遊專區</div>
-      <div class="card-desc">觸控優化手機遊戲</div>
-    </a>
-    <a class="nav-card" href="blog.html">
-      <div class="card-icon">📝</div>
-      <div class="card-label">Blog</div>
-      <div class="card-desc">文章與想法</div>
-    </a>
-    <a class="nav-card" href="books.html">
-      <div class="card-icon">📚</div>
-      <div class="card-label">Books</div>
-      <div class="card-desc">遊戲・書・影視推薦</div>
-    </a>
-    <a class="nav-card" href="tools.html">
-      <div class="card-icon">🛠</div>
-      <div class="card-label">Tools</div>
-      <div class="card-desc">常用工具與資源</div>
-    </a>
-    <a class="nav-card" href="about.html">
-      <div class="card-icon">🦫</div>
-      <div class="card-label">About</div>
-      <div class="card-desc">關於我</div>
-    </a>
-  </nav>
+  <div class="nav-sections">
+
+    <!-- 遊戲 -->
+    <div class="nav-section">
+      <div class="section-label">🎮 遊戲 · Games</div>
+      <nav class="nav-grid">
+        <a class="nav-card" href="games/">
+          <div class="card-icon">🎮</div>
+          <div class="card-label">Games</div>
+          <div class="card-desc">獨立小遊戲收藏</div>
+        </a>
+        <a class="nav-card" href="games/mobile.html">
+          <div class="card-icon">📱</div>
+          <div class="card-label">手遊專區</div>
+          <div class="card-desc">觸控優化手機遊戲</div>
+        </a>
+        <a class="nav-card" href="games/battle.html">
+          <div class="card-icon">⚔️</div>
+          <div class="card-label">對戰遊戲</div>
+          <div class="card-desc">即時 1v1 連線對戰</div>
+        </a>
+        <a class="nav-card" href="games/chat-room/">
+          <div class="card-icon">💬</div>
+          <div class="card-label">情境聊天室</div>
+          <div class="card-desc">配對異性・5分鐘聊天</div>
+        </a>
+      </nav>
+    </div>
+
+    <!-- 神祕工具 -->
+    <div class="nav-section">
+      <div class="section-label">🔮 神祕工具 · Mystical</div>
+      <nav class="nav-grid">
+        <a class="nav-card" href="fortune/">
+          <div class="card-icon">🌟</div>
+          <div class="card-label">每日運勢</div>
+          <div class="card-desc">輸入生日查看今日星座運勢</div>
+        </a>
+        <a class="nav-card" href="tarot/">
+          <div class="card-icon">🃏</div>
+          <div class="card-label">塔羅抽牌</div>
+          <div class="card-desc">三牌陣·探索過去現在未來</div>
+        </a>
+        <a class="nav-card" href="soul-match/">
+          <div class="card-icon">🌀</div>
+          <div class="card-label">靈魂配對</div>
+          <div class="card-desc">測試你與對方的靈魂契合度</div>
+        </a>
+      </nav>
+    </div>
+
+    <!-- 關於 -->
+    <div class="nav-section">
+      <div class="section-label">📖 關於 · About</div>
+      <nav class="nav-grid">
+        <a class="nav-card" href="blog.html">
+          <div class="card-icon">📝</div>
+          <div class="card-label">Blog</div>
+          <div class="card-desc">文章與想法</div>
+        </a>
+        <a class="nav-card" href="books.html">
+          <div class="card-icon">📚</div>
+          <div class="card-label">Books</div>
+          <div class="card-desc">遊戲・書・影視推薦</div>
+        </a>
+        <a class="nav-card" href="tools.html">
+          <div class="card-icon">🛠</div>
+          <div class="card-label">Tools</div>
+          <div class="card-desc">常用工具與資源</div>
+        </a>
+        <a class="nav-card" href="about.html">
+          <div class="card-icon">🦫</div>
+          <div class="card-label">About</div>
+          <div class="card-desc">關於我</div>
+        </a>
+      </nav>
+    </div>
+
+  </div>
+
+  <!-- Contact -->
+  <section class="contact-section">
+    <div class="contact-title">聯絡我 · Contact</div>
+    <div class="contact-links">
+      <a class="contact-link" href="https://www.threads.com/@lokiweiwei" target="_blank" rel="noopener">
+        <svg width="20" height="20" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M141.537 88.988c-1.177-.546-2.377-1.07-3.595-1.573-2.033-17.419-12.713-27.373-28.715-27.471-9.593-.058-17.827 3.986-22.811 11.136l10.5 7.203c3.39-4.82 8.707-7.147 14.31-7.113 6.896.044 12.11 3.546 14.298 9.745-1.782-.315-3.619-.476-5.507-.476-11.443 0-22.505 3.963-30.45 11.158-8.62 7.793-12.823 18.714-11.49 29.95.68 5.714 2.858 10.93 6.397 15.35 4.19 5.198 10.004 8.856 17.285 10.874 3.765 1.047 7.72 1.573 11.754 1.573 8.684 0 17.207-2.35 23.886-6.657 8.68-5.607 13.797-14.194 14.403-24.189.293-4.782-.462-9.506-2.265-13.955zm-45.435 24.044c-1.082-8.895 4.658-17.14 13.457-19.977 2.818-.908 5.771-1.352 8.693-1.313.996.013 1.986.075 2.967.185.55 2.22.83 4.533.83 6.89 0 5.58-1.62 10.707-4.428 14.817-3.065 4.471-7.59 7.258-12.87 7.258-1.485 0-2.97-.205-4.404-.625-1.918-.56-3.245-1.56-4.245-3.235zm63.044-17.26c-.088-.81-.183-1.617-.285-2.421C153.688 61.44 127.7 42.29 95.955 42.29c-14.613 0-28.478 4.543-40.091 13.135-12.185 8.98-21.208 22.08-25.406 37.027-4.1 14.635-3.06 29.87 2.95 43.008 6.233 13.647 17.247 24.34 30.999 30.117 6.52 2.761 13.459 4.16 20.549 4.16 5.8 0 11.654-.91 17.36-2.72l-3.47-11.22c-4.53 1.402-9.2 2.113-13.89 2.113-5.624 0-11.119-1.1-16.344-3.277-10.822-4.584-19.52-13.014-24.518-23.846-4.775-10.457-5.602-22.427-2.326-33.69 3.375-12.04 10.645-22.45 20.48-29.384 9.408-6.628 20.5-10.126 32.117-10.126 26.252 0 47.273 16.083 51.988 39.155.133.645.254 1.292.364 1.942-2.553-.408-5.193-.613-7.879-.613-3.3 0-6.554.322-9.72.96l2.307 11.38c2.58-.523 5.22-.786 7.886-.786 2.43 0 4.827.228 7.168.677.204 1.343.372 2.696.5 4.058.257 2.748.258 5.502.004 8.243-.625 6.84-3.258 12.965-7.614 17.703-4.54 4.934-10.84 7.818-17.782 8.127-7.512.336-14.656-2.617-19.645-8.085-4.728-5.188-7.097-12.142-6.67-19.584.437-7.585 3.858-14.505 9.592-19.468 5.517-4.773 12.61-7.162 19.745-6.74l.657-11.624c-10.016-.566-19.862 2.79-27.702 9.434-8.116 6.867-13.094 16.52-13.677 26.918-.604 10.492 2.682 20.609 9.26 27.856 6.832 7.527 16.728 11.64 27.432 11.176 10.29-.46 19.704-4.762 26.505-11.997 6.33-6.716 9.985-15.515 10.836-25.483.264-3.077.25-6.16-.04-9.23z" fill="currentColor"/>
+        </svg>
+        Threads @lokiweiwei
+      </a>
+      <a class="contact-link" href="https://s.team/p/qch-rmmd/pmvwgwjg" target="_blank" rel="noopener">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.003.187.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.029 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0zM7.54 18.21l-1.473-.61c.262.543.714.999 1.314 1.25 1.297.539 2.793-.076 3.332-1.375.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4 1.409 1.497 1.009 2.455-.397.957-1.497 1.41-2.454 1.012H7.54zm11.415-9.303c0-1.662-1.353-3.015-3.015-3.015-1.665 0-3.015 1.353-3.015 3.015 0 1.665 1.35 3.015 3.015 3.015 1.663 0 3.015-1.35 3.015-3.015zm-5.273-.005c0-1.252 1.013-2.266 2.265-2.266 1.249 0 2.266 1.014 2.266 2.266 0 1.251-1.017 2.265-2.266 2.265-1.252 0-2.265-1.014-2.265-2.265z" fill="currentColor"/>
+        </svg>
+        Steam
+      </a>
+    </div>
+  </section>
+
 
   <!-- Comments -->
   <section class="comments-section">
@@ -778,6 +974,24 @@
     <button class="dm-send" id="dm-send">發送</button>
   </div>
 
+  <!-- ── Danmaku Admin Panel ── -->
+  <div id="dm-admin-panel">
+    <div class="dm-adm-hd">
+      🛡️ 彈幕管理
+      <span>
+        <button class="dm-adm-btn warn" style="padding:3px 10px;flex:0" onclick="dmAdminRefresh()">重新整理</button>
+        <button class="dm-adm-btn neu"  style="padding:3px 10px;flex:0;margin-left:4px" onclick="exitDmAdmin()">退出</button>
+      </span>
+    </div>
+    <div class="dm-adm-list" id="dm-admin-list">
+      <div style="text-align:center;color:var(--text3);padding:20px;font-size:12px">載入中…</div>
+    </div>
+    <div class="dm-adm-ft">
+      <button class="dm-adm-btn danger" onclick="dmAdminClearAll()">🗑 清除全部彈幕</button>
+      <button class="dm-adm-btn neu"    onclick="dmAdminPauseToggle()" id="dm-pause-btn">⏸ 暫停顯示</button>
+    </div>
+  </div>
+
   <script>
   // ── Points System ──────────────────────────────────────────
   const PTS_KEY = 'capyPoints';
@@ -819,7 +1033,8 @@
   setPoints(getPoints());
 
   // ── Danmaku System ─────────────────────────────────────────
-  let dmOn = false, dmLastId = 0, dmPollTimer = null, dmColor = '#ffffff';
+  let dmOn = true, dmLastId = 0, dmPollTimer = null, dmColor = '#ffffff';
+  let dmPaused = false;
 
   const dmLayer  = document.getElementById('danmaku-layer');
   const dmToggle = document.getElementById('dm-toggle');
@@ -862,7 +1077,7 @@
   }
 
   function dmShow(text, color) {
-    if (!dmOn) return;
+    if (!dmOn || dmPaused) return;
     const el    = document.createElement('div');
     el.className = 'dm';
     el.textContent = text;
@@ -874,9 +1089,11 @@
     el.addEventListener('animationend', () => el.remove());
   }
 
-  // 管理員模式：點 "✦ X 積分" 徽章 5 下可輸入管理員密碼，解鎖免費彈幕
+  // ── Danmaku Admin ──────────────────────────────────────────
+  const DM_ADMIN_PW = '66520';
   let dmAdminMode = false;
   let dmBadgeClicks = 0, dmBadgeTimer = null;
+
   document.querySelector('.pts-badge').addEventListener('click', () => {
     dmBadgeClicks++;
     clearTimeout(dmBadgeTimer);
@@ -884,19 +1101,73 @@
     if (dmBadgeClicks >= 5) {
       dmBadgeClicks = 0;
       if (dmAdminMode) {
-        dmAdminMode = false;
-        showPtsPopup('已退出管理員模式');
+        openDmAdmin();
       } else {
-        const pw = prompt('輸入管理員密碼：');
-        if (pw && pw === adminKey) {
+        const pw = prompt('🛡️ 輸入彈幕管理員密碼：');
+        if (pw === DM_ADMIN_PW) {
           dmAdminMode = true;
-          showPtsPopup('管理員模式：彈幕免費 ✓');
+          showPtsPopup('管理員模式已開啟 ✓');
+          openDmAdmin();
         } else if (pw !== null) {
           showPtsPopup('密碼錯誤');
         }
       }
     }
   });
+
+  async function openDmAdmin() {
+    document.getElementById('dm-admin-panel').classList.add('show');
+    await dmAdminRefresh();
+  }
+
+  function exitDmAdmin() {
+    dmAdminMode = false;
+    document.getElementById('dm-admin-panel').classList.remove('show');
+    showPtsPopup('已退出管理員模式');
+  }
+
+  async function dmAdminRefresh() {
+    const list = document.getElementById('dm-admin-list');
+    list.innerHTML = '<div style="text-align:center;color:var(--text3);padding:18px;font-size:12px">載入中…</div>';
+    try {
+      const res  = await fetch(API + '/danmaku?admin=1', { headers:{ 'Authorization':'Bearer ' + DM_ADMIN_PW } });
+      const data = await res.json();
+      if (!data.length) { list.innerHTML = '<div style="text-align:center;color:var(--text3);padding:18px;font-size:12px">目前沒有彈幕</div>'; return; }
+      list.innerHTML = data.map(d => `
+        <div class="dm-adm-row" id="dm-item-${d.id}">
+          <div class="dm-adm-dot" style="background:${d.color}"></div>
+          <div class="dm-adm-txt" style="color:${d.color}">${esc(d.text)}</div>
+          <div class="dm-adm-id">#${d.id}</div>
+          <button class="dm-adm-del" onclick="dmAdminDelete(${d.id})">刪除</button>
+        </div>`).join('');
+    } catch { list.innerHTML = '<div style="text-align:center;color:#f66;padding:18px;font-size:12px">載入失敗</div>'; }
+  }
+
+  async function dmAdminDelete(id) {
+    try {
+      const res = await fetch(API + '/danmaku/' + id, { method:'DELETE', headers:{ 'Authorization':'Bearer ' + DM_ADMIN_PW } });
+      const d   = await res.json();
+      if (d.ok) { const el = document.getElementById('dm-item-' + id); if (el) el.remove(); }
+      else showPtsPopup(d.error || '刪除失敗');
+    } catch { showPtsPopup('網路錯誤'); }
+  }
+
+  async function dmAdminClearAll() {
+    if (!confirm('確定要清除所有彈幕記錄？')) return;
+    try {
+      const res = await fetch(API + '/danmaku/all', { method:'DELETE', headers:{ 'Authorization':'Bearer ' + DM_ADMIN_PW } });
+      const d   = await res.json();
+      if (d.ok) { dmLayer.innerHTML = ''; showPtsPopup('全部彈幕已清除 ✓'); await dmAdminRefresh(); }
+      else showPtsPopup(d.error || '清除失敗');
+    } catch { showPtsPopup('網路錯誤'); }
+  }
+
+  function dmAdminPauseToggle() {
+    dmPaused = !dmPaused;
+    const btn = document.getElementById('dm-pause-btn');
+    btn.textContent = dmPaused ? '▶ 恢復顯示' : '⏸ 暫停顯示';
+    showPtsPopup(dmPaused ? '彈幕已暫停' : '彈幕已恢復');
+  }
 
   async function doSendDanmaku() {
     const text = dmInput.value.trim();
@@ -923,6 +1194,17 @@
 
   dmSend.addEventListener('click', doSendDanmaku);
   dmInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSendDanmaku(); });
+
+  // 預設開啟彈幕
+  dmToggle.classList.add('on');
+  dmToggle.textContent = '💬 彈幕 ON';
+  dmBar.classList.add('open');
+  fetchDanmaku(true);
+  dmPollTimer = setInterval(() => fetchDanmaku(false), 15000);
+
+  // 冷笑話彈幕（本地，不送出伺服器）
+  setTimeout(() => dmShow('一山還有一山高，雞蛋還有雞蛋糕 🥚', '#ffd700'), 3000);
+  setTimeout(() => dmShow('我跟太陽說早安，太陽說：你好大膽 ☀️', '#00ffff'), 7500);
   </script>
 
 </body>

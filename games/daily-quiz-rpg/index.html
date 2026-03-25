@@ -27,7 +27,7 @@ html,body { width:100%; height:100%; background:#0a0a1a; overflow:hidden;
 .title-name { font-size:34px; font-weight:900; color:#00e5ff;
   text-shadow:0 0 24px rgba(0,229,255,0.7); letter-spacing:3px; }
 .title-sub  { font-size:14px; color:#607090; margin-bottom:8px; }
-.hero-preview { display:flex; align-items:flex-end; justify-content:center; gap:24px; margin:8px 0; }
+.hero-preview { display:flex; align-items:flex-end; justify-content:center; gap:14px; margin:8px 0; flex-wrap:wrap; }
 .hero-class-btn {
   background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12);
   border-radius:16px; padding:14px 10px; cursor:pointer;
@@ -37,7 +37,7 @@ html,body { width:100%; height:100%; background:#0a0a1a; overflow:hidden;
 .hero-class-btn.selected { border-color:#00e5ff; background:rgba(0,229,255,0.1); transform:scale(1.06); }
 .hero-class-btn .class-icon { font-size:36px; }
 .hero-class-btn .class-name { font-size:13px; font-weight:700; color:#cce0f0; }
-.hero-class-btn .class-desc { font-size:10px; color:#607090; text-align:center; }
+.hero-class-btn .class-desc { font-size:12px; color:#607090; text-align:center; }
 .name-input-row { display:flex; gap:8px; width:100%; max-width:320px; }
 .name-input {
   flex:1; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.2);
@@ -70,7 +70,7 @@ html,body { width:100%; height:100%; background:#0a0a1a; overflow:hidden;
 .sb-hero { display:flex; align-items:center; gap:8px; }
 .sb-avatar { font-size:24px; }
 .sb-name   { font-size:13px; font-weight:700; color:#cce0f0; }
-.sb-lv     { font-size:11px; color:#00e5ff; }
+.sb-lv     { font-size:12px; color:#00e5ff; }
 .sb-right  { display:flex; align-items:center; gap:12px; }
 .sb-stat   { display:flex; flex-direction:column; align-items:center; }
 .sb-stat-val { font-size:14px; font-weight:700; color:#ffd700; }
@@ -114,11 +114,13 @@ html,body { width:100%; height:100%; background:#0a0a1a; overflow:hidden;
 .action-btn.highlight { border-color:rgba(0,229,255,0.4); background:rgba(0,229,255,0.06); }
 .action-btn .ab-icon { font-size:32px; }
 .action-btn .ab-name { font-size:14px; font-weight:700; color:#cce0f0; }
-.action-btn .ab-desc { font-size:11px; color:#607090; }
+.action-btn .ab-desc { font-size:12px; color:#607090; }
 .action-btn .ab-badge {
   background:#ff4444; color:#fff; font-size:10px; font-weight:700;
   padding:2px 7px; border-radius:20px; margin-top:2px;
 }
+button:disabled { opacity: 0.5; }
+button, .action-btn { touch-action: manipulation; }
 </style>
 </head>
 <body>
@@ -192,23 +194,23 @@ html,body { width:100%; height:100%; background:#0a0a1a; overflow:hidden;
     </div>
     <div class="section-title">今日行動</div>
     <div class="action-grid">
-      <div class="action-btn highlight" id="btnQuiz">
+      <div class="action-btn highlight" id="btnQuiz" ontouchend="this.click();event.preventDefault()">
         <span class="ab-icon">🎯</span>
         <span class="ab-name">答題挑戰</span>
         <span class="ab-desc">答對獲得 XP</span>
         <span class="ab-badge" id="quizBadge">+XP</span>
       </div>
-      <div class="action-btn" id="btnBattle">
+      <div class="action-btn" id="btnBattle" ontouchend="this.click();event.preventDefault()">
         <span class="ab-icon">⚔️</span>
         <span class="ab-name">打怪冒險</span>
         <span class="ab-desc">消耗 HP 獲得金幣</span>
       </div>
-      <div class="action-btn" id="btnShop">
+      <div class="action-btn" id="btnShop" ontouchend="this.click();event.preventDefault()">
         <span class="ab-icon">🏪</span>
         <span class="ab-name">商店</span>
         <span class="ab-desc">購買技能與道具</span>
       </div>
-      <div class="action-btn" id="btnSkills">
+      <div class="action-btn" id="btnSkills" ontouchend="this.click();event.preventDefault()">
         <span class="ab-icon">💫</span>
         <span class="ab-name">技能</span>
         <span class="ab-desc">查看已學技能</span>
@@ -220,7 +222,7 @@ html,body { width:100%; height:100%; background:#0a0a1a; overflow:hidden;
   <!-- Quiz Screen -->
   <div id="quizScreen" class="screen">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
-      <button id="quizBack" style="background:none;border:none;color:#607090;font-size:22px;cursor:pointer;">←</button>
+      <button id="quizBack" style="background:none;border:none;color:#607090;font-size:22px;cursor:pointer;padding:10px 14px;min-width:44px;min-height:44px;">←</button>
       <div class="section-title" style="margin-bottom:0">答題挑戰</div>
     </div>
     <div style="display:flex;justify-content:space-between;font-size:12px;color:#607090;margin-bottom:12px;">
@@ -245,7 +247,7 @@ html,body { width:100%; height:100%; background:#0a0a1a; overflow:hidden;
   <!-- Battle Screen -->
   <div id="battleScreen" class="screen">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-      <button id="battleBack" style="background:none;border:none;color:#607090;font-size:22px;cursor:pointer;">←</button>
+      <button id="battleBack" style="background:none;border:none;color:#607090;font-size:22px;cursor:pointer;padding:10px 14px;min-width:44px;min-height:44px;">←</button>
       <div class="section-title" style="margin-bottom:0">打怪冒險</div>
     </div>
     <div id="battleArena" style="text-align:center;padding:20px 0;">
@@ -271,7 +273,7 @@ html,body { width:100%; height:100%; background:#0a0a1a; overflow:hidden;
   <div id="shopScreen" class="screen">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
       <div style="display:flex;align-items:center;gap:10px;">
-        <button id="shopBack" style="background:none;border:none;color:#607090;font-size:22px;cursor:pointer;">←</button>
+        <button id="shopBack" style="background:none;border:none;color:#607090;font-size:22px;cursor:pointer;padding:10px 14px;min-width:44px;min-height:44px;">←</button>
         <div class="section-title" style="margin-bottom:0">商店</div>
       </div>
       <div style="font-size:15px;color:#ffd700;font-weight:700;">💰 <span id="shopCoins">0</span></div>
@@ -282,7 +284,7 @@ html,body { width:100%; height:100%; background:#0a0a1a; overflow:hidden;
   <!-- Skills Screen -->
   <div id="skillsScreen" class="screen">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-      <button id="skillsBack" style="background:none;border:none;color:#607090;font-size:22px;cursor:pointer;">←</button>
+      <button id="skillsBack" style="background:none;border:none;color:#607090;font-size:22px;cursor:pointer;padding:10px 14px;min-width:44px;min-height:44px;">←</button>
       <div class="section-title" style="margin-bottom:0">已學技能</div>
     </div>
     <div id="skillsList" style="display:flex;flex-direction:column;gap:10px;"></div>
@@ -508,7 +510,7 @@ function showToast(msg){
   t.textContent=msg;
   Object.assign(t.style,{position:'fixed',bottom:'80px',left:'50%',transform:'translateX(-50%)',
     background:'rgba(0,200,100,0.9)',color:'#fff',padding:'10px 20px',borderRadius:'20px',
-    fontSize:'14px',fontWeight:'700',zIndex:'999',whiteSpace:'nowrap',transition:'opacity 0.4s'});
+    fontSize:'14px',fontWeight:'700',zIndex:'999',whiteSpace:'pre-wrap',maxWidth:'calc(100vw - 32px)',transition:'opacity 0.4s'});
   document.body.appendChild(t);
   setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),400);},1800);
 }

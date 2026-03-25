@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🌀 靈魂配對 — CapyWorlds</title>
+<style>
+:root{--bg:#0a1018;--bg2:#101820;--bg3:#182030;--border:#204060;--accent:#40c8ff;--accent2:#ff60a0;--text:#d8eef8;--text2:#5090c0;--h1:#fff;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.top-bar{height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;}
+.top-bar a{color:var(--text2);text-decoration:none;font-size:13px;}
+.logo{font-size:16px;font-weight:700;color:var(--accent);}
+.wrap{max-width:480px;margin:0 auto;padding:28px 16px 48px;}
+.hero{text-align:center;padding:32px 0 24px;}
+.hero-emoji{font-size:56px;display:block;margin-bottom:12px;}
+.hero h1{font-size:26px;font-weight:800;color:var(--h1);}
+.hero p{font-size:14px;color:var(--text2);margin-top:6px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:14px;}
+.input-group{display:flex;flex-direction:column;gap:6px;}
+.input-label{font-size:13px;color:var(--text2);}
+.name-input{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:11px 14px;font-size:16px;outline:none;width:100%;}
+.name-input:focus{border-color:var(--accent);}
+.vs-divider{text-align:center;font-size:22px;color:var(--text2);padding:4px 0;}
+.calc-btn{background:linear-gradient(135deg,#0080cc,#40c8ff);color:#fff;border:none;border-radius:12px;padding:14px;font-size:16px;font-weight:700;cursor:pointer;transition:opacity .2s;}
+.calc-btn:hover{opacity:.85;}
+.result{display:none;flex-direction:column;gap:16px;margin-top:20px;}
+.result.show{display:flex;}
+.names-banner{text-align:center;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;}
+.name-tag{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px 16px;font-size:15px;font-weight:700;color:var(--h1);}
+.name-tag.a{border-color:var(--accent);}
+.name-tag.b{border-color:var(--accent2);}
+.heart-icon{font-size:28px;}
+.percent-wrap{text-align:center;}
+.percent-num{font-size:64px;font-weight:800;color:var(--h1);line-height:1;}
+.percent-sym{font-size:28px;color:var(--text2);}
+.compat-bar-wrap{height:14px;background:var(--bg3);border-radius:7px;overflow:hidden;margin:8px 0;}
+.compat-bar{height:14px;border-radius:7px;transition:width 1s ease;}
+.compat-label{font-size:13px;color:var(--text2);text-align:center;}
+.elements-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.elem-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;}
+.elem-icon{font-size:24px;margin-bottom:4px;}
+.elem-title{font-size:11px;color:var(--text2);}
+.elem-val{font-size:14px;font-weight:700;color:var(--h1);margin-top:2px;}
+.desc-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;}
+.desc-title{font-size:14px;font-weight:700;color:var(--accent);margin-bottom:8px;}
+.desc-text{font-size:14px;line-height:1.7;color:var(--text);}
+.sparkles{text-align:center;font-size:18px;letter-spacing:6px;color:var(--accent);opacity:.5;padding:4px 0;}
+.try-again{background:transparent;border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:10px;font-size:14px;cursor:pointer;width:100%;margin-top:4px;}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <a href="/">← CapyWorlds</a>
+  <span class="logo">🌀 靈魂配對</span>
+  <span></span>
+</div>
+<div class="wrap">
+  <div class="hero">
+    <span class="hero-emoji">🌀</span>
+    <h1>靈魂配對</h1>
+    <p>輸入兩個名字，測試你們的靈魂契合度</p>
+  </div>
+  <div class="card">
+    <div class="input-group">
+      <label class="input-label">第一個人的名字</label>
+      <input class="name-input" id="nameA" type="text" placeholder="輸入名字..." maxlength="20">
+    </div>
+    <div class="vs-divider">💗</div>
+    <div class="input-group">
+      <label class="input-label">第二個人的名字</label>
+      <input class="name-input" id="nameB" type="text" placeholder="輸入名字..." maxlength="20">
+    </div>
+    <button class="calc-btn" onclick="calcMatch()">🌀 測試靈魂契合度</button>
+  </div>
+
+  <div class="result" id="result">
+    <div class="sparkles">✦ ✦ ✦ ✦ ✦</div>
+    <div class="names-banner">
+      <div class="name-tag a" id="nameTagA"></div>
+      <div class="heart-icon">💗</div>
+      <div class="name-tag b" id="nameTagB"></div>
+    </div>
+    <div class="percent-wrap">
+      <span class="percent-num" id="percentNum">0</span><span class="percent-sym">%</span>
+      <div class="compat-bar-wrap"><div class="compat-bar" id="compatBar" style="width:0%"></div></div>
+      <div class="compat-label" id="compatLabel"></div>
+    </div>
+    <div class="elements-grid" id="elemGrid"></div>
+    <div class="desc-card">
+      <div class="desc-title">✦ 配對解讀</div>
+      <div class="desc-text" id="descText"></div>
+    </div>
+    <button class="try-again" onclick="resetMatch()">↺ 重新測試</button>
+  </div>
+</div>
+<script>
+const ELEMENTS=[
+  {icon:'🔥',title:'激情指數'},
+  {icon:'🌊',title:'默契指數'},
+  {icon:'🌿',title:'穩定指數'},
+  {icon:'💨',title:'成長指數'},
+];
+const LEVELS=[
+  {min:90,label:'命中注定 ✨',color:'linear-gradient(90deg,#ff60a0,#ffaa40)',desc:'你們的靈魂在宇宙中彼此呼應，相遇是命運的安排。這種契合幾乎無可挑剔，彼此像是對方的另一半靈魂，無論喜怒哀樂都能深刻理解。'},
+  {min:75,label:'天作之合 💕',color:'linear-gradient(90deg,#8844ff,#ff60a0)',desc:'你們之間有著深厚的精神共鳴，興趣與價值觀高度吻合。在對方身邊能感受到強烈的安心感，關係中充滿溫暖與支持。'},
+  {min:60,label:'相輔相成 🌸',color:'linear-gradient(90deg,#40c8ff,#8844ff)',desc:'雖然個性各有不同，但正因如此你們能互補彼此的不足。相處時會帶來新鮮感，只要多些溝通，關係將越來越緊密。'},
+  {min:45,label:'緣分不淺 🌟',color:'linear-gradient(90deg,#44dd88,#40c8ff)',desc:'你們之間有些默契，也有些摩擦，這正是成長的動力。用心去了解對方的世界，會發現許多驚喜等著你們。'},
+  {min:30,label:'磨合中 🌙',color:'linear-gradient(90deg,#ffcc44,#44dd88)',desc:'你們的頻率目前稍有差異，但差異不代表不合，而是需要更多時間去理解。耐心傾聽，共同成長，靈魂的距離會慢慢拉近。'},
+  {min:0,label:'有待發現 💫',color:'linear-gradient(90deg,#888,#ffcc44)',desc:'表面看起來差異頗大，但也許正是因為如此才能帶來意想不到的化學反應。給彼此一些時間，也許靈魂的連結正悄悄形成中。'},
+];
+
+function strHash(s){let h=0;for(let i=0;i<s.length;i++)h=((h<<5)-h+s.charCodeAt(i))|0;return Math.abs(h);}
+function seededRand(seed){let s=seed>>>0;return()=>{s=((s*1664525+1013904223)>>>0);return s/4294967296;};}
+
+function calcMatch(){
+  const a=document.getElementById('nameA').value.trim();
+  const b=document.getElementById('nameB').value.trim();
+  if(!a||!b){alert('請輸入兩個名字');return;}
+
+  const seed=(strHash(a+b)+strHash(b+a))>>>0;
+  const r=seededRand(seed);
+  const score=Math.floor(r()*61)+35; // 35~95
+
+  document.getElementById('nameTagA').textContent=a;
+  document.getElementById('nameTagB').textContent=b;
+  document.getElementById('percentNum').textContent='0';
+  document.getElementById('compatBar').style.width='0%';
+
+  const lv=LEVELS.find(l=>score>=l.min)||LEVELS[LEVELS.length-1];
+  document.getElementById('compatBar').style.background=lv.color;
+  document.getElementById('compatLabel').textContent=lv.label;
+  document.getElementById('descText').textContent=lv.desc;
+
+  // element scores
+  const eg=document.getElementById('elemGrid'); eg.innerHTML='';
+  ELEMENTS.forEach(e=>{
+    const v=Math.floor(r()*46)+50;
+    const d=document.createElement('div'); d.className='elem-card';
+    d.innerHTML=`<div class="elem-icon">${e.icon}</div><div class="elem-title">${e.title}</div><div class="elem-val">${v}</div>`;
+    eg.appendChild(d);
+  });
+
+  document.getElementById('result').className='result show';
+
+  // animate counter
+  let current=0; const target=score;
+  const interval=setInterval(()=>{
+    current=Math.min(current+2, target);
+    document.getElementById('percentNum').textContent=current;
+    document.getElementById('compatBar').style.width=current+'%';
+    if(current>=target)clearInterval(interval);
+  },20);
+
+  document.getElementById('result').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function resetMatch(){
+  document.getElementById('nameA').value='';
+  document.getElementById('nameB').value='';
+  document.getElementById('result').className='result';
+}
+</script>
+</body>
+</html>

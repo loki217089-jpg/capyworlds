@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>水豚問答PK！— CapyWorlds</title>
+  <style>
+    :root {
+      --bg: #13100c; --bg2: #1e1812; --accent: #c8a456;
+      --text: #e8ddd0; --cyan: #00e5ff; --orange: #ff8040;
+      --green: #44ee88; --red: #ff4444; --yellow: #ffd700;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;
+      height: 100dvh; overflow: hidden; display: flex;
+      flex-direction: column; align-items: center; justify-content: center;
+      user-select: none; -webkit-user-select: none;
+    }
+    .screen { display: none; width: 100%; max-width: 480px; padding: 24px 20px; }
+    .screen.active { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .game-title { font-size: 2.2rem; font-weight: 900; color: var(--accent);
+      text-shadow: 0 0 24px rgba(200,164,86,0.5); letter-spacing: 2px; }
+    .game-sub { font-size: 1rem; color: #907a60; text-align: center; line-height: 1.5; }
+    .name-input {
+      width: 100%; padding: 14px 18px; font-size: 1.1rem;
+      background: var(--bg2); border: 2px solid #3d3020; border-radius: 12px;
+      color: var(--text); outline: none; text-align: center; transition: border-color 0.2s;
+    }
+    .name-input:focus { border-color: var(--accent); }
+    .btn {
+      width: 100%; padding: 16px; font-size: 1.2rem; font-weight: 700;
+      border: none; border-radius: 14px; cursor: pointer;
+      transition: transform 0.1s, opacity 0.2s; letter-spacing: 1px;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn-primary { background: linear-gradient(135deg, var(--accent), #e8c060); color: #1a0e00; }
+    .btn-secondary { background: #2a2018; color: var(--text); border: 1px solid #3d3020; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .spinner { width: 64px; height: 64px; border-radius: 50%;
+      border: 4px solid #3d3020; border-top-color: var(--accent);
+      animation: spin 0.9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .match-status { font-size: 1.1rem; color: var(--accent); text-align: center; }
+    .waiting-hint { font-size: 0.85rem; color: #6a5a48; text-align: center; }
+    .back-link { font-size: 0.85rem; color: #907a60; text-decoration: none;
+      border-bottom: 1px solid #3d3020; padding-bottom: 2px; }
+    .back-link:hover { color: var(--accent); }
+
+    /* ── Game Screen ── */
+    #screen-game { gap: 10px; justify-content: space-between; height: 100dvh;
+      padding: 14px 20px 20px; }
+    .scoreboard {
+      width: 100%; display: flex; justify-content: space-between; align-items: center;
+      background: var(--bg2); border-radius: 12px; padding: 10px 16px; gap: 8px;
+    }
+    .player-info { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .player-name { font-size: 0.85rem; color: #907a60; max-width: 100px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .player-wins { font-size: 1.6rem; font-weight: 900; }
+    .p1-color { color: var(--cyan); } .p2-color { color: var(--orange); }
+    .round-info { text-align: center; }
+    .round-label { font-size: 0.75rem; color: #6a5a48; }
+    .round-num { font-size: 1.3rem; font-weight: 700; color: var(--accent); }
+
+    .timer-row { width: 100%; display: flex; align-items: center; gap: 12px; }
+    .timer-bar-wrap { flex: 1; background: #1a1510; border-radius: 8px;
+      overflow: hidden; height: 8px; border: 1px solid #3d3020; }
+    .timer-bar { height: 100%; background: var(--accent); transition: width 0.3s linear; border-radius: 8px; }
+    .timer-text { font-size: 1.6rem; font-weight: 900; color: var(--accent); min-width: 50px; text-align: right; }
+
+    /* ── Question Area ── */
+    .question-box {
+      width: 100%; background: var(--bg2); border-radius: 16px;
+      padding: 20px 18px; border: 1px solid #3d3020;
+    }
+    .question-num { font-size: 0.75rem; color: #6a5a48; letter-spacing: 2px; margin-bottom: 8px; }
+    .question-text { font-size: 1.15rem; font-weight: 600; line-height: 1.5; color: var(--text); }
+
+    /* ── Answer Buttons ── */
+    .answers-grid { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .answer-btn {
+      padding: 16px 12px; border-radius: 14px; border: 2px solid #3d3020;
+      background: var(--bg2); color: var(--text); font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; text-align: center; line-height: 1.4;
+      transition: transform 0.1s, border-color 0.15s, background 0.15s;
+    }
+    .answer-btn:active { transform: scale(0.95); }
+    .answer-btn.selected { border-color: var(--accent); background: rgba(200,164,86,0.15); color: var(--accent); }
+    .answer-btn.correct { border-color: var(--green); background: rgba(68,238,136,0.15); color: var(--green); }
+    .answer-btn.wrong { border-color: var(--red); background: rgba(255,68,68,0.1); color: var(--red); opacity: 0.6; }
+    .answer-btn:disabled { cursor: not-allowed; }
+
+    /* ── Status Bar ── */
+    .status-bar {
+      width: 100%; display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.85rem; padding: 0 4px;
+    }
+    .status-p1 { color: var(--cyan); }
+    .status-p2 { color: var(--orange); }
+
+    /* ── Reveal Banner ── */
+    .reveal-banner {
+      width: 100%; padding: 14px 20px; border-radius: 14px; text-align: center;
+      font-size: 1.1rem; font-weight: 700;
+    }
+    .reveal-banner.win { background: rgba(68,238,136,0.15); color: var(--green); border: 1px solid rgba(68,238,136,0.3); }
+    .reveal-banner.lose { background: rgba(255,68,68,0.1); color: var(--red); border: 1px solid rgba(255,68,68,0.25); }
+    .reveal-banner.draw { background: rgba(200,164,86,0.1); color: var(--accent); border: 1px solid rgba(200,164,86,0.3); }
+
+    /* ── Countdown Overlay ── */
+    .countdown-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 12px; z-index: 100;
+    }
+    .countdown-overlay.hidden { display: none; }
+    .countdown-num { font-size: 8rem; font-weight: 900; line-height: 1; color: var(--accent); }
+    .countdown-label { font-size: 1.2rem; color: #907a60; }
+
+    /* ── Result Overlay ── */
+    .result-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 16px; z-index: 200; padding: 24px;
+    }
+    .result-overlay.hidden { display: none; }
+    .result-emoji { font-size: 5rem; }
+    .result-title { font-size: 2rem; font-weight: 900; text-align: center; }
+    .result-score { font-size: 3rem; font-weight: 900; color: var(--accent); }
+    .result-sub { font-size: 1rem; color: #907a60; text-align: center; }
+    .win-text { color: var(--green); } .lose-text { color: var(--red); } .draw-text { color: var(--accent); }
+
+    /* ── Leaderboard & Stats ── */
+    .lb-box { width: 100%; background: var(--bg2); border-radius: 14px;
+      padding: 14px 16px; border: 1px solid #3d3020; }
+    .lb-title { font-size: 0.85rem; font-weight: 700; color: var(--accent);
+      letter-spacing: 1px; margin-bottom: 8px; }
+    .lb-row { display: flex; align-items: center; gap: 8px;
+      padding: 5px 0; border-bottom: 1px solid #2a2018; font-size: 0.85rem; }
+    .lb-row:last-child { border-bottom: none; }
+    .lb-rank { width: 24px; text-align: center; color: #6a5a48; font-size: 0.8rem; }
+    .lb-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lb-score { font-weight: 700; color: var(--accent); }
+    .lb-empty { color: #6a5a48; font-size: 0.85rem; text-align: center; padding: 8px; }
+    .my-stats { width: 100%; display: flex; justify-content: space-around;
+      background: var(--bg2); border-radius: 12px; padding: 12px 16px;
+      border: 1px solid #3d3020; }
+    .stat-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .stat-val { font-size: 1.4rem; font-weight: 900; color: var(--accent); }
+    .stat-lbl { font-size: 0.72rem; color: #6a5a48; }
+    .player-total { font-size: 0.72rem; color: #6a5a48; margin-top: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- Lobby -->
+<div id="screen-lobby" class="screen active">
+  <div class="game-title">📚 水豚問答PK！</div>
+  <div class="game-sub">隨機配對 1v1 知識問答<br>搶先答對 3 題，稱霸水豚智識王！</div>
+  <input class="name-input" id="name-input" type="text" maxlength="16"
+    placeholder="輸入你的暱稱" autocomplete="off" spellcheck="false">
+  <button class="btn btn-primary" id="btn-find"
+    ontouchend="onFindTap(event)" onclick="onFindTap(event)">尋找對手</button>
+  <a href="../battle.html" class="back-link">← 返回對戰遊戲</a>
+  <div class="my-stats">
+    <div class="stat-item"><div class="stat-val" id="my-total-wins">0</div><div class="stat-lbl">總勝場</div></div>
+    <div class="stat-item"><div class="stat-val" id="my-streak">0</div><div class="stat-lbl">當前連勝</div></div>
+    <div class="stat-item"><div class="stat-val" id="my-best">0</div><div class="stat-lbl">最佳連勝</div></div>
+  </div>
+  <div class="lb-box">
+    <div class="lb-title">🏆 智識王排行榜</div>
+    <div id="lb-list"><div class="lb-empty">載入中…</div></div>
+  </div>
+</div>
+
+<!-- Matchmaking -->
+<div id="screen-match" class="screen">
+  <div class="spinner"></div>
+  <div class="match-status" id="match-status">尋找對手中…</div>
+  <div class="waiting-hint">通常不到 30 秒</div>
+  <button class="btn btn-secondary"
+    ontouchend="onCancelTap(event)" onclick="onCancelTap(event)">取消</button>
+</div>
+
+<!-- Game -->
+<div id="screen-game" class="screen">
+  <div class="scoreboard">
+    <div class="player-info">
+      <div class="player-name p1-color" id="p1-name">玩家1</div>
+      <div class="player-wins p1-color" id="p1-wins">0</div>
+      <div class="player-total" id="p1-total"></div>
+    </div>
+    <div class="round-info">
+      <div class="round-label">第</div>
+      <div class="round-num" id="round-num">1</div>
+      <div class="round-label">題</div>
+    </div>
+    <div class="player-info">
+      <div class="player-name p2-color" id="p2-name">玩家2</div>
+      <div class="player-wins p2-color" id="p2-wins">0</div>
+      <div class="player-total" id="p2-total"></div>
+    </div>
+  </div>
+
+  <div class="timer-row">
+    <div class="timer-bar-wrap"><div class="timer-bar" id="timer-bar"></div></div>
+    <div class="timer-text" id="timer-text">8</div>
+  </div>
+
+  <div class="question-box">
+    <div class="question-num" id="question-num">題目 1 / 5</div>
+    <div class="question-text" id="question-text">載入中…</div>
+  </div>
+
+  <div class="answers-grid" id="answers-grid">
+    <button class="answer-btn" id="ans-0"
+      ontouchend="onAnswer(event,1)" onclick="onAnswer(event,1)">A</button>
+    <button class="answer-btn" id="ans-1"
+      ontouchend="onAnswer(event,2)" onclick="onAnswer(event,2)">B</button>
+    <button class="answer-btn" id="ans-2"
+      ontouchend="onAnswer(event,3)" onclick="onAnswer(event,3)">C</button>
+    <button class="answer-btn" id="ans-3"
+      ontouchend="onAnswer(event,4)" onclick="onAnswer(event,4)">D</button>
+  </div>
+
+  <div class="status-bar">
+    <span class="status-p1" id="status-p1">你：未作答</span>
+    <span class="status-p2" id="status-p2">對手：未作答</span>
+  </div>
+
+  <div class="reveal-banner draw" id="reveal-banner" style="display:none;">等待揭曉…</div>
+</div>
+
+<!-- Countdown Overlay -->
+<div class="countdown-overlay hidden" id="countdown-overlay">
+  <div class="countdown-num" id="countdown-num">3</div>
+  <div class="countdown-label" id="countdown-label">準備好了嗎？</div>
+</div>
+
+<!-- Result Overlay -->
+<div class="result-overlay hidden" id="result-overlay">
+  <div class="result-emoji" id="result-emoji">🎉</div>
+  <div class="result-title" id="result-title">你贏了！</div>
+  <div class="result-score" id="result-score"></div>
+  <div class="result-sub" id="result-sub"></div>
+  <button class="btn btn-primary" style="max-width:320px"
+    ontouchend="onAgainTap(event)" onclick="onAgainTap(event)">再玩一局</button>
+  <a href="../battle.html" class="back-link">返回對戰遊戲</a>
+</div>
+
+<script>
+const API = '';
+const POLL_MS = 300;
+const ANSWER_SEC = 8;
+const LABELS = ['A','B','C','D'];
+const GAME_ID = 'capy-quiz';
+
+// Mirror of QUIZ_Q in worker (same order!)
+const QUESTIONS = [
+  {q:'水豚（Capybara）是世界上最大的什麼動物？',a:['嚙齒動物','有袋動物','猛獸','爬蟲類'],c:0},
+  {q:'地球繞太陽一圈大約需要幾天？',a:['265天','365天','465天','185天'],c:1},
+  {q:'1+1+1×0+1 等於幾？',a:['0','1','3','2'],c:2},
+  {q:'以下哪個是台灣的國花？',a:['玫瑰','梅花','菊花','蓮花'],c:1},
+  {q:'光速約為每秒幾公里？',a:['30萬公里','3萬公里','3百公里','30億公里'],c:0},
+  {q:'以下哪個國家的國旗是純紅色的？',a:['中國','日本','蒙古','吐瓦魯'],c:0},
+  {q:'水的沸點在標準大氣壓下是幾度？',a:['90°C','80°C','100°C','110°C'],c:2},
+  {q:'以下哪個不是足球場上的位置？',a:['前鋒','守門員','角衛','中場'],c:2},
+  {q:'人類有幾根肋骨（成人）？',a:['20根','24根','28根','16根'],c:1},
+  {q:'哪個星球是太陽系最大的行星？',a:['土星','天王星','木星','海王星'],c:2},
+  {q:'以下哪種語言使用人數最多？',a:['英語','西班牙語','普通話','印地語'],c:2},
+  {q:'鑽石的主要成分是什麼？',a:['矽','碳','氧','鐵'],c:1},
+];
+
+let pid = localStorage.getItem('capy_quiz_pid') || (() => {
+  const id = Math.random().toString(36).slice(2)+Date.now().toString(36);
+  localStorage.setItem('capy_quiz_pid', id); return id;
+})();
+
+let roomId=null, myRole=null, pollTimer=null, gameState=null;
+let myAnswer=0, lastState=null, isAnswering=false;
+
+// ── Win tracking ──────────────────────────────────────────
+let myTotalWins = parseInt(localStorage.getItem('capy_quiz_total_wins')||'0');
+let myStreak    = parseInt(localStorage.getItem('capy_quiz_streak')||'0');
+let myBestStreak= parseInt(localStorage.getItem('capy_quiz_best')||'0');
+let lbData = [];
+
+function updateMyStats(){
+  document.getElementById('my-total-wins').textContent=myTotalWins;
+  document.getElementById('my-streak').textContent=myStreak;
+  document.getElementById('my-best').textContent=myBestStreak;
+}
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+async function fetchLeaderboard(){
+  try{
+    const res=await fetch(`/leaderboard/${GAME_ID}`);
+    lbData=await res.json(); renderLeaderboard();
+  }catch{ document.getElementById('lb-list').innerHTML='<div class="lb-empty">載入失敗</div>'; }
+}
+function renderLeaderboard(){
+  const el=document.getElementById('lb-list');
+  if(!lbData||!lbData.length){el.innerHTML='<div class="lb-empty">還沒有紀錄，快成為智識王！</div>';return;}
+  const medals=['🥇','🥈','🥉'];
+  el.innerHTML=lbData.slice(0,10).map((r,i)=>`
+    <div class="lb-row">
+      <div class="lb-rank">${medals[i]||i+1}</div>
+      <div class="lb-name">${escHtml(r.name)}</div>
+      <div class="lb-score">${r.score} 勝</div>
+    </div>`).join('');
+}
+async function submitScore(){
+  const name=localStorage.getItem('capy_quiz_name')||'水豚玩家';
+  try{
+    await fetch(`/leaderboard/${GAME_ID}`,{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,score:myTotalWins})});
+    fetchLeaderboard();
+  }catch{}
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const el=document.getElementById(id); if(el) el.classList.add('active');
+}
+
+document.getElementById('name-input').value = localStorage.getItem('capy_quiz_name')||'';
+updateMyStats();
+fetchLeaderboard();
+
+function onFindTap(e){
+  if(e.type==='touchend') e.preventDefault();
+  const name=document.getElementById('name-input').value.trim()||'水豚玩家';
+  localStorage.setItem('capy_quiz_name', name);
+  startMatchmaking(name);
+}
+function onCancelTap(e){
+  if(e.type==='touchend') e.preventDefault();
+  stopPolling(); roomId=null; showScreen('screen-lobby');
+}
+function onAgainTap(e){
+  if(e.type==='touchend') e.preventDefault();
+  document.getElementById('result-overlay').classList.add('hidden');
+  roomId=null; myRole=null; myAnswer=0; lastState=null; isAnswering=false; gameState=null;
+  updateMyStats(); fetchLeaderboard();
+  showScreen('screen-lobby');
+}
+
+async function startMatchmaking(name){
+  showScreen('screen-match');
+  document.getElementById('match-status').textContent='尋找對手中…';
+  try {
+    const res=await fetch(`${API}/room/quiz/join`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pid,name})});
+    const data=await res.json();
+    if(data.error){document.getElementById('match-status').textContent=data.error;return;}
+    roomId=data.room_id; myRole=data.role;
+    document.getElementById('match-status').textContent=data.state==='waiting'?'等待對手加入… 房間碼：'+roomId:'配對成功！';
+    startPolling();
+  } catch { document.getElementById('match-status').textContent='連線失敗，請重試'; }
+}
+
+function startPolling(){stopPolling();pollOnce();pollTimer=setInterval(pollOnce,POLL_MS);}
+function stopPolling(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;}}
+
+async function pollOnce(){
+  if(!roomId) return;
+  try {
+    const res=await fetch(`${API}/room/quiz/${roomId}?pid=${pid}`);
+    if(!res.ok) return;
+    const st=await res.json();
+    handleState(st);
+  } catch {}
+}
+
+function handleState(st){
+  gameState=st;
+  if(st.state==='waiting'){
+    document.getElementById('match-status').textContent='等待對手加入… 房間碼：'+roomId; return;
+  }
+  if(lastState==='waiting'||lastState===null){showScreen('screen-game');updateNames(st);}
+  lastState=st.state;
+  updateScoreboard(st);
+
+  if(st.state==='starting'){
+    isAnswering=false; myAnswer=0;
+    setAnswerButtons(false); resetAnswerStyles();
+    document.getElementById('reveal-banner').style.display='none';
+    showCountdown(Math.ceil(st.time_left/1000));
+    updateQuestion(st);
+  } else if(st.state==='answering'){
+    hideCountdown();
+    isAnswering=!myAnswer;
+    setAnswerButtons(!myAnswer);
+    updateTimer(st);
+    updateQuestion(st);
+    document.getElementById('reveal-banner').style.display='none';
+    updateAnswerStatus(st);
+  } else if(st.state==='revealing'){
+    hideCountdown(); isAnswering=false; setAnswerButtons(false);
+    document.getElementById('timer-bar').style.width='0%';
+    document.getElementById('timer-text').textContent='';
+    showReveal(st);
+  } else if(st.state==='done'){
+    stopPolling(); isAnswering=false; hideCountdown(); showGameOver(st);
+  }
+}
+
+function updateNames(st){
+  document.getElementById('p1-name').textContent=st.p1_name||'玩家1';
+  document.getElementById('p2-name').textContent=st.p2_name||'玩家2';
+  const myNameEl=document.getElementById(myRole+'-name');
+  if(myNameEl) myNameEl.style.fontWeight='900';
+  const myLbEntry=lbData.find(r=>r.name===(myRole==='p1'?st.p1_name:st.p2_name));
+  const oppLbEntry=lbData.find(r=>r.name===(myRole==='p1'?st.p2_name:st.p1_name));
+  const myRec=myLbEntry?myLbEntry.score+'勝':myTotalWins+'勝';
+  const oppRec=oppLbEntry?oppLbEntry.score+'勝':'新手';
+  document.getElementById('p1-total').textContent=myRole==='p1'?'歷史：'+myRec:'歷史：'+oppRec;
+  document.getElementById('p2-total').textContent=myRole==='p2'?'歷史：'+myRec:'歷史：'+oppRec;
+}
+function updateScoreboard(st){
+  document.getElementById('p1-wins').textContent=st.p1_wins;
+  document.getElementById('p2-wins').textContent=st.p2_wins;
+  document.getElementById('round-num').textContent=st.round;
+}
+function updateTimer(st){
+  const left=Math.max(0,st.time_left), pct=(left/(ANSWER_SEC*1000))*100;
+  document.getElementById('timer-bar').style.width=pct+'%';
+  document.getElementById('timer-text').textContent=Math.ceil(left/1000);
+  const col=pct>50?'var(--accent)':pct>25?'#ff9900':'var(--red)';
+  document.getElementById('timer-bar').style.background=col;
+  document.getElementById('timer-text').style.color=col;
+}
+function updateQuestion(st){
+  const q=QUESTIONS[st.question_idx%QUESTIONS.length];
+  document.getElementById('question-num').textContent='題目 '+st.round+' / 5';
+  document.getElementById('question-text').textContent=q.q;
+  for(let i=0;i<4;i++){
+    document.getElementById('ans-'+i).textContent=LABELS[i]+'. '+q.a[i];
+  }
+}
+function updateAnswerStatus(st){
+  const myA=myRole==='p1'?st.p1_answer:st.p2_answer;
+  const oppA=myRole==='p1'?st.p2_answer:st.p1_answer;
+  document.getElementById('status-p1').textContent='你：'+(myA>0?'已作答':'未作答');
+  document.getElementById('status-p2').textContent='對手：'+(oppA>0?'已作答':'未作答');
+}
+function setAnswerButtons(enabled){
+  for(let i=0;i<4;i++){document.getElementById('ans-'+i).disabled=!enabled;}
+}
+function resetAnswerStyles(){
+  for(let i=0;i<4;i++){
+    const btn=document.getElementById('ans-'+i);
+    btn.className='answer-btn';
+  }
+}
+
+function showReveal(st){
+  const q=QUESTIONS[st.question_idx%QUESTIONS.length];
+  resetAnswerStyles();
+  // Highlight correct answer
+  document.getElementById('ans-'+st.correct_idx).classList.add('correct');
+  // Show my answer
+  const myA=myRole==='p1'?st.p1_answer:st.p2_answer; // 1-indexed
+  const oppA=myRole==='p1'?st.p2_answer:st.p1_answer;
+  if(myA>0 && myA-1!==st.correct_idx){
+    document.getElementById('ans-'+(myA-1)).classList.add('wrong');
+  }
+
+  const banner=document.getElementById('reveal-banner');
+  banner.style.display='block';
+  const myRight=myA>0&&(myA-1===st.correct_idx);
+  const oppRight=oppA>0&&(oppA-1===st.correct_idx);
+
+  if(myRight&&!oppRight){banner.className='reveal-banner win';banner.textContent='✅ 你答對了！本題得分';}
+  else if(oppRight&&!myRight){banner.className='reveal-banner lose';banner.textContent='❌ 對手答對，本題失分';}
+  else if(myRight&&oppRight){banner.className='reveal-banner draw';banner.textContent='🤝 雙方都答對，不計分';}
+  else if(!myA){banner.className='reveal-banner lose';banner.textContent='⏱ 時間到，未作答';}
+  else{banner.className='reveal-banner draw';banner.textContent='❌ 雙方都答錯，不計分';}
+}
+
+function showCountdown(sec){
+  const overlay=document.getElementById('countdown-overlay');
+  overlay.classList.remove('hidden');
+  const numEl=document.getElementById('countdown-num');
+  if(sec>0){numEl.textContent=sec;numEl.style.color='var(--accent)';document.getElementById('countdown-label').textContent='準備好了嗎？';}
+  else{numEl.textContent='GO!';numEl.style.color='var(--green)';document.getElementById('countdown-label').textContent='搶先答題！';}
+}
+function hideCountdown(){document.getElementById('countdown-overlay').classList.add('hidden');}
+
+function onAnswer(e, ans){
+  if(e.type==='touchend') e.preventDefault();
+  if(!isAnswering||myAnswer) return;
+  myAnswer=ans;
+  isAnswering=false;
+  setAnswerButtons(false);
+  document.getElementById('ans-'+(ans-1)).classList.add('selected');
+  document.getElementById('status-p1').textContent='你：已作答';
+  sendAnswer(ans);
+}
+
+async function sendAnswer(answer){
+  if(!roomId) return;
+  try {
+    await fetch(`${API}/room/quiz/${roomId}/act`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pid,answer})});
+  } catch {}
+}
+
+function showGameOver(st){
+  const myWins=myRole==='p1'?st.p1_wins:st.p2_wins;
+  const oppWins=myRole==='p1'?st.p2_wins:st.p1_wins;
+  const iWon=st.winner===myRole, isDraw=st.winner==='draw';
+  if(iWon){
+    myTotalWins++; myStreak++;
+    if(myStreak>myBestStreak) myBestStreak=myStreak;
+    localStorage.setItem('capy_quiz_total_wins',myTotalWins);
+    localStorage.setItem('capy_quiz_streak',myStreak);
+    localStorage.setItem('capy_quiz_best',myBestStreak);
+    submitScore();
+  } else if(!isDraw){ myStreak=0; localStorage.setItem('capy_quiz_streak',0); }
+  document.getElementById('result-emoji').textContent=isDraw?'🤝':iWon?'🎉':'😢';
+  document.getElementById('result-title').textContent=isDraw?'平手！':iWon?'你是智識王！':'輸了，繼續加油！';
+  document.getElementById('result-title').className='result-title '+(isDraw?'draw-text':iWon?'win-text':'lose-text');
+  document.getElementById('result-score').textContent=myWins+' : '+oppWins;
+  const oppName=myRole==='p1'?(st.p2_name||'對手'):(st.p1_name||'對手');
+  const streakMsg=iWon&&myStreak>1?' 🔥連勝'+myStreak+'場！':'';
+  document.getElementById('result-sub').textContent=isDraw?'勢均力敵，再來一局！':iWon?'知識完勝 '+oppName+'！'+streakMsg:'被 '+oppName+' 打敗，再挑戰！';
+  document.getElementById('result-overlay').classList.remove('hidden');
+}
+
+document.getElementById('name-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter') onFindTap({type:'click',preventDefault:()=>{}});
+});
+</script>
+</body>
+</html>

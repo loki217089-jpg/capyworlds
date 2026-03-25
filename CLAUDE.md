@@ -1,4 +1,44 @@
-# CapyWorlds — Claude 開發指引（2026/3/22 更新）
+# CapyWorlds — Claude 開發指引（2026/3/25 更新）
+
+## 新 Session 自動合併規則（最優先執行）
+
+**每次開新 session 時**，Claude 必須主動執行以下流程：
+
+1. **檢查是否有未合併的 `claude/` 分支**：
+   ```bash
+   git branch -r --no-merged origin/main | grep "origin/claude/"
+   ```
+2. **若有未合併分支**：
+   - 先 `git fetch origin main` 取得最新 main
+   - 切換到該分支，嘗試 `git merge origin/main`
+   - 若有 conflict → 自動解決（保留雙方有意義的改動）
+   - 合併後 push 到該分支
+   - 用 GitHub MCP 工具合併 PR 到 main（若 PR 存在）
+   - 若無 PR，直接 `git checkout main && git merge <branch> && git push origin main`
+3. **合併完成後告知使用者**：「已把 `claude/xxx` 合併進 main ✅」
+4. **不需要問**：直接執行，事後報告即可
+
+---
+
+## Context 壓縮保護規則（最優先執行）
+
+**問題根因**：對話過長時，系統會自動壓縮舊訊息，設計討論細節會消失。
+
+### 強制流程：設計討論 → 立即存檔
+
+1. **每次遊戲設計討論結束後**，Claude 必須主動說：「要把這次討論存進設計文件嗎？」
+2. **有新遊戲開發時**，在 `games/<name>/DESIGN.md` 存設計草稿
+3. **重要決策確認後**，立即 append 進該遊戲的 DESIGN.md，不等到最後
+4. **不需要問**：若討論中出現 Boss 機制、升級樹、核心玩法變更等重要細節，直接存，事後告知
+
+### 各遊戲設計文件位置
+
+| 遊戲 | 設計文件 |
+|------|---------|
+| 世界航道 | `games/sea-route/DESIGN.md` |
+| （新遊戲依此格式新增） | |
+
+---
 
 ## 大型檔案寫入規則（最優先執行）
 
@@ -134,7 +174,10 @@
 
 - 所有遊戲都是純前端，無外部依賴（無 npm、無框架）
 - 每款遊戲只有一個 `index.html`（CSS 與 JS 全部 inline）
-- 使用繁體中文 UI
+- 語言：繁體中文 + 英文雙語（預設繁體中文，右上角切換按鈕「繁中 / EN」，切換後 i18n 物件全部替換文字）
+- **⚠️ 雙語文字出框**：英文通常比中文長 1.5～2 倍，製作或修改 UI 時兩種語言都要確認
+  - **視覺舒適度優先**：優先調大容器或改排版，其次縮短文案，最後才用壓縮（`fillText maxWidth` / CSS truncate）
+  - 壓縮後若文字明顯變形，就該改排版，不是硬塞
 - 視覺風格跟隨現有設計（深色背景、金色/青色強調色）
 - 手機遊戲：Canvas 必須用 JS 縮放填滿螢幕
 - `touch-action: none` 只加在 canvas 元素，不加在 body
@@ -208,10 +251,173 @@ JS: `document.documentElement.setAttribute('data-theme', t)` + `localStorage.set
 
 ---
 
+## 新遊戲建置：素材配置清單
+
+> 開一款新遊戲時，先從這張表決定要用哪些素材，路徑都以 `../../assets/` 為根目錄。
+
+---
+
+### 🎵 背景音樂（BGM）配置
+
+| 遊戲氛圍 | 推薦音樂包 | 代表曲目 | 格式 |
+|----------|-----------|---------|------|
+| 輕鬆 / 休閒 / 農村 | `JDSherbert - Minigame Music Pack [FREE]/` | Beach Vibes, Refreshing Dawn | .ogg |
+| 奇幻 / RPG | `Fantasy RPG Music Pack Vol.3/Loops/ogg/` | Action 1~5 Loop, Ambient 1~10 Loop | .ogg |
+| 中世紀 / 冒險 | `Medieval Vol. 2/ogg/` | Medieval Vol. 2 1~8.ogg | .ogg |
+| 環境 / 海洋 / 放置 | `10 Ambient RPG Tracks/ogg/` | Ambient 1~10.ogg | .ogg |
+| 賽博龐克 / 現代 | `Urban Modern/` | urban-light-bed-loop, modern-electronic-waves | .mp3 |
+| 恐怖 / 末日 | `retroindiejosh_mp06-horror_ogg/` | — | .ogg |
+| 🎹 鋼琴輕音樂 | `Game Piano Music/` | — | — |
+| 科幻 / 太空 | ❌ **缺少** | 需補充 | — |
+| 節日 / 歡慶 | ❌ **缺少** | 需補充 | — |
+| 戰鬥 / Action | ❌ **缺少**（目前只有 RPG 循環） | 需補充 | — |
+
+**BGM 使用模板：**
+```javascript
+// 遊戲路徑：games/<game>/index.html → 素材根：../../assets/
+startBGM('../../assets/music/JDSherbert - Minigame Music Pack [FREE]/JDSherbert - Minigame Music Pack - Beach Vibes.ogg');
+```
+
+---
+
+### 🔊 音效（SFX）配置
+
+> 規則：即時動作音效 ≤ 300ms，超過需傳 maxMs 截斷
+
+#### 常見事件對應表
+
+| 觸發事件 | 推薦音效檔 | 路徑 | maxMs |
+|----------|-----------|------|-------|
+| 撿道具 / 收集 | `coin_collect.wav` | `sfx/400 Sounds Pack/Items/` | 280 |
+| 稀有道具 / 手動收集 | `gem_collect.wav` | `sfx/400 Sounds Pack/Items/` | 280 |
+| 購買 / 確認 | `synth_confirmation.wav` | `sfx/400 Sounds Pack/UI/` | 260 |
+| 取消 / 返回 | `cancel.wav` | `sfx/400 Sounds Pack/UI/` | 200 |
+| 錯誤 / 不可操作 | `8_bit_negative.wav` | `sfx/400 Sounds Pack/Musical Effects/` | 300 |
+| 升級 / 強化 | `Retro PowerUP 09.wav` | `sfx/GameSFX3/PowerUp/` | 280 |
+| 進度上升提示 | `Retro Ascending Short 20.wav` | `sfx/GameSFX0/Ascending/` | 250 |
+| 跳躍 | `Retro Jump 01.wav` | `sfx/GameSFX1/Bounce Jump/` | 200 |
+| 攻擊 / 受傷 | `Retro Impact Punch 07.wav` | `sfx/GameSFX2/Impact/` | 200 |
+| 射擊 | `Retro Gun SingleShot 04.wav` | `sfx/GameSFX3/Weapon/` | 200 |
+| 魔法技能 | `Retro Magic 06.wav` | `sfx/GameSFX2/Magic/` | 250 |
+| 爆炸 | `（GameSFX1/Explosion/ 內取用）` | `sfx/GameSFX1/Explosion/` | 不截斷 |
+| 關卡完成 / 通關 | `brass_level_complete.wav` | `sfx/400 Sounds Pack/Musical Effects/` | 不截斷 |
+| 解鎖新內容 | `8_bit_level_complete.wav` | `sfx/400 Sounds Pack/Musical Effects/` | 不截斷 |
+| Boss 擊中 | `vibraphone_chime_positive.wav` | `sfx/400 Sounds Pack/Musical Effects/` | 200 |
+| Boss 失誤 | `8_bit_negative.wav` | `sfx/400 Sounds Pack/Musical Effects/` | 300 |
+| UI 按鈕 hover | `select_1.wav` | `sfx/400 Sounds Pack/UI/` | 150 |
+| Popup 開啟 | `JDSherbert - Ultimate UI SFX Pack - Popup Open - 1.ogg` | `sfx/JDSherbert - Ultimate UI SFX Pack (FREE)/…/Stereo/ogg/` | 不截斷 |
+| Popup 關閉 | `JDSherbert - Ultimate UI SFX Pack - Popup Close - 1.ogg` | 同上 | 不截斷 |
+
+**SFX 使用模板（複製進新遊戲）：**
+```javascript
+const AUDIO_CTX = new (window.AudioContext||window.webkitAudioContext)();
+const AUDIO_BUFS = {};
+let audioMuted = (localStorage.getItem('<game>Muted')==='1');
+let bgmSource = null, bgmGain = null, bgmLoaded = false;
+
+function loadAudio(name, url){
+  fetch(url).then(r=>r.arrayBuffer()).then(ab=>AUDIO_CTX.decodeAudioData(ab))
+    .then(buf=>{ AUDIO_BUFS[name]=buf; }).catch(()=>{});
+}
+function playAudio(name, vol=0.7, rate=1, maxMs=0){
+  if(audioMuted) return;
+  const buf=AUDIO_BUFS[name]; if(!buf) return;
+  if(AUDIO_CTX.state==='suspended') AUDIO_CTX.resume();
+  const src=AUDIO_CTX.createBufferSource();
+  src.buffer=buf; src.playbackRate.value=rate;
+  const gain=AUDIO_CTX.createGain(); gain.gain.value=vol;
+  src.connect(gain); gain.connect(AUDIO_CTX.destination);
+  src.start(0,0,maxMs>0?maxMs/1000:buf.duration);
+}
+function startBGM(url){
+  if(bgmLoaded||audioMuted) return; bgmLoaded=true;
+  fetch(url).then(r=>r.arrayBuffer()).then(ab=>AUDIO_CTX.decodeAudioData(ab)).then(buf=>{
+    if(AUDIO_CTX.state==='suspended') AUDIO_CTX.resume();
+    bgmSource=AUDIO_CTX.createBufferSource();
+    bgmSource.buffer=buf; bgmSource.loop=true;
+    bgmGain=AUDIO_CTX.createGain(); bgmGain.gain.value=0.22;
+    bgmSource.connect(bgmGain); bgmGain.connect(AUDIO_CTX.destination);
+    bgmSource.start();
+  }).catch(()=>{});
+}
+function toggleMute(){
+  audioMuted=!audioMuted;
+  if(bgmGain) bgmGain.gain.value=audioMuted?0:0.22;
+  document.getElementById('mute-btn').textContent=audioMuted?'🔇':'🔊';
+  localStorage.setItem('<game>Muted',audioMuted?'1':'0');
+  if(!audioMuted&&!bgmLoaded) startBGM(BGM_URL);
+}
+// 在 init() 裡加：
+// if(audioMuted) document.getElementById('mute-btn').textContent='🔇';
+// const startOnce=()=>{ startBGM(BGM_URL); document.removeEventListener('click',startOnce); document.removeEventListener('touchend',startOnce); };
+// document.addEventListener('click',startOnce); document.addEventListener('touchend',startOnce);
+```
+
+---
+
+### 🎨 圖片 / Sprite 配置
+
+| 遊戲類型 | 推薦素材包 | 路徑 | 內容 |
+|----------|-----------|------|------|
+| 農場 / 村落 | Sunnyside World | `images/Sunnyside World/` | 建築、NPC、地板、植物、農業 |
+| 末日 / 生存 | PostApocalypse | `packs/PostApocalypse_AssetPack_v1.1.2/` | 主角、殭屍3種、廢墟 tile |
+| 機甲 / 戰爭 | Robot Warfare | `packs/Robot Warfare Asset Pack 24-11-21/` | 士兵×7、機器人×5、子彈、爆炸 |
+| RPG / 地城 | Pixel Crawler | `images/Pixel Crawler - Free Pack 2.0.4/` | 怪物、地板、效果 |
+| 奇幻角色 | Tiny RPG Character | `images/Tiny RPG Character Asset Pack v1.03b…/` | 士兵、獸人 spritesheet |
+| 農夫 / 人物 | Mana Seed Farmer | `images/Mana Seed Farmer Sprite Free Sample/` | 農夫動畫 |
+| 森林 / 奇幻環境 | mystic_woods | `images/mystic_woods_free_2.2/` | 樹木、灌木、環境 |
+| Roguelike 綜合 | 32rogues | `images/32rogues-1/` `images/32rogues-2/` | 多樣素材 |
+| 小動物 | critters | `images/critters/` | 動物 sprite |
+| 寶石 / 礦物 | Pixel Art Gem Pack | `Pixel Art Gem Pack - Animated/` | 10種×8色寶石動畫 + 火花 |
+| 物品圖標（商店用） | Pixel_Mart | `Pixel_Mart/` | 150個物品 PNG |
+| UI 通用圖標 | Icons_Essential | `images/Icons_Essential/Icons/` | 80個像素 icon（Coin, Book, Chest…） |
+| 魔法 / 技能特效 | Free Pixel Effects | `images/Free Pixel Effects Pack/` | 22種特效 spritesheet |
+| 天氣特效 | Weather Elements | `images/Weather Elements Freebie/` | 雨、雪、雷 |
+| 等距地板 | isometric tileset | `images/isometric tileset/` | 等距視角地板 |
+| 海洋 / 航海 | ❌ **缺少** | 需補充 | 海浪、船隻、港口 |
+| 太空 / 科幻 | ❌ **缺少** | 需補充 | 太空背景、星球、飛船 |
+| 水豚角色 sprite | ❌ **缺少** | 需補充 | 吉祥物動畫 spritesheet |
+
+---
+
+### 🖼️ UI 元件配置
+
+| UI 元件 | 現有做法 | 素材 | 狀態 |
+|---------|---------|------|------|
+| 按鈕 / 面板 | 純 CSS（border-radius + backdrop-filter） | — | ✅ CSS 即可 |
+| 血條 / 進度條 | 純 CSS div + width 動畫 | — | ✅ CSS 即可 |
+| 道具 / 通用圖標 | Icons_Essential / Pixel_Mart PNG | `images/Icons_Essential/Icons/` | ✅ 現有 |
+| 金幣圖示 | `Coin.png` / `Coin2.png` | `images/Icons_Essential/Icons/` | ✅ 現有 |
+| 寶箱 / 稀有物 | `ChestTreasure.png` | `images/Icons_Essential/Icons/` | ✅ 現有 |
+| 特效動畫 | Free Pixel Effects spritesheet | `images/Free Pixel Effects Pack/` | ✅ 現有 |
+| 字型（像素風） | Google Fonts CDN（VT323 / Press Start 2P） | — | ⚠️ 靠 CDN，無本地檔 |
+| 9-slice 面板框 | ❌ 缺少，目前全靠 CSS | 需補充 | ❌ 缺 |
+| 虛擬搖桿（手機） | Canvas 繪製圓形 | — | ⚠️ 無圖片，靠 canvas |
+| 對話框 / 氣泡框 | 純 CSS | — | ✅ CSS 即可 |
+
+---
+
+### ❗ 目前素材庫缺少（需補充）
+
+| 優先 | 類型 | 說明 | 建議來源 |
+|------|------|------|---------|
+| 🔴 高 | 字型檔（本地） | 目前靠 CDN，離線環境或 CrazyGames 上架可能失效 | Google Fonts 下載 .woff2（VT323, Press Start 2P, Noto Sans TC） |
+| 🔴 高 | 戰鬥 / Action BGM | 現有音樂全是環境/RPG 迴圈，缺乏激烈戰鬥感 | itch.io 免費音樂包 |
+| 🔴 高 | 科幻 / 太空 BGM | 虛空領航員等太空遊戲無合適 BGM | itch.io: synthwave/space music |
+| 🟡 中 | 海洋 / 航海 Sprite | 世界航道全靠 canvas 畫，沒有真實船隻/海浪素材 | OpenGameArt.org 搜 "ocean tileset" |
+| 🟡 中 | 水豚角色 sprite | 吉祥物有 emoji 但沒有動畫 spritesheet | 自製或委外像素藝術師 |
+| 🟡 中 | 節日 / 歡慶 BGM | 節日活動缺 BGM | itch.io 免費 |
+| 🟢 低 | 9-slice UI 面板 | 現在 CSS 夠用，但像素風遊戲有面板更有質感 | Kenney.nl UI Pack |
+| 🟢 低 | 太空 / 科幻 Sprite | 虛空領航員星空全靠 canvas 繪製 | Kenney.nl Space Shooter |
+| 🟢 低 | 虛擬搖桿圖片 | 目前用 canvas 畫圓，無圖片質感 | Kenney.nl Game Input |
+
+---
+
 ## 現有遊戲清單（2026/3/22 同步）
 
 | 目錄 | 遊戲名稱 | 類型 | 行數 |
 |------|---------|------|------|
+| `sea-route/` | 世界航道 Sea Route | 放置 Idle + 探索 | ~1091 |
 | `beat-warrior/` | 節拍戰士 | 節奏 RPG | ~795 |
 | `beyblade/` | 戰鬥陀螺 BURST ARENA | 物理對戰 | ~1084 |
 | `bug-crisis/` | 機甲蟲蟲危機 | 塔防 | ~709 |
@@ -223,7 +429,7 @@ JS: `document.documentElement.setAttribute('data-theme', t)` + `localStorage.set
 | `fps/` | FPS 射擊遊戲 | 第一人稱射擊 | ~930 |
 | `hero/` | 勇者傳說 | 放置 RPG | ~3369 |
 | `mosquito/` | 進化蚊子 | 放置進化 | ~1546 |
-| `space-roguelike/` | 虛空領航員 | 太空 Roguelike | ~2565 |
+| `space-roguelike/` | 虛空領航員 | 太空 Roguelike | ~3000 |
 | `village/` | 水豚小村 | 村落模擬 | ~1655 |
 | `virus/` | VIRUS.EXE 系統清除 | 駭客防禦 | ~2446 |
 | `zombie-idle/` | 殭屍蔓延 Zombie Idle | 放置點擊 | ~1651 |
@@ -232,6 +438,9 @@ JS: `document.documentElement.setAttribute('data-theme', t)` + `localStorage.set
 ---
 
 ## 各遊戲優缺點
+
+> **優化規則**：每次優化完成後，從該遊戲條目刪除對應的缺點。
+> 若一款遊戲的缺點全部刪完（只剩優點描述），**立即停止優化**，等整個清單都清空後再重新分析一輪。
 
 ### 節拍戰士 `beat-warrior/`
 - 節奏判定清晰（Perfect/Good/Miss）、真實 sprite 動畫、螢幕震動回饋
@@ -259,12 +468,14 @@ JS: `document.documentElement.setAttribute('data-theme', t)` + `localStorage.set
 - 鑽探方向單一（只能往下）
 
 ### 地球再生 `earth-civilization/`
-- 5 時代進程、與太空 Roguelike 跨遊戲連動
-- 後期被動收入過慢
+- 5 時代進程、與太空 Roguelike 跨遊戲連動（研究院×3、發電廠數值已調整）
 
 ### 農場三消 `farm-match/`
 - Gacha 元素、N/R/SR/SSR 稀有度、連擊系統
-- 尚待深度測試
+- 卡片技能豐富多樣（炸行/3×3炸/十字清/全場核彈），爆發感強
+- 里程碑分數獎勵步數，給玩家持續動力，不易中途放棄
+- 無存檔機制，一局結束金幣/卡片全清，難以累積長線成就感
+- 後期缺乏難度曲線，寶石種類固定、無關卡障礙物
 
 ### FPS 射擊 `fps/`
 - 完整光線追蹤引擎、爆頭機制、3 種武器
@@ -275,16 +486,14 @@ JS: `document.documentElement.setAttribute('data-theme', t)` + `localStorage.set
 - 3369 行，修改需特別謹慎分塊
 
 ### 進化蚊子 `mosquito/`
-- 吸血點擊升級、進化路線、Boss 戰
-- 點擊疲勞感（放置元素不足）
+- 吸血點擊升級、進化路線、Boss 戰、血流加速被動升級（Lv1-3 自動血珠）
 
 ### 虛空領航員 `space-roguelike/`
 - 太空探索+採礦、燃料管理、Meta 升級
-- ~2565 行，武器種類偏少
+- 8 種武器（雷射/散射/重砲/導彈/波動/連射/等離子/閃電鏈），~3000 行
 
 ### 水豚小村 `village/`
-- 收集/採集冷卻、行為日誌系統
-- 缺乏長期目標
+- 收集/採集冷卻、行為日誌系統、村民故事線（每人 4 個節點 friendship 25/50/75/100）
 
 ### VIRUS.EXE `virus/`
 - 賽博朋克視覺風格、VT323 字型、多層防禦
@@ -305,11 +514,26 @@ JS: `document.documentElement.setAttribute('data-theme', t)` + `localStorage.set
 ### 辨認方式
 ```cmd
 echo %COMPUTERNAME%
+echo %USERPROFILE%
 ```
 
 ### 筆電（已確認）
+- COMPUTERNAME：`USER`（推測）
 - Git repo：`C:\Users\User\capyworlds`
 - 素材落地：`C:\Users\User\Desktop\capyworlds\assets\`
+
+### 桌機 ALICE（已確認 2026/3/24）
+- COMPUTERNAME：`ALICE`
+- Git repo：`C:\Users\alice\OneDrive\桌面\capyworlds`
+- wrangler deploy 指令：
+  ```cmd
+  cd C:\Users\alice\OneDrive\桌面\capyworlds
+  git pull origin main
+  npx wrangler deploy
+  ```
+
+### 手機
+- 路徑待確認（第一次使用時補充）
 
 ### ACER 主機（路徑待確認）
 第一次用 ACER 時請先跑 `echo %COMPUTERNAME%` 和 `echo %USERPROFILE%`
@@ -330,6 +554,424 @@ git push origin main
 
 ---
 
+## 好遊戲上架 SOP（2026/3/23 制定）
+
+> 適用平台：CrazyGames（Web）為主，可延伸至 itch.io / Steam / 手機
+
+```
+Step 0｜IP 授權 & 合規確認（開工前）
+  - 確認所有素材（圖、音、字型）授權允許商業用途
+  - 若用 AI 生圖，確認平台政策（CG 目前接受）
+  - 建立 credits.txt 記錄所有第三方素材來源
+
+Step 1｜核心玩法鑽石
+  - 一句話說清楚：「玩家做 X，感受 Y」
+  - 先做最小可玩版本（30 分鐘內能玩完的 demo）
+  - 玩法不有趣 → 不往下走
+  - **語言預設：繁體中文 + 英文雙語**（方案 A：右上角「繁中/EN」切換按鈕，i18n 物件儲存所有文字）
+
+Step 2｜市場定位
+  - 找 3 款相似遊戲：我的差異是什麼？
+  - 目標平台鎖定：Web（CrazyGames / itch.io）/ iOS / Android / Steam
+  - 目標受眾：核心玩家 / 輕度玩家 / 學生？
+  - 商業模式在這裡決定（不是最後才加）：
+    Web → CrazyGames revenue share / AdSense
+    手機 → 內購（道具/皮膚）/ 訂閱 / 買斷
+    Steam → 買斷 $2.99~$9.99 甜蜜帶
+
+Step 3｜美術風格鎖定
+  - 選定 1 種視覺語言（像素藝術 / 扁平 / 2.5D）
+  - 確認素材來源（自製 / 素材包授權 / 外包）
+  - 建立 palette（4~6 色）+ 統一字型
+  - 確定 Icon 設計方向（1024×1024 主視覺）
+
+Step 4｜音效 & 音樂
+  - 核心動作音效（擊打/撿取/升級）<= 300ms
+  - 背景音樂迴圈（授權或自製，注意 loop point 無縫）
+  - 音效品質是第一印象關鍵，不能省
+
+Step 5｜核心迴圈打磨（Juice & Balance）
+  - 每個動作加回饋：粒子、震動、聲音、數字跳出
+  - 進度感：升級樹 / 解鎖 / 排行榜
+  - 至少找 5 個真實玩家測試，觀察卡關點
+  - 加入教學/新手引導（前 60 秒體驗決定留存）
+
+Step 6｜效能 & 相容性測試
+  - 目標：中低階手機/電腦也能跑 60fps
+  - 測試瀏覽器：Chrome / Firefox / Safari / Edge
+  - 手機測試：iOS Safari + Android Chrome
+  - 確認無記憶體洩漏（長時間開著不爆）
+
+Step 7｜上架素材準備（以 CrazyGames 為模板）
+  封面圖（3 尺寸，皆需含遊戲名稱）：
+    - 1920×1080（橫版主視覺）
+    - 800×1200（直版，手機清單用）
+    - 800×800（正方形，縮圖用）
+  宣傳影片：
+    - 30 秒，前 5 秒必須有最精彩畫面
+    - 無需語音，字幕說明即可
+    - 解析度 1920×1080，MP4
+  文案：
+    - 標題（<30 字）/ 副標 / 關鍵字 5~10 個
+    - 遊戲說明（操作方式 + 核心玩法，<200 字）
+  法務：
+    - 隱私政策頁（手機 & CG 必要）
+    - 年齡分級（CG 自填）
+
+Step 8｜發布 & 社群曝光
+  - 先 soft launch（小範圍測試 1 週）
+  - 收 review → 修 bug → 發版本更新
+  - 曝光管道：Reddit（r/WebGames / r/indiegaming）/ Twitter / Discord
+  - 追蹤核心指標：留存率 Day1/7/30、平均遊玩時長、廣告點擊率
+
+Step 9｜迭代 & 長尾運營
+  - 每 2~4 週發內容更新（新關卡/角色/活動）
+  - 節日活動（聖誕/農曆新年/萬聖節）刷曝光
+  - 收集玩家反饋決定是否值得繼續投入
+  - 若留存良好 → 移植手機版本擴大受眾
+```
+
+### 各平台素材規格速查
+
+| 平台 | 封面尺寸 | 影片長度 | 特殊要求 |
+|------|---------|---------|---------|
+| CrazyGames | 1920×1080 / 800×1200 / 800×800 | 30s | 需嵌入頁面可玩 |
+| itch.io | 630×500（封面）| 可 YouTube 連結 | 支援自訂頁面 HTML |
+| Steam | 460×215（主圖）/ 1232×706（截圖）| 30s~90s MP4 | 需 Steamworks 審核 |
+| Google Play | 512×512（icon）/ 1024×500（feature）| 30s | 需 privacy policy URL |
+| App Store | 1024×1024（icon）/ 6.5" 截圖 | 30s | 需 Apple 開發者帳號 |
+
+---
+
+## CrazyGames 上架表單內容（英文版）
+
+> 封面產生器：`tools/cover-gen.html`（本地打開，3種尺寸一鍵下載）
+> 每次上架前把下方對應遊戲的內容複製貼入 CG 表單即可。
+
+### 表單欄位說明
+
+| 欄位 | 字數限制 | 說明 |
+|------|---------|------|
+| Category | — | 單選，從 CG 清單選 |
+| Tags | 最多 5 個 | 從 CG 標籤庫選 |
+| Description | 無 HTML | 遊戲說明，純文字 |
+| Controls | 無 HTML | 操作說明，純文字 |
+
+---
+
+### 🦫 Capy Village（水豚小村）
+- **Category:** Idle
+- **Tags:** `1 Player` `Mouse` `Animal` `Village` `Clicker`
+- **Description:**
+  Build and grow your very own capybara village! Assign villagers to gather wood, stone, and food. Unlock new buildings, discover villager stories, and watch your cozy settlement thrive. Each capybara has a unique personality revealed through friendship milestones.
+- **Controls:**
+  Mouse – Click to collect resources and interact with villagers. Click buildings to assign tasks. Use the upgrade panel to improve your village.
+
+---
+
+### 🦫 Capy Runner（水豚跑酷）
+- **Category:** Running
+- **Tags:** `1 Player` `Mobile` `Animal` `Endless Runner` `Swipe`
+- **Description:**
+  Guide your capybara through an endless obstacle course! Swipe up to jump, swipe down to slide. Collect coins, grab power-ups like shields and magnets, and see how far you can run before the barrels and walls stop you. Speed increases over time!
+- **Controls:**
+  Mobile – Swipe up to jump, swipe down to slide.
+  Desktop – Arrow Up / W to jump, Arrow Down / S to slide.
+
+---
+
+### 📚 Daily Quiz RPG（每日一題 RPG）
+- **Category:** Trivia
+- **Tags:** `1 Player` `Mobile` `Educational` `RPG` `Daily Challenge`
+- **Description:**
+  Answer daily trivia questions to power up your hero! Every correct answer earns XP and gold. Level up your character, unlock new skills, and battle monsters using knowledge as your weapon. A new question arrives every day — keep your streak going!
+- **Controls:**
+  Mouse / Tap – Select your answer. Click skill buttons to use abilities in battle.
+
+---
+
+### 🦟 Mosquito Evolution（進化蚊子）
+- **Category:** Clicker
+- **Tags:** `1 Player` `Animal` `Mouse` `Idle` `Evolution`
+- **Description:**
+  Click to swat evolving mosquitoes before they drain your blood! As you survive, mosquitoes grow stronger and smarter — upgrade your reflexes, unlock passive abilities, and discover evolution branches that change how the swarm behaves. How long can you last?
+- **Controls:**
+  Mouse – Click mosquitoes to swat them. Click upgrade buttons to spend coins. Passive upgrades activate automatically.
+
+---
+
+### ⛏️ Deep Diggers（深地探掘者）
+- **Category:** Idle
+- **Tags:** `1 Player` `Mouse` `Mining` `Roguelike` `Upgrade`
+- **Description:**
+  Dig deeper into the earth, discover rare ores, and battle underground creatures! Explore 5 distinct biomes as you descend. Spend gems on 7 upgrade trees to enhance your drill speed, inventory, and combat power. How deep can you go?
+- **Controls:**
+  Mouse – Click to drill. Click upgrade panels to spend resources. Hover over items for details.
+
+---
+
+### 🌍 Earth Reborn（地球再生）
+- **Category:** Idle
+- **Tags:** `1 Player` `Mouse` `Civilization` `Strategy` `Idle`
+- **Description:**
+  Rebuild civilization from scratch after the apocalypse! Progress through 5 eras — from Stone Age to Space Age — by gathering resources, researching technologies, and constructing wonders. Connects with Void Navigator: research from Earth powers your space fleet!
+- **Controls:**
+  Mouse – Click to collect resources. Click buildings to produce goods. Use the tech tree to unlock new eras.
+
+---
+
+### 🧟 Zombie Idle（殭屍蔓延）
+- **Category:** Idle
+- **Tags:** `1 Player` `Mouse` `Zombie` `Clicker` `Idle`
+- **Description:**
+  Spread your zombie horde across the city! Click to infect survivors, place auto-spreading units, and unlock DNA upgrades through Prestige resets. Each prestige run makes your horde exponentially stronger. Can you infect the entire world?
+- **Controls:**
+  Mouse – Click the map to spread infection. Click upgrade buttons to evolve your horde. Use the Prestige button to reset and multiply your power.
+
+---
+
+### ☣ Last Stand（末日求生）
+- **Category:** Shooter
+- **Tags:** `1 Player` `Keyboard` `Zombie` `Survival` `Wave Defense`
+- **Description:**
+  Survive endless waves of the undead in a post-apocalyptic wasteland! Face 3 types of zombies — walkers, runners, and tanks — with authentic pixel art sprites. Earn points per wave to buy weapons and upgrades. How many waves can you endure?
+- **Controls:**
+  WASD – Move. Mouse – Aim. Left Click – Shoot. R – Reload. 1/2/3 – Switch weapon. Space – Dash.
+
+---
+
+### 🦠 VIRUS.EXE（系統清除）
+- **Category:** Strategy
+- **Tags:** `1 Player` `Mouse` `Hacker` `Tower Defense` `Cyberpunk`
+- **Description:**
+  Your system is under attack — deploy firewalls, launch counter-viruses, and purge malware before it corrupts your core files! Master 3 layers of defense in a neon cyberpunk interface. Each virus type requires a different strategy. Can you keep your system clean?
+- **Controls:**
+  Mouse – Click to place defense nodes. Right-click to sell. Click virus nodes to target manually. Use hotkeys 1–5 for quick deploy.
+
+---
+
+### 🚀 Void Navigator（虛空領航員）
+- **Category:** Space
+- **Tags:** `1 Player` `Keyboard` `Space` `Roguelike` `Exploration`
+- **Description:**
+  Navigate the void between stars, mine asteroid fields, and battle alien fleets in this deep-space roguelike! Manage fuel, choose your route through 8 star systems, and unlock 8 weapon types — from laser beams to plasma chains. Meta upgrades persist between runs.
+- **Controls:**
+  WASD / Arrow Keys – Fly. Mouse – Aim. Left Click – Fire. Tab – Map. E – Interact. Esc – Pause.
+
+---
+
+### ⚔️ Hero Legend（勇者傳說）
+- **Category:** RPG
+- **Tags:** `1 Player` `Mouse` `RPG` `Fantasy` `Idle`
+- **Description:**
+  Embark on an epic RPG adventure! Choose your class, master skills, forge equipment, and conquer multi-floor dungeons. Face challenging boss encounters, unlock talent trees, and build the ultimate hero. A full RPG experience in your browser — no download needed.
+- **Controls:**
+  Mouse – Click to attack, select skills, and navigate menus. Hotkeys 1–6 to use skills in battle. Auto-battle toggle available.
+
+---
+
+### ⚔ Beat Warrior（節拍戰士）
+- **Category:** Music
+- **Tags:** `1 Player` `Keyboard` `Rhythm` `RPG` `Music`
+- **Description:**
+  Fight enemies to the beat! Time your attacks with the music for Perfect hits that deal massive damage. Miss the rhythm and your defense crumbles. Progress through stages, level up your warrior, and face rhythm-based bosses with unique attack patterns.
+- **Controls:**
+  Z / X / C or Arrow Keys – Hit notes in time with the beat. Space – Special skill. Esc – Pause.
+
+---
+
+### 🌀 Burst Arena（戰鬥陀螺）
+- **Category:** Sports
+- **Tags:** `1 Player` `2 Players` `Physics` `Battle` `Arena`
+- **Description:**
+  Customize your spinning top and battle opponents in the arena! Combine Attack, Defense, and Stamina parts for unique builds. Random environmental events — magnetic fields, ice floors, and wind storms — shake up every match. First to knock the opponent out wins!
+- **Controls:**
+  Mouse – Drag to aim and release to launch. Click ability buttons during battle. Press Space to activate special move.
+
+---
+
+### 🐛 Bug Crisis（機甲蟲蟲危機）
+- **Category:** Strategy
+- **Tags:** `1 Player` `Mouse` `Tower Defense` `Mech` `Sci-Fi`
+- **Description:**
+  Command your mech army across 3 battle lanes to stop the mutant insect invasion! Deploy 5 unit types — each with distinct roles — before the bugs overwhelm your base. Earn scraps to upgrade your units and unlock powerful support abilities. Survive 20 waves!
+- **Controls:**
+  Mouse – Click a unit card then click a lane to deploy. Click the upgrade button to strengthen units in the field.
+
+---
+
+### 🌾 Farm Match（農場三消）
+- **Category:** Puzzle
+- **Tags:** `1 Player` `Mouse` `Match 3` `Farm` `Gacha`
+- **Description:**
+  Match colorful crops to earn points and summon rare farm helpers! With N / R / SR / SSR rarity tiers, every gacha pull is exciting. Build combos to trigger chain reactions and unlock helper abilities. How many SSR cards can you collect?
+- **Controls:**
+  Mouse – Click or drag to swap adjacent tiles. Click Gacha button to spend coins on summons.
+
+---
+
+### 🔫 FPS Shooter（FPS 射擊）
+- **Category:** Shooting
+- **Tags:** `1 Player` `Keyboard` `FPS` `Shooter` `Action`
+- **Description:**
+  A browser-based first-person shooter with a full raycasting engine! Explore maze-like maps, score headshots for bonus damage, and switch between 3 weapons. Enemies patrol and chase on detection. Survive as long as possible or clear every enemy to win.
+- **Controls:**
+  WASD – Move. Mouse – Look. Left Click – Shoot. R – Reload. 1/2/3 – Switch weapon. Shift – Sprint.
+
+---
+
+### ⛵ Sea Route（世界航道）
+- **Category:** Idle
+- **Tags:** `1 Player` `Mouse` `Nautical` `Idle` `Exploration`
+- **Description:**
+  Set sail and discover the world's great trade routes! Upgrade your fleet, unlock 10 nation ports, and automate cargo collection for passive income. Encounter sea events and time-limited boss ships for rare rewards. The ocean is yours to conquer!
+- **Controls:**
+  Mouse – Click to collect cargo, select routes, and upgrade your ship. Toggle auto-collect for hands-free sailing.
+
+---
+
+## CrazyGames 上架前檢查清單（2026/3/25 制定）
+
+> **強制規則**：每款遊戲在提交 CrazyGames 前，Claude 必須逐項跑完此清單並回報結果。
+> 源自進化蚊子被拒經驗，避免重複犯錯。
+
+### 🔴 瀏覽器相容性（必過，否則直接被拒）
+
+| 檢查項 | 說明 | 修正方式 |
+|--------|------|---------|
+| `roundRect()` | Firefox/Safari 不支援 | 加 polyfill（arcTo 替代） |
+| `replaceAll()` | 舊瀏覽器不支援 | 用 `split().join()` 或 `replace(/x/g, y)` |
+| `structuredClone()` | Safari 15.3 以下不支援 | 用 `JSON.parse(JSON.stringify())` |
+| `?.` optional chaining | IE 不支援（CG 不管 IE，但注意） | — |
+| WebAudio API | 需 `webkitAudioContext` fallback | `new (window.AudioContext\|\|window.webkitAudioContext)()` |
+| Canvas API 新方法 | `reset()`, `roundRect()` 等 | 一律加 polyfill 或用替代寫法 |
+
+**檢查指令**：在檔案中搜尋 `roundRect`、`replaceAll`、`structuredClone`、`at(` 等新 API。
+
+### 🔴 功能完整性（缺一項就被拒）
+
+- [ ] **靜音按鈕** — 必須可見且隨時可用（z-index 高於所有面板）
+- [ ] **暫停功能** — 遊戲中可暫停（按鈕或 [P]/[Esc]）
+- [ ] **語言切換** — 至少支援英文（CG 主要用戶為歐美）
+- [ ] **所有按鍵綁定都有對應 handler** — 說明書說 [F] 可引爆，就必須真的綁了 [F]
+- [ ] **所有宣告的功能都有實作** — 商店列了磁鐵，就必須有 `activateMagnet()` 函式
+- [ ] **遊戲不會因任何操作崩潰** — 空指標、未定義函式、除以零
+
+### 📱 手機 / 響應式（CG 有手機玩家，必須支援）
+
+- [ ] **Canvas touch 事件** — `touchstart` + `touchmove`，座標要乘以縮放比例
+- [ ] **`touch-action: none`** — 只加在 canvas，不加在 body
+- [ ] **UI 面板響應式** — `width: min(Xpx, calc(100vw - 24px))`，不用固定 px
+- [ ] **按鈕可點擊** — 手機上按鈕尺寸 ≥ 44px，且不被其他元素遮擋
+- [ ] **文字不溢出** — 英文比中文長 1.5~2 倍，需 `word-wrap: break-word`
+- [ ] **遊戲結束按鈕** — 用相對尺寸，不用固定 px 座標
+
+### 🎓 新手體驗（影響留存率，間接影響審核）
+
+- [ ] **新手教學** — 首次進入顯示操作說明覆蓋層（localStorage 記住已看過）
+- [ ] **前 60 秒體驗** — 不能太難也不能太無聊
+- [ ] **核心機制解釋** — 特殊機制（如吸血警告）要讓玩家看得懂
+
+### ⚡ 效能 & 品質
+
+- [ ] **resize debounce** — `setTimeout` 100ms，避免頻繁重排
+- [ ] **粒子/特效數量上限** — 長時間遊玩不能 FPS 下降
+- [ ] **移除 AdSense** — CrazyGames 用自有 SDK，不能載入第三方廣告腳本
+- [ ] **無 console.error** — 開 DevTools 確認無紅色錯誤
+
+### 📦 提交前最終確認
+
+- [ ] 在 **Chrome** 測試通過
+- [ ] 在 **Firefox** 測試通過（重點：Canvas API 相容性）
+- [ ] 在 **手機瀏覽器** 測試通過（觸控 + 響應式）
+- [ ] 英文模式下所有 UI 文字不溢出
+- [ ] 遊戲可正常結束並重新開始
+- [ ] 所有快捷鍵都能正常運作
+
+---
+
+## 週開發節奏（$100 MAX 方案）
+
+### 標準週排程
+
+| 天 | 類型 | 建議任務 |
+|----|------|---------|
+| 週一 | 🛠 開發日 | 新遊戲 or 新軟體 → 規劃 + 執行到完成 |
+| 週二 | 🔧 彈性日 | 修 bug、加小功能、更新 CLAUDE.md |
+| 週三 | 🛠 開發 / 強化日 | 新作品 or 強化現有遊戲/軟體 |
+| 週四 | 🧪 測試 & 平衡日 | 實際玩/用，找問題，請 Claude 修 |
+| 週五 | 📦 整理 & 上架日 | commit、cards、CLAUDE.md 記錄、上架素材 |
+| 週六 | 💡 靈感 & 規劃日 | 玩競品、聊概念、不強制動手 |
+| 週日 | 😴 休息日 | 放下開發，靈感來了記一筆就好 |
+
+### 每月目標（參考值）
+- 遊戲：6~10 款（CrazyGames 上架為目標）
+- 軟體：1~2 個社會影響工具
+- 書籍：4~8 章（每週 1~2 章）
+- 其他方向：按心情從下方選單挑
+
+---
+
+## 創作方向選單（沒靈感時對號入座）
+
+> 直接說「我想做 X 方向，幫我發想」，Claude 會提出 3 個具體方案讓你選。
+
+### 🎮 當你想創作
+
+| 方向 | 做什麼 |
+|------|--------|
+| 互動小說 / 文字冒險 | 世界觀 + 分支劇情 + 遊戲化 |
+| 劇本 / 故事板 | 短片、動畫、YouTube 腳本 |
+| 歌詞 / 詩集 | 中英雙語、配合音樂風格 |
+| 世界觀設定集 | 架空歷史、地圖、種族、魔法系統 |
+
+### 🌍 當你想幫助人
+
+| 方向 | 做什麼 |
+|------|--------|
+| 教育工具 | 互動學習網頁、flashcard、視覺化解釋 |
+| 無障礙工具 | 幫視障/聽障/學習障礙族群的輕量 web app |
+| 心理健康小工具 | 情緒日記、呼吸練習、CBT 引導 |
+| 社區資源整合頁 | 某議題的資訊彙整網站 |
+| 開源工具 | 發布 GitHub，讓其他開發者用 |
+
+### 📖 當你想寫作
+
+| 方向 | 做什麼 |
+|------|--------|
+| 書籍（章節） | 逐章展開，Claude 幫結構 + 潤飾 |
+| 深度部落格文章 | 技術心得、觀察、論述 |
+| 課程設計 | 把知識做成有結構的教學內容 |
+| Newsletter | 定期主題，Claude 起草 + 潤飾 |
+
+### 🧠 當你想思考 / 研究
+
+| 方向 | 做什麼 |
+|------|--------|
+| 深度研究報告 | 某議題廣泛整理成長文 |
+| 商業 / 產品分析 | 競品分析、市場切入點、MVP 規劃 |
+| 個人知識庫 | 把想法/筆記整理成有結構文件 |
+| 哲學 / 觀點整理 | 深度對話，思路變成可分享文章 |
+
+### ⚙️ 當你想自動化生活
+
+| 方向 | 做什麼 |
+|------|--------|
+| 個人自動化腳本 | Python/Bash 處理重複工作 |
+| 資料視覺化 | 數據做成漂亮 HTML 圖表 |
+| 模板庫 | 合約草稿、提案範本、Email 範本集 |
+
+### 方向互相餵養參考
+
+```
+深度研究報告 ──→ 書籍章節
+世界觀設定集 ──→ 互動小說 ──→ 遊戲
+教育工具     ──→ 課程設計 ──→ Newsletter
+社區資源頁   ──→ 開源工具 ──→ 部落格文章
+```
+
+---
+
 ## 歷史對話重點紀錄
 
 - **2026/3/22** 新增每日一題 RPG `daily-quiz-rpg/`（手機答題養成）
@@ -340,4 +982,11 @@ git push origin main
   - 新增：護盾/磁鐵道具、速度感特效、油桶障礙物
 - **2026/3/19** 節拍戰士 bug 修：第二關「繼續」按鈕 overlay 不消失 -> 已修 showOverlay
 - **2026/3/19** 節拍戰士音效：從 WebAudio 合成改為素材庫真實音效
+- **2026/3/23** 制定好遊戲上架 SOP（9步驟）+ 各平台素材規格速查表，寫入 CLAUDE.md
+- **2026/3/23** 新增週開發節奏排程 + 創作方向選單（遊戲/軟體/寫作/研究/自動化）
+- **2026/3/24** 新增世界航道 Sea Route `sea-route/`（放置 Idle + 探索解鎖，10 國航線）
+  - 設計文件：`games/sea-route/DESIGN.md`（含 Boss 機制、4 升級樹、素材規劃）
+  - v0.1：基礎航行、自動/手動蒐集、紙娃娃船、timing Boss、10 國地標
+- **2026/3/24** 新增 Context 壓縮保護規則 + 設計文件流程
+- **2026/3/23** 新增 SessionStart hook，每次開 session 自動顯示當日開發建議
 - **2026/3/19** 彈幕按鈕移到右上角，配色改用主題變數

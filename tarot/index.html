@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🃏 塔羅抽牌 — CapyWorlds</title>
+<style>
+:root{--bg:#0d0818;--bg2:#160d24;--bg3:#211038;--border:#4a2a6a;--accent:#c060ff;--text:#e8d8f8;--text2:#9070c0;--h1:#fff;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.top-bar{height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;}
+.top-bar a{color:var(--text2);text-decoration:none;font-size:13px;}
+.logo{font-size:16px;font-weight:700;color:var(--accent);}
+.wrap{max-width:600px;margin:0 auto;padding:28px 16px 48px;}
+.hero{text-align:center;padding:32px 0 24px;}
+.hero-emoji{font-size:56px;display:block;margin-bottom:12px;}
+.hero h1{font-size:26px;font-weight:800;color:var(--h1);}
+.hero p{font-size:14px;color:var(--text2);margin-top:6px;}
+.spread-label{font-size:13px;color:var(--text2);text-align:center;margin-bottom:16px;}
+.cards-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;}
+.card-slot{border:2px dashed var(--border);border-radius:14px;aspect-ratio:.65;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .3s;position:relative;overflow:hidden;}
+.card-slot.back{background:var(--bg3);border-style:solid;}
+.card-slot.back::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(192,96,255,.04) 0,rgba(192,96,255,.04) 2px,transparent 2px,transparent 10px);}
+.card-slot.back .card-inner{font-size:36px;}
+.card-slot.flipped{border-color:var(--accent);background:linear-gradient(160deg,var(--bg3),#1a0a30);}
+.card-slot.flipped .card-inner{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px;width:100%;}
+.card-slot.reversed{transform:rotate(180deg);}
+.card-emoji{font-size:32px;}
+.card-name{font-size:11px;font-weight:700;color:var(--h1);text-align:center;line-height:1.3;}
+.card-num{font-size:10px;color:var(--text2);}
+.slot-label{position:absolute;bottom:6px;font-size:10px;color:var(--text2);z-index:2;}
+.card-slot.flipped .slot-label{bottom:-2px;}
+.draw-btn{display:block;width:100%;background:linear-gradient(135deg,#6030aa,#c060ff);color:#fff;border:none;border-radius:12px;padding:14px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:20px;transition:opacity .2s;}
+.draw-btn:hover{opacity:.85;}
+.draw-btn:disabled{opacity:.35;cursor:not-allowed;}
+.reading{display:none;flex-direction:column;gap:12px;}
+.reading.show{display:flex;}
+.reading-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;gap:14px;}
+.reading-icon{font-size:32px;flex-shrink:0;}
+.reading-pos{font-size:11px;color:var(--accent);margin-bottom:2px;font-weight:700;}
+.reading-name{font-size:15px;font-weight:700;color:var(--h1);}
+.reading-rev{font-size:11px;color:#ff9944;margin-left:4px;}
+.reading-meaning{font-size:13px;color:var(--text2);margin-top:4px;line-height:1.6;}
+.reset-btn{background:transparent;border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:10px;font-size:14px;cursor:pointer;width:100%;}
+.stars{text-align:center;font-size:20px;letter-spacing:4px;color:var(--accent);opacity:.4;margin:8px 0;}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <a href="/">← CapyWorlds</a>
+  <span class="logo">🃏 塔羅抽牌</span>
+  <span></span>
+</div>
+<div class="wrap">
+  <div class="hero">
+    <span class="hero-emoji">🃏</span>
+    <h1>塔羅抽牌</h1>
+    <p>大阿爾卡那 · 三牌陣 · 過去・現在・未來</p>
+  </div>
+  <div class="stars">✦ ✦ ✦</div>
+  <div class="spread-label">點擊牌面翻牌，或直接抽三張</div>
+  <div class="cards-row" id="cardsRow">
+    <div class="card-slot" id="slot0" onclick="flipCard(0)"><div class="card-inner">🌙</div><span class="slot-label">過去</span></div>
+    <div class="card-slot" id="slot1" onclick="flipCard(1)"><div class="card-inner">🌙</div><span class="slot-label">現在</span></div>
+    <div class="card-slot" id="slot2" onclick="flipCard(2)"><div class="card-inner">🌙</div><span class="slot-label">未來</span></div>
+  </div>
+  <button class="draw-btn" id="drawBtn" onclick="drawAll()">🃏 抽三張牌</button>
+  <div class="reading" id="reading"></div>
+  <button class="reset-btn" id="resetBtn" style="display:none" onclick="resetDraw()">↺ 重新抽牌</button>
+</div>
+<script>
+const MAJOR=[
+  {num:'0',name:'愚者',emoji:'🤹',keywords:'新開始・冒險・自由',upright:'充滿潛力的新旅程即將展開，跟隨直覺勇敢出發，不要被恐懼束縛。',reversed:'魯莽行事或逃避責任，需要更多規劃再行動。'},
+  {num:'I',name:'魔術師',emoji:'🎩',keywords:'意志力・技能・實現',upright:'你擁有實現目標的所有能力，集中意志力，將想法化為現實。',reversed:'資源浪費或能力未發揮，需重新整合自身優勢。'},
+  {num:'II',name:'女祭司',emoji:'🌙',keywords:'直覺・神秘・內在智慧',upright:'深入傾聽內心的聲音，答案就在你的潛意識之中。',reversed:'忽視直覺或資訊隱藏，需要更多自我反省。'},
+  {num:'III',name:'皇后',emoji:'🌸',keywords:'豐饒・母性・創造',upright:'豐盛與創造力旺盛，感情與事業都將充滿滋養與成長。',reversed:'依賴心太重或創造力受阻，注意過度保護的傾向。'},
+  {num:'IV',name:'皇帝',emoji:'👑',keywords:'權威・穩定・秩序',upright:'以穩固的基礎和紀律建立你的王國，領導力得到認可。',reversed:'控制慾過強或缺乏靈活性，嘗試放鬆掌控。'},
+  {num:'V',name:'教皇',emoji:'⛪',keywords:'傳統・指引・信仰',upright:'尋求長者或前輩的建議，傳統智慧能幫助你度過難關。',reversed:'質疑既有規則，打破傳統或尋找個人信仰路徑。'},
+  {num:'VI',name:'戀人',emoji:'💕',keywords:'愛情・選擇・和諧',upright:'重要的選擇即將到來，遵從內心，感情關係將更加深厚。',reversed:'關係中出現裂縫或面臨艱難選擇，需要誠實溝通。'},
+  {num:'VII',name:'戰車',emoji:'🏆',keywords:'意志・勝利・掌控',upright:'憑藉強大意志力克服障礙，勝利近在眼前，繼續前進！',reversed:'失去方向感或難以自制，調整策略再出發。'},
+  {num:'VIII',name:'力量',emoji:'🦁',keywords:'勇氣・耐心・內力',upright:'用溫柔而堅定的力量面對挑戰，內在的勇氣比外在強大。',reversed:'自我懷疑或恐懼作祟，鼓起勇氣面對內心的恐懼。'},
+  {num:'IX',name:'隱士',emoji:'🏔️',keywords:'內省・孤獨・指引',upright:'退一步靜心思考，孤獨中尋找智慧，答案就在沉默裡。',reversed:'過度孤立或拒絕幫助，嘗試向他人開放心扉。'},
+  {num:'X',name:'命運之輪',emoji:'🎡',keywords:'轉機・命運・循環',upright:'命運的齒輪開始轉動，變化即將到來，順勢而為。',reversed:'逆境中的轉機，抗拒改變只會增加痛苦。'},
+  {num:'XI',name:'正義',emoji:'⚖️',keywords:'公正・真相・因果',upright:'以公平的眼光看待事物，誠實面對後果，因果自有定論。',reversed:'不公正的對待或逃避責任，需反思自身的行為。'},
+  {num:'XII',name:'倒吊人',emoji:'🙃',keywords:'等待・犧牲・新視角',upright:'暫時放下執著，換個角度看待困境，等待中蘊含智慧。',reversed:'無謂的犧牲或拖延，是時候採取行動了。'},
+  {num:'XIII',name:'死神',emoji:'🌑',keywords:'結束・轉化・重生',upright:'一個階段的結束是另一個開始，放下舊有讓新生命萌芽。',reversed:'抗拒改變或無法放手，轉化的過程需要更多時間。'},
+  {num:'XIV',name:'節制',emoji:'🌊',keywords:'平衡・耐心・融合',upright:'保持平衡與和諧，耐心整合各方面，水到渠成。',reversed:'過度放縱或失衡，調整生活節奏找回平衡。'},
+  {num:'XV',name:'惡魔',emoji:'⛓️',keywords:'束縛・物質・陰暗面',upright:'注意被物慾或不健康關係所束縛，是時候面對自己的陰影。',reversed:'掙脫束縛的時機到來，重獲自由在望。'},
+  {num:'XVI',name:'塔',emoji:'⚡',keywords:'突變・崩塌・覺醒',upright:'意外的震撼將打破舊有格局，雖然痛苦，但能帶來深刻覺醒。',reversed:'避免了危機，但仍需正視根本問題。'},
+  {num:'XVII',name:'星星',emoji:'⭐',keywords:'希望・療癒・靈感',upright:'黑暗後的曙光，希望與靈感源源不絕，相信美好將會到來。',reversed:'失去信念或夢想受阻，重新連結內心的希望之光。'},
+  {num:'XVIII',name:'月亮',emoji:'🌕',keywords:'幻覺・直覺・潛意識',upright:'事物並不如表面，運用直覺穿越迷霧，潛意識有重要訊息。',reversed:'恐懼或欺騙逐漸消散，現實漸漸清晰。'},
+  {num:'XIX',name:'太陽',emoji:'☀️',keywords:'成功・活力・光明',upright:'充滿光芒的一天！成功、快樂與活力伴隨左右，盡情發光！',reversed:'能量稍有遮蔽，樂觀心態仍能帶來好結果。'},
+  {num:'XX',name:'審判',emoji:'📯',keywords:'覺醒・召喚・更新',upright:'內在的呼喚要你覺醒，評估過去並做出新的承諾，蛻變時機到了。',reversed:'自我評判過重或害怕改變，放下批判接納自己。'},
+  {num:'XXI',name:'世界',emoji:'🌍',keywords:'完成・整合・圓滿',upright:'一個完整的循環圓滿結束，你已達成目標，盡情慶祝這份成就！',reversed:'接近完成但仍有最後障礙，堅持到底即可圓滿。'},
+];
+const POS=['過去','現在','未來'];
+let drawn=[], flipped=[false,false,false];
+
+function seededRand(s){let x=s;return()=>{x=((x*1664525+1013904223)>>>0);return x/4294967296;};}
+
+function drawAll(){
+  const seed=Date.now();const r=seededRand(seed);
+  const pool=[...MAJOR]; drawn=[];
+  for(let i=0;i<3;i++){
+    const idx=Math.floor(r()*pool.length);
+    const rev=r()>.5;
+    drawn.push({...pool[idx],reversed:rev});
+    pool.splice(idx,1);
+  }
+  flipped=[false,false,false];
+  document.querySelectorAll('.card-slot').forEach((s,i)=>{
+    s.className='card-slot back';
+    s.innerHTML=`<div class="card-inner">🌙</div><span class="slot-label">${POS[i]}</span>`;
+  });
+  document.getElementById('reading').innerHTML='';
+  document.getElementById('reading').className='reading';
+  document.getElementById('resetBtn').style.display='none';
+  document.getElementById('drawBtn').disabled=true;
+  setTimeout(()=>{
+    drawn.forEach((_,i)=>setTimeout(()=>flipCard(i),i*400));
+  },200);
+}
+
+function flipCard(i){
+  if(!drawn[i]||flipped[i])return;
+  flipped[i]=true;
+  const c=drawn[i], slot=document.getElementById('slot'+i);
+  slot.className='card-slot flipped'+(c.reversed?' reversed':'');
+  slot.innerHTML=`<div class="card-inner"><div class="card-emoji">${c.emoji}</div><div class="card-name">${c.name}</div><div class="card-num">${c.num}${c.reversed?' ↓':''}</div></div><span class="slot-label">${POS[i]}</span>`;
+  if(flipped.every(Boolean)) showReading();
+}
+
+function showReading(){
+  const div=document.getElementById('reading'); div.innerHTML='';
+  drawn.forEach((c,i)=>{
+    const d=document.createElement('div'); d.className='reading-card';
+    d.innerHTML=`<div class="reading-icon">${c.emoji}</div><div><div class="reading-pos">${POS[i]}</div><div class="reading-name">${c.name}<span class="reading-rev">${c.reversed?'(逆位)':''}</span></div><div style="font-size:11px;color:var(--accent);margin:2px 0">${c.keywords}</div><div class="reading-meaning">${c.reversed?c.reversed:c.upright}</div></div>`;
+    div.appendChild(d);
+  });
+  div.className='reading show';
+  document.getElementById('resetBtn').style.display='block';
+  div.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function resetDraw(){
+  drawn=[]; flipped=[false,false,false];
+  document.querySelectorAll('.card-slot').forEach((s,i)=>{
+    s.className='card-slot';
+    s.innerHTML=`<div class="card-inner">🌙</div><span class="slot-label">${POS[i]}</span>`;
+  });
+  document.getElementById('reading').className='reading';
+  document.getElementById('resetBtn').style.display='none';
+  document.getElementById('drawBtn').disabled=false;
+}
+
+// fix reversed meaning lookup
+MAJOR.forEach(c=>{const rev=c.reversed;c.upright_text=c.upright;c.reversed_text=rev;});
+</script>
+</body>
+</html>

@@ -265,6 +265,51 @@
       border: 1px solid var(--border);
     }
 
+    /* ── In Development Section ── */
+    .dev-section { margin-top: 56px; }
+    .dev-section-desc {
+      font-size: 13px;
+      color: var(--text2);
+      margin-bottom: 20px;
+      line-height: 1.6;
+      padding: 12px 18px;
+      background: rgba(255,140,0,0.06);
+      border: 1px solid rgba(255,140,0,0.18);
+      border-radius: 10px;
+    }
+    .dev-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 18px;
+    }
+    .dev-card {
+      opacity: 0.72;
+      transition: transform 0.22s, border-color 0.22s, box-shadow 0.22s, opacity 0.22s;
+    }
+    .dev-card:hover {
+      opacity: 0.9;
+      transform: translateY(-4px);
+      border-color: rgba(255,140,0,0.35) !important;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    .dev-card .card-banner { height: 100px; filter: saturate(0.7); }
+    .dev-card .game-title  { font-size: 15px; }
+    .dev-card .game-desc   { font-size: 12px; }
+    .dev-badge {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      background: rgba(255,140,0,0.12);
+      color: #ff9900;
+      border: 1px solid rgba(255,140,0,0.3);
+    }
+    .dev-card .card-footer { padding: 10px 18px; }
+    .dev-card .play-btn    { font-size: 12px; color: var(--text3) !important; }
+
     /* ── Back Link ── */
     .back-link {
       display: block;
@@ -360,8 +405,8 @@
   </header>
 
   <main class="content">
-    <!-- Current Games -->
-    <div class="section-title">現有遊戲 &nbsp; Available Now</div>
+    <!-- Featured Games -->
+    <div class="section-title">🎮 精選遊戲 &nbsp; Featured Games</div>
 
     <div class="games-grid">
 
@@ -488,26 +533,6 @@
         </div>
       </a>
 
-      <!-- Deep Diggers -->
-      <a class="game-card" href="deep-diggers.html"
-         style="--card-accent:#f5a623; --banner-bg:#1a0e00; --banner-glow:rgba(245,166,35,0.35);">
-        <div class="card-banner">
-          <div class="game-emoji">⛏️</div>
-        </div>
-        <div class="card-body">
-          <div class="game-title">Deep Diggers</div>
-          <div class="game-desc">深度挖掘採礦遊戲。升級工具、探索地下世界，挖出稀有礦石打造你的挖礦帝國。</div>
-          <div class="tags">
-            <span class="tag" style="color:#f5a623;border-color:rgba(245,166,35,0.4);background:rgba(245,166,35,0.1);">挖礦</span>
-            <span class="tag" style="color:#f5a623;border-color:rgba(245,166,35,0.4);background:rgba(245,166,35,0.1);">升級</span>
-            <span class="tag" style="color:#f5a623;border-color:rgba(245,166,35,0.4);background:rgba(245,166,35,0.1);">探索</span>
-          </div>
-        </div>
-        <div class="card-footer">
-          <span class="play-btn" style="color:#f5a623;">▶ 開始遊玩</span>
-        </div>
-      </a>
-
       <!-- Earth Reborn -->
       <a class="game-card" href="earth-civilization/"
          style="--card-accent:#44ee88; --banner-bg:#010d04; --banner-glow:rgba(50,200,100,0.35);">
@@ -549,164 +574,253 @@
         </div>
       </a>
 
-      <!-- Beat Warrior rhythm game -->
-      <a class="game-card" href="beat-warrior/"
-         style="--card-accent:#a060ff; --banner-bg:#0c0820; --banner-glow:rgba(160,80,255,0.38);">
+      <!-- 心理測驗 -->
+      <a class="game-card" href="psych-test/"
+         style="--card-accent:#a060f0; --banner-bg:#0e0818; --banner-glow:rgba(160,96,240,0.28);">
         <div class="card-banner">
-          <svg class="game-icon" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <line x1="14" y1="58" x2="58" y2="14" stroke="white" stroke-width="6" stroke-linecap="round"/>
-            <line x1="14" y1="14" x2="58" y2="58" stroke="white" stroke-width="6" stroke-linecap="round"/>
-            <circle cx="14" cy="58" r="5" fill="white"/>
-            <circle cx="58" cy="14" r="5" fill="white"/>
-            <circle cx="14" cy="14" r="5" fill="white"/>
-            <circle cx="58" cy="58" r="5" fill="white"/>
-          </svg>
+          <div class="game-emoji">🔮</div>
         </div>
         <div class="card-body">
-          <div class="game-title">節拍戰士</div>
-          <div class="game-desc">節奏RPG對戰遊戲。跟著音樂節拍按下 D/F/J/K，Perfect 連擊造成最大傷害，守住士兵血量擊敗三階段獸人！</div>
+          <div class="game-title">潛意識人格測驗</div>
+          <div class="game-desc">10 道情境題，揭開你內心深處的性格類型。6 種人格結果，附詳細解析、特質雷達與相容分析。</div>
           <div class="tags">
-            <span class="tag" style="color:#a060ff;border-color:rgba(160,80,255,0.4);background:rgba(160,80,255,0.1);">節奏</span>
-            <span class="tag" style="color:#a060ff;border-color:rgba(160,80,255,0.4);background:rgba(160,80,255,0.1);">RPG</span>
-            <span class="tag" style="color:#a060ff;border-color:rgba(160,80,255,0.4);background:rgba(160,80,255,0.1);">連擊</span>
+            <span class="tag" style="color:#a060f0;border-color:rgba(160,96,240,0.4);background:rgba(160,96,240,0.1);">心理</span>
+            <span class="tag" style="color:#a060f0;border-color:rgba(160,96,240,0.4);background:rgba(160,96,240,0.1);">測驗</span>
+            <span class="tag" style="color:#c8a456;border-color:rgba(200,164,86,0.4);background:rgba(200,164,86,0.1);">分享</span>
           </div>
         </div>
         <div class="card-footer">
-          <span class="play-btn" style="color:#a060ff;">▶ 開始節拍</span>
+          <span class="play-btn" style="color:#a060f0;">▶ 開始測驗</span>
         </div>
       </a>
 
-      <!-- Daily Quiz RPG -->
-      <a class="game-card" href="daily-quiz-rpg/"
-         style="--card-accent:#00e5ff; --banner-bg:#000d1a; --banner-glow:rgba(0,229,255,0.25);">
+      <!-- 1對1情境聊天室 -->
+      <a class="game-card" href="chat-room/"
+         style="--card-accent:#ff80c0; --banner-bg:#1a0818; --banner-glow:rgba(255,128,192,0.28);">
         <div class="card-banner">
-          <div class="game-emoji">📚</div>
+          <div class="game-emoji">💬</div>
         </div>
         <div class="card-body">
-          <div class="game-title">每日一題 RPG</div>
-          <div class="game-desc">答題換經驗值！選擇法師、勇士、射手三種職業，打怪升級、學習技能、累積金幣，成為知識勇者！</div>
+          <div class="game-title">1對1情境聊天室</div>
+          <div class="game-desc">選擇性別配對異性，聊天 5 分鐘！可提議深夜告白、咖啡廳偶遇等情境，對方同意才切換，支援貼圖。</div>
           <div class="tags">
-            <span class="tag" style="color:#00e5ff;border-color:rgba(0,229,255,0.4);background:rgba(0,229,255,0.1);">答題</span>
-            <span class="tag" style="color:#00e5ff;border-color:rgba(0,229,255,0.4);background:rgba(0,229,255,0.1);">RPG</span>
-            <span class="tag" style="color:#ffd700;border-color:rgba(255,215,0,0.4);background:rgba(255,215,0,0.1);">手機</span>
+            <span class="tag" style="color:#ff80c0;border-color:rgba(255,128,192,0.4);background:rgba(255,128,192,0.1);">多人</span>
+            <span class="tag" style="color:#ff80c0;border-color:rgba(255,128,192,0.4);background:rgba(255,128,192,0.1);">聊天</span>
+            <span class="tag" style="color:#ff80c0;border-color:rgba(255,128,192,0.4);background:rgba(255,128,192,0.1);">情境</span>
           </div>
         </div>
         <div class="card-footer">
-          <span class="play-btn" style="color:#00e5ff;">▶ 開始答題</span>
+          <span class="play-btn" style="color:#ff80c0;">▶ 開始聊天</span>
         </div>
       </a>
 
-      <!-- Capy Runner -->
-      <a class="game-card" href="capy-runner/"
-         style="--card-accent:#ffd700; --banner-bg:#0a0a1a; --banner-glow:rgba(255,215,0,0.28);">
+      <!-- 世界航道 Sea Route -->
+      <a class="game-card" href="sea-route/"
+         style="--card-accent:#4af8ff; --banner-bg:#020d1a; --banner-glow:rgba(74,248,255,0.3);">
         <div class="card-banner">
-          <div class="game-emoji">🦫</div>
+          <div class="game-emoji">⛵</div>
         </div>
         <div class="card-body">
-          <div class="game-title">水豚跑酷</div>
-          <div class="game-desc">水豚無盡奔跑！左右滑動換道，上滑跳躍，下滑翻滾，閃過障礙物收集金幣！手機最佳體驗。</div>
+          <div class="game-title">世界航道 Sea Route</div>
+          <div class="game-desc">環遊世界 10 國的治癒航海 Idle。船隻自動前進，路過各國地標蒐集文化素材，強化船體解鎖下一國。紙娃娃船隻成長系統，每國有獨特 Boss 機制！</div>
           <div class="tags">
-            <span class="tag" style="color:#ffd700;border-color:rgba(255,215,0,0.4);background:rgba(255,215,0,0.1);">跑酷</span>
-            <span class="tag" style="color:#ffd700;border-color:rgba(255,215,0,0.4);background:rgba(255,215,0,0.1);">無盡</span>
-            <span class="tag" style="color:#ffd700;border-color:rgba(255,215,0,0.4);background:rgba(255,215,0,0.1);">手機</span>
+            <span class="tag" style="color:#4af8ff;border-color:rgba(74,248,255,0.4);background:rgba(74,248,255,0.1);">Idle</span>
+            <span class="tag" style="color:#4af8ff;border-color:rgba(74,248,255,0.4);background:rgba(74,248,255,0.1);">探索解鎖</span>
+            <span class="tag" style="color:#4af8ff;border-color:rgba(74,248,255,0.4);background:rgba(74,248,255,0.1);">治癒</span>
           </div>
         </div>
         <div class="card-footer">
-          <span class="play-btn" style="color:#ffd700;">▶ 開始跑酷</span>
+          <span class="play-btn" style="color:#4af8ff;">▶ 啟航！</span>
         </div>
       </a>
 
-      <!-- Zombie Spread -->
-      <a class="game-card" href="zombie-spread/"
-         style="--card-accent:#4f8; --banner-bg:#030d03; --banner-glow:rgba(64,255,100,0.35);">
-        <div class="card-banner">
-          <svg class="game-icon" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- Biohazard symbol -->
-            <circle cx="36" cy="36" r="6" fill="white"/>
-            <!-- Three arcs -->
-            <path d="M36 30 A14 14 0 0 1 48.1 37" stroke="white" stroke-width="7" stroke-linecap="round" fill="none"/>
-            <path d="M48.1 37 A14 14 0 0 1 23.9 37" stroke="white" stroke-width="7" stroke-linecap="round" fill="none"/>
-            <path d="M23.9 37 A14 14 0 0 1 36 30" stroke="white" stroke-width="7" stroke-linecap="round" fill="none"/>
-            <!-- Outer ring segments -->
-            <path d="M36 17 A19 19 0 0 1 53.4 26.5" stroke="white" stroke-width="6" stroke-linecap="round" fill="none"/>
-            <path d="M53.4 45.5 A19 19 0 0 1 18.6 45.5" stroke="white" stroke-width="6" stroke-linecap="round" fill="none"/>
-            <path d="M18.6 26.5 A19 19 0 0 1 36 17" stroke="white" stroke-width="6" stroke-linecap="round" fill="none"/>
-          </svg>
-        </div>
-        <div class="card-body">
-          <div class="game-title">末日求生</div>
-          <div class="game-desc">末日像素生存遊戲。殭屍從四面八方湧入，用滑鼠瞄準射擊，撿起補給堅持更多波次！</div>
-          <div class="tags">
-            <span class="tag" style="color:#4f8;border-color:rgba(64,255,100,0.4);background:rgba(64,255,100,0.1);">生存</span>
-            <span class="tag" style="color:#4f8;border-color:rgba(64,255,100,0.4);background:rgba(64,255,100,0.1);">波次</span>
-            <span class="tag" style="color:#4f8;border-color:rgba(64,255,100,0.4);background:rgba(64,255,100,0.1);">像素</span>
+    </div>
+
+    <!-- In Development -->
+    <div class="dev-section">
+      <div class="section-title">🔧 開發中 &nbsp; In Development</div>
+      <div class="dev-section-desc">
+        🛠 以下遊戲仍在打磨中，玩法可能不完整或有 Bug，歡迎試玩並給我們意見！
+      </div>
+      <div class="dev-grid">
+
+        <!-- 節拍戰士 -->
+        <a class="game-card dev-card" href="beat-warrior/"
+           style="--card-accent:#a060ff; --banner-bg:#0c0820; --banner-glow:rgba(160,80,255,0.2); border-color:rgba(160,80,255,0.18);">
+          <div class="card-banner">
+            <div class="game-emoji">⚔</div>
           </div>
-        </div>
-        <div class="card-footer">
-          <span class="play-btn" style="color:#4f8;">▶ 末日求生</span>
-        </div>
-      </a>
-
-      <!-- Bug Crisis RTS -->
-      <a class="game-card" href="bug-crisis/"
-         style="--card-accent:#f84020; --banner-bg:#180a04; --banner-glow:rgba(248,80,20,0.32);">
-        <div class="card-banner">
-          <div class="game-emoji">🐛</div>
-        </div>
-        <div class="card-body">
-          <div class="game-title">機甲蟲蟲危機</div>
-          <div class="game-desc">即時戰略防禦遊戲。蟲族機甲大軍從右側入侵，部署突擊兵、機槍手、狙擊手等精銳士兵，守住左側基地！共10波次，最終 Boss 為蜈蚣機甲。</div>
-          <div class="tags">
-            <span class="tag" style="color:#f84020;border-color:rgba(248,80,20,0.4);background:rgba(248,80,20,0.1);">即時戰略</span>
-            <span class="tag" style="color:#f84020;border-color:rgba(248,80,20,0.4);background:rgba(248,80,20,0.1);">防禦</span>
-            <span class="tag" style="color:#f84020;border-color:rgba(248,80,20,0.4);background:rgba(248,80,20,0.1);">波次</span>
+          <div class="card-body">
+            <div class="game-title">節拍戰士</div>
+            <div class="game-desc">節奏 RPG，跟著音符連擊擊敗 Boss。</div>
+            <span class="dev-badge">🔧 內容擴充中</span>
           </div>
-        </div>
-        <div class="card-footer">
-          <span class="play-btn" style="color:#f84020;">▶ 開始作戰</span>
-        </div>
-      </a>
-
-      <!-- FPS Game -->
-      <a class="game-card" href="fps/"
-         style="--card-accent:#4080ff; --banner-bg:#0a1422; --banner-glow:rgba(64,128,255,0.28);">
-        <div class="card-banner">
-          <div class="game-emoji">🔫</div>
-        </div>
-        <div class="card-body">
-          <div class="game-title">FPS Game</div>
-          <div class="game-desc">第一人稱射擊遊戲。光線追蹤地城引擎，對抗士兵、重甲兵、精英怪。</div>
-          <div class="tags">
-            <span class="tag" style="color:#4080ff;border-color:rgba(64,128,255,0.4);background:rgba(64,128,255,0.1);">FPS</span>
-            <span class="tag" style="color:#4080ff;border-color:rgba(64,128,255,0.4);background:rgba(64,128,255,0.1);">動作</span>
-            <span class="tag" style="color:#4080ff;border-color:rgba(64,128,255,0.4);background:rgba(64,128,255,0.1);">3D</span>
+          <div class="card-footer">
+            <span class="play-btn">▶ 試玩</span>
           </div>
-        </div>
-        <div class="card-footer">
-          <span class="play-btn" style="color:#4080ff;">▶ 開始遊玩</span>
-        </div>
-      </a>
+        </a>
 
-      <!-- Farm Match-3 -->
-      <a class="game-card" href="farm-match/"
-         style="--card-accent:#ffd700; --banner-bg:#0d1a0a; --banner-glow:rgba(255,215,0,0.28);">
-        <div class="card-banner">
-          <div class="game-emoji">💎</div>
-        </div>
-        <div class="card-body">
-          <div class="game-title">寶石三消</div>
-          <div class="game-desc">消除閃亮寶石、累積連段！用金幣抽卡，SSR 傳說卡片讓盤面大爆炸，衝破最高分！</div>
-          <div class="tags">
-            <span class="tag" style="color:#ffd700;border-color:rgba(255,215,0,0.4);background:rgba(255,215,0,0.1);">三消</span>
-            <span class="tag" style="color:#ffd700;border-color:rgba(255,215,0,0.4);background:rgba(255,215,0,0.1);">抽卡</span>
-            <span class="tag" style="color:#ffd700;border-color:rgba(255,215,0,0.4);background:rgba(255,215,0,0.1);">寶石</span>
+        <!-- 機甲蟲蟲危機 -->
+        <a class="game-card dev-card" href="bug-crisis/"
+           style="--card-accent:#f84020; --banner-bg:#180a04; --banner-glow:rgba(248,80,20,0.15); border-color:rgba(248,80,20,0.15);">
+          <div class="card-banner">
+            <div class="game-emoji">🐛</div>
           </div>
-        </div>
-        <div class="card-footer">
-          <span class="play-btn" style="color:#ffd700;">▶ 開始消除</span>
-        </div>
-      </a>
+          <div class="card-body">
+            <div class="game-title">機甲蟲蟲危機</div>
+            <div class="game-desc">3 線道塔防，部署機甲士兵守住基地。</div>
+            <span class="dev-badge">🔧 平衡調整中</span>
+          </div>
+          <div class="card-footer">
+            <span class="play-btn">▶ 試玩</span>
+          </div>
+        </a>
 
+        <!-- 水豚跑酷 -->
+        <a class="game-card dev-card" href="capy-runner/"
+           style="--card-accent:#ffd700; --banner-bg:#0a0a1a; --banner-glow:rgba(255,215,0,0.15); border-color:rgba(255,215,0,0.15);">
+          <div class="card-banner">
+            <div class="game-emoji">🦫</div>
+          </div>
+          <div class="card-body">
+            <div class="game-title">水豚跑酷</div>
+            <div class="game-desc">手機無盡跑酷，滑動閃過障礙物收集金幣。</div>
+            <span class="dev-badge">🔧 道具系統擴充中</span>
+          </div>
+          <div class="card-footer">
+            <span class="play-btn">▶ 試玩</span>
+          </div>
+        </a>
+
+        <!-- 每日一題 RPG -->
+        <a class="game-card dev-card" href="daily-quiz-rpg/"
+           style="--card-accent:#00e5ff; --banner-bg:#000d1a; --banner-glow:rgba(0,229,255,0.12); border-color:rgba(0,229,255,0.15);">
+          <div class="card-banner">
+            <div class="game-emoji">📚</div>
+          </div>
+          <div class="card-body">
+            <div class="game-title">每日一題 RPG</div>
+            <div class="game-desc">答題升級，知識換戰力，手機答題養成。</div>
+            <span class="dev-badge">🔧 題庫擴充中</span>
+          </div>
+          <div class="card-footer">
+            <span class="play-btn">▶ 試玩</span>
+          </div>
+        </a>
+
+        <!-- Deep Diggers -->
+        <a class="game-card dev-card" href="deep-diggers.html"
+           style="--card-accent:#f5a623; --banner-bg:#1a0e00; --banner-glow:rgba(245,166,35,0.15); border-color:rgba(245,166,35,0.15);">
+          <div class="card-banner">
+            <div class="game-emoji">⛏️</div>
+          </div>
+          <div class="card-body">
+            <div class="game-title">Deep Diggers</div>
+            <div class="game-desc">縱向地城挖礦，7 升級樹探索地底深處。</div>
+            <span class="dev-badge">🔧 地圖擴充中</span>
+          </div>
+          <div class="card-footer">
+            <span class="play-btn">▶ 試玩</span>
+          </div>
+        </a>
+
+        <!-- 農場三消 -->
+        <a class="game-card dev-card" href="farm-match/"
+           style="--card-accent:#ffd700; --banner-bg:#0d1a0a; --banner-glow:rgba(255,215,0,0.12); border-color:rgba(255,215,0,0.15);">
+          <div class="card-banner">
+            <div class="game-emoji">💎</div>
+          </div>
+          <div class="card-body">
+            <div class="game-title">寶石三消</div>
+            <div class="game-desc">消除寶石抽卡，SSR 讓盤面大爆炸。</div>
+            <span class="dev-badge">🔧 測試中</span>
+          </div>
+          <div class="card-footer">
+            <span class="play-btn">▶ 試玩</span>
+          </div>
+        </a>
+
+        <!-- FPS Game -->
+        <a class="game-card dev-card" href="fps/"
+           style="--card-accent:#4080ff; --banner-bg:#0a1422; --banner-glow:rgba(64,128,255,0.12); border-color:rgba(64,128,255,0.15);">
+          <div class="card-banner">
+            <div class="game-emoji">🔫</div>
+          </div>
+          <div class="card-body">
+            <div class="game-title">FPS Game</div>
+            <div class="game-desc">光線追蹤第一人稱射擊，對抗地城敵人。</div>
+            <span class="dev-badge">🔧 AI 優化中</span>
+          </div>
+          <div class="card-footer">
+            <span class="play-btn">▶ 試玩</span>
+          </div>
+        </a>
+
+        <!-- 末日求生 -->
+        <a class="game-card dev-card" href="zombie-spread/"
+           style="--card-accent:#44ff88; --banner-bg:#030d03; --banner-glow:rgba(64,255,100,0.12); border-color:rgba(64,255,100,0.15);">
+          <div class="card-banner">
+            <div class="game-emoji">☣️</div>
+          </div>
+          <div class="card-body">
+            <div class="game-title">末日求生</div>
+            <div class="game-desc">波次殭屍生存射擊，PostApocalypse 素材包。</div>
+            <span class="dev-badge">🔧 地圖擴充中</span>
+          </div>
+          <div class="card-footer">
+            <span class="play-btn">▶ 試玩</span>
+          </div>
+        </a>
+
+      </div>
+    </div>
+
+    <!-- Battle Games -->
+    <div class="coming-soon-section">
+      <div class="section-title">⚔️ 對戰遊戲 &nbsp; Battle Games</div>
+      <div class="coming-grid">
+        <a class="game-card" href="capy-tug/"
+           style="--card-accent:#00e5ff; --banner-bg:#001a22; --banner-glow:rgba(0,229,255,0.28); text-decoration:none; opacity:1;">
+          <div class="card-banner">
+            <div class="game-emoji">🦫</div>
+          </div>
+          <div class="card-body">
+            <div class="game-title">水豚拔河！</div>
+            <div class="game-desc">點擊拔河 1v1 手速對決</div>
+            <div class="tags"><span class="tag" style="color:#00e5ff;border-color:rgba(0,229,255,0.4);background:rgba(0,229,255,0.1);">多人連線</span></div>
+          </div>
+          <div class="card-footer"><span class="play-btn" style="color:#00e5ff;">▶ 開始對戰</span></div>
+        </a>
+        <a class="game-card" href="capy-rps/"
+           style="--card-accent:#aa44ff; --banner-bg:#1a0028; --banner-glow:rgba(170,68,255,0.28); text-decoration:none; opacity:1;">
+          <div class="card-banner">
+            <div class="game-emoji">✂️</div>
+          </div>
+          <div class="card-body">
+            <div class="game-title">水豚猜拳！</div>
+            <div class="game-desc">石頭布剪刀 1v1 猜拳對戰</div>
+            <div class="tags"><span class="tag" style="color:#aa44ff;border-color:rgba(170,68,255,0.4);background:rgba(170,68,255,0.1);">多人連線</span></div>
+          </div>
+          <div class="card-footer"><span class="play-btn" style="color:#aa44ff;">▶ 開始對戰</span></div>
+        </a>
+        <a class="game-card" href="capy-quiz/"
+           style="--card-accent:#ffd700; --banner-bg:#1a1400; --banner-glow:rgba(255,215,0,0.28); text-decoration:none; opacity:1;">
+          <div class="card-banner">
+            <div class="game-emoji">📚</div>
+          </div>
+          <div class="card-body">
+            <div class="game-title">水豚問答PK！</div>
+            <div class="game-desc">知識問答搶分 1v1 對戰</div>
+            <div class="tags"><span class="tag" style="color:#ffd700;border-color:rgba(255,215,0,0.4);background:rgba(255,215,0,0.1);">多人連線</span></div>
+          </div>
+          <div class="card-footer"><span class="play-btn" style="color:#ffd700;">▶ 開始對戰</span></div>
+        </a>
+      </div>
+      <div style="margin-top:16px;text-align:center;">
+        <a href="battle.html" style="color:var(--accent);font-size:13px;text-decoration:none;letter-spacing:1px;opacity:0.8;">
+          → 前往對戰遊戲專區
+        </a>
+      </div>
     </div>
 
     <!-- Coming Soon -->

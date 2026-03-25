@@ -1,0 +1,100 @@
+================================================================
+  EVO MOSQUITO — CrazyGames Submission Package
+  Game: games/mosquito/index.html
+  Prepared: 2026-03-24
+================================================================
+
+─── GAME TITLE ──────────────────────────────────────────────
+Evo Mosquito
+
+─── SUBTITLE (tagline) ──────────────────────────────────────
+Swat. Upgrade. Survive.
+
+─── SHORT DESCRIPTION (for card / search result, ≤80 chars) ─
+Click to swat evolving mosquitoes before they drain your blood!
+
+─── FULL DESCRIPTION (≤200 words) ───────────────────────────
+Mosquitoes are invading — and they're evolving!
+
+Click to swat them before the swarm grows out of control.
+Five types of mosquitoes keep you on your toes:
+
+• Normal  — slow but they evolve into Fast if you ignore them
+• Fast    — zippy and worth double blood
+• Stealth — flicker invisible; you can't always see them!
+• Mutant  — tanky 2-HP bruisers
+• Boss    — a massive, sprint-charging monster arrives every 60s
+
+Earn Blood Drops by killing mosquitoes, then spend them in the
+Alchemy Shop between (or during) runs on permanent upgrades
+that carry across every session:
+
+⚡ Bug Zapper — AoE lightning strike
+💣 Mosquito Bomb — instant screen-clear
+🛡 Bite Shield — 10-second invincibility
+❄ Freeze Spray — stop all mosquitoes cold
+🧲 Blood Magnet — auto-collect all blood drops
+🌀 Incense Coil — passive auto-kill every few seconds
+...and more!
+
+Three difficulty modes (Normal / Hard / Hell) let beginners
+enjoy the game while veterans chase the S-rank leaderboard.
+How long can you survive?
+
+─── KEYWORDS (5–10 tags) ────────────────────────────────────
+clicker, mosquito, survival, upgrade, boss, arcade, casual,
+idle, swat, evolution
+
+─── CATEGORY ────────────────────────────────────────────────
+Primary:   Clicker / Idle
+Secondary: Arcade / Survival
+
+─── CONTROLS ────────────────────────────────────────────────
+🖱 Mouse click — Swat mosquitoes / collect blood drops
+[S]         — Open Upgrade Shop (also pauses game)
+[P] / [Esc] — Pause / Resume
+[Space]     — Activate Bug Zapper (at cursor position)
+[E]         — Activate Bite Shield
+[R]         — Activate Freeze Spray
+[T]         — Activate Blood Magnet
+[F]         — Detonate Mosquito Bomb
+[Q]         — Use Repellent (restore 1 HP)
+
+─── LANGUAGE ────────────────────────────────────────────────
+English / Traditional Chinese (toggle button top-right)
+
+─── AGE RATING ──────────────────────────────────────────────
+All Ages  (cartoon violence: swatting insects, no gore)
+
+─── TECHNICAL ───────────────────────────────────────────────
+Platform:    Web (HTML5 / Canvas)
+Engine:      Vanilla JS, no framework
+Resolution:  960×660 (responsive scaling)
+Orientation: Landscape
+Save:        localStorage (upgrades persist across sessions)
+Audio:       Web Audio API (procedural BGM + SFX)
+
+─── IMAGE SIZES NEEDED ──────────────────────────────────────
+Cover (landscape) : 1920 × 1080  →  cg-cover-1920x1080.png
+Cover (portrait)  :  800 × 1200  →  cg-cover-800x1200.png
+Thumbnail (square):  800 ×  800  →  cg-cover-800x800.png
+
+Open cg-covers.html in Chrome → right-click each canvas → Save as PNG
+
+─── 30-SECOND VIDEO SCRIPT ──────────────────────────────────
+00:00–00:03  Title card: "Evo Mosquito" logo on dark bg, mosquito emoji pulses
+00:03–00:08  Title screen shown → click NORMAL difficulty → game starts
+00:08–00:15  Player swatting normal mosquitoes; one evolves into Fast (↑ particle)
+00:15–00:18  Shop opens → buy Bug Zapper; shop closes
+00:18–00:22  Bug Zapper fires → lightning wipes 5 mosquitoes at once
+00:22–00:26  Boss mosquito spawns → red border flashes → player kills it
+00:26–00:28  Game Over screen: Grade S, score 2500+
+00:28–00:30  Title card again: "Evo Mosquito — Play Free on CrazyGames"
+
+Production notes:
+- No voiceover needed; use in-game SFX only
+- Add subtitle text overlays for each section
+- Resolution: 1920×1080, 60fps, MP4 H.264
+- Aspect ratio: 16:9
+
+================================================================

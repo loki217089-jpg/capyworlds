@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🌟 每日運勢 — CapyWorlds</title>
+<style>
+:root{--bg:#13100c;--bg2:#1e1812;--bg3:#2a2018;--border:#3d3020;--accent:#c8a456;--text:#e8ddd0;--text2:#907a60;--h1:#fff;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.top-bar{height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;}
+.top-bar a{color:var(--text2);text-decoration:none;font-size:13px;}
+.logo{font-size:16px;font-weight:700;color:var(--accent);}
+.wrap{max-width:520px;margin:0 auto;padding:28px 16px 48px;}
+.hero{text-align:center;padding:32px 0 24px;}
+.hero-emoji{font-size:56px;display:block;margin-bottom:12px;}
+.hero h1{font-size:26px;font-weight:800;color:var(--h1);}
+.hero p{font-size:14px;color:var(--text2);margin-top:6px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px;}
+.form-label{font-size:14px;color:var(--text2);margin-bottom:8px;display:block;}
+.date-row{display:flex;gap:10px;align-items:center;}
+.sel{background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:10px 14px;font-size:15px;outline:none;flex:1;cursor:pointer;}
+.sel:focus{border-color:var(--accent);}
+.query-btn{width:100%;background:var(--accent);color:#1a1000;border:none;border-radius:10px;padding:13px;font-size:16px;font-weight:700;cursor:pointer;margin-top:14px;transition:opacity .2s;}
+.query-btn:hover{opacity:.85;}
+.result{display:none;margin-top:20px;display:flex;flex-direction:column;gap:16px;}
+.result.hidden{display:none;}
+.zodiac-banner{border-radius:12px;padding:20px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;}
+.zodiac-emoji{font-size:52px;}
+.zodiac-name{font-size:22px;font-weight:800;color:var(--h1);}
+.date-str{font-size:13px;color:var(--text2);}
+.scores-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.score-item{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;}
+.score-label{font-size:12px;color:var(--text2);margin-bottom:6px;}
+.score-bar-wrap{background:var(--bg3,#2a2018);border-radius:4px;height:8px;overflow:hidden;}
+.score-bar{height:8px;border-radius:4px;transition:width .8s ease;}
+.score-val{font-size:18px;font-weight:700;color:var(--h1);margin-top:4px;}
+.fortune-text{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;}
+.fortune-text h3{font-size:14px;font-weight:700;color:var(--accent);margin-bottom:8px;}
+.fortune-text p{font-size:14px;line-height:1.7;color:var(--text);}
+.lucky-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.lucky-item{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;}
+.lucky-icon{font-size:22px;margin-bottom:4px;}
+.lucky-label{font-size:11px;color:var(--text2);}
+.lucky-val{font-size:15px;font-weight:700;color:var(--h1);margin-top:2px;}
+.color-dot{width:22px;height:22px;border-radius:50%;display:inline-block;margin:4px auto 2px;}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <a href="/">← CapyWorlds</a>
+  <span class="logo">🌟 每日運勢</span>
+  <span></span>
+</div>
+<div class="wrap">
+  <div class="hero">
+    <span class="hero-emoji">🌟</span>
+    <h1>每日運勢</h1>
+    <p>輸入你的生日，查看今天的星座運勢</p>
+  </div>
+  <div class="card">
+    <label class="form-label">你的生日（月/日）</label>
+    <div class="date-row">
+      <select class="sel" id="selMonth">
+        <option value="">月份</option>
+      </select>
+      <select class="sel" id="selDay">
+        <option value="">日期</option>
+      </select>
+    </div>
+    <button class="query-btn" onclick="checkFortune()">✦ 查看今日運勢</button>
+  </div>
+  <div class="result hidden" id="result">
+    <div class="zodiac-banner" id="zodiacBanner">
+      <div class="zodiac-emoji" id="zodiacEmoji"></div>
+      <div class="zodiac-name" id="zodiacName"></div>
+      <div class="date-str" id="dateStr"></div>
+    </div>
+    <div class="scores-grid" id="scoresGrid"></div>
+    <div class="fortune-text" id="fortuneText"></div>
+    <div class="lucky-row" id="luckyRow"></div>
+  </div>
+</div>
+<script>
+const ZODIACS=[
+  {name:'摩羯座',emoji:'🐐',color:'#8899bb',range:[[12,22],[1,19]]},
+  {name:'水瓶座',emoji:'🏺',color:'#66aacc',range:[[1,20],[2,18]]},
+  {name:'雙魚座',emoji:'🐟',color:'#88aadd',range:[[2,19],[3,20]]},
+  {name:'牡羊座',emoji:'🐏',color:'#ff6644',range:[[3,21],[4,19]]},
+  {name:'金牛座',emoji:'🐂',color:'#88bb66',range:[[4,20],[5,20]]},
+  {name:'雙子座',emoji:'👯',color:'#ffcc44',range:[[5,21],[6,20]]},
+  {name:'巨蟹座',emoji:'🦀',color:'#aaccff',range:[[6,21],[7,22]]},
+  {name:'獅子座',emoji:'🦁',color:'#ffaa33',range:[[7,23],[8,22]]},
+  {name:'處女座',emoji:'🌾',color:'#88cc88',range:[[8,23],[9,22]]},
+  {name:'天秤座',emoji:'⚖️',color:'#ffbb88',range:[[9,23],[10,22]]},
+  {name:'天蠍座',emoji:'🦂',color:'#cc4466',range:[[10,23],[11,21]]},
+  {name:'射手座',emoji:'🏹',color:'#dd8833',range:[[11,22],[12,21]]},
+];
+const SCORES_DEF=[
+  {key:'overall',label:'整體運勢',icon:'⭐'},
+  {key:'love',label:'愛情運',icon:'💕'},
+  {key:'career',label:'事業運',icon:'💼'},
+  {key:'health',label:'健康運',icon:'🌿'},
+];
+const LUCKY_COLORS=[
+  {name:'紅色',hex:'#ff4444'},{name:'橘色',hex:'#ff8833'},{name:'金色',hex:'#ffcc00'},
+  {name:'綠色',hex:'#44cc44'},{name:'藍色',hex:'#4488ff'},{name:'紫色',hex:'#9966ff'},
+  {name:'粉色',hex:'#ff88cc'},{name:'白色',hex:'#eeeeee'},{name:'銀色',hex:'#aaaaaa'},
+];
+const FORTUNE_TEXTS=[
+  '今日星象格外明亮，行動力與創造力同時提升。把握機會展現自我，會有意想不到的收穫。',
+  '內心有些波動，建議靜心思考後再行動。感情方面需要多溝通，避免誤解產生。',
+  '貴人運強旺！今天遇到的人可能帶來重要資訊，保持開放的心態去傾聽。',
+  '財運有所起伏，謹慎規劃支出為佳。工作上可能有新挑戰，但你有能力應對。',
+  '能量滿滿的一天！積極投入任何計畫都會有好結果。感情關係也顯得特別甜蜜。',
+  '適合整理思緒的一天，回顧過去的計畫並修正方向。小心不要過度勞累。',
+  '直覺力特別敏銳，相信自己的第一感。今天做的決定可能影響未來的走向。',
+];
+
+// build selects
+const mSel=document.getElementById('selMonth'), dSel=document.getElementById('selDay');
+for(let m=1;m<=12;m++){const o=document.createElement('option');o.value=m;o.textContent=m+'月';mSel.appendChild(o);}
+for(let d=1;d<=31;d++){const o=document.createElement('option');o.value=d;o.textContent=d+'日';dSel.appendChild(o);}
+
+function getZodiac(m,d){
+  for(const z of ZODIACS){
+    const[s,e]=z.range;
+    if((m===s[0]&&d>=s[1])||(m===e[0]&&d<=e[1]))return z;
+  }
+  return ZODIACS[0];
+}
+
+function seededRand(seed){
+  let s=seed;
+  return function(){s=((s*1664525+1013904223)>>>0);return s/4294967296;};
+}
+
+function checkFortune(){
+  const m=parseInt(mSel.value), d=parseInt(dSel.value);
+  if(!m||!d){alert('請選擇月份和日期');return;}
+  const z=getZodiac(m,d);
+  const today=new Date(); const dateKey=today.getFullYear()*10000+today.getMonth()*100+today.getDate();
+  const rand=seededRand(m*100+d+dateKey);
+  const scores={overall:Math.floor(rand()*35)+60,love:Math.floor(rand()*40)+55,career:Math.floor(rand()*40)+55,health:Math.floor(rand()*35)+60};
+  const luckColor=LUCKY_COLORS[Math.floor(rand()*LUCKY_COLORS.length)];
+  const luckNum=Math.floor(rand()*9)+1;
+  const luckDir=['東','西','南','北','東南','東北','西南','西北'][Math.floor(rand()*8)];
+  const fortuneIdx=Math.floor(rand()*FORTUNE_TEXTS.length);
+
+  // banner
+  document.getElementById('zodiacEmoji').textContent=z.emoji;
+  document.getElementById('zodiacName').textContent=z.name;
+  document.getElementById('dateStr').textContent=`${m}月${d}日 · ${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()} 運勢`;
+  document.getElementById('zodiacBanner').style.background=z.color+'22';
+  document.getElementById('zodiacBanner').style.borderColor=z.color+'44';
+
+  // scores
+  const sg=document.getElementById('scoresGrid'); sg.innerHTML='';
+  SCORES_DEF.forEach(s=>{
+    const v=scores[s.key];
+    const div=document.createElement('div'); div.className='score-item';
+    const barColor=v>=75?'#44dd88':v>=60?'#ffcc44':'#ff6644';
+    div.innerHTML=`<div class="score-label">${s.icon} ${s.label}</div><div class="score-bar-wrap"><div class="score-bar" style="width:${v}%;background:${barColor}"></div></div><div class="score-val">${v}</div>`;
+    sg.appendChild(div);
+  });
+
+  // text
+  document.getElementById('fortuneText').innerHTML=`<h3>今日提示</h3><p>${FORTUNE_TEXTS[fortuneIdx]}</p>`;
+
+  // lucky
+  document.getElementById('luckyRow').innerHTML=`
+    <div class="lucky-item"><div class="lucky-icon"><span class="color-dot" style="background:${luckColor.hex}"></span></div><div class="lucky-label">幸運色</div><div class="lucky-val">${luckColor.name}</div></div>
+    <div class="lucky-item"><div class="lucky-icon">🔢</div><div class="lucky-label">幸運數字</div><div class="lucky-val">${luckNum}</div></div>
+    <div class="lucky-item"><div class="lucky-icon">🧭</div><div class="lucky-label">吉方位</div><div class="lucky-val">${luckDir}</div></div>`;
+
+  document.getElementById('result').classList.remove('hidden');
+  document.getElementById('result').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+</script>
+</body>
+</html>
