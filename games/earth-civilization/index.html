@@ -130,6 +130,17 @@ const BLDGS=[
    terrain:['plains'],     desc:'⭐ 文明頂點，建造後啟動倒數',special:'win'},
 ];
 
+// ── TECH RESEARCH ──
+const TECH_LIST=[
+  {id:'agri',     name:'農業革命',   era:1, desc:'食物產量 ×1.8',    cost:{knowledge:25},  mult:{food:1.8}},
+  {id:'logging',  name:'伐木技術',   era:1, desc:'木材產量 ×1.8',    cost:{knowledge:30},  mult:{wood:1.8}},
+  {id:'masonry',  name:'採礦技術',   era:2, desc:'石材產量 ×2.0',    cost:{knowledge:45},  mult:{stone:2.0}},
+  {id:'electro',  name:'電氣革命',   era:3, desc:'能源產量 ×2.2',    cost:{knowledge:70},  mult:{energy:2.2}},
+  {id:'research', name:'知識網絡',   era:3, desc:'知識產量 ×2.0',    cost:{knowledge:90},  mult:{knowledge:2.0}},
+  {id:'storage',  name:'倉儲優化',   era:2, desc:'所有資源上限 ×2',  cost:{knowledge:55},  mult:{caps:2.0}},
+  {id:'synergy',  name:'科技協同',   era:4, desc:'所有產量 ×1.6',    cost:{knowledge:150}, mult:{all:1.6}},
+];
+
 // ── GAME STATE ──
 const gs={
   era:0, eraChanged:false,
@@ -137,6 +148,7 @@ const gs={
   caps:{food:150,wood:200,stone:300,energy:200,knowledge:600},
   tiles: Array(WORLD_TILES).fill(null), // null or {id, placedAt}
   builtTypes: new Set(),
+  tech: new Set(),
   pop: 0, popCap: 5, popGrowthTimer:0,
   scroll: 0,  // camera X offset in pixels
   selectedBldg: null,
@@ -638,8 +650,42 @@ function calcProduction(){
     for(const[res,amt] of Object.entries(b.prod)) prod[res]=(prod[res]||0)+amt;
     if(b.special==='popRate2x') popRate2x=true;
   }
+  // Era bonus: each era gives +35% production
+  const eraBonus=1+gs.era*0.35;
+  // Population bonus: +0.4% per person (max ~+48% at pop 120)
+  const popBonus=1+gs.res.pop*0.004;
+  // Tech multipliers per resource
+  const techMult={food:1,wood:1,stone:1,energy:1,knowledge:1};
+  let allMult=1;
+  for(const id of gs.tech){
+    const t=TECH_LIST.find(t=>t.id===id);
+    if(!t) continue;
+    if(t.mult.caps) continue; // handled separately
+    if(t.mult.all) allMult*=t.mult.all;
+    else for(const[k,v] of Object.entries(t.mult)) techMult[k]=(techMult[k]||1)*v;
+  }
+  for(const k of ['food','wood','stone','energy','knowledge']){
+    prod[k]=prod[k]*eraBonus*popBonus*techMult[k]*allMult;
+  }
   prod._popRate2x=popRate2x;
   return prod;
+}
+
+function buyTech(id){
+  if(gs.tech.has(id)) return;
+  const t=TECH_LIST.find(t=>t.id===id);
+  if(!t||gs.era<t.era) return;
+  for(const[res,amt] of Object.entries(t.cost)) if((gs.res[res]||0)<amt) return;
+  for(const[res,amt] of Object.entries(t.cost)) gs.res[res]-=amt;
+  gs.tech.add(id);
+  // Apply caps multiplier immediately
+  if(t.mult.caps){
+    for(const k of ['food','wood','stone','energy','knowledge']) gs.caps[k]*=t.mult.caps;
+  }
+  spawnNotif(`🔬 ${t.name}`,worldPxW/2,H/2-30,'#aaaaff');
+  setStatus(`🔬 研究完成：${t.name}`,true);
+  sfx('era');
+  updateBuildPanel();
 }
 
 function updateResources(dt){
@@ -698,6 +744,12 @@ function updateResourceBar(){
   const rb=document.getElementById('rb');
   const prod=calcProduction();
   const keys=['pop','food','wood','stone','energy','knowledge'];
+  const eraB=Math.round(gs.era*35);
+  const popB=Math.round(gs.res.pop*0.4);
+  let bonusHtml='';
+  if(eraB>0||popB>0){
+    bonusHtml=`<div class="ri" style="margin-left:auto;opacity:.7"><span style="font-size:10px;color:#88ffaa">×${(1+gs.era*0.35+gs.res.pop*0.004).toFixed(2)}</span></div>`;
+  }
   rb.innerHTML=keys.map(k=>{
     const v=k==='pop'?Math.floor(gs.res.pop):Math.floor(gs.res[k]||0);
     const cap=k==='pop'?gs.popCap:Math.floor(gs.caps[k]||999);
@@ -707,7 +759,7 @@ function updateResourceBar(){
       <span class="rvl" style="color:${color}">${v}${cap<999?'/'+cap:''}</span>
       ${rate?`<span class="rrt">${rate}</span>`:''}
     </div>`;
-  }).join('');
+  }).join('')+bonusHtml;
 }
 
 function updateBuildPanel(){
@@ -733,8 +785,24 @@ function updateBuildPanel(){
       </button>`;
     }
   }
+  // Tech research section
+  const availTech=TECH_LIST.filter(t=>t.era<=gs.era);
+  if(availTech.length){
+    html+=`<span class="cat">🔬 科技研究</span>`;
+    for(const t of availTech){
+      const done=gs.tech.has(t.id);
+      const costStr=Object.entries(t.cost).map(([r,v])=>`${RES_ICONS[r]}${v}`).join(' ');
+      const canAfford=!done&&Object.entries(t.cost).every(([r,v])=>(gs.res[r]||0)>=v);
+      const dis=done||!canAfford?'disabled':'';
+      const label=done?`✅ ${t.name}`:`${t.name}`;
+      html+=`<button class="bb" ${dis} data-tech="${t.id}">
+        ${label}
+        <div class="bco" style="color:${done?'#336633':'#5a5aaa'}">${done?t.desc:costStr}</div>
+      </button>`;
+    }
+  }
   lp.innerHTML=html;
-  lp.querySelectorAll('.bb').forEach(btn=>{
+  lp.querySelectorAll('.bb[data-id]').forEach(btn=>{
     btn.addEventListener('click',()=>{
       const id=btn.dataset.id;
       gs.selectedBldg=gs.selectedBldg===id?null:id;
@@ -743,6 +811,9 @@ function updateBuildPanel(){
       updateRightPanel(id);
       canvas.style.cursor=gs.selectedBldg?'cell':'crosshair';
     });
+  });
+  lp.querySelectorAll('.bb[data-tech]').forEach(btn=>{
+    btn.addEventListener('click',()=>{ buyTech(btn.dataset.tech); });
   });
 }
 
