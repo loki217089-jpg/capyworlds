@@ -190,6 +190,15 @@ const HARD_PATS = [
   [[0,0],[1,1],[3,2],[4,3],[5,2],[6,1],[7,0]],         // pyramid
   [[0,0],[1,2],[2,0],[3,2],[4,1],[5,3],[6,1],[7,3]],   // alternating pairs
   [[0,3],[1,2],[2,1],[3,0],[5,3],[6,2],[7,1]],         // reverse zigzag
+  // Extra HARD patterns for late-game variety
+  [[0,0],[1,1],[2,0],[3,1],[4,2],[5,3],[6,2],[7,3]],   // paired weave
+  [[0,0],[0,2],[2,1],[2,3],[4,0],[4,2],[6,1],[6,3]],   // quad pulse
+  [[0,0],[2,2],[3,3],[5,1],[6,0],[7,3]],               // sparse+burst
+  [[0,1],[2,3],[3,2],[4,1],[5,0],[6,3],[7,2]],         // descend spiral
+  [[0,0],[1,3],[3,1],[4,2],[6,0],[7,3]],               // jump wide
+  [[0,0],[0,1],[0,2],[0,3],[6,0],[6,1],[6,2],[6,3]],   // dual quad chord
+  [[0,0],[2,1],[4,2],[6,3],[7,2],[5,3],[3,0]],         // sweep+return
+  [[0,1],[1,3],[3,0],[4,2],[5,1],[7,3]],               // wide zigzag
 ];
 // ── BLOCK 3: Image Loader ────────────────────────────────
 const imgs = {};
@@ -362,12 +371,19 @@ function buildChart(bpm, phases, startTime) {
   let t = startTime + 0.5; // brief delay before first note
   let bar = 0;
   const totalBars = phases * 4;
+  let lastPatIdx = -1;
 
   for (let b=0; b<totalBars; b++) {
-    // Pick pattern (harder patterns more likely in later bars)
-    const patIdx = phases>=4
-      ? Math.floor(Math.random()*(pats.length))
-      : Math.floor(Math.random()*BASE_PATS.length);
+    // Pick pattern — no consecutive repeats, harder patterns more likely later
+    let patIdx;
+    let tries = 0;
+    do {
+      patIdx = phases>=4
+        ? Math.floor(Math.random()*(pats.length))
+        : Math.floor(Math.random()*BASE_PATS.length);
+      tries++;
+    } while (patIdx === lastPatIdx && tries < 8);
+    lastPatIdx = patIdx;
     const pat = pats[patIdx];
     const barLen = 8 * tickSec;
 
@@ -547,10 +563,32 @@ const STAGE_THEME = [
 
 function drawBattle() {
   const theme = STAGE_THEME[Math.min(gs.stage, STAGE_THEME.length-1)];
+  const now = performance.now();
   // Background gradient
   const grad = ctx.createLinearGradient(0,0,0,BATTLE_H);
   grad.addColorStop(0, theme[0]); grad.addColorStop(1, theme[1]);
   ctx.fillStyle=grad; ctx.fillRect(0,0,CW,BATTLE_H);
+
+  // Floating energy motes (stage-themed)
+  for (let pi=0; pi<14; pi++){
+    const seed=pi*7919;
+    const px=((seed*317+now*0.018)%(CW-100))+50;
+    const py=BATTLE_H-(((now*0.035+seed*53))%(BATTLE_H-10));
+    const pr=0.8+((seed%3)*0.8);
+    const alpha=0.10+0.08*Math.sin(now*0.002+seed);
+    ctx.fillStyle=theme[2]+(Math.floor(alpha*255).toString(16).padStart(2,'0'));
+    ctx.beginPath(); ctx.arc(px,py,pr,0,Math.PI*2); ctx.fill();
+  }
+
+  // Magical floor rune (faint circle on ground, pulsing)
+  const runeAlpha=0.08+0.05*Math.sin(now*0.003);
+  ctx.strokeStyle=theme[2]+(Math.floor(runeAlpha*255).toString(16).padStart(2,'0'));
+  ctx.lineWidth=1;
+  for(const cx_rune of [170,730]){
+    const rr=50+10*Math.sin(now*0.002+(cx_rune===170?0:Math.PI));
+    ctx.beginPath();ctx.arc(cx_rune,BATTLE_H-18,rr,0,Math.PI*2);ctx.stroke();
+    ctx.beginPath();ctx.arc(cx_rune,BATTLE_H-18,rr*0.6,0,Math.PI*2);ctx.stroke();
+  }
 
   // Atmospheric side vignettes
   const vigL=ctx.createLinearGradient(0,0,120,0);
@@ -559,6 +597,13 @@ function drawBattle() {
   const vigR=ctx.createLinearGradient(CW,0,CW-120,0);
   vigR.addColorStop(0,'rgba(0,0,0,0.55)'); vigR.addColorStop(1,'transparent');
   ctx.fillStyle=vigR; ctx.fillRect(CW-120,0,120,BATTLE_H);
+
+  // Combo glow: when combo >= 10, tint the bg edges
+  if(gs.combo>=10){
+    const comboIntensity=Math.min(1,(gs.combo-10)/40)*0.18;
+    ctx.fillStyle=`rgba(200,100,255,${comboIntensity})`;
+    ctx.fillRect(0,0,CW,BATTLE_H);
+  }
 
   // Ground platform
   ctx.fillStyle=theme[3]+'44';
@@ -594,9 +639,21 @@ function drawBattle() {
   ctx.fillStyle='#7a6060'; ctx.font='9px monospace'; ctx.textAlign='center';
   ctx.fillText('必殺', CW/2, 19); ctx.textAlign='left';
 
-  // Draw characters
-  if (player) player.draw(ctx, 170, BATTLE_H-20, false);
-  if (enemy)  enemy.draw(ctx,  730, BATTLE_H-20, true);
+  // Draw characters with aura glow on attack
+  if (player) {
+    const isAtk=player.anim&&(player.anim.key==='sAtk1'||player.anim.key==='sAtk2'||player.anim.key==='sAtk3');
+    if(isAtk){
+      ctx.shadowColor='#c080ff'; ctx.shadowBlur=28;
+    }
+    player.draw(ctx, 170, BATTLE_H-20, false);
+    ctx.shadowBlur=0;
+  }
+  if (enemy) {
+    const isHurt=enemy.anim&&enemy.anim.key==='oHurt';
+    if(isHurt){ ctx.shadowColor='#ff4444'; ctx.shadowBlur=20; }
+    enemy.draw(ctx, 730, BATTLE_H-20, true);
+    ctx.shadowBlur=0;
+  }
 
   // Popups
   for (const p of popups) {
