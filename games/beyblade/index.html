@@ -802,6 +802,17 @@ function updateAI(top, opponent){
       // 回中心保存轉速
       if(td>20&&td>0){ top.vx+=(tdx/td)*f*1.3; top.vy+=(tdy/td)*f*1.3; }
       if(d<80&&d>0){ top.vx-=(dx/d)*f*0.5; top.vy-=(dy/d)*f*0.5; }
+    } else if(cpuState==='cautious'){
+      // 低血量：遠離玩家、繞場保命
+      if(d<160&&d>0){ top.vx-=(dx/d)*f*1.4; top.vy-=(dy/d)*f*1.4; }
+      // 沿競技場邊緣繞圈
+      if(td>0){ const px=-tdy/td, py=tdx/td; top.vx+=px*f*0.7; top.vy+=py*f*0.7; }
+      // 仍自動爆裂以反制
+      if(top.burst>=100){ const ok=top.activateBurst(); if(ok){ spawnBurst(top.x,top.y,top.color); } }
+    } else if(cpuState==='pressure'){
+      // 玩家轉速低：全力衝殺
+      if(d>0){ top.vx+=(dx/d)*f*2.5; top.vy+=(dy/d)*f*2.5; }
+      if(top.burst>=60&&d<130){ const ok=top.activateBurst(); if(ok){ spawnBurst(top.x,top.y,top.color); } }
     } else {
       // maneuver：依刀型決策
       if(t==='attack'){
@@ -928,6 +939,29 @@ function drawPlayerActions(){
     ctx.fillStyle=pct>=1?'#fff':'#888';
     ctx.fillText(rem>0?s.label+' '+rem.toFixed(1)+'s':s.label+' ✓',bx+bw/2,by+13);
   });
+  // 玩家速度方向箭頭
+  if(playerTop && gameState==='battle'){
+    const spd=Math.hypot(playerTop.vx,playerTop.vy);
+    if(spd>0.8){
+      const angle=Math.atan2(playerTop.vy,playerTop.vx);
+      const arrowLen=Math.min(spd*7,38);
+      ctx.save();
+      ctx.translate(playerTop.x,playerTop.y);
+      ctx.rotate(angle);
+      ctx.strokeStyle=playerTop.glow+'cc'; ctx.lineWidth=2;
+      ctx.shadowBlur=6; ctx.shadowColor=playerTop.glow;
+      ctx.beginPath();
+      ctx.moveTo(playerTop.r+4,0);
+      ctx.lineTo(playerTop.r+4+arrowLen,0);
+      ctx.moveTo(playerTop.r+4+arrowLen-7,-4);
+      ctx.lineTo(playerTop.r+4+arrowLen,0);
+      ctx.lineTo(playerTop.r+4+arrowLen-7,4);
+      ctx.stroke();
+      ctx.shadowBlur=0;
+      ctx.restore();
+    }
+  }
+
   // 防禦中提示 + 護盾視覺
   if(playerGuardTimer>0 && playerTop){
     ctx.textAlign='left'; ctx.font='bold 13px Arial'; ctx.fillStyle='#44ff88';
@@ -1029,9 +1063,20 @@ function gameLoop(ts){
     // CPU 狀態機轉換
     cpuStateTimer-=dtSec;
     if(cpuStateTimer<=0){
-      if(cpuTop.spin>2200){ cpuState='charge'; cpuStateTimer=2.5; }
-      else if(cpuTop.spin<900){ cpuState='recover'; cpuStateTimer=3.0; }
-      else { cpuState='maneuver'; cpuStateTimer=1.8; }
+      // 優先反應戰況
+      if(cpuTop.hp < cpuTop.maxHp*0.28){
+        cpuState='cautious'; cpuStateTimer=2.2;          // 低血量：躲避
+      } else if(playerTop.spin < 800 && cpuTop.spin > 1400){
+        cpuState='pressure'; cpuStateTimer=2.0;          // 玩家快耗盡：猛攻
+      } else if(playerGuardTimer > 0.2){
+        cpuState='recover'; cpuStateTimer=playerGuardTimer+0.4; // 玩家防禦中：先退回
+      } else if(cpuTop.spin>2200){
+        cpuState='charge'; cpuStateTimer=2.5;
+      } else if(cpuTop.spin<900){
+        cpuState='recover'; cpuStateTimer=3.0;
+      } else {
+        cpuState='maneuver'; cpuStateTimer=1.8;
+      }
     }
 
     // CPU AI控制
@@ -1045,13 +1090,22 @@ function gameLoop(ts){
 
     // 玩家 WASD / 方向鍵直接操控陀螺移動
     if(playerTop){
-      const moveF = 0.32 * (1+playerTop.spinRatio*0.4);
+      const isMoving = keys['KeyW']||keys['ArrowUp']||keys['KeyS']||keys['ArrowDown']||keys['KeyA']||keys['ArrowLeft']||keys['KeyD']||keys['ArrowRight'];
+      const moveF = 0.45 * (1+playerTop.spinRatio*0.4);
       if(keys['KeyW']||keys['ArrowUp'])    playerTop.vy -= moveF;
       if(keys['KeyS']||keys['ArrowDown'])  playerTop.vy += moveF;
       if(keys['KeyA']||keys['ArrowLeft'])  playerTop.vx -= moveF;
       if(keys['KeyD']||keys['ArrowRight']) playerTop.vx += moveF;
+      const maxSpd = isMoving ? 6.5 : 5.5;
       const pspd=Math.hypot(playerTop.vx,playerTop.vy);
-      if(pspd>5.5){ playerTop.vx=(playerTop.vx/pspd)*5.5; playerTop.vy=(playerTop.vy/pspd)*5.5; }
+      if(pspd>maxSpd){ playerTop.vx=(playerTop.vx/pspd)*maxSpd; playerTop.vy=(playerTop.vy/pspd)*maxSpd; }
+      // 移動時在陀螺前方噴出方向粒子
+      if(isMoving && playerTop.spinRatio>0.3 && Math.random()<0.35){
+        const a=Math.atan2(playerTop.vy,playerTop.vx);
+        particles.push({x:playerTop.x-Math.cos(a)*playerTop.r,y:playerTop.y-Math.sin(a)*playerTop.r,
+          vx:-Math.cos(a)*1.2+((Math.random()-0.5)*0.8),vy:-Math.sin(a)*1.2+((Math.random()-0.5)*0.8),
+          color:playerTop.glow,life:0.5,size:2,type:'spark'});
+      }
     }
 
     // 每1秒：CPU 施加少量向玩家的引力（保持對抗感，但不再控制玩家）
