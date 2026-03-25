@@ -1,5 +1,24 @@
 # CapyWorlds — Claude 開發指引（2026/3/25 更新）
 
+## Push 後自動衝突檢查規則（最優先執行）
+
+**每次 `git push` 到 `claude/` 分支後**，Claude 必須立即執行以下流程：
+
+1. **檢查 PR 是否有衝突**：
+   ```bash
+   git fetch origin main
+   git merge-base --is-ancestor origin/main HEAD
+   # 若回傳非 0 → 表示 main 有新 commit，需要 rebase
+   ```
+2. **若有衝突**：
+   - `git rebase origin/main`
+   - 逐一解決 conflict（保留雙方有意義的改動）
+   - `git push --force-with-lease origin <branch>`
+3. **不需要問**：直接執行，事後報告「已解決衝突並重新推送 ✅」
+4. **若 rebase 過程失敗**：報告具體衝突檔案，請使用者確認解法
+
+---
+
 ## 新 Session 自動合併規則（最優先執行）
 
 **每次開新 session 時**，Claude 必須主動執行以下流程：

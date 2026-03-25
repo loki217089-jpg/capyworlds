@@ -341,8 +341,12 @@ export default {
       const wait=await env.DB.prepare("SELECT id,p1_id,p1_name FROM chat_rooms WHERE state='waiting' AND p1_gender=? AND NOT(p1_ping=0 AND created_at<?) AND (p1_ping=0 OR p1_ping>?) LIMIT 1").bind(opp,now-60000,now-90000).first();
       if (wait && wait.p1_id!==pid) {
         const timer_end=now+300000;
-        await env.DB.prepare("UPDATE chat_rooms SET p2_id=?,p2_name=?,p2_gender=?,state='chatting',timer_end=?,p2_ip=?,p2_country=?,p2_ua=? WHERE id=?").bind(pid,name,gender,timer_end,joinIp,joinCountry,joinUa,wait.id).run();
-        return Response.json({room_id:wait.id,role:'p2',state:'chatting',opp_name:wait.p1_name},{headers:cors});
+        // conditional UPDATE to prevent race condition + include IP/country/UA
+        const upd=await env.DB.prepare("UPDATE chat_rooms SET p2_id=?,p2_name=?,p2_gender=?,state='chatting',timer_end=?,p2_ip=?,p2_country=?,p2_ua=? WHERE id=? AND state='waiting'").bind(pid,name,gender,timer_end,joinIp,joinCountry,joinUa,wait.id).run();
+        if ((upd.meta?.changes||0)>0) {
+          return Response.json({room_id:wait.id,role:'p2',state:'chatting',opp_name:wait.p1_name},{headers:cors});
+        }
+        // another user grabbed that room first — fall through to create new waiting room
       }
       const cnt=await env.DB.prepare("SELECT COUNT(*) as c FROM chat_rooms WHERE state='waiting'").first();
       if ((cnt?.c||0)>=20) return Response.json({error:'等待人數已滿，請稍後再試'},{status:503,headers:cors});
@@ -389,8 +393,12 @@ export default {
       const pid=(b.pid||'').slice(0,40);
       const room=await env.DB.prepare("SELECT p1_id,p2_id,state FROM chat_rooms WHERE id=?").bind(room_id).first();
       if (!room) return Response.json({ok:true},{headers:cors});
-      // only mark done if still waiting (don't kill an active chat by accident)
-      if (room.state==='waiting' && room.p1_id===pid) {
+      const isP1=room.p1_id===pid, isP2=room.p2_id===pid;
+      if (!isP1 && !isP2) return Response.json({ok:true},{headers:cors});
+      if (room.state==='waiting' && isP1) {
+        await env.DB.prepare("UPDATE chat_rooms SET state='done' WHERE id=?").bind(room_id).run();
+      } else if (room.state==='chatting') {
+        // one side left → mark done so other side's poll detects it
         await env.DB.prepare("UPDATE chat_rooms SET state='done' WHERE id=?").bind(room_id).run();
       }
       return Response.json({ok:true},{headers:cors});
