@@ -648,19 +648,104 @@ function resetGame() {
 const canvas=document.getElementById('canvas');
 const ctx=canvas.getContext('2d');
 
+// Static map decorations (pre-calculated for perf)
+const MAP_RUINS=[
+  // left wall buildings
+  {x:0,y:0,w:72,h:180,col:'#0d150d'},{x:0,y:220,w:60,h:160,col:'#0c140c'},
+  {x:0,y:410,w:80,h:90,col:'#0d160d'},
+  // right wall buildings
+  {x:830,y:0,w:70,h:200,col:'#0c140c'},{x:846,y:230,w:54,h:140,col:'#0e160e'},
+  {x:836,y:400,w:64,h:100,col:'#0d150d'},
+  // top buildings
+  {x:100,y:0,w:120,h:55,col:'#0c140c'},{x:280,y:0,w:90,h:48,col:'#0d150d'},
+  {x:440,y:0,w:110,h:60,col:'#0c140c'},{x:620,y:0,w:100,h:52,col:'#0e160e'},
+  // bottom buildings
+  {x:80,y:448,w:130,h:52,col:'#0c140c'},{x:280,y:455,w:100,h:45,col:'#0d150d'},
+  {x:460,y:452,w:120,h:48,col:'#0c140c'},{x:650,y:450,w:110,h:50,col:'#0d160d'},
+];
+const MAP_CARS=[
+  {x:130,y:340,w:50,h:26,col:'#1a2a1a',angle:0.12},
+  {x:720,y:155,w:52,h:26,col:'#1a1a22',angle:-0.08},
+  {x:370,y:70,w:50,h:26,col:'#221a1a',angle:0.22},
+  {x:555,y:408,w:54,h:28,col:'#1a221a',angle:-0.15},
+  {x:220,y:190,w:50,h:26,col:'#1c1a18',angle:0.05},
+  {x:660,y:310,w:52,h:28,col:'#1a1c1a',angle:-0.18},
+];
+const MAP_CRACKS=[
+  {x:160,y:280,dx:90,dy:22},{x:340,y:120,dx:-60,dy:40},
+  {x:580,y:360,dx:70,dy:-30},{x:450,y:230,dx:-50,dy:50},
+  {x:700,y:180,dx:55,dy:25},{x:240,y:380,dx:-80,dy:18},
+];
+
 function drawBackground() {
-  // Dark asphalt ground
+  // Dark asphalt ground base
   ctx.fillStyle='#0f1a0f'; ctx.fillRect(0,0,CW,CH);
-  // Grid lines (cracked streets)
-  ctx.strokeStyle='#131f13'; ctx.lineWidth=1;
+
+  // Ground texture patches (subtle variation)
+  for(let gx=0;gx<CW;gx+=120) for(let gy=0;gy<CH;gy+=100){
+    const seed=(gx*7+gy*13)%100;
+    if(seed<22){ctx.fillStyle='rgba(0,0,0,0.08)';ctx.fillRect(gx+8,gy+8,108,88);}
+    else if(seed<36){ctx.fillStyle='rgba(10,30,10,0.06)';ctx.fillRect(gx,gy,120,100);}
+  }
+
+  // Road markings — crossroads at center
+  ctx.strokeStyle='rgba(30,50,30,0.55)'; ctx.lineWidth=3;
+  ctx.setLineDash([20,15]);
+  ctx.beginPath();ctx.moveTo(CW/2,80);ctx.lineTo(CW/2,CH-80);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(80,CH/2);ctx.lineTo(CW-80,CH/2);ctx.stroke();
+  ctx.setLineDash([]);
+  // Road edge markings
+  ctx.strokeStyle='rgba(25,45,25,0.35)'; ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(80,80);ctx.lineTo(CW-80,80);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(80,CH-80);ctx.lineTo(CW-80,CH-80);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(80,80);ctx.lineTo(80,CH-80);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(CW-80,80);ctx.lineTo(CW-80,CH-80);ctx.stroke();
+
+  // Cracks in ground
+  ctx.strokeStyle='rgba(0,0,0,0.35)'; ctx.lineWidth=1.5;
+  for(const c of MAP_CRACKS){
+    ctx.beginPath();ctx.moveTo(c.x,c.y);ctx.lineTo(c.x+c.dx,c.y+c.dy);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(c.x+c.dx*0.4,c.y+c.dy*0.4);ctx.lineTo(c.x+c.dx*0.4+20,c.y+c.dy*0.4+c.dy*0.3);ctx.stroke();
+  }
+
+  // Building ruins on edges
+  for(const r of MAP_RUINS){
+    ctx.fillStyle=r.col; ctx.fillRect(r.x,r.y,r.w,r.h);
+    // Window/crack details
+    ctx.fillStyle='rgba(0,0,0,0.5)';
+    for(let wy=r.y+8;wy<r.y+r.h-10;wy+=16){
+      for(let wx=r.x+5;wx<r.x+r.w-10;wx+=12){
+        if(Math.abs(wx*7+wy*13)%5<2) ctx.fillRect(wx,wy,7,5);
+      }
+    }
+    // Broken edge
+    ctx.strokeStyle='rgba(20,40,20,0.6)'; ctx.lineWidth=1;
+    ctx.strokeRect(r.x,r.y,r.w,r.h);
+  }
+
+  // Abandoned wrecked cars
+  for(const c of MAP_CARS){
+    ctx.save(); ctx.translate(c.x,c.y); ctx.rotate(c.angle);
+    ctx.fillStyle=c.col; ctx.fillRect(-c.w/2,-c.h/2,c.w,c.h);
+    ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(-c.w/2+4,-c.h/2+4,c.w-8,c.h-8);
+    // Broken windows
+    ctx.strokeStyle='rgba(60,80,60,0.4)'; ctx.lineWidth=1;
+    ctx.strokeRect(-c.w/2,-c.h/2,c.w,c.h);
+    ctx.restore();
+  }
+
+  // Fine grid lines (cracked asphalt texture)
+  ctx.strokeStyle='rgba(15,25,15,0.4)'; ctx.lineWidth=1;
   for(let x=0;x<CW;x+=60){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,CH);ctx.stroke();}
   for(let y=0;y<CH;y+=60){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(CW,y);ctx.stroke();}
+
   // Fire decorations
   for (const f of fireAnims) f.anim.draw(ctx, f.x, f.y, false, 0.85);
-  // danger vignette near edges
+
+  // Danger vignette
   const grad=ctx.createRadialGradient(CW/2,CH/2,CH*0.28,CW/2,CH/2,CH*0.7);
   grad.addColorStop(0,'rgba(0,0,0,0)');
-  grad.addColorStop(1,'rgba(0,0,0,0.55)');
+  grad.addColorStop(1,'rgba(0,0,0,0.6)');
   ctx.fillStyle=grad; ctx.fillRect(0,0,CW,CH);
 }
 

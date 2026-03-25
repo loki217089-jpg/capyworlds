@@ -97,7 +97,7 @@ body {
     <button class="ubtn"     data-type="antitank">反坦克<span class="ucost">💰120</span></button>
     <button class="ubtn"     data-type="grenadier">擲彈兵<span class="ucost">💰90</span></button>
     <button class="ubtn astr" data-type="__airstrike__">空 襲<span class="ucost">💰150</span></button>
-    <span class="uhint">選單位點排部署<br>右鍵點單位退售(60%)<br>空襲：選後點排</span>
+    <span class="uhint">左鍵部署單位<br>右鍵單位=升級★(2級)<br>滿級後右鍵退售50%</span>
   </div>
   <div id="overlay">
     <h1>🐛 機甲蟲蟲危機</h1>
@@ -131,8 +131,8 @@ const UCFG = {
   assault:   {name:'突擊兵',cost:50, hp:120,dmg:20,spd:1.2,rng:44, aps:1.2,spr:'assault',   col:'#4af'},
   machinegun:{name:'機槍手',cost:80, hp:90, dmg:10,spd:1.0,rng:90, aps:3.0,spr:'machinegun',col:'#fa4'},
   sniper:    {name:'狙擊手',cost:100,hp:70, dmg:65,spd:1.0,rng:180,aps:0.5,spr:'sniper',    col:'#4f8'},
-  antitank:  {name:'反坦克',cost:120,hp:100,dmg:90,spd:0.8,rng:110,aps:0.4,spr:'antitank',  col:'#f84',aoe:45},
-  grenadier: {name:'擲彈兵',cost:90, hp:80, dmg:55,spd:1.0,rng:130,aps:0.5,spr:'grenadier', col:'#a4f',aoe:40},
+  antitank:  {name:'反坦克',cost:120,hp:110,dmg:105,spd:0.8,rng:110,aps:0.45,spr:'antitank',col:'#f84',aoe:50},
+  grenadier: {name:'擲彈兵',cost:90, hp:85, dmg:65, spd:1.0,rng:135,aps:0.55,spr:'grenadier',col:'#a4f',aoe:44},
 };
 
 // Enemy configs
@@ -261,6 +261,7 @@ class Unit {
     this.frameT = 0;
     this.atkT = 0;
     this.state = 'walk';  // walk | fight
+    this.upgLevel = 0;    // upgrade level (0-2)
   }
 
   update(dt, allies, foes) {
@@ -308,8 +309,23 @@ class Unit {
     const flip = this.isEnemy;
     // row 2 = typically a side-facing row for most 7-row sheets
     const row = this.state==='fight' ? 3 : 2;
+    // Upgrade aura glow
+    if (!this.dead && !this.isEnemy && this.upgLevel > 0) {
+      ctx.shadowColor = this.upgLevel>=2 ? '#ffd700' : '#44ccff';
+      ctx.shadowBlur = 10 + this.upgLevel*4;
+    }
     drawSpr(ctx, this.cfg.spr, this.x, this.y, this.frame, row, flip, alpha);
-    if (!this.dead) drawBar(ctx, this.x, this.y-32, this.hp, this.maxHp);
+    ctx.shadowBlur = 0;
+    if (!this.dead) {
+      drawBar(ctx, this.x, this.y-32, this.hp, this.maxHp);
+      // Upgrade stars
+      if (!this.isEnemy && this.upgLevel > 0) {
+        ctx.fillStyle = this.upgLevel>=2 ? '#ffd700' : '#44ccff';
+        ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center';
+        ctx.fillText('★'.repeat(this.upgLevel), this.x, this.y-38);
+        ctx.textAlign = 'left';
+      }
+    }
   }
 }
 
@@ -438,6 +454,10 @@ function updateWave(dt) {
   if (!spawnQ.length && enemies.every(e=>e.dead)) {
     gs.waveActive=false;
     gs.nextWaveIn = WAVE_DELAY;
+    // Wave clear bonus gold — scales with wave number
+    const wBonus = 30 + gs.wave * 15;
+    gs.gold += wBonus; hud('gold');
+    parts.push({x:CW/2, y:CH/2-30, t:0, dur:2000, big:false, label:`波次完清！+${wBonus}💰`});
     if (gs.wave >= WAVES.length) setTimeout(()=>endGame(true), 2000);
   }
 }
@@ -447,6 +467,27 @@ function deploySoldier(type, lane) {
   if (!c || gs.gold < c.cost) return;
   gs.gold -= c.cost; hud('gold');
   soldiers.push(new Unit(c, PBX+22, lane, false));
+}
+
+function upgradeCost(s) {
+  return Math.floor(s.cfg.cost * (s.upgLevel===0 ? 0.5 : 0.7));
+}
+
+function upgradeUnit(s) {
+  if (s.isEnemy || s.dead || s.upgLevel >= 2) return;
+  const cost = upgradeCost(s);
+  if (gs.gold < cost) return;
+  gs.gold -= cost; hud('gold');
+  s.upgLevel++;
+  // Apply +30% dmg and HP (reconstruct effective cfg)
+  s.cfg = Object.assign({}, s.cfg, {
+    dmg:  Math.round(s.cfg.dmg  * 1.3),
+    hp:   Math.round(s.cfg.hp   * 1.3),
+    aps:  parseFloat((s.cfg.aps * 1.1).toFixed(3)),
+  });
+  s.maxHp = s.cfg.hp;
+  s.hp = Math.min(s.hp * 1.3, s.maxHp);
+  parts.push({x:s.x, y:s.y-38, t:0, dur:1400, big:false, label:`升級★${s.upgLevel} +${cost}💰`});
 }
 
 function endGame(win) {
@@ -648,7 +689,7 @@ canvas.addEventListener('click', e => {
   }
 });
 
-// Right-click on soldier → sell for 60% cost
+// Right-click on soldier → upgrade (1st try) or sell (if maxed)
 canvas.addEventListener('contextmenu', e => {
   e.preventDefault();
   if (gs.phase!=='playing') return;
@@ -662,11 +703,22 @@ canvas.addEventListener('contextmenu', e => {
     if (d<36 && d<bestD) { bestD=d; best=s; }
   }
   if (best) {
-    const refund=Math.floor(best.cfg.cost*0.6);
-    best.dead=true; best.dieT=0;
-    gs.gold+=refund; hud('gold');
-    spawnExpl(best.x, best.y, false);
-    parts.push({x:best.x, y:best.y-28, t:0, dur:1200, big:false, label:`退售 +${refund}💰`});
+    if (best.upgLevel < 2) {
+      // Try upgrade; if can't afford, show cost
+      const cost = upgradeCost(best);
+      if (gs.gold >= cost) {
+        upgradeUnit(best);
+      } else {
+        parts.push({x:best.x, y:best.y-28, t:0, dur:1000, big:false, label:`升級需${cost}💰`});
+      }
+    } else {
+      // Maxed: sell for 50% cost
+      const refund=Math.floor(best.cfg.cost*0.5);
+      best.dead=true; best.dieT=0;
+      gs.gold+=refund; hud('gold');
+      spawnExpl(best.x, best.y, false);
+      parts.push({x:best.x, y:best.y-28, t:0, dur:1200, big:false, label:`退售 +${refund}💰`});
+    }
   }
 });
 

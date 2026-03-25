@@ -26,7 +26,7 @@
       text-shadow: 0 0 24px rgba(200,164,86,0.5); letter-spacing: 2px; }
     .game-sub { font-size: 1rem; color: #907a60; text-align: center; line-height: 1.5; }
     .name-input {
-      width: 100%; padding: 14px 18px; font-size: 1.1rem;
+      width: 100%; padding: 14px 18px; font-size: 1.1rem; min-height: 52px;
       background: var(--bg2); border: 2px solid #3d3020; border-radius: 12px;
       color: var(--text); outline: none; text-align: center;
       transition: border-color 0.2s;
@@ -117,7 +117,7 @@
     }
     .countdown-overlay.hidden { display: none; }
     .countdown-num {
-      font-size: 8rem; font-weight: 900; line-height: 1;
+      font-size: clamp(5rem, 25vw, 8rem); font-weight: 900; line-height: 1;
       color: var(--accent); text-shadow: 0 0 40px rgba(200,164,86,0.7);
     }
     .countdown-label { font-size: 1.2rem; color: #907a60; }
@@ -154,8 +154,9 @@
     .draw-text { color: var(--accent); }
 
     .back-link { font-size: 0.85rem; color: #907a60; text-decoration: none;
-      border-bottom: 1px solid #3d3020; padding-bottom: 2px; }
-    .back-link:hover { color: var(--accent); }
+      border-bottom: 1px solid #3d3020; padding: 10px 14px; display: inline-block;
+      min-height: 44px; line-height: 1.5; }
+    .back-link:hover, .back-link:active { color: var(--accent); }
 
     /* ── Leaderboard & Stats ── */
     .lb-box { width: 100%; background: var(--bg2); border-radius: 14px;
@@ -163,7 +164,8 @@
     .lb-title { font-size: 0.85rem; font-weight: 700; color: var(--accent);
       letter-spacing: 1px; margin-bottom: 8px; }
     .lb-row { display: flex; align-items: center; gap: 8px;
-      padding: 5px 0; border-bottom: 1px solid #2a2018; font-size: 0.85rem; }
+      padding: 8px 0; border-bottom: 1px solid #2a2018; font-size: 0.85rem;
+      min-height: 40px; }
     .lb-row:last-child { border-bottom: none; }
     .lb-rank { width: 24px; text-align: center; color: #6a5a48; font-size: 0.8rem; }
     .lb-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -174,8 +176,8 @@
       border: 1px solid #3d3020; }
     .stat-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
     .stat-val { font-size: 1.4rem; font-weight: 900; color: var(--accent); }
-    .stat-lbl { font-size: 0.72rem; color: #6a5a48; }
-    .player-total { font-size: 0.72rem; color: #6a5a48; margin-top: 2px; }
+    .stat-lbl { font-size: 0.8rem; color: #6a5a48; }
+    .player-total { font-size: 0.8rem; color: #6a5a48; margin-top: 2px; }
 
     .tap-ripple {
       position: absolute; border-radius: 50%;
@@ -188,6 +190,15 @@
     }
 
     .waiting-hint { font-size: 0.85rem; color: #6a5a48; text-align: center; }
+
+    /* ── Mobile touch improvements ── */
+    button, .back-link { touch-action: manipulation; }
+    .btn + .btn, .btn + .back-link { margin-top: 8px; }
+    .result-overlay { padding: clamp(16px, 5vw, 24px); }
+    @media (max-width: 400px) {
+      .player-name { max-width: 80px; }
+      .scoreboard { gap: 4px; }
+    }
   </style>
 </head>
 <body>
@@ -273,7 +284,7 @@
 
   <!-- Tap Button -->
   <button class="tap-btn disabled" id="tap-btn"
-    ontouchstart="onTap(event)" onclick="onTap(event)">點我！</button>
+    ontouchend="onTap(event)" onclick="onTap(event)">點我！</button>
   <div class="tap-count-label">本局點擊：<span id="tap-count-display">0</span> 下</div>
 </div>
 
@@ -558,7 +569,7 @@ function setTapEnabled(on) {
 }
 
 function onTap(e) {
-  if (e.type === 'touchstart') e.preventDefault();
+  if (e.type === 'touchend') e.preventDefault();
   if (!isPlaying) return;
   localTaps++;
   document.getElementById('tap-count-display').textContent = localTaps;

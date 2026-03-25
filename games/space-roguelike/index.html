@@ -742,7 +742,7 @@ window.addEventListener('keydown', e => {
       const idx = wl.indexOf(player.weaponMode);
       player.weaponMode = wl[(idx+1) % wl.length];
       player.waveCharge = 0;
-      const names = {laser:'雷射砲', scatter:'散射炮', heavy:'重砲', missile:'導彈砲', wave:'波動砲'};
+      const names = {laser:'雷射砲', scatter:'散射炮', heavy:'重砲', missile:'導彈砲', wave:'波動砲', chain:'鏈閃砲', nova:'環形砲'};
       setStatus(`切換武器：${names[player.weaponMode]}`);
     }
   }
@@ -900,6 +900,13 @@ function renderShop() {
       player.unlockedWeapons.push('chain');
       player.weaponMode='chain';
       setStatus('閃電鏈解鎖！按 Q 切換武器');
+    }});
+  }
+  if (!player.unlockedWeapons.includes('nova')) {
+    upgrades.push({name:'環形砲 — 360°全方位爆炸 群體清場 (按Q切換)',cost:{ore:75,crystal:12},req:()=>true,buy:()=>{
+      player.unlockedWeapons.push('nova');
+      player.weaponMode='nova';
+      setStatus('環形砲解鎖！按 Q 切換武器');
     }});
   }
   // Consumables (always visible if needed)
@@ -1195,14 +1202,12 @@ function updatePlayer(dt) {
         spawnParticle(player.x,player.y,Math.cos(ta)*40,Math.sin(ta)*40,0.2,'#ff8833',4);
       }
     } else if (player.weaponMode === 'gatling') {
-      // Rapid-fire burst: very fast, low damage
       player.fireTimer = fr * 0.12;
       spawnBullet(player.x, player.y, ang + (Math.random()-0.5)*0.07, bspd*1.1, dmg*0.38, 'player');
       if (hasRelic('energy_lens')) spawnBullet(player.x, player.y, ang+(Math.random()-0.5)*0.1, bspd*1.1, dmg*0.28, 'player');
       audio.play('shoot', 0.10, 1.5);
       spawnParticle(mx, my, Math.cos(ang)*120, Math.sin(ang)*120, 0.05, '#aaffff', 4);
     } else if (player.weaponMode === 'plasma') {
-      // Large slow piercing plasma orb
       player.fireTimer = fr * 4.2;
       const pb = {x:player.x, y:player.y,
         vx:Math.cos(ang)*bspd*0.32, vy:Math.sin(ang)*bspd*0.32,
@@ -1222,7 +1227,6 @@ function updatePlayer(dt) {
         spawnParticle(player.x,player.y,Math.cos(ta)*90,Math.sin(ta)*90,0.25,'#cc44ff',6+Math.random()*5);
       }
     } else if (player.weaponMode === 'chain') {
-      // Chain lightning: fires a fast bolt, chains up to 3 nearby enemies on hit
       player.fireTimer = fr * 1.6;
       const cb = {x:player.x, y:player.y,
         vx:Math.cos(ang)*bspd*1.4, vy:Math.sin(ang)*bspd*1.4,
@@ -1236,6 +1240,18 @@ function updatePlayer(dt) {
       }
       audio.play('shoot', 0.35, 1.8);
       spawnParticle(mx, my, Math.cos(ang)*200, Math.sin(ang)*200, 0.06, '#44ccff', 5);
+    } else if (player.weaponMode === 'nova') {
+      player.fireTimer = fr * 3.2;
+      const novaDmg = dmg * 0.7;
+      for (let ni = 0; ni < 8; ni++) {
+        const na = (ni/8)*Math.PI*2;
+        spawnBullet(player.x, player.y, na, bspd*0.52, novaDmg, 'player');
+      }
+      audio.play('shoot', 0.5, 0.78);
+      for (let k=0;k<8;k++) {
+        const pa=(k/8)*Math.PI*2;
+        spawnParticle(player.x, player.y, Math.cos(pa)*70, Math.sin(pa)*70, 0.18,'#ff88ff',6);
+      }
     } else {
       // Default laser
       player.fireTimer = fr;
@@ -1383,6 +1399,7 @@ function updateBullets(dt) {
             }
             explosion(b.x,b.y,6,en.color);
           }
+          if (b.chain > 0 && !b.isMissile) chainBurst(b.x, b.y, b.dmg*0.6, b.chain-1, en);
           if (en.hp<=0) {
             en.alive=false;
             audio.play('explodeBig', 0.6);
@@ -1513,6 +1530,34 @@ function missileExplode(bx, by, dmg, nearChunk) {
         registerKill();
       }
     }
+  }
+}
+
+function chainBurst(bx, by, dmg, chainLeft, originEn) {
+  const nearby = [];
+  for (const chunk of chunks.values()) {
+    for (const e of chunk.enemies) {
+      if (!e.alive || e === originEn) continue;
+      const d = dist2(bx, by, e.x, e.y);
+      if (d < 230*230) nearby.push({e, d});
+    }
+  }
+  for (const e of dynamicEnemies) {
+    if (!e.alive || e === originEn) continue;
+    const d = dist2(bx, by, e.x, e.y);
+    if (d < 230*230) nearby.push({e, d});
+  }
+  nearby.sort((a,b)=>a.d-b.d);
+  for (let ci = 0; ci < Math.min(2, nearby.length); ci++) {
+    const te = nearby[ci].e;
+    const ta = Math.atan2(te.y-by, te.x-bx);
+    bullets.push({x:bx,y:by,
+      vx:Math.cos(ta)*BULLET_SPEED*1.05, vy:Math.sin(ta)*BULLET_SPEED*1.05,
+      life:0.65, dmg, owner:'player', r:4, homing:false, chain:chainLeft, isChain:true});
+  }
+  for (let k=0;k<6;k++) {
+    const pa=(k/6)*Math.PI*2;
+    spawnParticle(bx,by,Math.cos(pa)*55,Math.sin(pa)*55,0.2,'#44ffff',4);
   }
 }
 
@@ -2480,6 +2525,16 @@ function drawBullets(t) {
       ctx.beginPath(); ctx.arc(0,0,b.r,0,Math.PI*2); ctx.fill();
       ctx.strokeStyle='#ffcc44'; ctx.lineWidth=2;
       ctx.beginPath(); ctx.arc(0,0,b.r,0,Math.PI*2); ctx.stroke();
+    } else if (b.chain > 0 || b.isChain) {
+      // Chain lightning — electric cyan bolt
+      ctx.shadowColor='#00ffff'; ctx.shadowBlur=16;
+      ctx.strokeStyle='#44ffff'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(-b.r*1.5,0); ctx.lineTo(b.r*1.5,0); ctx.stroke();
+      ctx.strokeStyle='#ffffff'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(-b.r,0); ctx.lineTo(b.r,0); ctx.stroke();
+      // Electric arc decoration
+      ctx.strokeStyle='rgba(100,255,255,0.6)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(-4,-3); ctx.lineTo(0,2); ctx.lineTo(4,-3); ctx.stroke();
     } else {
       ctx.shadowColor='#88ffff'; ctx.shadowBlur=8;
       ctx.fillStyle='#00ffff';

@@ -68,6 +68,7 @@
     -webkit-tap-highlight-color: transparent;
   }
   #startBtn:active { transform: scale(0.94); }
+  button { touch-action: manipulation; }
   #hud {
     position: fixed;
     pointer-events: none;
@@ -96,6 +97,8 @@
     left: 0; right: 0;
     text-align: center;
     color: rgba(255,255,255,0.35);
+    padding: 0 8px;
+    word-wrap: break-word;
   }
   #powerup {
     position: absolute;
@@ -105,6 +108,11 @@
     font-weight: 700;
     opacity: 0;
     transition: opacity 0.3s;
+    max-width: 90%;
+    margin: 0 auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 </style>
 </head>
@@ -157,16 +165,18 @@ function resizeAll() {
   ov.querySelector('.sub').style.fontSize = Math.round(14 * SCALE) + 'px';
   const btn = document.getElementById('startBtn');
   btn.style.fontSize = Math.round(20 * SCALE) + 'px';
-  btn.style.padding = Math.round(14*SCALE) + 'px ' + Math.round(44*SCALE) + 'px';
+  const btnPadV = Math.max(14, Math.round(14*SCALE));
+  btn.style.padding = btnPadV + 'px ' + Math.round(44*SCALE) + 'px';
+  btn.style.minHeight = '44px';
 
   // HUD same position
   const hud = document.getElementById('hud');
   hud.style.left = ox + 'px'; hud.style.top = oy + 'px';
   hud.style.width = dw + 'px'; hud.style.height = dh + 'px';
-  document.getElementById('score').style.fontSize   = Math.round(26*SCALE) + 'px';
-  document.getElementById('coinHud').style.fontSize = Math.round(15*SCALE) + 'px';
-  document.getElementById('hint').style.fontSize    = Math.round(11*SCALE) + 'px';
-  document.getElementById('powerup').style.fontSize = Math.round(16*SCALE) + 'px';
+  document.getElementById('score').style.fontSize   = Math.max(16, Math.round(26*SCALE)) + 'px';
+  document.getElementById('coinHud').style.fontSize = Math.max(13, Math.round(15*SCALE)) + 'px';
+  document.getElementById('hint').style.fontSize    = Math.max(11, Math.round(11*SCALE)) + 'px';
+  document.getElementById('powerup').style.fontSize = Math.max(14, Math.round(16*SCALE)) + 'px';
 }
 resizeAll();
 window.addEventListener('resize', resizeAll);

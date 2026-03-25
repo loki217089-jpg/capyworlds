@@ -673,11 +673,6 @@
           <div class="card-label">情境聊天室</div>
           <div class="card-desc">配對異性・5分鐘聊天</div>
         </a>
-        <a class="nav-card" href="games/black-hole/">
-          <div class="card-icon">🕳️</div>
-          <div class="card-label">黑洞收割者</div>
-          <div class="card-desc">操控黑洞吞噬世界</div>
-        </a>
       </nav>
     </div>
 
@@ -726,28 +721,6 @@
           <div class="card-icon">🦫</div>
           <div class="card-label">About</div>
           <div class="card-desc">關於我</div>
-        </a>
-      </nav>
-    </div>
-
-    <!-- 台灣社會工具 -->
-    <div class="nav-section">
-      <div class="section-label">🇹🇼 社會工具 · Taiwan</div>
-      <nav class="nav-grid">
-        <a class="nav-card" href="rental-rights/">
-          <div class="card-icon">📋</div>
-          <div class="card-label">租屋糾紛自救包</div>
-          <div class="card-desc">法條 × 存證信函草稿</div>
-        </a>
-        <a class="nav-card" href="scam-detector/">
-          <div class="card-icon">🔍</div>
-          <div class="card-label">詐騙辨識器</div>
-          <div class="card-desc">貼上可疑訊息立即分析</div>
-        </a>
-        <a class="nav-card" href="legislator/">
-          <div class="card-icon">🗳️</div>
-          <div class="card-label">議員做了什麼？</div>
-          <div class="card-desc">查立委投票 × 質詢 × 出席率</div>
         </a>
       </nav>
     </div>
@@ -1004,7 +977,12 @@
   <!-- ── Danmaku Admin Panel ── -->
   <div id="dm-admin-panel">
     <div class="dm-adm-hd">
-      🛡️ 彈幕管理
+      <div>
+        🛡️ 彈幕管理
+        <div id="dm-adm-counts" style="font-size:10px;font-weight:400;color:var(--text2);margin-top:2px;letter-spacing:0">
+          資料庫 <b style="color:var(--accent)">—</b> 筆 ｜ 畫面中 <b style="color:#00ffcc">—</b> 筆
+        </div>
+      </div>
       <span>
         <button class="dm-adm-btn warn" style="padding:3px 10px;flex:0" onclick="dmAdminRefresh()">重新整理</button>
         <button class="dm-adm-btn neu"  style="padding:3px 10px;flex:0;margin-left:4px" onclick="exitDmAdmin()">退出</button>
@@ -1016,6 +994,7 @@
     <div class="dm-adm-ft">
       <button class="dm-adm-btn danger" onclick="dmAdminClearAll()">🗑 清除全部彈幕</button>
       <button class="dm-adm-btn neu"    onclick="dmAdminPauseToggle()" id="dm-pause-btn">⏸ 暫停顯示</button>
+      <button class="dm-adm-btn warn"   onclick="dmAdminShowAll()" style="flex:1 1 100%">▶▶ 全部顯示到畫面</button>
     </div>
   </div>
 
@@ -1069,11 +1048,16 @@
   const dmInput  = document.getElementById('dm-input');
   const dmSend   = document.getElementById('dm-send');
 
-  dmToggle.addEventListener('click', () => {
-    dmOn = !dmOn;
+  function applyDmState(on) {
+    dmOn = on;
     dmToggle.classList.toggle('on', dmOn);
     dmToggle.textContent = dmOn ? '💬 彈幕 ON' : '💬 彈幕';
     dmBar.classList.toggle('open', dmOn);
+    localStorage.setItem('capyDmOn', dmOn ? '1' : '0');
+  }
+
+  dmToggle.addEventListener('click', () => {
+    applyDmState(!dmOn);
     if (dmOn) {
       fetchDanmaku(true);
       dmPollTimer = setInterval(() => fetchDanmaku(false), 15000);
@@ -1142,13 +1126,28 @@
     }
   });
 
+  let _dmCountTimer = null;
+
+  function dmUpdateCounts(dbCount) {
+    const el = document.getElementById('dm-adm-counts');
+    if (!el) return;
+    const screenCount = dmLayer ? dmLayer.children.length : 0;
+    const pauseTxt = dmPaused ? ' · ⏸暫停中' : '';
+    el.innerHTML = `資料庫 <b style="color:var(--accent)">${dbCount}</b> 筆 ｜ 畫面中 <b style="color:#00ffcc">${screenCount}</b> 筆${pauseTxt}`;
+  }
+
   async function openDmAdmin() {
     document.getElementById('dm-admin-panel').classList.add('show');
     await dmAdminRefresh();
+    _dmCountTimer = setInterval(() => {
+      const dbCount = document.getElementById('dm-admin-list').querySelectorAll('.dm-adm-row').length;
+      dmUpdateCounts(dbCount);
+    }, 1000);
   }
 
   function exitDmAdmin() {
     dmAdminMode = false;
+    clearInterval(_dmCountTimer); _dmCountTimer = null;
     document.getElementById('dm-admin-panel').classList.remove('show');
     showPtsPopup('已退出管理員模式');
   }
@@ -1159,7 +1158,11 @@
     try {
       const res  = await fetch(API + '/danmaku?admin=1', { headers:{ 'Authorization':'Bearer ' + DM_ADMIN_PW } });
       const data = await res.json();
-      if (!data.length) { list.innerHTML = '<div style="text-align:center;color:var(--text3);padding:18px;font-size:12px">目前沒有彈幕</div>'; return; }
+      if (!data.length) {
+        list.innerHTML = '<div style="text-align:center;color:var(--text3);padding:18px;font-size:12px">目前沒有彈幕</div>';
+        dmUpdateCounts(0);
+        return;
+      }
       list.innerHTML = data.map(d => `
         <div class="dm-adm-row" id="dm-item-${d.id}">
           <div class="dm-adm-dot" style="background:${d.color}"></div>
@@ -1167,6 +1170,7 @@
           <div class="dm-adm-id">#${d.id}</div>
           <button class="dm-adm-del" onclick="dmAdminDelete(${d.id})">刪除</button>
         </div>`).join('');
+      dmUpdateCounts(data.length);
     } catch { list.innerHTML = '<div style="text-align:center;color:#f66;padding:18px;font-size:12px">載入失敗</div>'; }
   }
 
@@ -1174,8 +1178,12 @@
     try {
       const res = await fetch(API + '/danmaku/' + id, { method:'DELETE', headers:{ 'Authorization':'Bearer ' + DM_ADMIN_PW } });
       const d   = await res.json();
-      if (d.ok) { const el = document.getElementById('dm-item-' + id); if (el) el.remove(); }
-      else showPtsPopup(d.error || '刪除失敗');
+      if (d.ok) {
+        const el = document.getElementById('dm-item-' + id);
+        if (el) el.remove();
+        const dbCount = document.getElementById('dm-admin-list').querySelectorAll('.dm-adm-row').length;
+        dmUpdateCounts(dbCount);
+      } else showPtsPopup(d.error || '刪除失敗');
     } catch { showPtsPopup('網路錯誤'); }
   }
 
@@ -1193,7 +1201,26 @@
     dmPaused = !dmPaused;
     const btn = document.getElementById('dm-pause-btn');
     btn.textContent = dmPaused ? '▶ 恢復顯示' : '⏸ 暫停顯示';
+    const dbCount = document.getElementById('dm-admin-list').querySelectorAll('.dm-adm-row').length;
+    dmUpdateCounts(dbCount);
     showPtsPopup(dmPaused ? '彈幕已暫停' : '彈幕已恢復');
+  }
+
+  function dmAdminShowAll() {
+    const rows = document.getElementById('dm-admin-list').querySelectorAll('.dm-adm-row');
+    if (!rows.length) { showPtsPopup('目前沒有彈幕'); return; }
+    // temporarily unpause so dmShow can run
+    const wasPaused = dmPaused;
+    dmPaused = false;
+    rows.forEach((row, i) => {
+      const txt   = row.querySelector('.dm-adm-txt');
+      const dot   = row.querySelector('.dm-adm-dot');
+      const text  = txt ? txt.textContent : '';
+      const color = dot ? dot.style.background : '#fff';
+      setTimeout(() => dmShow(text, color), i * 600);
+    });
+    dmPaused = wasPaused;
+    showPtsPopup(`播放全部 ${rows.length} 則彈幕`);
   }
 
   async function doSendDanmaku() {
@@ -1222,12 +1249,13 @@
   dmSend.addEventListener('click', doSendDanmaku);
   dmInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSendDanmaku(); });
 
-  // 預設開啟彈幕
-  dmToggle.classList.add('on');
-  dmToggle.textContent = '💬 彈幕 ON';
-  dmBar.classList.add('open');
-  fetchDanmaku(true);
-  dmPollTimer = setInterval(() => fetchDanmaku(false), 15000);
+  // 依使用者偏好初始化（沒設定過預設開）
+  const _savedDmOn = localStorage.getItem('capyDmOn');
+  applyDmState(_savedDmOn === null ? true : _savedDmOn === '1');
+  if (dmOn) {
+    fetchDanmaku(true);
+    dmPollTimer = setInterval(() => fetchDanmaku(false), 15000);
+  }
 
   // 冷笑話彈幕（本地，不送出伺服器）
   setTimeout(() => dmShow('一山還有一山高，雞蛋還有雞蛋糕 🥚', '#ffd700'), 3000);

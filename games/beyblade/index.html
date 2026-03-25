@@ -358,6 +358,7 @@ let countdownTimer=0, roundEndTimer=0, roundEndMsg='', roundEndReason='';
 let lastBeepN = -1;
 let cpuAggression = 1.0;   // escalates each round CPU loses
 let playerBurstChain = 0;  // consecutive burst activations in a match
+let cpuState='maneuver', cpuStateTimer=0;
 let screenFlash = 0;       // 0-1 white flash intensity
 // ---- match stats ----
 let battleStartTime = 0;
@@ -380,8 +381,17 @@ window.addEventListener('blur', ()=>{ Object.keys(keys).forEach(k=>{ keys[k]=fal
 function playerDash(){
   if(gameState!=='battle'||!playerTop||!cpuTop) return;
   if(playerCooldowns.dash>0) return;
-  const dx=cpuTop.x-playerTop.x, dy=cpuTop.y-playerTop.y, d=Math.hypot(dx,dy)||1;
-  playerTop.vx+=(dx/d)*9; playerTop.vy+=(dy/d)*9;
+  // 優先以 WASD 方向衝刺；無方向輸入才自動衝向 CPU
+  const dirX=(keys['KeyD']||keys['ArrowRight']?1:0)-(keys['KeyA']||keys['ArrowLeft']?1:0);
+  const dirY=(keys['KeyS']||keys['ArrowDown']?1:0)-(keys['KeyW']||keys['ArrowUp']?1:0);
+  let ddx, ddy;
+  if(dirX!==0||dirY!==0){
+    const dl=Math.hypot(dirX,dirY)||1; ddx=dirX/dl; ddy=dirY/dl;
+  } else {
+    const d=Math.hypot(cpuTop.x-playerTop.x,cpuTop.y-playerTop.y)||1;
+    ddx=(cpuTop.x-playerTop.x)/d; ddy=(cpuTop.y-playerTop.y)/d;
+  }
+  playerTop.vx+=ddx*9.5; playerTop.vy+=ddy*9.5;
   playerCooldowns.dash=4;
   spawnBurst(playerTop.x,playerTop.y,playerTop.color);
   updateBtnCooldown('dash',4);
@@ -781,28 +791,50 @@ function updateAI(top, opponent){
   const f=(0.16+top.spinRatio*0.08)*aggMult;
   const t=top.blade.type;
 
-  if(t==='attack'){
-    if(d>0){ top.vx+=(dx/d)*f; top.vy+=(dy/d)*f; }
-    if(Math.random()<0.005 && d>0){ top.vx+=(dx/d)*3; top.vy+=(dy/d)*3; }
-  } else if(t==='defense'){
-    if(td>35&&td>0){ top.vx+=(tdx/td)*f*0.65; top.vy+=(tdy/td)*f*0.65; }
-    if(d<130&&d>0){ top.vx-=(dx/d)*f*0.4; top.vy-=(dy/d)*f*0.4; }
-  } else if(t==='stamina'){
-    if(td>0){
-      const px=-tdy/td, py=tdx/td;
-      top.vx+=px*f*0.75; top.vy+=py*f*0.75;
-      const targetR=85;
-      if(td<targetR-12){top.vx-=(tdx/td)*f*0.3;top.vy-=(tdy/td)*f*0.3;}
-      if(td>targetR+12){top.vx+=(tdx/td)*f*0.3;top.vy+=(tdy/td)*f*0.3;}
+  if(top.team==='cpu'){
+    // 狀態機 AI
+    if(cpuState==='charge'){
+      // 高能衝鋒：全速衝向玩家
+      if(d>0){ top.vx+=(dx/d)*f*1.6; top.vy+=(dy/d)*f*1.6; }
+      // 靠近時釋放 Burst
+      if(top.burst>=80&&d<110){ const ok=top.activateBurst(); if(ok) spawnBurst(top.x,top.y,top.color); }
+    } else if(cpuState==='recover'){
+      // 回中心保存轉速
+      if(td>20&&td>0){ top.vx+=(tdx/td)*f*1.3; top.vy+=(tdy/td)*f*1.3; }
+      if(d<80&&d>0){ top.vx-=(dx/d)*f*0.5; top.vy-=(dy/d)*f*0.5; }
+    } else {
+      // maneuver：依刀型決策
+      if(t==='attack'){
+        if(d>0){ top.vx+=(dx/d)*f; top.vy+=(dy/d)*f; }
+        if(Math.random()<0.005&&d>0){ top.vx+=(dx/d)*3; top.vy+=(dy/d)*3; }
+      } else if(t==='defense'){
+        if(td>35&&td>0){ top.vx+=(tdx/td)*f*0.65; top.vy+=(tdy/td)*f*0.65; }
+        if(d<130&&d>0){ top.vx-=(dx/d)*f*0.4; top.vy-=(dy/d)*f*0.4; }
+      } else if(t==='stamina'){
+        if(td>0){
+          const px=-tdy/td, py=tdx/td;
+          top.vx+=px*f*0.75; top.vy+=py*f*0.75;
+          const targetR=85;
+          if(td<targetR-12){top.vx-=(tdx/td)*f*0.3;top.vy-=(tdy/td)*f*0.3;}
+          if(td>targetR+12){top.vx+=(tdx/td)*f*0.3;top.vy+=(tdy/td)*f*0.3;}
+        }
+      } else {
+        if(top.hp>=opponent.hp){
+          if(d>0){top.vx+=(dx/d)*f*0.8;top.vy+=(dy/d)*f*0.8;}
+        } else {
+          if(td>0){top.vx+=(tdx/td)*f*0.6;top.vy+=(tdy/td)*f*0.6;}
+        }
+      }
+      if(top.burst>=100){ const ok=top.activateBurst(); if(ok){ spawnBurst(top.x,top.y,top.color); } }
     }
   } else {
-    if(top.hp>=opponent.hp){
-      if(d>0){top.vx+=(dx/d)*f*0.8;top.vy+=(dy/d)*f*0.8;}
-    } else {
-      if(td>0){top.vx+=(tdx/td)*f*0.6;top.vy+=(tdy/td)*f*0.6;}
+    // 非 CPU top 使用原本邏輯
+    if(t==='attack'){
+      if(d>0){ top.vx+=(dx/d)*f; top.vy+=(dy/d)*f; }
     }
+    if(top.burst>=100){ const ok=top.activateBurst(); if(ok){ spawnBurst(top.x,top.y,top.color); } }
   }
-  if(top.burst>=100){ const ok=top.activateBurst(); if(ok){ spawnBurst(top.x,top.y,top.color); } }
+
   const spd=Math.sqrt(top.vx*top.vx+top.vy*top.vy);
   if(spd>5.5){ top.vx=(top.vx/spd)*5.5; top.vy=(top.vy/spd)*5.5; }
 }
@@ -994,6 +1026,14 @@ function gameLoop(ts){
     updateEnv(dtSec);
     updateCooldowns(dtSec);
 
+    // CPU 狀態機轉換
+    cpuStateTimer-=dtSec;
+    if(cpuStateTimer<=0){
+      if(cpuTop.spin>2200){ cpuState='charge'; cpuStateTimer=2.5; }
+      else if(cpuTop.spin<900){ cpuState='recover'; cpuStateTimer=3.0; }
+      else { cpuState='maneuver'; cpuStateTimer=1.8; }
+    }
+
     // CPU AI控制
     updateAI(cpuTop, playerTop);
     // CPU strategic rush: occasional high-speed charge scaled by aggression
@@ -1126,6 +1166,7 @@ function startBattle(){
   battleStartTime=Date.now();
   envTimer=18; envActive=null;
   dirTimer=1; cpuAggression=1.0; playerBurstChain=0; screenFlash=0;
+  cpuState='maneuver'; cpuStateTimer=0;
   startRound();
   if(!loopStarted){ loopStarted=true; requestAnimationFrame(gameLoop); }
 }
@@ -1203,7 +1244,7 @@ function _resetMatch(){
   playerScore=0; cpuScore=0; currentRound=1;
   matchCollisions=0; playerMaxRpm=0; playerDamageDealt=0; playerBurstCount=0;
   envTimer=18; envActive=null; dirTimer=1; cpuAggression=1.0; playerBurstChain=0;
-  screenFlash=0;
+  screenFlash=0; cpuState='maneuver'; cpuStateTimer=0;
   previewCpuIdx=Math.floor(Math.random()*CPU_BUILDS.length);
   document.getElementById('resultOverlay').style.display='none';
 }

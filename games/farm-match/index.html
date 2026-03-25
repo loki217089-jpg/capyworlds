@@ -438,6 +438,7 @@ body {
       <div id="coinDisplay">0 🪙</div>
       <button class="pull-btn pull-1" id="btnPull1" onclick="doPull(1)">單抽 × 1（30🪙）</button>
       <button class="pull-btn pull-10" id="btnPull10" onclick="doPull(10)">十連抽（250🪙）</button>
+      <div id="pityDisplay" style="font-size:0.68rem;color:#666;margin-top:6px;line-height:1.6;"></div>
     </div>
     <div style="text-align:center;">
       <button class="btn-sm" onclick="endGame()">結束遊戲</button>
@@ -471,6 +472,8 @@ const COLS = 8, ROWS = 8;
 const MOVES_INIT = 30;
 const PULL1_COST = 30, PULL10_COST = 250;
 const COMBO_DECAY_MS = 3000; // combo resets after 3s no match
+const PITY_R_EVERY  = 10;   // guaranteed R+ every N pulls
+const PITY_SR_EVERY = 30;   // guaranteed SR+ every 30 pulls
 
 const CARD_POOL = [
   // N cards
@@ -545,6 +548,8 @@ let busy = false;      // lock during animations
 let cardSlots = [null, null, null]; // up to 3 cards
 let pendingGachaCards = [];
 let activeEffects = {}; // { effectKey: {stepsLeft, mult, ...} }
+let pityR  = 0;   // pulls since last R+ (guarantee at PITY_R_EVERY)
+let pitySR = 0;   // pulls since last SR+ (guarantee at PITY_SR_EVERY)
 
 // ============================================================
 // BOARD GENERATION
@@ -762,6 +767,13 @@ async function processMatches(matched) {
   // tick duration effects
   tickEffects();
   renderPanel();
+
+  // auto_match: trigger next auto-swap after chain settles
+  if (activeEffects['auto_match'] && activeEffects['auto_match'].uses > 0) {
+    consumeUse('auto_match');
+    renderPanel();
+    setTimeout(doAutoMatch, 350);
+  }
 }
 
 // ============================================================
@@ -884,7 +896,7 @@ function activateCard(slotIdx) {
     cardSlots[slotIdx]=null; renderPanel(); playSFX('magic'); return;
   }
   if (eff === 'nuke') {
-    score += Math.floor(score * 5);
+    score = Math.floor(score * 5);  // ×5 current score, then board clear adds more
     const mat = Array.from({length:ROWS},()=>Array(COLS).fill(true));
     processMatches(mat);
     cardSlots[slotIdx]=null; renderPanel(); playSFX('magic'); return;
@@ -982,12 +994,36 @@ async function doShuffle() {
 // GACHA
 // ============================================================
 function weightedPull() {
-  const pool = [];
-  for(const [r, w] of Object.entries(RARITY_WEIGHTS)) {
-    const cards = CARD_POOL.filter(c=>c.rarity===r);
-    for(let i=0;i<w;i++) pool.push(cards[Math.floor(Math.random()*cards.length)]);
+  pityR++;
+  pitySR++;
+
+  let result;
+  if (pitySR >= PITY_SR_EVERY) {
+    // guaranteed SR+ (10% chance SSR)
+    pitySR = 0; pityR = 0;
+    const pityRarity = Math.random() < 0.1 ? 'SSR' : 'SR';
+    const pc = CARD_POOL.filter(c => c.rarity === pityRarity);
+    result = pc[Math.floor(Math.random() * pc.length)];
+  } else if (pityR >= PITY_R_EVERY) {
+    // guaranteed R+
+    pityR = 0;
+    const pc = CARD_POOL.filter(c => c.rarity === 'R' || c.rarity === 'SR' || c.rarity === 'SSR');
+    result = pc[Math.floor(Math.random() * pc.length)];
+  } else {
+    const pool = [];
+    for(const [r, w] of Object.entries(RARITY_WEIGHTS)) {
+      const cards = CARD_POOL.filter(c=>c.rarity===r);
+      for(let i=0;i<w;i++) pool.push(cards[Math.floor(Math.random()*cards.length)]);
+    }
+    result = pool[Math.floor(Math.random()*pool.length)];
   }
-  return pool[Math.floor(Math.random()*pool.length)];
+
+  // reset pity trackers if result is SR/SSR
+  if (result.rarity === 'SSR') { pitySR = 0; pityR = 0; }
+  else if (result.rarity === 'SR') { pitySR = 0; pityR = 0; }
+  else if (result.rarity === 'R') { pityR = 0; }
+
+  return result;
 }
 
 function doPull(n) {
@@ -1033,10 +1069,20 @@ function closeGacha() {
   // add to slots (priority: higher rarity, prefer SSR>SR>R>N)
   const order = ['SSR','SR','R','N'];
   const sorted = [...pendingGachaCards].sort((a,b)=>order.indexOf(a.rarity)-order.indexOf(b.rarity));
+  const OVERFLOW_COINS = { N:8, R:20, SR:55, SSR:120 };
+  let overflowCoins = 0;
   for(const card of sorted) {
     const empty = cardSlots.indexOf(null);
-    if(empty>=0) cardSlots[empty] = JSON.parse(JSON.stringify(card));
-    // else discard (full)
+    if(empty>=0) {
+      cardSlots[empty] = JSON.parse(JSON.stringify(card));
+    } else {
+      // slots full — convert to coins
+      overflowCoins += OVERFLOW_COINS[card.rarity] || 8;
+    }
+  }
+  if (overflowCoins > 0) {
+    coins += overflowCoins;
+    showMilestoneBanner(`牌組已滿！多餘卡片換成 +${overflowCoins}🪙`);
   }
   pendingGachaCards=[];
   renderPanel();
@@ -1161,6 +1207,14 @@ function renderPanel() {
   document.querySelectorAll('.pull-btn').forEach(b=>{
     b.disabled = b.disabled || filled===3;
   });
+
+  // Pity display
+  const pd = document.getElementById('pityDisplay');
+  if (pd) {
+    const rLeft  = PITY_R_EVERY  - pityR;
+    const srLeft = PITY_SR_EVERY - pitySR;
+    pd.innerHTML = `R保底 <b style="color:#7ab8ff">${rLeft}</b>抽 ／ SR保底 <b style="color:#d07aff">${srLeft}</b>抽`;
+  }
 }
 
 function rarityColor(r) {
@@ -1229,6 +1283,7 @@ function startGame() {
   busy=false;
   window._pendingEffect=null;
   clearTimeout(comboTimer);
+  pityR=0; pitySR=0;
   stopComboBar();
 
   newBoard();
