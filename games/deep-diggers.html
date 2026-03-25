@@ -78,7 +78,7 @@ body{background:#0a0a0f;display:flex;justify-content:center;align-items:center;m
 <div class="ov" id="scs">
   <h1>&#x26CF; DEEP DIGGERS</h1>
   <p>&#x947F;&#x5165;&#x5730;&#x5E95;&#xFF0C;&#x6316;&#x6398;&#x5BF6;&#x85CF;<br>&#x8D8A;&#x6DF1;&#x8D8A;&#x5371;&#x96AA;&#xFF0C;&#x734E;&#x52F5;&#x8D8A;&#x8C50;&#x539A;</p>
-  <div class="kh">A/&#x2190; &#x5DE6;&#x79FB; | D/&#x2192; &#x53F3;&#x79FB; | S/&#x2193; &#x52A0;&#x901F;<br>W/&#x2191; &#x8FD4;&#x56DE; | &#x7A7A;&#x767D;&#x9375; &#x885D;&#x523A; | B &#x70B8;&#x5F48;</div>
+  <div class="kh">A/← 左移 | D/→ 右移 | S/↓ 加速<br>W/↑ 返回 | 空白鍵 衝刺 | B 炸彈<br>⛏ 對著岩石按左右可橫向鑽穿（消耗更多燃料）</div>
   <button class="btn" id="startBtn">&#x958B;&#x59CB;&#x6316;&#x6398;</button>
 </div>
 <div class="ov" id="cls">
@@ -402,6 +402,7 @@ function startRun(){
   buildWorld();
   ST.phase='dig';updateUI();startBGM();
   log('⛏ 第'+ST.runs+'次下挖！');
+  log('💡 對岩石按左右可橫向鑽穿');
 }
 
 // UPDATE
@@ -432,9 +433,21 @@ function update(dt){
   if(row>=0&&row<ROWS&&col>=0&&col<COLS){
     const tile=world[row][col]||{type:'dirt'};
     if(tile.type==='rock'){
-      drill.y-=vy*dt*2;drill.x-=drill.vx*dt;
-      ST.dur=Math.max(0,ST.dur-(ST.shielded?10:20)*dt);ST.fuel=Math.max(0,+(ST.fuel-3*dt).toFixed(2));
-      spawnPt(col*TILE+16,row*TILE,'#8a9aaa',4);if(Math.random()<.11)SFX.rock();
+      // Horizontal drilling: if pressing left/right into rock, drill through it (costs more fuel/dur)
+      const horizDrill=Math.abs(drill.vx)>80&&!boost&&!dash.active;
+      if(horizDrill){
+        drill.y-=vy*dt; // cancel downward drift into rock
+        ST.dur=Math.max(0,ST.dur-(ST.shielded?20:38)*dt);
+        ST.fuel=Math.max(0,+(ST.fuel-6*dt).toFixed(2));
+        world[row][col]={type:'empty'};
+        spawnPt(col*TILE+16,row*TILE,'#aab8cc',7);
+        for(let i=0;i<3;i++)spawnPt(col*TILE+16,row*TILE,'#ffffff',0.4);
+        if(Math.random()<.25)SFX.rock();
+      } else {
+        drill.y-=vy*dt*2;drill.x-=drill.vx*dt;
+        ST.dur=Math.max(0,ST.dur-(ST.shielded?10:20)*dt);ST.fuel=Math.max(0,+(ST.fuel-3*dt).toFixed(2));
+        spawnPt(col*TILE+16,row*TILE,'#8a9aaa',4);if(Math.random()<.11)SFX.rock();
+      }
     }else if(tile.type==='treasure'){
       collectT(tile,row,col);world[row][col]={type:'empty'};SFX.pickup();
     }else if(tile.type==='fuel'){
