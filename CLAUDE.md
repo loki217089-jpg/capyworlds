@@ -477,7 +477,7 @@ function toggleMute(){
 
 ### 節拍戰士 `beat-warrior/`
 - 節奏判定清晰（Perfect/Good/Miss）、真實 sprite 動畫、螢幕震動回饋
-- 戰場畫面單調，音符 pattern 後期重複
+- 各關卡氛圍動畫（森林/烈焰/血雨）、擊中粒子爆發效果、54 種音符 pattern + anti-repeat 記憶最近 4 個
 
 ### 戰鬥陀螺 `beyblade/`
 - 模組化陀螺組裝、物理碰撞流暢、隨機環境事件（磁力/冰面/風暴）
