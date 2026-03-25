@@ -166,6 +166,7 @@ body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;backgr
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
       <button class="ico-btn" onclick="openScenePanel()" title="調情境">🎭</button>
+      <button class="ico-btn" onclick="leaveChat()" title="離開聊天室" style="font-size:14px;color:#ff7070;border-color:rgba(255,80,80,.3)">✕</button>
       <div class="timer" id="timer">5:00</div>
       <button class="ico-btn leave-btn" onclick="confirmLeave()" title="離開聊天室">✕</button>
     </div>
@@ -251,6 +252,12 @@ let myGender = '', myName = '', roomId = '', myRole = '';
 let lastMsgId = 0, pollTimer = null, timerInterval = null;
 let currentScenario = 0, pendingSceneReq = null;
 let selectedScene = 0;
+// Bug-fix flags
+let _matchCancelled = false;   // Bug2: prevent ghost retry after cancel
+let _waitTimeout   = null;     // Bug3: 5-min wait timeout handle
+let _pollWaitBusy  = false;    // Bug6: prevent concurrent pollWait
+let _pollChatBusy  = false;    // concurrent pollChat guard
+let timerEnd       = 0;        // Bug8: shared timer variable for server sync
 
 // ── Init ──
 (function init(){
@@ -303,57 +310,80 @@ function showScreen(id){
 async function startMatching(){
   myName = document.getElementById('nameInput').value.trim() || '陌生人';
   if(!myGender) return;
+  _matchCancelled = false;
   showScreen('waitScreen');
   await doJoin();
 }
 
 async function doJoin(){
+  if (_matchCancelled) return;
   try {
     const r = await fetch(`${API}/chat/join`, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({pid:myPid, name:myName, gender:myGender})
     });
     const d = await r.json();
-    if(d.error){alert(d.error);showScreen('setupScreen');return;}
+    if (_matchCancelled) return;
+    if(d.error){ alert(d.error); showScreen('setupScreen'); return; }
     roomId = d.room_id; myRole = d.role;
     if(d.state === 'chatting'){
       enterChat(d.opp_name);
     } else {
+      // Bug3: 5-min wait timeout
+      clearTimeout(_waitTimeout);
+      _waitTimeout = setTimeout(() => {
+        if (!roomId) return;
+        clearInterval(pollTimer); pollTimer = null;
+        const rid = roomId; roomId = ''; myRole = '';
+        fetch(`${API}/chat/${rid}/leave`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pid:myPid})}).catch(()=>{});
+        showScreen('setupScreen');
+        document.getElementById('waitScreen').querySelector('.wait-sub').textContent = '等待超時，請重新配對';
+      }, 300000);
       pollTimer = setInterval(pollWait, 2000);
     }
   } catch(e){
-    setTimeout(doJoin, 3000);
+    if (!_matchCancelled) setTimeout(doJoin, 3000);
   }
 }
 
 async function pollWait(){
+  if (_pollWaitBusy || _matchCancelled) return;  // Bug6: concurrent guard
+  _pollWaitBusy = true;
   try {
     const r = await fetch(`${API}/chat/${roomId}?pid=${myPid}`);
     const d = await r.json();
+    if(_matchCancelled){ _pollWaitBusy=false; return; }
     if(d.state === 'chatting'){
       clearInterval(pollTimer); pollTimer = null;
+      clearTimeout(_waitTimeout); _waitTimeout = null;
       const oppName = myRole==='p1' ? d.p2_name : d.p1_name;
       enterChat(oppName);
+    } else if(d.error || d.state === 'done'){
+      // Bug1: room gone / cancelled → go back to setup
+      clearInterval(pollTimer); pollTimer = null;
+      clearTimeout(_waitTimeout); _waitTimeout = null;
+      roomId = ''; myRole = '';
+      document.getElementById('waitScreen').querySelector('.wait-sub').textContent = '配對失敗，請重新嘗試';
+      showScreen('setupScreen');
     }
   } catch(e){}
+  _pollWaitBusy = false;
 }
 
 async function cancelMatch(){
+  _matchCancelled = true;
   clearInterval(pollTimer); pollTimer = null;
-  if (roomId) {
-    try {
-      await fetch(`${API}/chat/${roomId}/leave`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({pid: myPid})
-      });
-    } catch(e){}
+  clearTimeout(_waitTimeout); _waitTimeout = null;
+  const rid = roomId; roomId = ''; myRole = '';
+  if (rid) {
+    fetch(`${API}/chat/${rid}/leave`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pid:myPid})}).catch(()=>{});
   }
-  roomId = ''; myRole = '';
   showScreen('setupScreen');
 }
 
 // ── Enter Chat ──
 function enterChat(oppName){
+  clearTimeout(_waitTimeout); _waitTimeout = null;  // Bug3: clear wait timeout
   const oppGender = myGender === 'male' ? 'female' : 'male';
   const avatar = document.getElementById('oppAvatar');
   avatar.textContent = oppGender === 'male' ? '♂' : '♀';
@@ -366,15 +396,15 @@ function enterChat(oppName){
   showScreen('chatScreen');
   addSystemMsg('已連線！開始 5 分鐘的聊天吧 💬');
   pollTimer = setInterval(pollChat, 1500);
-  startTimer(CHAT_MS);
+  startTimer();
 }
 
-// ── Timer ──
-function startTimer(ms){
+// ── Timer (Bug8: use shared timerEnd so pollChat can sync) ──
+function startTimer(){
   clearInterval(timerInterval);
-  let end = Date.now() + ms;
+  timerEnd = Date.now() + CHAT_MS;  // initial local estimate
   function tick(){
-    const left = Math.max(0, end - Date.now());
+    const left = Math.max(0, timerEnd - Date.now());
     const mm = String(Math.floor(left/60000)).padStart(1,'0');
     const ss = String(Math.floor((left%60000)/1000)).padStart(2,'0');
     const el = document.getElementById('timer');
@@ -388,21 +418,22 @@ function startTimer(ms){
 
 // ── Poll Chat ──
 async function pollChat(){
+  if (_pollChatBusy) return;  // concurrent guard
+  if (!document.getElementById('chatScreen').classList.contains('active')) return;
+  _pollChatBusy = true;
   try {
     const r = await fetch(`${API}/chat/${roomId}?pid=${myPid}&last=${lastMsgId}`);
     const d = await r.json();
-    if(d.state === 'done' && document.getElementById('chatScreen').classList.contains('active')){
-      endChat(); return;
+    if (!document.getElementById('chatScreen').classList.contains('active')){ _pollChatBusy=false; return; }
+    if(d.state === 'done'){
+      _pollChatBusy = false;
+      endChat();
+      // Bug4: notify user if partner left (not timer expiry)
+      if(timerEnd - Date.now() > 5000) addSystemMsg('對方已離開聊天室');
+      return;
     }
-    // sync timer
-    if(d.time_left > 0){
-      const el = document.getElementById('timer');
-      const left = d.time_left;
-      const mm = String(Math.floor(left/60000)).padStart(1,'0');
-      const ss = String(Math.floor((left%60000)/1000)).padStart(2,'0');
-      el.textContent = mm+':'+ss;
-      el.classList.toggle('urgent', left < 60000);
-    }
+    // Bug8: sync timerEnd with server (avoid local/server drift)
+    if(d.time_left > 0) timerEnd = Date.now() + d.time_left;
     // scenario req
     if(d.scenario_req && d.scenario_req.proposer !== myRole){
       if(!pendingSceneReq || pendingSceneReq.scene_id !== d.scenario_req.scene_id){
@@ -432,6 +463,23 @@ async function pollChat(){
       });
     }
   } catch(e){}
+  _pollChatBusy = false;
+}
+
+// Bug4: active leave button in chat header
+async function leaveChat(){
+  if(!confirm('確定要離開聊天室嗎？')) return;
+  const rid = roomId; roomId = ''; myRole = '';
+  clearInterval(pollTimer); pollTimer = null;
+  clearInterval(timerInterval); timerInterval = null;
+  if(rid){
+    try {
+      await fetch(`${API}/chat/${rid}/leave`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pid:myPid})});
+    } catch(e){}
+  }
+  document.getElementById('reqOverlay').classList.remove('open');
+  document.getElementById('sceneOverlay').classList.remove('open');
+  showScreen('doneScreen');
 }
 
 async function leaveRoom(){
@@ -459,11 +507,24 @@ function endChat(){
 }
 
 function resetAll(){
+  _matchCancelled = false;
   roomId = ''; myRole = ''; lastMsgId = 0;
   currentScenario = 0; pendingSceneReq = null;
+  timerEnd = 0;
+  // reset wait-sub text in case it was changed by timeout
+  const sub = document.getElementById('waitScreen').querySelector('.wait-sub');
+  if(sub) sub.textContent = '等待另一位使用者進入';
   document.getElementById('chatMsgs').innerHTML = '';
   showScreen('setupScreen');
 }
+
+// Bug4: beforeunload — notify server when user closes tab/browser
+window.addEventListener('beforeunload', () => {
+  if(roomId){
+    navigator.sendBeacon(`${API}/chat/${roomId}/leave`,
+      new Blob([JSON.stringify({pid:myPid})], {type:'application/json'}));
+  }
+});
 
 // ── Messages ──
 function appendMsg(side, name, type, content){
