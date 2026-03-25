@@ -977,7 +977,12 @@
   <!-- ── Danmaku Admin Panel ── -->
   <div id="dm-admin-panel">
     <div class="dm-adm-hd">
-      🛡️ 彈幕管理
+      <div>
+        🛡️ 彈幕管理
+        <div id="dm-adm-counts" style="font-size:10px;font-weight:400;color:var(--text2);margin-top:2px;letter-spacing:0">
+          資料庫 <b style="color:var(--accent)">—</b> 筆 ｜ 畫面中 <b style="color:#00ffcc">—</b> 筆
+        </div>
+      </div>
       <span>
         <button class="dm-adm-btn warn" style="padding:3px 10px;flex:0" onclick="dmAdminRefresh()">重新整理</button>
         <button class="dm-adm-btn neu"  style="padding:3px 10px;flex:0;margin-left:4px" onclick="exitDmAdmin()">退出</button>
@@ -1115,13 +1120,28 @@
     }
   });
 
+  let _dmCountTimer = null;
+
+  function dmUpdateCounts(dbCount) {
+    const el = document.getElementById('dm-adm-counts');
+    if (!el) return;
+    const screenCount = dmLayer ? dmLayer.children.length : 0;
+    const pauseTxt = dmPaused ? ' · ⏸暫停中' : '';
+    el.innerHTML = `資料庫 <b style="color:var(--accent)">${dbCount}</b> 筆 ｜ 畫面中 <b style="color:#00ffcc">${screenCount}</b> 筆${pauseTxt}`;
+  }
+
   async function openDmAdmin() {
     document.getElementById('dm-admin-panel').classList.add('show');
     await dmAdminRefresh();
+    _dmCountTimer = setInterval(() => {
+      const dbCount = document.getElementById('dm-admin-list').querySelectorAll('.dm-adm-row').length;
+      dmUpdateCounts(dbCount);
+    }, 1000);
   }
 
   function exitDmAdmin() {
     dmAdminMode = false;
+    clearInterval(_dmCountTimer); _dmCountTimer = null;
     document.getElementById('dm-admin-panel').classList.remove('show');
     showPtsPopup('已退出管理員模式');
   }
@@ -1132,7 +1152,11 @@
     try {
       const res  = await fetch(API + '/danmaku?admin=1', { headers:{ 'Authorization':'Bearer ' + DM_ADMIN_PW } });
       const data = await res.json();
-      if (!data.length) { list.innerHTML = '<div style="text-align:center;color:var(--text3);padding:18px;font-size:12px">目前沒有彈幕</div>'; return; }
+      if (!data.length) {
+        list.innerHTML = '<div style="text-align:center;color:var(--text3);padding:18px;font-size:12px">目前沒有彈幕</div>';
+        dmUpdateCounts(0);
+        return;
+      }
       list.innerHTML = data.map(d => `
         <div class="dm-adm-row" id="dm-item-${d.id}">
           <div class="dm-adm-dot" style="background:${d.color}"></div>
@@ -1140,6 +1164,7 @@
           <div class="dm-adm-id">#${d.id}</div>
           <button class="dm-adm-del" onclick="dmAdminDelete(${d.id})">刪除</button>
         </div>`).join('');
+      dmUpdateCounts(data.length);
     } catch { list.innerHTML = '<div style="text-align:center;color:#f66;padding:18px;font-size:12px">載入失敗</div>'; }
   }
 
@@ -1147,8 +1172,12 @@
     try {
       const res = await fetch(API + '/danmaku/' + id, { method:'DELETE', headers:{ 'Authorization':'Bearer ' + DM_ADMIN_PW } });
       const d   = await res.json();
-      if (d.ok) { const el = document.getElementById('dm-item-' + id); if (el) el.remove(); }
-      else showPtsPopup(d.error || '刪除失敗');
+      if (d.ok) {
+        const el = document.getElementById('dm-item-' + id);
+        if (el) el.remove();
+        const dbCount = document.getElementById('dm-admin-list').querySelectorAll('.dm-adm-row').length;
+        dmUpdateCounts(dbCount);
+      } else showPtsPopup(d.error || '刪除失敗');
     } catch { showPtsPopup('網路錯誤'); }
   }
 
@@ -1166,6 +1195,8 @@
     dmPaused = !dmPaused;
     const btn = document.getElementById('dm-pause-btn');
     btn.textContent = dmPaused ? '▶ 恢復顯示' : '⏸ 暫停顯示';
+    const dbCount = document.getElementById('dm-admin-list').querySelectorAll('.dm-adm-row').length;
+    dmUpdateCounts(dbCount);
     showPtsPopup(dmPaused ? '彈幕已暫停' : '彈幕已恢復');
   }
 
