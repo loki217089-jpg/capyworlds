@@ -1,5 +1,19 @@
 # CapyWorlds — Claude 開發指引（2026/3/25 更新）
 
+## 分支策略規則（最優先執行）
+
+**判斷要不要開分支：**
+
+| 情境 | 做法 |
+|------|------|
+| 小修改（修 bug、調 UI、更新 CLAUDE.md、加遊戲卡片）預估 < 50 行 | 直接在 main 改，`git push origin main` |
+| 新遊戲 / 新功能 / 預估 > 50 行 | 開 `claude/` 分支，**同一 session 結束前合回 main** |
+| 跨 session 的大型工作 | 每次開 session 先 `git rebase origin/main`，結束前 push |
+
+**黃金規則**：任何 `claude/` 分支不得跨 session 存活超過 24 小時。Session 結束前必須合回 main。
+
+---
+
 ## Push 後自動衝突檢查規則（最優先執行）
 
 **每次 `git push` 到 `claude/` 分支後**，Claude 必須立即執行以下流程：
