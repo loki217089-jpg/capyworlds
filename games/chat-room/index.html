@@ -338,8 +338,16 @@ async function pollWait(){
   } catch(e){}
 }
 
-function cancelMatch(){
+async function cancelMatch(){
   clearInterval(pollTimer); pollTimer = null;
+  if (roomId) {
+    try {
+      await fetch(`${API}/chat/${roomId}/leave`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({pid: myPid})
+      });
+    } catch(e){}
+  }
   roomId = ''; myRole = '';
   showScreen('setupScreen');
 }
