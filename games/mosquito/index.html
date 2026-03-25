@@ -210,6 +210,16 @@
     <div class="cost" id="coilCost">🩸 35</div>
   </div>
 
+  <div class="shop-item" id="shopAutoSwat" onclick="buyUpgrade('autoswat')">
+    <div class="icon">🤖</div>
+    <div class="info">
+      <div class="name">自動蚊拍機</div>
+      <div class="desc">自動鎖定最近的蚊子並拍打，每 3/2/1 秒觸發（最多 3 級）</div>
+      <div class="level" id="autoswatLevel">未購買</div>
+    </div>
+    <div class="cost" id="autoswatCost">🩸 60</div>
+  </div>
+
   </div><!-- end shop-scroll -->
   <button id="shopClose" onclick="closeShop()">關　閉　[S]</button>
 </div>
@@ -263,6 +273,7 @@ const upgrades={
   magnet:  {owned:false,cooldown:0,maxCooldown:15000,active:false,activeTimer:5000},
   crit:    {owned:false,level:0,maxLevel:2},
   coil:    {owned:false,level:0,maxLevel:3,timer:0,interval:10000}, // 蚊香爐（被動自動攻擊）
+  autoswat:{level:0,maxLevel:3,timer:0},  // 自動蚊拍機
 };
 
 // ── 全域血量（跨局保留）──────────────────────
@@ -730,6 +741,15 @@ function buyUpgrade(type){
     upgrades.coil.interval=intervals[upgrades.coil.level-1];
     Audio.SFX.upgradeBuy();
     showMsg(`🌀 蚊香爐升到 Lv${upgrades.coil.level}！每 ${upgrades.coil.interval/1000} 秒自動擊殺`);
+  } else if(type==='autoswat'){
+    const costs=[60,100,150];
+    const intervals=[3000,2000,1000];
+    if(upgrades.autoswat.level>=upgrades.autoswat.maxLevel){showMsg('自動蚊拍機已滿級');return;}
+    const cost=costs[upgrades.autoswat.level];
+    if(totalBlood<cost){showMsg(`蚊子血不足！需要 ${cost} 滴`);return;}
+    totalBlood-=cost; upgrades.autoswat.level++;
+    Audio.SFX.upgradeBuy();
+    showMsg(`🤖 自動蚊拍機升到 Lv${upgrades.autoswat.level}！每 ${intervals[upgrades.autoswat.level-1]/1000} 秒自動拍打`);
   }
   updateShopUI();
 }
@@ -851,6 +871,22 @@ function updateShopUI(){
       coilCost.textContent=`🩸 ${costs[upgrades.coil.level]}`;
     }
   } else { coilEl.classList.remove('maxed'); coilLv.textContent='未購買'; coilCost.textContent='🩸 35'; }
+  // 自動蚊拍機
+  const asEl=document.getElementById('shopAutoSwat');
+  const asLv=document.getElementById('autoswatLevel');
+  const asCost=document.getElementById('autoswatCost');
+  const asCosts=[60,100,150]; const asIntervals=[3,2,1];
+  if(upgrades.autoswat.level>0){
+    if(upgrades.autoswat.level>=upgrades.autoswat.maxLevel){
+      asEl.classList.add('maxed');
+      asLv.textContent=`Lv 3 (每${asIntervals[2]}秒自動)`;
+      asCost.textContent='已滿級';
+    } else {
+      asEl.classList.remove('maxed');
+      asLv.textContent=`Lv ${upgrades.autoswat.level} (每${asIntervals[upgrades.autoswat.level-1]}秒)`;
+      asCost.textContent=`🩸 ${asCosts[upgrades.autoswat.level]}`;
+    }
+  } else { asEl.classList.remove('maxed'); asLv.textContent='未購買'; asCost.textContent='🩸 60'; }
 }
 
 function useBomb(){
@@ -1043,6 +1079,7 @@ function startGame(){
   upgrades.shield.active=false;
   upgrades.zap.cooldown=0;
   upgrades.coil.timer=0;
+  upgrades.autoswat.timer=0;
   state={
     phase:'playing',score:0,hp:5+upgrades.maxhp.level,maxHp:5+upgrades.maxhp.level,time:0,combo:0,comboTimer:0,maxCombo:0,
     bossKills:0,nextBoss:currentDiff.bossInterval,
@@ -1391,6 +1428,29 @@ function loop(ts){
 
   // 扣血攻擊
   updateBleedAttacks(dt);
+
+  // 自動蚊拍機：定時自動拍打最近蚊子
+  if(upgrades.autoswat.level>0){
+    const autoIntervals=[3000,2000,1000];
+    const autoRange=80+upgrades.autoswat.level*20;
+    upgrades.autoswat.timer+=dt;
+    const autoInterval=autoIntervals[upgrades.autoswat.level-1];
+    if(upgrades.autoswat.timer>=autoInterval){
+      upgrades.autoswat.timer=0;
+      const alive=state.mosquitoes.filter(m=>m.alive&&m.type!=='boss');
+      if(alive.length>0){
+        // 鎖定最近的蚊子
+        const cx=W/2, cy=H/2;
+        alive.sort((a,b)=>Math.hypot(a.x-cx,a.y-cy)-Math.hypot(b.x-cx,b.y-cy));
+        const tgt=alive[0];
+        if(Math.hypot(tgt.x-cx,tgt.y-cy)<autoRange+100){
+          if(tgt.hit(1)) killMosquito(tgt);
+          spawnParticles(tgt.x,tgt.y,'#ffee44',10);
+          state.floatingTexts.push(new FloatingText(tgt.x,tgt.y-18,'🤖 自動！','#ffcc00',15));
+        }
+      }
+    }
+  }
 
   // 蚊香爐被動：定時自動擊殺最近一隻蚊子
   if(upgrades.coil.owned&&state.mosquitoes.some(m=>m.alive&&m.type!=='boss')){
