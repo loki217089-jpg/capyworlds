@@ -758,6 +758,18 @@ function endMiniGame(){
     if(state.action==='gather'&&state.upgrades.gatherTime<15)state.upgrades.gatherTime++;
   }
 }
+function exitMiniGameEarly(){
+  // farm/dig: resources not yet awarded — give partial based on current score
+  const score=state.mg.score;
+  if(state.action==='farm'){state.res.seed+=Math.floor(score/20)}
+  if(state.action==='dig'){state.res.stone+=Math.floor(score/30);state.res.wood+=Math.floor(score/40)}
+  state.res.gold+=Math.floor(score/50);
+  // fish/gather: resources already added during play — no extra needed
+  state.mg.phase='result';
+  state.mgCount=(state.mgCount||0)+1;
+  if(state.mgCount>=3){state.mgCount=0;advanceDay()}
+  else{saveGame()}
+}
 function drawResultScreen(){
   ctx.fillStyle='rgba(0,0,0,0.8)';ctx.fillRect(0,0,GW,GH);
   ctx.fillStyle='#ffd700';ctx.font='28px sans-serif';ctx.textAlign='center';
@@ -937,9 +949,10 @@ function drawFarmView(){
 // ═══════════════════════════════════════════
 function drawTopBar(){
   ctx.fillStyle='rgba(0,0,0,0.85)';ctx.fillRect(0,0,GW,TOP_H);
-  // Back button
+  // Back button — shows "結算" during active mini-game, "返回" otherwise
   ctx.fillStyle='#c8a456';ctx.font='bold 14px sans-serif';ctx.textAlign='left';
-  ctx.fillText('← '+( lang==='zh'?'返回':'Back'),10,26);
+  const _inMg=state.screen==='minigame'&&state.mg.phase!=='result';
+  ctx.fillText(_inMg?(lang==='zh'?'⚡ 結算':'⚡ Exit'):'← '+(lang==='zh'?'返回':'Back'),10,26);
   // Right buttons
   ctx.textAlign='right';
   ctx.fillText(lang==='zh'?'繁中/EN':'EN/繁中',GW-10,16);
@@ -1108,7 +1121,10 @@ function getCanvasPos(e){
 function handleTap(px,py){
   // Top bar taps (always active)
   if(py<TOP_H){
-    if(px<80){window.location.href='../';return}// Back
+    if(px<80){
+      if(state.screen==='minigame'&&state.mg.phase!=='result'){exitMiniGameEarly();return}
+      window.location.href='../';return;
+    }// Back
     if(px>GW-140&&px<GW-100){togglePause();return}// Pause
     if(px>GW-170&&px<GW-130){toggleMute();return}// Mute
     if(px>GW-80){toggleLang();return}// Lang

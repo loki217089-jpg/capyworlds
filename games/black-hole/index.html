@@ -182,7 +182,7 @@ function dist(ax,ay,bx,by){ const d=ax-bx, e=ay-by; return Math.sqrt(d*d+e*e); }
 
 function spawnObjects() {
   objects = [];
-  const maxTypeIdx = Math.min(levelIdx + 3, OBJ_TYPES.length - 1);
+  const maxTypeIdx = Math.min(levelIdx + 2, OBJ_TYPES.length - 1);
   const count = 18 + levelIdx * 4;
   for (let i = 0; i < count; i++) {
     const typeIdx = Math.floor(Math.random() * (maxTypeIdx + 1));
@@ -232,7 +232,7 @@ function updateObjects() {
     const d  = Math.sqrt(dx*dx + dy*dy) || 1;
     const gravRange = hole.r * 3.2;
     if (d < hole.r * 0.85 && hole.r >= o.minHoleR) { o.absorbing = true; continue; }
-    if (d < gravRange && hole.r >= o.minHoleR * 0.7) {
+    if (d < gravRange && hole.r >= o.minHoleR) {
       const f = 0.08 * (1 - d / gravRange);
       o.vx += (dx/d) * f;
       o.vy += (dy/d) * f;
@@ -309,7 +309,7 @@ function drawObjects() {
     ctx.textBaseline = 'middle';
     ctx.fillText(o.emoji, 0, 2);
     // pull indicator (small ring if in range)
-    if (hole && dist(hole.x, hole.y, o.x, o.y) < hole.r * 3.2 && hole.r >= o.minHoleR * 0.7) {
+    if (hole && dist(hole.x, hole.y, o.x, o.y) < hole.r * 3.2 && hole.r >= o.minHoleR) {
       ctx.strokeStyle = '#a78bfa44';
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.arc(0, 0, o.r + 4, 0, Math.PI*2); ctx.stroke();
