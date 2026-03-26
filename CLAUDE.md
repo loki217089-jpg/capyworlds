@@ -33,6 +33,22 @@
 
 ---
 
+## Push 到 main 後殘留 PR 清理規則（最優先執行）
+
+**每次 `git push origin main` 成功後**，Claude 必須立即執行以下流程：
+
+1. **列出所有 Open 狀態的 PR**：
+   - 用 GitHub MCP 工具 `list_pull_requests` 查詢 state=open
+2. **對每個 Open PR 判斷**：
+   - 若 PR 的 `head` 分支變更**已全部包含在 main** → 直接**關閉** PR
+   - 若 PR 的 `head` 分支有 main 沒有的新 commit → **更新分支**（rebase onto main），解決衝突後 push
+3. **不需要問**：直接執行，事後報告：
+   - 「已關閉過時 PR #XX ✅」
+   - 「已更新 PR #XX 分支（rebase + 解決衝突）✅」
+4. **這確保**：不會有殘留的衝突 PR 卡在 GitHub 上
+
+---
+
 ## 新 Session 自動合併規則（最優先執行）
 
 **每次開新 session 時**，Claude 必須主動執行以下流程：
