@@ -9,13 +9,13 @@
 html{height:100%}
 body{background:#1a1408;overflow:hidden;font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;user-select:none;display:flex;flex-direction:column;height:100vh;height:100dvh}
 canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;display:block;margin:0 auto}
-.top-bar{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:rgba(0,0,0,0.85);border-bottom:1px solid rgba(200,164,86,0.3);z-index:100;flex-shrink:0;min-height:44px}
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:rgba(0,0,0,0.85);border-bottom:1px solid rgba(200,164,86,0.3);z-index:200;flex-shrink:0;min-height:44px;position:relative}
 .top-bar a,.top-bar button{background:rgba(30,24,18,0.8);border:1.5px solid #c8a456;color:#c8a456;font-family:inherit;font-size:14px;padding:5px 10px;border-radius:6px;cursor:pointer;text-decoration:none;white-space:nowrap}
 .top-bar button{display:flex;align-items:center;justify-content:center}
 .top-bar .btn-group{display:flex;gap:6px;align-items:center}
 .top-bar .mute-btn{font-size:18px;width:36px;height:36px;padding:0;color:#fff}
 .game-area{flex:1;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;min-height:0}
-.action-bar{display:flex;justify-content:center;gap:6px;padding:8px 8px calc(env(safe-area-inset-bottom,6px) + 6px);background:rgba(0,0,0,0.85);border-top:1px solid rgba(200,164,86,0.3);flex-shrink:0}
+.action-bar{display:flex;justify-content:center;gap:6px;padding:8px 8px calc(env(safe-area-inset-bottom,6px) + 6px);background:rgba(0,0,0,0.85);border-top:1px solid rgba(200,164,86,0.3);flex-shrink:0;position:relative;z-index:200}
 .action-btn{background:rgba(30,24,18,0.9);border:2px solid #c8a456;color:#e8ddd0;font-family:inherit;font-size:13px;padding:8px 6px;border-radius:10px;cursor:pointer;flex:1;max-width:72px;text-align:center;transition:all .15s}
 .action-btn:active{transform:scale(0.93);background:rgba(200,164,86,0.3)}
 .action-btn .btn-icon{font-size:20px;display:block;margin-bottom:1px}
