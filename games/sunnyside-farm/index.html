@@ -13,7 +13,7 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
 .top-bar button{display:flex;align-items:center;justify-content:center}
 .top-bar .btn-group{display:flex;gap:6px;align-items:center}
 .top-bar .mute-btn{font-size:18px;width:36px;height:36px;padding:0;color:#fff}
-.game-area{flex:1;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden}
+.game-area{flex:1;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;min-height:0}
 .action-bar{display:flex;justify-content:center;gap:6px;padding:8px 8px calc(env(safe-area-inset-bottom,6px) + 6px);background:rgba(0,0,0,0.85);border-top:1px solid rgba(200,164,86,0.3);flex-shrink:0}
 .action-btn{background:rgba(30,24,18,0.9);border:2px solid #c8a456;color:#e8ddd0;font-family:inherit;font-size:13px;padding:8px 6px;border-radius:10px;cursor:pointer;flex:1;max-width:72px;text-align:center;transition:all .15s}
 .action-btn:active{transform:scale(0.93);background:rgba(200,164,86,0.3)}
@@ -46,7 +46,7 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;d
 // ═══════════════════════════════════════════
 // 常數 & 設定
 // ═══════════════════════════════════════════
-const GW=384, GH=640, TILE=16, SCALE=2, DTILE=TILE*SCALE;
+const GW=384, GH=560, TILE=16, SCALE=2, DTILE=TILE*SCALE;
 const canvas=document.getElementById('game');
 const ctx=canvas.getContext('2d');
 canvas.width=GW; canvas.height=GH;
@@ -975,7 +975,7 @@ function drawHUD(){
 function drawQuestPanel(){
   const quests=getAvailableQuests();
   if(quests.length===0)return;
-  const panelY=GH-220;// moved up to avoid action bar overlap
+  const panelY=GH-qH-10;// pin to bottom of canvas
   const qH=40+quests.length*34;
   ctx.fillStyle='rgba(0,0,0,0.8)';
   drawRoundRect(10,panelY,GW-20,qH,8);ctx.fill();
@@ -1141,7 +1141,9 @@ function handleTap(px,py){
     const quests=getAvailableQuests();
     quests.forEach((q,i)=>{
       if(checkQuestComplete(q)){
-        const qy=GH-220+36+i*22;
+        const availQ=getAvailableQuests();
+        const qH=40+availQ.length*34;
+        const qy=(GH-qH-10)+36+i*34;
         if(py>qy-12&&py<qy+8)completeQuest(q);
       }
     });
