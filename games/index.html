@@ -161,6 +161,29 @@
       filter: drop-shadow(0 4px 16px var(--banner-glow, rgba(200,164,86,0.5)));
     }
 
+    /* Card badge (NEW / UPDATED) */
+    .card-badge {
+      position: absolute;
+      top: 8px; right: 8px;
+      z-index: 2;
+      padding: 3px 9px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      pointer-events: none;
+    }
+    .card-badge.new-badge {
+      background: rgba(80,220,120,0.18);
+      border: 1px solid rgba(80,220,120,0.5);
+      color: #50dc78;
+    }
+    .card-badge.updated-badge {
+      background: rgba(74,248,255,0.14);
+      border: 1px solid rgba(74,248,255,0.4);
+      color: #4af8ff;
+    }
+
     /* Card body */
     .card-body {
       padding: 22px 22px 18px;
@@ -436,6 +459,7 @@
          style="--card-accent:#e8a020; --banner-bg:#2a1500; --banner-glow:rgba(232,160,32,0.3);">
         <div class="card-banner">
           <div class="game-emoji">🦟</div>
+          <div class="card-badge updated-badge">UPDATED 03-26</div>
         </div>
         <div class="card-body">
           <div class="game-title">Evolution Mosquito</div>
