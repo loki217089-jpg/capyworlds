@@ -922,11 +922,20 @@
       const d = new Date(dateStr);
       const diffDays = Math.floor((now - d) / DAY_MS);
 
-      // NEW badge for games updated within 3 days
+      // NEW badge for games updated within 3 days (with date)
       if(diffDays <= 3 && !card.querySelector('.new-badge')){
         const badge = document.createElement('span');
         badge.className = 'new-badge';
-        badge.textContent = diffDays === 0 ? 'NEW!' : diffDays === 1 ? 'NEW' : 'UPDATED';
+        const label = diffDays === 0 ? 'NEW!' : diffDays === 1 ? 'NEW' : 'UPDATED';
+        badge.textContent = label + ' ' + dateStr.slice(5);
+        card.appendChild(badge);
+      } else if(diffDays <= 14 && !card.querySelector('.new-badge')){
+        // Show date badge for recently updated (within 2 weeks)
+        const badge = document.createElement('span');
+        badge.className = 'new-badge';
+        badge.style.background = 'linear-gradient(135deg, rgba(200,164,86,0.9), rgba(160,130,60,0.9))';
+        badge.style.boxShadow = '0 2px 8px rgba(200,164,86,0.3)';
+        badge.textContent = '🔄 ' + dateStr.slice(5);
         card.appendChild(badge);
       }
 
