@@ -803,11 +803,14 @@ function drawResultScreen(){
   ctx.fillStyle='#c8a456';ctx.font='18px sans-serif';
   if(dayAdv)ctx.fillText(t('day',{n:state.day})+' '+t('weather_'+state.weather),GW/2,GH/2+75);
   else ctx.fillText(lang==='zh'?'再玩 '+(3-(state.mgCount||0))+' 次就過一天':'Play '+(3-(state.mgCount||0))+' more for next day',GW/2,GH/2+75);
-  // Back button
+  // Back button (large, easy to tap)
   ctx.fillStyle='#ffd700';
-  drawRoundRect(GW/2-70,GH/2+90,140,40,8);ctx.fill();
-  ctx.fillStyle='#1a1408';ctx.font='20px sans-serif';
-  ctx.fillText(t('backToFarm'),GW/2,GH/2+115);
+  drawRoundRect(GW/2-100,GH/2+90,200,50,10);ctx.fill();
+  ctx.fillStyle='#1a1408';ctx.font='bold 22px sans-serif';
+  ctx.fillText(t('backToFarm'),GW/2,GH/2+120);
+  // Hint
+  ctx.fillStyle='rgba(255,255,255,0.35)';ctx.font='13px sans-serif';
+  ctx.fillText(lang==='zh'?'或點擊任意處返回':'or tap anywhere',GW/2,GH/2+160);
 }
 
 // ═══════════════════════════════════════════
@@ -1117,7 +1120,7 @@ function handleTap(px,py){
   }
   if(state.screen==='minigame'){
     if(state.mg.phase==='result'){
-      if(px>GW/2-70&&px<GW/2+70&&py>GH/2+90&&py<GH/2+130){state.screen='farm'}
+      state.screen='farm';state.mg.phase='ready';// tap anywhere to return
       return;
     }
     if(state.action==='farm'){
