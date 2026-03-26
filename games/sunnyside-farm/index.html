@@ -983,8 +983,8 @@ function drawActionBar(){
 function drawQuestPanel(){
   const quests=getAvailableQuests();
   if(quests.length===0)return;
-  const panelY=GH-qH-10;// pin to bottom of canvas
   const qH=40+quests.length*34;
+  const panelY=GH-qH-10;
   ctx.fillStyle='rgba(0,0,0,0.8)';
   drawRoundRect(10,panelY,GW-20,qH,8);ctx.fill();
   ctx.strokeStyle='#c8a456';ctx.lineWidth=1;
