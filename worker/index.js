@@ -528,6 +528,36 @@ export default {
       return Response.json({rooms,totalWaiting,totalChatting,now},{headers:cors});
     }
 
+    // ── 社群趨勢代理 (/trends/:source) ────────────────────────────
+    if (url.pathname==='/trends/google' && request.method==='GET') {
+      try {
+        const r=await fetch('https://trends.google.com.tw/trending/rss?geo=TW',{headers:{'User-Agent':'Mozilla/5.0'}});
+        const xml=await r.text();
+        return new Response(xml,{headers:{...cors,'Content-Type':'application/xml;charset=utf-8'}});
+      } catch(e){ return Response.json({error:'fetch failed'},{status:502,headers:cors}); }
+    }
+    if (url.pathname==='/trends/dcard' && request.method==='GET') {
+      try {
+        const r=await fetch('https://www.dcard.tw/service/api/v2/posts?popular=true&limit=30',{headers:{'User-Agent':'Mozilla/5.0'}});
+        const data=await r.json();
+        return Response.json(data,{headers:cors});
+      } catch(e){ return Response.json({error:'fetch failed'},{status:502,headers:cors}); }
+    }
+    if (url.pathname==='/trends/ptt' && request.method==='GET') {
+      try {
+        const r=await fetch('https://www.ptt.cc/bbs/hotboards.html',{headers:{'User-Agent':'Mozilla/5.0','Cookie':'over18=1'}});
+        const html=await r.text();
+        return new Response(html,{headers:{...cors,'Content-Type':'text/html;charset=utf-8'}});
+      } catch(e){ return Response.json({error:'fetch failed'},{status:502,headers:cors}); }
+    }
+    if (url.pathname==='/trends/yahoo' && request.method==='GET') {
+      try {
+        const r=await fetch('https://tw.news.yahoo.com/rss/',{headers:{'User-Agent':'Mozilla/5.0'}});
+        const xml=await r.text();
+        return new Response(xml,{headers:{...cors,'Content-Type':'application/xml;charset=utf-8'}});
+      } catch(e){ return Response.json({error:'fetch failed'},{status:502,headers:cors}); }
+    }
+
     return env.ASSETS.fetch(request);
   }
 };
