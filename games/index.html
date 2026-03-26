@@ -939,14 +939,6 @@
         card.appendChild(badge);
       }
 
-      // Add subtle update date to card footer
-      const footer = card.querySelector('.card-footer');
-      if(footer && !footer.querySelector('.update-date')){
-        const dateEl = document.createElement('span');
-        dateEl.className = 'update-date';
-        dateEl.textContent = dateStr.slice(5); // "03-26"
-        footer.appendChild(dateEl);
-      }
     }
     grid.appendChild(card);
   });
