@@ -8,7 +8,7 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html{height:100%}
 body{background:#1a1408;overflow:hidden;font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;display:flex;flex-direction:column;height:100vh;height:100dvh}
-canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;display:block;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);max-width:100%;max-height:100%}
+canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;display:block;position:absolute;top:0;left:0}
 .top-bar{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:rgba(0,0,0,0.85);border-bottom:1px solid rgba(200,164,86,0.3);z-index:200;flex-shrink:0;min-height:44px;position:relative}
 .top-bar a,.top-bar button{background:rgba(30,24,18,0.8);border:1.5px solid #c8a456;color:#c8a456;font-family:inherit;font-size:14px;padding:5px 10px;border-radius:6px;cursor:pointer;text-decoration:none;white-space:nowrap;-webkit-tap-highlight-color:rgba(200,164,86,0.3)}
 .top-bar button{display:flex;align-items:center;justify-content:center}
@@ -1246,11 +1246,14 @@ function resizeAll(){
   if(!gameArea)return;
   const availW=gameArea.clientWidth;
   const availH=gameArea.clientHeight;
+  if(availW<=0||availH<=0)return;
   const sc=Math.min(availW/GW,availH/GH);
   const w=Math.floor(GW*sc), h=Math.floor(GH*sc);
-  // Clamp to game-area bounds so canvas never overlaps action-bar
-  canvas.style.width=Math.min(w,availW)+'px';
-  canvas.style.height=Math.min(h,availH)+'px';
+  // Explicit pixel position — canvas MUST stay inside game-area
+  canvas.style.width=w+'px';
+  canvas.style.height=h+'px';
+  canvas.style.left=Math.floor((availW-w)/2)+'px';
+  canvas.style.top=Math.floor((availH-h)/2)+'px';
 }
 let resizeTimer;
 window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(resizeAll,100)});
