@@ -422,22 +422,6 @@ export default {
       return Response.json({ok:true},{headers:cors});
     }
 
-    // POST /chat/:id/leave  { pid }
-    const chatLeave=url.pathname.match(/^\/chat\/([A-Z0-9]{6})\/leave$/);
-    if (chatLeave && request.method==='POST') {
-      const room_id=chatLeave[1];
-      let b; try{b=await request.json();}catch{b={};}
-      const pid=(b.pid||'').slice(0,40);
-      const room=await env.DB.prepare("SELECT p1_id,p2_id,state FROM chat_rooms WHERE id=?").bind(room_id).first();
-      if (!room) return Response.json({ok:false},{headers:cors});
-      if (room.state==='waiting' && room.p1_id===pid) {
-        await env.DB.prepare("DELETE FROM chat_rooms WHERE id=?").bind(room_id).run();
-      } else if (room.state==='chatting') {
-        await env.DB.prepare("UPDATE chat_rooms SET state='done' WHERE id=?").bind(room_id).run();
-      }
-      return Response.json({ok:true},{headers:cors});
-    }
-
     // POST /chat/:id/scene  { pid, action, scene_id }
     const chatScene=url.pathname.match(/^\/chat\/([A-Z0-9]{6})\/scene$/);
     if (chatScene && request.method==='POST') {
