@@ -22,3 +22,17 @@ CREATE TABLE IF NOT EXISTS danmaku (
 
 CREATE INDEX IF NOT EXISTS idx_scores_game ON scores(game, score DESC);
 CREATE INDEX IF NOT EXISTS idx_danmaku_id  ON danmaku(id DESC);
+
+CREATE TABLE IF NOT EXISTS page_views (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts INTEGER NOT NULL,
+  path TEXT NOT NULL,
+  ref TEXT DEFAULT '',
+  ua TEXT DEFAULT '',
+  country TEXT DEFAULT '',
+  lang TEXT DEFAULT '',
+  screen TEXT DEFAULT '',
+  sid TEXT DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_pv_ts   ON page_views(ts);
+CREATE INDEX IF NOT EXISTS idx_pv_path ON page_views(path);

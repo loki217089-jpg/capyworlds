@@ -308,6 +308,88 @@ export default {
       return Response.json({ok:true},{headers:cors});
     }
 
+    // ── 流量追蹤 ──────────────────────────────────────────────────
+    if (url.pathname==='/t' && request.method==='POST') {
+      try {
+        await env.DB.prepare("CREATE TABLE IF NOT EXISTS page_views (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, path TEXT NOT NULL, ref TEXT DEFAULT '', ua TEXT DEFAULT '', country TEXT DEFAULT '', lang TEXT DEFAULT '', screen TEXT DEFAULT '', sid TEXT DEFAULT '')").run();
+        await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_pv_ts ON page_views(ts)").run();
+        await env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_pv_path ON page_views(path)").run();
+      } catch(e){}
+      let b; try{b=await request.json();}catch{return Response.json({ok:true},{headers:cors});}
+      const ts=Date.now();
+      const path=(b.p||'/').slice(0,200);
+      const ref=(b.r||'').slice(0,500);
+      const ua=(request.headers.get('User-Agent')||'').slice(0,300);
+      const country=request.headers.get('CF-IPCountry')||'';
+      const lang=(b.l||'').slice(0,10);
+      const screen=(b.s||'').slice(0,20);
+      const sid=(b.sid||'').slice(0,40);
+      await env.DB.prepare('INSERT INTO page_views (ts,path,ref,ua,country,lang,screen,sid) VALUES (?,?,?,?,?,?,?,?)').bind(ts,path,ref,ua,country,lang,screen,sid).run();
+      return Response.json({ok:true},{headers:cors});
+    }
+
+    if (url.pathname.startsWith('/analytics-data') && request.method==='GET') {
+      const auth=(request.headers.get('Authorization')||'').replace('Bearer ','');
+      const adminKey=env.ADMIN_KEY||env.ANALYTICS_KEY||'';
+      if (!adminKey||auth!==adminKey) return Response.json({error:'unauthorized'},{status:401,headers:cors});
+      try {
+        await env.DB.prepare("CREATE TABLE IF NOT EXISTS page_views (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER NOT NULL, path TEXT NOT NULL, ref TEXT DEFAULT '', ua TEXT DEFAULT '', country TEXT DEFAULT '', lang TEXT DEFAULT '', screen TEXT DEFAULT '', sid TEXT DEFAULT '')").run();
+      } catch(e){}
+      const q=url.searchParams.get('q')||'overview';
+      const days=Math.min(90,Math.max(1,parseInt(url.searchParams.get('days')||'7')));
+      const since=Date.now()-days*86400000;
+
+      if (q==='overview') {
+        const total=await env.DB.prepare('SELECT COUNT(*) as c FROM page_views WHERE ts>?').bind(since).first();
+        const uv=await env.DB.prepare('SELECT COUNT(DISTINCT sid) as c FROM page_views WHERE ts>? AND sid!=?').bind(since,'').first();
+        const today_start=Date.now()-Date.now()%86400000;
+        const today=await env.DB.prepare('SELECT COUNT(*) as c FROM page_views WHERE ts>?').bind(today_start).first();
+        const active=await env.DB.prepare('SELECT COUNT(DISTINCT sid) as c FROM page_views WHERE ts>? AND sid!=?').bind(Date.now()-300000,'').first();
+        return Response.json({total:total?.c||0,uv:uv?.c||0,today:today?.c||0,active:active?.c||0},{headers:cors});
+      }
+      if (q==='daily') {
+        const {results}=await env.DB.prepare("SELECT CAST((ts/86400000) AS INTEGER) as day, COUNT(*) as pv, COUNT(DISTINCT sid) as uv FROM page_views WHERE ts>? GROUP BY day ORDER BY day").bind(since).all();
+        return Response.json(results||[],{headers:cors});
+      }
+      if (q==='hourly') {
+        const {results}=await env.DB.prepare("SELECT CAST((ts/3600000)%24 AS INTEGER) as hour, CAST(((ts/86400000)+4)%7 AS INTEGER) as dow, COUNT(*) as c FROM page_views WHERE ts>? GROUP BY hour, dow").bind(since).all();
+        return Response.json(results||[],{headers:cors});
+      }
+      if (q==='pages') {
+        const {results}=await env.DB.prepare('SELECT path, COUNT(*) as c, COUNT(DISTINCT sid) as uv FROM page_views WHERE ts>? GROUP BY path ORDER BY c DESC LIMIT 30').bind(since).all();
+        return Response.json(results||[],{headers:cors});
+      }
+      if (q==='countries') {
+        const {results}=await env.DB.prepare("SELECT country, COUNT(*) as c FROM page_views WHERE ts>? AND country!='' GROUP BY country ORDER BY c DESC LIMIT 30").bind(since).all();
+        return Response.json(results||[],{headers:cors});
+      }
+      if (q==='devices') {
+        const {results}=await env.DB.prepare('SELECT ua, COUNT(*) as c FROM page_views WHERE ts>? GROUP BY ua ORDER BY c DESC LIMIT 100').bind(since).all();
+        // parse UA server-side into categories
+        let mobile=0, desktop=0, tablet=0;
+        const browsers={};
+        for (const r of (results||[])) {
+          const u=r.ua||'';
+          if (/tablet|ipad/i.test(u)) tablet+=r.c;
+          else if (/mobile|android|iphone/i.test(u)) mobile+=r.c;
+          else desktop+=r.c;
+          const bm=u.match(/(Chrome|Firefox|Safari|Edge|Opera|Samsung)/i);
+          const bn=bm?bm[1]:'Other';
+          browsers[bn]=(browsers[bn]||0)+r.c;
+        }
+        return Response.json({mobile,desktop,tablet,browsers},{headers:cors});
+      }
+      if (q==='referrers') {
+        const {results}=await env.DB.prepare("SELECT ref, COUNT(*) as c FROM page_views WHERE ts>? AND ref!='' GROUP BY ref ORDER BY c DESC LIMIT 20").bind(since).all();
+        return Response.json(results||[],{headers:cors});
+      }
+      if (q==='languages') {
+        const {results}=await env.DB.prepare("SELECT lang, COUNT(*) as c FROM page_views WHERE ts>? AND lang!='' GROUP BY lang ORDER BY c DESC LIMIT 15").bind(since).all();
+        return Response.json(results||[],{headers:cors});
+      }
+      return Response.json({error:'unknown query'},{status:400,headers:cors});
+    }
+
     // ── 1對1情境聊天室 ────────────────────────────────────────────
     // POST /chat/join  { pid, name, gender }
     if (url.pathname==='/chat/join' && request.method==='POST') {

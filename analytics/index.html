@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>流量分析 - CapyWorlds Analytics</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;--text:#c9d1d9;--text2:#8b949e;--accent:#58a6ff;--green:#3fb950;--orange:#d29922;--red:#f85149;--purple:#bc8cff;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:40px;max-width:380px;width:100%;text-align:center;}
+.login-box h2{margin-bottom:8px;color:#fff;font-size:22px;}
+.login-box p{color:var(--text2);font-size:13px;margin-bottom:24px;}
+.login-box input{width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;margin-bottom:16px;}
+.login-box button{width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600;}
+.login-box button:hover{opacity:0.9;}
+.login-box .err{color:var(--red);font-size:12px;margin-top:8px;display:none;}
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+header h1{font-size:18px;color:#fff;}
+header h1 span{color:var(--accent);}
+.header-right{display:flex;gap:10px;align-items:center;}
+.header-right select,.header-right button{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;}
+.header-right button:hover{border-color:var(--accent);}
+.dashboard{display:none;max-width:1280px;margin:0 auto;padding:20px;}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;position:relative;overflow:hidden;}
+.stat-card .label{font-size:12px;color:var(--text2);margin-bottom:6px;}
+.stat-card .value{font-size:28px;font-weight:700;color:#fff;}
+.stat-card .sub{font-size:11px;color:var(--text2);margin-top:4px;}
+.stat-card .icon{position:absolute;top:14px;right:14px;font-size:20px;opacity:0.5;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+@media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;min-height:200px;}
+.card h3{font-size:14px;color:#fff;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.card h3 .badge{font-size:10px;background:var(--bg3);padding:2px 8px;border-radius:10px;color:var(--text2);}
+canvas.chart{width:100%;height:200px;}
+.bar-list{list-style:none;}
+.bar-list li{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:13px;}
+.bar-list .bar-bg{flex:1;height:20px;background:var(--bg3);border-radius:4px;overflow:hidden;position:relative;}
+.bar-list .bar-fill{height:100%;border-radius:4px;transition:width 0.6s;}
+.bar-list .bar-val{position:absolute;right:6px;top:2px;font-size:11px;color:var(--text2);}
+.bar-list .bar-label{min-width:80px;text-align:right;color:var(--text2);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;}
+.heatmap{display:grid;grid-template-columns:auto repeat(24,1fr);gap:2px;font-size:10px;}
+.heatmap .day-label{color:var(--text2);text-align:right;padding-right:4px;line-height:20px;}
+.heatmap .hour-label{color:var(--text2);text-align:center;line-height:16px;}
+.heatmap .cell{width:100%;aspect-ratio:1;border-radius:3px;min-width:12px;min-height:12px;}
+.suggestions{list-style:none;}
+.suggestions li{padding:10px 14px;margin-bottom:8px;background:var(--bg3);border-radius:8px;font-size:13px;line-height:1.5;border-left:3px solid var(--accent);}
+.suggestions li.warn{border-left-color:var(--orange);}
+.suggestions li.good{border-left-color:var(--green);}
+.suggestions li .tip-title{font-weight:600;color:#fff;margin-bottom:2px;}
+.tracking-code{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:12px;font-family:'Cascadia Code','Fira Code',monospace;color:var(--green);overflow-x:auto;white-space:pre;line-height:1.5;}
+.copy-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:4px 12px;border-radius:6px;font-size:11px;cursor:pointer;margin-top:8px;}
+.copy-btn:hover{border-color:var(--accent);}
+.loading{text-align:center;padding:40px;color:var(--text2);}
+.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tab-row{display:flex;gap:0;margin-bottom:16px;border-bottom:1px solid var(--border);}
+.tab-row button{background:none;border:none;color:var(--text2);padding:8px 16px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;}
+.tab-row button.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-row button:hover{color:var(--text);}
+</style>
+</head>
+<body>
+<!-- Login -->
+<div class="login-wrap" id="login-screen">
+  <div class="login-box">
+    <h2>📊 CapyWorlds Analytics</h2>
+    <p>輸入管理員金鑰查看流量數據</p>
+    <input type="password" id="key-input" placeholder="Admin Key" autocomplete="off">
+    <button onclick="tryLogin()">登入</button>
+    <div class="err" id="login-err">金鑰錯誤，請重試</div>
+  </div>
+</div>
+<!-- Dashboard -->
+<div class="dashboard" id="dashboard">
+  <header>
+    <h1>📊 <span>CapyWorlds</span> Analytics</h1>
+    <div class="header-right">
+      <select id="days-select" onchange="loadAll()">
+        <option value="1">今天</option>
+        <option value="7" selected>近 7 天</option>
+        <option value="30">近 30 天</option>
+        <option value="90">近 90 天</option>
+      </select>
+      <button onclick="loadAll()">🔄 重新整理</button>
+      <button onclick="logout()">登出</button>
+    </div>
+  </header>
+  <div style="padding:20px;max-width:1280px;margin:0 auto;">
+    <!-- Overview -->
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card"><div class="icon">👁</div><div class="label">總瀏覽量 (PV)</div><div class="value" id="s-pv">-</div><div class="sub" id="s-pv-sub"></div></div>
+      <div class="stat-card"><div class="icon">👤</div><div class="label">獨立訪客 (UV)</div><div class="value" id="s-uv">-</div><div class="sub" id="s-uv-sub"></div></div>
+      <div class="stat-card"><div class="icon">📅</div><div class="label">今日瀏覽量</div><div class="value" id="s-today">-</div></div>
+      <div class="stat-card"><div class="icon">⚡</div><div class="label">即時在線 (5分鐘)</div><div class="value" id="s-active">-</div></div>
+    </div>
+    <!-- Tabs -->
+    <div class="tab-row" id="main-tabs">
+      <button class="active" data-tab="trend">📈 趨勢</button>
+      <button data-tab="pages">📄 頁面</button>
+      <button data-tab="geo">🌍 地理</button>
+      <button data-tab="devices">📱 裝置</button>
+      <button data-tab="sources">🔗 來源</button>
+      <button data-tab="heatmap">🕐 時段</button>
+      <button data-tab="suggestions">💡 建議</button>
+      <button data-tab="setup">⚙ 追蹤碼</button>
+    </div>
+    <!-- Tab panels -->
+    <div id="tab-trend" class="tab-panel">
+      <div class="card"><h3>每日流量趨勢 <span class="badge">PV / UV</span></h3><canvas id="chart-daily" class="chart" height="220"></canvas></div>
+    </div>
+    <div id="tab-pages" class="tab-panel" style="display:none">
+      <div class="card"><h3>熱門頁面 Top 20</h3><ul class="bar-list" id="pages-list"></ul></div>
+    </div>
+    <div id="tab-geo" class="tab-panel" style="display:none">
+      <div class="grid-2">
+        <div class="card"><h3>🌍 訪客國家分佈</h3><ul class="bar-list" id="country-list"></ul></div>
+        <div class="card"><h3>🗣 語言分佈</h3><ul class="bar-list" id="lang-list"></ul></div>
+      </div>
+    </div>
+    <div id="tab-devices" class="tab-panel" style="display:none">
+      <div class="grid-2">
+        <div class="card"><h3>裝置類型</h3><canvas id="chart-device" class="chart" height="200"></canvas></div>
+        <div class="card"><h3>瀏覽器分佈</h3><ul class="bar-list" id="browser-list"></ul></div>
+      </div>
+    </div>
+    <div id="tab-sources" class="tab-panel" style="display:none">
+      <div class="card"><h3>🔗 流量來源 (Referrers)</h3><ul class="bar-list" id="ref-list"></ul></div>
+    </div>
+    <div id="tab-heatmap" class="tab-panel" style="display:none">
+      <div class="card"><h3>🕐 時段熱力圖 <span class="badge">小時 × 星期</span></h3><div class="heatmap" id="heatmap-grid"></div></div>
+    </div>
+    <div id="tab-suggestions" class="tab-panel" style="display:none">
+      <div class="card"><h3>💡 優化建議</h3><ul class="suggestions" id="suggestions-list"></ul></div>
+    </div>
+    <div id="tab-setup" class="tab-panel" style="display:none">
+      <div class="card">
+        <h3>⚙ 追蹤碼安裝</h3>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">將以下程式碼加入每個頁面的 <code>&lt;/body&gt;</code> 前即可開始收集流量數據：</p>
+        <div class="tracking-code" id="tracking-code"></div>
+        <button class="copy-btn" onclick="copyCode()">📋 複製追蹤碼</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div style="position:fixed;bottom:4px;left:8px;z-index:9999;opacity:0.4;font-size:10px"><a href="/privacy.html" target="_blank" style="color:#888;text-decoration:none">Privacy Policy</a></div>
+<script>
+const API_BASE='';
+let API_KEY='';
+function getDays(){return document.getElementById('days-select').value;}
+
+// Auth
+function tryLogin(){
+  const k=document.getElementById('key-input').value.trim();
+  if(!k){document.getElementById('login-err').style.display='block';return;}
+  API_KEY=k;
+  localStorage.setItem('capy_analytics_key',k);
+  fetch(API_BASE+'/analytics-data?q=overview&days=1',{headers:{'Authorization':'Bearer '+k}})
+    .then(r=>{if(!r.ok)throw 0;return r.json();})
+    .then(()=>{showDashboard();})
+    .catch(()=>{document.getElementById('login-err').style.display='block';API_KEY='';});
+}
+function logout(){API_KEY='';localStorage.removeItem('capy_analytics_key');location.reload();}
+function showDashboard(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  loadAll();
+}
+// Auto-login
+(function(){
+  const k=localStorage.getItem('capy_analytics_key');
+  if(k){API_KEY=k;showDashboard();}
+})();
+
+// Tabs
+document.getElementById('main-tabs').addEventListener('click',function(e){
+  if(e.target.tagName!=='BUTTON')return;
+  this.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p=>p.style.display='none');
+  document.getElementById('tab-'+e.target.dataset.tab).style.display='';
+});
+
+// Fetch helper
+function api(q,days){
+  return fetch(API_BASE+'/analytics-data?q='+q+'&days='+(days||getDays()),{
+    headers:{'Authorization':'Bearer '+API_KEY}
+  }).then(r=>r.json());
+}
+
+// Load all data
+function loadAll(){
+  loadOverview();loadDaily();loadPages();loadCountries();loadDevices();loadReferrers();loadHourly();loadLanguages();
+  renderTrackingCode();
+  setTimeout(generateSuggestions,2000);
+}
+
+// Overview
+function loadOverview(){
+  api('overview').then(d=>{
+    document.getElementById('s-pv').textContent=fmt(d.total);
+    document.getElementById('s-uv').textContent=fmt(d.uv);
+    document.getElementById('s-today').textContent=fmt(d.today);
+    document.getElementById('s-active').textContent=fmt(d.active);
+    const ratio=d.total>0?(d.uv/d.total*100).toFixed(1)+'% UV/PV':'';
+    document.getElementById('s-uv-sub').textContent=ratio;
+  });
+}
+function fmt(n){if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return ''+n;}
+
+// Daily trend chart
+let dailyData=[];
+function loadDaily(){
+  api('daily').then(data=>{
+    dailyData=data;
+    drawLineChart('chart-daily',data);
+  });
+}
+function drawLineChart(id,data){
+  const canvas=document.getElementById(id);
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  const rect=canvas.getBoundingClientRect();
+  canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;
+  ctx.scale(dpr,dpr);
+  const W=rect.width,H=rect.height,pad={t:20,r:20,b:30,l:50};
+  const cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+  ctx.clearRect(0,0,W,H);
+  if(!data.length){ctx.fillStyle='#8b949e';ctx.font='13px sans-serif';ctx.fillText('暫無數據',W/2-30,H/2);return;}
+  const maxPV=Math.max(...data.map(d=>d.pv),1);
+  // Grid
+  ctx.strokeStyle='#21262d';ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){
+    const y=pad.t+ch*(1-i/4);
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();
+    ctx.fillStyle='#8b949e';ctx.font='10px sans-serif';ctx.textAlign='right';
+    ctx.fillText(fmt(Math.round(maxPV*i/4)),pad.l-6,y+4);
+  }
+  // PV line
+  ctx.beginPath();ctx.strokeStyle='#58a6ff';ctx.lineWidth=2;
+  data.forEach((d,i)=>{
+    const x=pad.l+cw*(i/(data.length-1||1)),y=pad.t+ch*(1-d.pv/maxPV);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  // PV area
+  ctx.beginPath();
+  data.forEach((d,i)=>{
+    const x=pad.l+cw*(i/(data.length-1||1)),y=pad.t+ch*(1-d.pv/maxPV);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.lineTo(pad.l+cw,pad.t+ch);ctx.lineTo(pad.l,pad.t+ch);ctx.closePath();
+  const grad=ctx.createLinearGradient(0,pad.t,0,pad.t+ch);
+  grad.addColorStop(0,'rgba(88,166,255,0.25)');grad.addColorStop(1,'rgba(88,166,255,0)');
+  ctx.fillStyle=grad;ctx.fill();
+  // UV line
+  ctx.beginPath();ctx.strokeStyle='#3fb950';ctx.lineWidth=2;ctx.setLineDash([4,4]);
+  data.forEach((d,i)=>{
+    const x=pad.l+cw*(i/(data.length-1||1)),y=pad.t+ch*(1-(d.uv||0)/maxPV);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.stroke();ctx.setLineDash([]);
+  // X-axis labels
+  ctx.fillStyle='#8b949e';ctx.font='10px sans-serif';ctx.textAlign='center';
+  const step=Math.max(1,Math.floor(data.length/7));
+  data.forEach((d,i)=>{
+    if(i%step!==0&&i!==data.length-1)return;
+    const x=pad.l+cw*(i/(data.length-1||1));
+    const date=new Date(d.day*86400000);
+    ctx.fillText((date.getMonth()+1)+'/'+(date.getDate()),x,H-pad.b+16);
+  });
+  // Legend
+  ctx.fillStyle='#58a6ff';ctx.fillRect(W-130,6,12,3);
+  ctx.fillStyle='#c9d1d9';ctx.font='10px sans-serif';ctx.textAlign='left';ctx.fillText('PV',W-114,10);
+  ctx.fillStyle='#3fb950';ctx.fillRect(W-80,6,12,3);
+  ctx.fillStyle='#c9d1d9';ctx.fillText('UV',W-64,10);
+}
+
+// Pages
+let pagesData=[];
+function loadPages(){
+  api('pages').then(data=>{pagesData=data;renderBarList('pages-list',data.map(d=>({label:d.path,value:d.c,sub:'UV: '+d.uv})),'#58a6ff');});
+}
+
+// Countries
+let countriesData=[];
+function loadCountries(){
+  api('countries').then(data=>{countriesData=data;renderBarList('country-list',data.map(d=>({label:countryName(d.country),value:d.c})),'#d29922');});
+}
+
+// Languages
+function loadLanguages(){
+  api('languages').then(data=>{renderBarList('lang-list',data.map(d=>({label:d.lang,value:d.c})),'#bc8cff');});
+}
+
+// Devices
+let devicesData={};
+function loadDevices(){
+  api('devices').then(data=>{
+    devicesData=data;
+    drawDonut('chart-device',[
+      {label:'Desktop',value:data.desktop,color:'#58a6ff'},
+      {label:'Mobile',value:data.mobile,color:'#3fb950'},
+      {label:'Tablet',value:data.tablet,color:'#d29922'}
+    ]);
+    const b=Object.entries(data.browsers||{}).sort((a,b)=>b[1]-a[1]);
+    renderBarList('browser-list',b.map(([k,v])=>({label:k,value:v})),'#bc8cff');
+  });
+}
+function drawDonut(id,slices){
+  const canvas=document.getElementById(id);
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  const rect=canvas.getBoundingClientRect();
+  canvas.width=rect.width*dpr;canvas.height=rect.height*dpr;
+  ctx.scale(dpr,dpr);
+  const W=rect.width,H=rect.height;
+  ctx.clearRect(0,0,W,H);
+  const total=slices.reduce((s,d)=>s+d.value,0);
+  if(!total){ctx.fillStyle='#8b949e';ctx.font='13px sans-serif';ctx.fillText('暫無數據',W/2-30,H/2);return;}
+  const cx=W/2-40,cy=H/2,r=Math.min(cx,cy)-10;
+  let angle=-Math.PI/2;
+  slices.forEach(s=>{
+    const sweep=s.value/total*Math.PI*2;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,angle,angle+sweep);ctx.closePath();
+    ctx.fillStyle=s.color;ctx.fill();
+    angle+=sweep;
+  });
+  ctx.beginPath();ctx.arc(cx,cy,r*0.55,0,Math.PI*2);ctx.fillStyle=getComputedStyle(document.body).getPropertyValue('--bg2').trim()||'#161b22';ctx.fill();
+  // Center text
+  ctx.fillStyle='#fff';ctx.font='bold 18px sans-serif';ctx.textAlign='center';ctx.fillText(fmt(total),cx,cy+6);
+  // Legend
+  let ly=20;
+  slices.forEach(s=>{
+    const pct=total?(s.value/total*100).toFixed(1)+'%':'0%';
+    ctx.fillStyle=s.color;ctx.fillRect(W-120,ly,10,10);
+    ctx.fillStyle='#c9d1d9';ctx.font='11px sans-serif';ctx.textAlign='left';
+    ctx.fillText(s.label+' '+pct,W-106,ly+9);
+    ly+=18;
+  });
+}
+
+// Referrers
+function loadReferrers(){
+  api('referrers').then(data=>{
+    renderBarList('ref-list',data.map(d=>{
+      let label=d.ref;
+      try{label=new URL(d.ref).hostname;}catch(e){}
+      return {label,value:d.c};
+    }),'#3fb950');
+  });
+}
+
+// Heatmap
+function loadHourly(){
+  api('hourly').then(data=>{
+    const grid=document.getElementById('heatmap-grid');
+    grid.innerHTML='';
+    const map={};let maxC=1;
+    data.forEach(d=>{const k=d.dow+'_'+d.hour;map[k]=d.c;if(d.c>maxC)maxC=d.c;});
+    const dayNames=['日','一','二','三','四','五','六'];
+    // header row
+    grid.appendChild(Object.assign(document.createElement('div'),{className:'hour-label',textContent:''}));
+    for(let h=0;h<24;h++){const el=document.createElement('div');el.className='hour-label';el.textContent=h;grid.appendChild(el);}
+    // data rows
+    for(let d=0;d<7;d++){
+      const lbl=document.createElement('div');lbl.className='day-label';lbl.textContent=dayNames[d];grid.appendChild(lbl);
+      for(let h=0;h<24;h++){
+        const c=map[d+'_'+h]||0;
+        const intensity=c/maxC;
+        const cell=document.createElement('div');
+        cell.className='cell';
+        cell.style.background=intensity>0?`rgba(88,166,255,${0.1+intensity*0.8})`:'var(--bg3)';
+        cell.title=dayNames[d]+' '+h+'時: '+c+' PV';
+        grid.appendChild(cell);
+      }
+    }
+  });
+}
+
+// Bar list renderer
+function renderBarList(id,items,color){
+  const ul=document.getElementById(id);ul.innerHTML='';
+  if(!items.length){ul.innerHTML='<li style="color:var(--text2);font-size:13px">暫無數據</li>';return;}
+  const max=Math.max(...items.map(d=>d.value),1);
+  items.slice(0,20).forEach(d=>{
+    const li=document.createElement('li');
+    li.innerHTML=`<span class="bar-label" title="${d.label}">${d.label}</span>
+      <div class="bar-bg"><div class="bar-fill" style="width:${d.value/max*100}%;background:${color}"></div>
+      <span class="bar-val">${fmt(d.value)}${d.sub?' · '+d.sub:''}</span></div>`;
+    ul.appendChild(li);
+  });
+}
+
+// Country code to name
+function countryName(code){
+  const m={TW:'台灣',US:'美國',JP:'日本',CN:'中國',HK:'香港',KR:'韓國',GB:'英國',DE:'德國',FR:'法國',CA:'加拿大',AU:'澳洲',SG:'新加坡',MY:'馬來西亞',TH:'泰國',VN:'越南',ID:'印尼',PH:'菲律賓',IN:'印度',BR:'巴西',MX:'墨西哥',NL:'荷蘭',SE:'瑞典',IT:'義大利',ES:'西班牙',RU:'俄羅斯',PL:'波蘭',TR:'土耳其',SA:'沙烏地',AE:'阿聯酋',ZA:'南非'};
+  return m[code]||code;
+}
+
+// Suggestions engine
+function generateSuggestions(){
+  const ul=document.getElementById('suggestions-list');ul.innerHTML='';
+  const tips=[];
+  // Based on pages data
+  if(pagesData.length){
+    const gamePages=pagesData.filter(p=>p.path.includes('/games/'));
+    const topPage=pagesData[0];
+    if(topPage)tips.push({cls:'good',title:'最受歡迎頁面',text:`「${topPage.path}」以 ${fmt(topPage.c)} PV 居首。考慮在首頁給它更醒目的入口。`});
+    const lowUV=pagesData.filter(p=>p.c>10&&p.uv<p.c*0.3);
+    if(lowUV.length)tips.push({cls:'',title:'高回訪頁面',text:`${lowUV.map(p=>p.path).slice(0,3).join(', ')} 的 UV/PV 比低於 30%，表示這些頁面有回訪黏性，適合加入更多內容。`});
+    const low=pagesData.filter(p=>p.c<=3);
+    if(low.length>5)tips.push({cls:'warn',title:'低流量頁面過多',text:`有 ${low.length} 個頁面瀏覽量 ≤ 3，考慮整合或加強 SEO/入口曝光。`});
+  }
+  // Based on devices
+  if(devicesData.mobile!==undefined){
+    const total=(devicesData.mobile||0)+(devicesData.desktop||0)+(devicesData.tablet||0);
+    if(total>0){
+      const mobilePct=devicesData.mobile/total*100;
+      if(mobilePct>60)tips.push({cls:'warn',title:'手機流量占比 '+mobilePct.toFixed(0)+'%',text:'超過六成訪客使用手機，確保所有頁面和遊戲都做好手機適配。'});
+      if(mobilePct<20)tips.push({cls:'',title:'手機流量偏低 ('+mobilePct.toFixed(0)+'%)',text:'考慮針對手機用戶優化體驗、在社群媒體推廣來增加手機流量。'});
+    }
+  }
+  // Based on countries
+  if(countriesData.length){
+    const nonTW=countriesData.filter(c=>c.country!=='TW');
+    const twData=countriesData.find(c=>c.country==='TW');
+    if(nonTW.length>3)tips.push({cls:'good',title:'國際流量',text:`來自 ${nonTW.length} 個非台灣國家的訪客，英文化內容可進一步擴大國際受眾。`});
+    if(twData&&countriesData.length===1)tips.push({cls:'',title:'流量集中在台灣',text:'考慮在 Reddit (r/WebGames)、itch.io 等國際平台曝光以拓展海外流量。'});
+  }
+  // Based on referrers
+  // General tips
+  tips.push({cls:'',title:'追蹤碼覆蓋率',text:'確保所有頁面都安裝了追蹤碼。到「追蹤碼」分頁查看安裝方式。'});
+  tips.push({cls:'',title:'SEO 基礎',text:'為每個遊戲頁面加入 meta description 和 og:image，提升搜尋引擎和社群分享效果。'});
+
+  tips.forEach(t=>{
+    const li=document.createElement('li');
+    li.className=t.cls||'';
+    li.innerHTML=`<div class="tip-title">${t.title}</div><div>${t.text}</div>`;
+    ul.appendChild(li);
+  });
+}
+
+// Tracking code snippet
+function renderTrackingCode(){
+  const code=`<`+`script>
+(function(){
+  var sid=localStorage.getItem('_cw_sid');
+  if(!sid){sid=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('_cw_sid',sid);}
+  var d={p:location.pathname,r:document.referrer,l:navigator.language,s:screen.width+'x'+screen.height,sid:sid};
+  fetch('/t',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d),keepalive:true});
+})();
+<`+`/script>`;
+  document.getElementById('tracking-code').textContent=code;
+}
+function copyCode(){
+  const t=document.getElementById('tracking-code').textContent;
+  navigator.clipboard.writeText(t).then(()=>{
+    const btn=document.querySelector('.copy-btn');btn.textContent='✅ 已複製！';setTimeout(()=>btn.textContent='📋 複製追蹤碼',2000);
+  });
+}
+
+// Handle resize for charts
+let resizeTimer;
+window.addEventListener('resize',function(){clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(dailyData.length)drawLineChart('chart-daily',dailyData);},200);});
+</script>
+</body>
+</html>
