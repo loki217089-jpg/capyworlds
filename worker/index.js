@@ -528,6 +528,37 @@ export default {
       return Response.json({rooms,totalWaiting,totalChatting,now},{headers:cors});
     }
 
+    // ── 社群趨勢代理 (/trends/:source) ────────────────────────────
+    // 用 CF Cache API 快取 6 小時，避免重複打外部 API
+    const TREND_SOURCES = {
+      '/trends/google': { url:'https://trends.google.com.tw/trending/rss?geo=TW', type:'application/xml;charset=utf-8' },
+      '/trends/dcard':  { url:'https://www.dcard.tw/service/api/v2/posts?popular=true&limit=30', type:'application/json;charset=utf-8' },
+      '/trends/ptt':    { url:'https://www.ptt.cc/bbs/hotboards.html', type:'text/html;charset=utf-8', extraHeaders:{'Cookie':'over18=1'} },
+      '/trends/yahoo':  { url:'https://tw.news.yahoo.com/rss/', type:'application/xml;charset=utf-8' },
+    };
+    const trendSrc = TREND_SOURCES[url.pathname];
+    if (trendSrc && request.method==='GET') {
+      const cache = caches.default;
+      const cacheKey = new Request(url.toString(), request);
+      // 先查快取
+      let cached = await cache.match(cacheKey);
+      if (cached) {
+        // 加上 CORS headers（快取的 response 可能沒有）
+        const body = await cached.text();
+        return new Response(body, { headers:{...cors,'Content-Type':trendSrc.type,'X-Cache':'HIT'} });
+      }
+      // 快取沒有 → 打外部 API
+      try {
+        const r = await fetch(trendSrc.url, { headers:{'User-Agent':'Mozilla/5.0',...(trendSrc.extraHeaders||{})} });
+        const body = await r.text();
+        const resp = new Response(body, { headers:{...cors,'Content-Type':trendSrc.type,'Cache-Control':'public, max-age=21600','X-Cache':'MISS'} });
+        // 存入快取（6小時 = 21600秒）
+        const cacheResp = new Response(body, { headers:{'Content-Type':trendSrc.type,'Cache-Control':'public, max-age=21600'} });
+        await cache.put(cacheKey, cacheResp);
+        return resp;
+      } catch(e){ return Response.json({error:'fetch failed'},{status:502,headers:cors}); }
+    }
+
     return env.ASSETS.fetch(request);
   }
 };

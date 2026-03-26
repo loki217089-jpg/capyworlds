@@ -707,9 +707,116 @@ function renderAll(){
   if(document.getElementById('panel-timeline').classList.contains('active')) drawTimeline();
 }
 
+/* ── API base (same Cloudflare Worker) ── */
+const API_BASE = location.hostname==='localhost'||location.hostname==='127.0.0.1'
+  ? '' : 'https://capyworlds.com';
+
+/* ── Classify topic by keywords ── */
+function classifyTopic(text){
+  const t = text.toLowerCase();
+  if(/股|台積|指數|漲|跌|財報|央行|利率|匯率|etf|bitcoin|btc|投資|金融|營收/.test(t)) return 'finance';
+  if(/選舉|立法|政府|總統|政黨|立院|罷免|公投|立委|議員/.test(t)) return 'politics';
+  if(/ai|apple|google|手機|晶片|iphone|科技|nvidia|openai|軟體|app/.test(t)) return 'tech';
+  if(/棒球|籃球|足球|奧運|world cup|nba|mlb|中職|球員|賽事|體育/.test(t)) return 'sports';
+  if(/電影|劇|netflix|演員|mv|歌手|演唱會|金曲|偶像|節目|youtube|直播|動漫/.test(t)) return 'entertainment';
+  if(/遊戲|switch|ps5|xbox|steam|lol|手遊|電競/.test(t)) return 'games';
+  if(/餐廳|美食|食譜|料理|咖啡|甜點|米其林|小吃/.test(t)) return 'food';
+  if(/地震|颱風|氣候|俄|烏|戰爭|聯合國|國際|日本|韓國|美國/.test(t)) return 'international';
+  if(/學校|考試|大學|指考|學測|教育|老師|教授/.test(t)) return 'education';
+  if(/疫苗|covid|病毒|醫院|健康|癌|疾病|流感/.test(t)) return 'health';
+  return 'life';
+}
+
+/* ── Parse Google Trends RSS XML ── */
+function parseGoogleRSS(xml){
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xml, 'application/xml');
+  const items = doc.querySelectorAll('item');
+  const results = [];
+  items.forEach((item,i)=>{
+    const title = item.querySelector('title')?.textContent||'';
+    const traffic = item.querySelector('ht\\:approx_traffic, approx_traffic')?.textContent||'';
+    const heat = parseInt((traffic||'0').replace(/[^0-9]/g,''))||((items.length-i)*5000);
+    results.push({
+      title, category:classifyTopic(title), heat,
+      comments:Math.round(heat*0.05), views:heat*10,
+      sentiment:{pos:45+Math.floor(Math.random()*20),neu:20+Math.floor(Math.random()*15),neg:5+Math.floor(Math.random()*15)},
+      time:new Date().toISOString()
+    });
+  });
+  return results;
+}
+
+/* ── Parse Yahoo RSS XML ── */
+function parseYahooRSS(xml){
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xml, 'application/xml');
+  const items = doc.querySelectorAll('item');
+  const results = [];
+  items.forEach((item,i)=>{
+    const title = item.querySelector('title')?.textContent||'';
+    if(!title) return;
+    const heat = (items.length-i)*3000+Math.floor(Math.random()*2000);
+    results.push({
+      title, category:classifyTopic(title), heat,
+      comments:Math.round(heat*0.03), views:heat*8,
+      sentiment:{pos:40+Math.floor(Math.random()*20),neu:25+Math.floor(Math.random()*15),neg:5+Math.floor(Math.random()*15)},
+      time:item.querySelector('pubDate')?.textContent ? new Date(item.querySelector('pubDate').textContent).toISOString() : new Date().toISOString()
+    });
+  });
+  return results.slice(0,15);
+}
+
+/* ── Parse Dcard API JSON ── */
+function parseDcard(data){
+  if(!Array.isArray(data)) return [];
+  return data.slice(0,15).map((post,i)=>{
+    const heat = (post.likeCount||0)+(post.commentCount||0)*5;
+    return {
+      title:post.title||'(無標題)',
+      category:classifyTopic(post.title||''),
+      heat:heat||((data.length-i)*2000),
+      comments:post.commentCount||0,
+      views:(post.likeCount||0)*20,
+      sentiment:{pos:50+Math.floor(Math.random()*15),neu:20+Math.floor(Math.random()*15),neg:5+Math.floor(Math.random()*10)},
+      time:post.createdAt||new Date().toISOString()
+    };
+  });
+}
+
+/* ── Fetch real data (with demo fallback) ── */
+async function fetchRealData(){
+  const demo = generateDemoData();
+  const results = {...demo}; // start with demo as fallback
+
+  const fetches = [
+    { key:'google', url:API_BASE+'/trends/google', parse:'xml', handler:parseGoogleRSS },
+    { key:'yahoo',  url:API_BASE+'/trends/yahoo',  parse:'xml', handler:parseYahooRSS },
+    { key:'dcard',  url:API_BASE+'/trends/dcard',   parse:'json',handler:parseDcard },
+  ];
+
+  const promises = fetches.map(async ({key,url,parse,handler})=>{
+    try {
+      const r = await fetch(url);
+      if(!r.ok) throw new Error(r.status);
+      const data = parse==='xml'? await r.text() : await r.json();
+      const parsed = handler(data);
+      if(parsed.length>0) results[key]=parsed;
+    } catch(e){ console.warn('Trends fetch failed:',key,e); }
+  });
+  await Promise.all(promises);
+  return results;
+}
+
 /* ── Refresh ── */
-function refreshAll(){
-  trendData = generateDemoData();
+async function refreshAll(){
+  // Show loading
+  document.getElementById('trends-grid').innerHTML='<div class="loading"><div class="spinner"></div><div>'+t('loading')+'</div></div>';
+  try {
+    trendData = await fetchRealData();
+  } catch(e){
+    trendData = generateDemoData();
+  }
   lastRefresh = new Date();
   localStorage.setItem('trendData', JSON.stringify(trendData));
   localStorage.setItem('trendRefresh', lastRefresh.toISOString());
@@ -718,30 +825,27 @@ function refreshAll(){
 }
 
 /* ── Init ── */
-function init(){
-  // Load cached data
+async function init(){
+  // Load cached data first (instant render)
   const cached = localStorage.getItem('trendData');
   const cachedTime = localStorage.getItem('trendRefresh');
+  let needFetch = true;
   if(cached && cachedTime){
     const elapsed = Date.now() - new Date(cachedTime).getTime();
     if(elapsed < 6*3600000){
       trendData = JSON.parse(cached);
       lastRefresh = new Date(cachedTime);
-    } else {
-      trendData = generateDemoData();
-      lastRefresh = new Date();
-      localStorage.setItem('trendData', JSON.stringify(trendData));
-      localStorage.setItem('trendRefresh', lastRefresh.toISOString());
+      needFetch = false;
     }
-  } else {
-    trendData = generateDemoData();
-    lastRefresh = new Date();
-    localStorage.setItem('trendData', JSON.stringify(trendData));
-    localStorage.setItem('trendRefresh', lastRefresh.toISOString());
   }
   applyI18n();
-  renderAll();
-  startCountdown();
+  if(needFetch){
+    // First load or cache expired → fetch real data
+    await refreshAll();
+  } else {
+    renderAll();
+    startCountdown();
+  }
   window.addEventListener('resize', ()=>{
     if(document.getElementById('panel-timeline').classList.contains('active')) drawTimeline();
   });
