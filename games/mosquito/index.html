@@ -591,6 +591,89 @@ const upgrades={
 // ── 全域血量（跨局保留）──────────────────────
 let totalBlood=0;
 
+// ── Prestige / 進化系統 ──────────────────────
+let prestige={level:0,totalEarned:0,mult:1};
+function loadPrestige(){
+  try{const s=JSON.parse(localStorage.getItem('mosquitoPrestige'));if(s){prestige=s}}catch(e){}
+}
+function savePrestige(){localStorage.setItem('mosquitoPrestige',JSON.stringify(prestige))}
+function getPrestigeCost(){return Math.floor(50*Math.pow(2,prestige.level))}
+function doPrestige(){
+  const cost=getPrestigeCost();
+  if(totalBlood<cost)return false;
+  totalBlood-=cost;
+  prestige.level++;
+  prestige.mult=1+prestige.level*0.5;// ×1.5, ×2, ×2.5...
+  // Reset upgrades but keep blood and prestige
+  resetUpgrades();
+  savePrestige();
+  savePersist();
+  return true;
+}
+function resetUpgrades(){
+  upgrades.zap.owned=false;upgrades.zap.cooldown=0;
+  upgrades.heal.stock=0;
+  upgrades.shield.owned=false;upgrades.shield.active=false;upgrades.shield.cooldown=0;
+  upgrades.freeze.owned=false;upgrades.freeze.active=false;upgrades.freeze.cooldown=0;
+  upgrades.maxhp.level=0;upgrades.bloodmag.level=0;
+  upgrades.bomb.stock=0;
+  upgrades.boots.owned=false;upgrades.boots.level=0;
+  upgrades.magnet.owned=false;upgrades.magnet.active=false;upgrades.magnet.cooldown=0;
+  upgrades.crit.owned=false;upgrades.crit.level=0;
+  upgrades.coil.owned=false;upgrades.coil.level=0;upgrades.coil.timer=0;
+  upgrades.bloodflow.owned=false;upgrades.bloodflow.level=0;upgrades.bloodflow.timer=0;
+  upgrades.autoswat.level=0;upgrades.autoswat.timer=0;
+}
+// Blood earned with prestige multiplier
+function earnBlood(amount){
+  const earned=Math.ceil(amount*prestige.mult);
+  totalBlood+=earned;prestige.totalEarned+=earned;
+  return earned;
+}
+
+// ── 離線收益 ──────────────────────────────────
+function calcOfflineEarnings(){
+  const lastTime=parseInt(localStorage.getItem('mosquitoLastTime')||'0');
+  if(!lastTime)return 0;
+  const elapsed=Math.min(Date.now()-lastTime,86400000)/1000;// cap 24h
+  // passive rate based on bloodflow + coil upgrades
+  let rate=0;
+  if(upgrades.bloodflow.level>=2)rate+=60/upgrades.bloodflow.interval;// drops per second
+  if(upgrades.coil.level>0)rate+=upgrades.coil.level*0.5;
+  if(upgrades.autoswat.level>0)rate+=upgrades.autoswat.level*0.3;
+  return Math.floor(elapsed*rate*prestige.mult*0.5);// 50% efficiency offline
+}
+function saveLastTime(){localStorage.setItem('mosquitoLastTime',Date.now().toString())}
+
+// ── 成就系統 ──────────────────────────────────
+const ACHIEVEMENTS=[
+  {id:'kill100',icon:'🎯',zh:'擊殺 100 隻蚊子',en:'Kill 100 Mosquitoes',check:()=>prestige.totalEarned>=100},
+  {id:'boss5',icon:'👑',zh:'擊敗 5 隻 Boss',en:'Defeat 5 Bosses',check:()=>(personalBest.normal?.bosses||0)+(personalBest.hard?.bosses||0)+(personalBest.hell?.bosses||0)>=5},
+  {id:'combo10',icon:'🔥',zh:'達成 10 連擊',en:'10 Combo',check:()=>(personalBest.normal?.combo||0)>=10||(personalBest.hard?.combo||0)>=10||(personalBest.hell?.combo||0)>=10},
+  {id:'hard_clear',icon:'💪',zh:'Hard 模式存活 60 秒',en:'Survive 60s on Hard',check:()=>(personalBest.hard?.time||0)>=60},
+  {id:'hell_clear',icon:'☠️',zh:'Hell 模式存活 30 秒',en:'Survive 30s on Hell',check:()=>(personalBest.hell?.time||0)>=30},
+  {id:'prestige1',icon:'🧬',zh:'第一次進化',en:'First Evolution',check:()=>prestige.level>=1},
+  {id:'prestige3',icon:'🦠',zh:'進化 3 次',en:'Evolve 3 Times',check:()=>prestige.level>=3},
+  {id:'blood500',icon:'🩸',zh:'累計獲得 500 血',en:'Earn 500 Blood Total',check:()=>prestige.totalEarned>=500},
+  {id:'blood5000',icon:'💎',zh:'累計獲得 5000 血',en:'Earn 5000 Blood',check:()=>prestige.totalEarned>=5000},
+  {id:'all_upgrades',icon:'⭐',zh:'購買所有升級一次',en:'Buy All Upgrades Once',check:()=>upgrades.zap.owned&&upgrades.shield.owned&&upgrades.freeze.owned&&upgrades.boots.owned&&upgrades.crit.owned&&upgrades.coil.owned&&upgrades.bloodflow.owned&&upgrades.magnet.owned},
+];
+let unlockedAchievements=JSON.parse(localStorage.getItem('mosquitoAch')||'[]');
+function checkAchievements(){
+  let newOnes=[];
+  ACHIEVEMENTS.forEach(a=>{
+    if(!unlockedAchievements.includes(a.id)&&a.check()){
+      unlockedAchievements.push(a.id);newOnes.push(a);
+    }
+  });
+  if(newOnes.length>0){
+    localStorage.setItem('mosquitoAch',JSON.stringify(unlockedAchievements));
+    newOnes.forEach(a=>{
+      if(state.phase==='playing')state.floatingTexts.push(new FloatingText(W/2,H/2-60,`${a.icon} ${lang==='zh'?a.zh:a.en}`,'#ffd700',20));
+    });
+  }
+}
+
 // ── 遊戲狀態 ──────────────────────────────────
 let state={
   phase:'title',score:0,hp:5,time:0,
@@ -908,7 +991,7 @@ function stingPlayer(mq,isBleedAttack){
   spawnParticles(mq.x,mq.y,C.blood,14);
   const msg=isBleedAttack?T('ft_blood_hit'):T('ft_stung');
   state.floatingTexts.push(new FloatingText(W/2,H/2,msg,C.blood,24));
-  if(state.hp<=0){updatePB();Audio.SFX.gameOver();Audio.stopBGM();state.phase='gameover';requestAnimationFrame(gameoverLoop);}
+  if(state.hp<=0){updatePB();checkAchievements();savePersist();Audio.SFX.gameOver();Audio.stopBGM();state.phase='gameover';requestAnimationFrame(gameoverLoop);}
 }
 
 // ── 扣血機制主邏輯 ────────────────────────────
@@ -1116,7 +1199,7 @@ function updateMagnet(dt){
   // Auto-collect all blood drops
   state.bloodDrops.forEach(bd=>{
     if(bd.collected) return;
-    bd.collected=true; totalBlood+=bd.amount;
+    bd.collected=true; earnBlood(bd.amount);
     state.floatingTexts.push(new FloatingText(bd.x,bd.y-10,`🩸+${bd.amount}`,C.blood,13));
   });
 }
@@ -1312,7 +1395,7 @@ canvas.addEventListener('mousemove',e=>{
     state.bloodDrops.forEach(bd=>{
       if(bd.collected) return;
       if(Math.hypot(mx-bd.x,my-bd.y)<bd.size+14+upgrades.bloodmag.level*15){
-        bd.collected=true; totalBlood+=bd.amount;
+        bd.collected=true; earnBlood(bd.amount);
         Audio.SFX.bloodCollect();
         state.floatingTexts.push(new FloatingText(bd.x,bd.y-10,`🩸+${bd.amount}`,C.blood,13));
         document.getElementById('statBlood').textContent=totalBlood;
@@ -1345,16 +1428,29 @@ canvas.addEventListener('click',e=>{
     return;
   }
   if(state.phase==='gameover'){
-    const goPw=Math.min(550,W-40),goBtnW=Math.min(230,(goPw-36)/2),goBtnGap=9;
+    const goPw=Math.min(550,W-40),goBtnW=Math.min(160,(goPw-40)/3),goBtnGap=6;
     const gby=H/2-275+510-46;
-    // 重新開始（左側按鈕）
-    if(mx>W/2-goBtnGap-goBtnW&&mx<W/2-goBtnGap&&Math.abs(my-gby)<22){
+    const b1x=W/2-goBtnW-goBtnGap-goBtnW/2, b2x=W/2-goBtnW/2, b3x=W/2+goBtnGap+goBtnW/2;
+    // 重新開始（左）
+    if(mx>b1x&&mx<b1x+goBtnW&&Math.abs(my-gby)<22){
       Audio.resume();Audio.SFX.gameStart();Audio.startBGM();startGame();return;
     }
-    // 離開遊戲（右側按鈕）
-    if(mx>W/2+goBtnGap&&mx<W/2+goBtnGap+goBtnW&&Math.abs(my-gby)<22){
+    // 進化（中）
+    if(mx>b2x&&mx<b2x+goBtnW&&Math.abs(my-gby)<22){
+      if(doPrestige()){
+        Audio.SFX.upgradeBuy();
+        state.floatingTexts.push(new FloatingText(W/2,H/2,'🧬 '+(lang==='zh'?'進化成功！':'Evolved!'),'#bb66ff',28));
+        state.phase='title';titleLoop();
+      }else{
+        showMsg(lang==='zh'?'血量不足，無法進化':'Not enough blood to evolve');
+      }
+      return;
+    }
+    // 離開遊戲（右）
+    if(mx>b3x&&mx<b3x+goBtnW&&Math.abs(my-gby)<22){
       quitGame();return;
     }
+    checkAchievements();
     return;
   }
   // HUD 右上按鈕點擊偵測（playing 時）
@@ -1414,7 +1510,7 @@ canvas.addEventListener('touchmove',e=>{
     state.bloodDrops.forEach(bd=>{
       if(bd.collected) return;
       if(Math.hypot(mx-bd.x,my-bd.y)<bd.size+14+upgrades.bloodmag.level*15){
-        bd.collected=true; totalBlood+=bd.amount;
+        bd.collected=true; earnBlood(bd.amount);
         Audio.SFX.bloodCollect();
         state.floatingTexts.push(new FloatingText(bd.x,bd.y-10,`🩸+${bd.amount}`,C.blood,13));
         document.getElementById('statBlood').textContent=totalBlood;
@@ -1735,6 +1831,10 @@ function drawTitle(){
   ctx.save();ctx.translate(W/2,py+76);ctx.scale(em,em);ctx.font='56px serif';ctx.fillText('🦟',0,0);ctx.restore();
   ctx.fillStyle=C.amber;ctx.font=`900 42px 'Noto Serif TC',serif`;ctx.shadowColor=C.amber;ctx.shadowBlur=22;ctx.fillText(T('title_main'),W/2,py+158);ctx.shadowBlur=0;
   ctx.fillStyle='#5a4828';ctx.font=`14px 'Share Tech Mono'`;ctx.fillText(T('title_sub'),W/2,py+184);
+  // Prestige + Blood display
+  if(prestige.level>0){ctx.fillStyle='#bb66ffaa';ctx.font=`bold 13px 'Share Tech Mono'`;ctx.fillText(`🧬 ${lang==='zh'?'進化':'Evo'} Lv${prestige.level} (×${prestige.mult.toFixed(1)})  🩸 ${totalBlood}`,W/2,py+202)}
+  else if(totalBlood>0){ctx.fillStyle='#cc224488';ctx.font=`13px 'Share Tech Mono'`;ctx.fillText(`🩸 ${totalBlood}`,W/2,py+202)}
+  if(unlockedAchievements.length>0){ctx.fillStyle='#8a8a5a';ctx.font=`11px 'Share Tech Mono'`;ctx.fillText(`🏆 ${unlockedAchievements.length}/${ACHIEVEMENTS.length}`,W/2,py+216)}
   ctx.strokeStyle=C.amber+'44';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(px+50,py+200);ctx.lineTo(px+pw-50,py+200);ctx.stroke();
   ctx.fillStyle='#8a7a58';ctx.font=`15px 'Share Tech Mono'`;
   ctx.fillText(T('title_features'),W/2,py+228);
@@ -1797,16 +1897,32 @@ function drawGameOver(){
   const rc={S:'#f0d060',A:'#7ecf6e',B:'#8090e8',C:'#c0b090',D:'#e07840',F:'#4a3a2a'}[rank];
   ctx.fillStyle='#4a3a1a';ctx.font=`14px 'Share Tech Mono'`;ctx.fillText(T('go_rank'),W/2,py+348);
   ctx.font=`900 68px 'Noto Serif TC',serif`;ctx.fillStyle=rc;ctx.shadowColor=rc;ctx.shadowBlur=26;ctx.fillText(rank,W/2,py+424);ctx.shadowBlur=0;
+  // Achievements count
+  const achCount=unlockedAchievements.length;
+  if(achCount>0){ctx.fillStyle='#8a8a6a';ctx.font=`12px 'Share Tech Mono'`;ctx.fillText(`🏆 ${achCount}/${ACHIEVEMENTS.length}`,W/2,py+322)}
+  // 3 buttons: Restart / Evolve / Quit
   const bx=W/2,by=py+ph-46;
-  const btnW=Math.min(230,(pw-36)/2),btnGap=9;
+  const btnW=Math.min(160,(pw-40)/3),btnGap=6;
+  const b1x=bx-btnW-btnGap-btnW/2, b2x=bx-btnW/2, b3x=bx+btnGap+btnW/2;
   // 重新開始（左）
-  ctx.fillStyle=C.amber;ctx.beginPath();ctx.roundRect(bx-btnGap-btnW,by-22,btnW,44,4);ctx.fill();
-  ctx.fillStyle='#1a0e00';ctx.font=`bold 20px 'Noto Serif TC',serif`;ctx.textAlign='center';
-  ctx.fillText(T('go_restart'),bx-btnGap-btnW/2,by+8);
+  ctx.fillStyle=C.amber;ctx.beginPath();ctx.roundRect(b1x,by-22,btnW,44,4);ctx.fill();
+  ctx.fillStyle='#1a0e00';ctx.font=`bold 16px 'Noto Serif TC',serif`;ctx.textAlign='center';
+  ctx.fillText(T('go_restart'),b1x+btnW/2,by+8);
+  // 進化（中）- Prestige button
+  const pCost=getPrestigeCost();const canPrestige=totalBlood>=pCost;
+  ctx.fillStyle=canPrestige?'rgba(100,40,180,0.9)':'rgba(40,20,60,0.6)';
+  ctx.beginPath();ctx.roundRect(b2x,by-22,btnW,44,4);ctx.fill();
+  if(canPrestige){ctx.strokeStyle='#bb66ff';ctx.lineWidth=2;ctx.beginPath();ctx.roundRect(b2x,by-22,btnW,44,4);ctx.stroke();ctx.shadowColor='#bb66ff';ctx.shadowBlur=10}
+  ctx.fillStyle=canPrestige?'#ddaaff':'#6a4a8a';ctx.font=`bold 14px 'Noto Serif TC',serif`;
+  ctx.fillText(lang==='zh'?'🧬 進化':'🧬 Evolve',b2x+btnW/2,by+2);ctx.shadowBlur=0;
+  ctx.font=`10px 'Share Tech Mono'`;ctx.fillStyle=canPrestige?'#ccaaee':'#5a3a6a';
+  ctx.fillText(`🩸${pCost} → ×${(1+(prestige.level+1)*0.5).toFixed(1)}`,b2x+btnW/2,by+18);
   // 離開遊戲（右）
-  ctx.fillStyle='rgba(160,30,50,0.85)';ctx.beginPath();ctx.roundRect(bx+btnGap,by-22,btnW,44,4);ctx.fill();
-  ctx.fillStyle='#ffcccc';ctx.font=`bold 20px 'Noto Serif TC',serif`;
-  ctx.fillText(T('go_quit'),bx+btnGap+btnW/2,by+8);
+  ctx.fillStyle='rgba(160,30,50,0.85)';ctx.beginPath();ctx.roundRect(b3x,by-22,btnW,44,4);ctx.fill();
+  ctx.fillStyle='#ffcccc';ctx.font=`bold 16px 'Noto Serif TC',serif`;
+  ctx.fillText(T('go_quit'),b3x+btnW/2,by+8);
+  // Current evolution level display
+  if(prestige.level>0){ctx.fillStyle='#bb66ff88';ctx.font=`13px 'Share Tech Mono'`;ctx.fillText(`🧬 ${lang==='zh'?'進化':'Evo'} Lv${prestige.level} (×${prestige.mult.toFixed(1)})`,W/2,by-32)}
 }
 
 // ── 主迴圈 ────────────────────────────────────
@@ -2130,12 +2246,54 @@ applyScale();
 let _resizeTimer;
 window.addEventListener('resize',()=>{clearTimeout(_resizeTimer);_resizeTimer=setTimeout(applyScale,100);});
 
+// ── 持久化存讀 ────────────────────────────────
+function savePersist(){
+  const data={totalBlood,upgrades:{
+    zap:{owned:upgrades.zap.owned},heal:{stock:upgrades.heal.stock},
+    shield:{owned:upgrades.shield.owned},freeze:{owned:upgrades.freeze.owned},
+    maxhp:{level:upgrades.maxhp.level},bloodmag:{level:upgrades.bloodmag.level},
+    bomb:{stock:upgrades.bomb.stock},boots:{owned:upgrades.boots.owned,level:upgrades.boots.level},
+    magnet:{owned:upgrades.magnet.owned},crit:{owned:upgrades.crit.owned,level:upgrades.crit.level},
+    coil:{owned:upgrades.coil.owned,level:upgrades.coil.level},
+    bloodflow:{owned:upgrades.bloodflow.owned,level:upgrades.bloodflow.level},
+    autoswat:{level:upgrades.autoswat.level},
+  }};
+  localStorage.setItem('mosquitoSave',JSON.stringify(data));
+  saveLastTime();
+}
+function loadPersist(){
+  try{
+    const s=JSON.parse(localStorage.getItem('mosquitoSave'));
+    if(s){
+      totalBlood=s.totalBlood||0;
+      if(s.upgrades){
+        Object.keys(s.upgrades).forEach(k=>{
+          if(upgrades[k])Object.assign(upgrades[k],s.upgrades[k]);
+        });
+      }
+    }
+  }catch(e){}
+}
+
 // ── 初始化 ────────────────────────────────────
+loadPrestige();
+loadPersist();
 state.bg=createBG();
 applyLang();
+// Offline earnings
+const offlineEarned=calcOfflineEarnings();
+if(offlineEarned>0){totalBlood+=offlineEarned}
+// Show title
 titleLoop();
-// 首次進入顯示教學
-if(!localStorage.getItem('mosquitoTutSeen')) showTutorial();
+// 首次進入顯示教學；回歸玩家顯示離線收益
+if(!localStorage.getItem('mosquitoTutSeen')){showTutorial()}
+else if(offlineEarned>0){
+  setTimeout(()=>{
+    showMsg(`${lang==='zh'?'離線收益':'Offline Earnings'}: +${offlineEarned} 🩸`);
+  },500);
+}
+// Save on page unload
+window.addEventListener('beforeunload',()=>{savePersist();savePrestige()});
 </script>
 </body>
 </html>
