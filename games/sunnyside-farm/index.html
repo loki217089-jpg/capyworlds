@@ -1299,7 +1299,7 @@ function gameLoop(ts){
   if(state.screen==='title'){drawTitleScreen()}
   else if(state.screen==='tutorial'){drawFarmView();drawTutorial()}
   else if(state.screen==='farm'){
-    drawFarmView();drawHUD();drawQuestPanel();
+    drawFarmView();drawQuestPanel();
     if(state.action==='idle'){
       ctx.fillStyle='rgba(100,100,200,0.06)';ctx.fillRect(0,0,GW,GH);
       // Idle status panel
@@ -1326,10 +1326,13 @@ function gameLoop(ts){
       if(state.action==='gather')drawGatherGame();
     }
   }
-  // Always draw Canvas UI bars on top
-  if(state.screen==='farm'||state.screen==='minigame'){drawTopBar();drawActionBar()}
+  // Always draw Canvas UI bars on top (every screen except title)
+  if(state.screen!=='title'){drawTopBar();drawHUD();drawActionBar()}
   drawParticles();
   drawNotifs();
+  // Version watermark (helps debug caching)
+  ctx.fillStyle='rgba(255,255,255,0.15)';ctx.font='10px sans-serif';ctx.textAlign='right';
+  ctx.fillText('v3',GW-4,GH-2);
   requestAnimationFrame(gameLoop);
 }
 
