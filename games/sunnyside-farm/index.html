@@ -8,7 +8,7 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html{height:100%}
 body{background:#1a1408;overflow:hidden;font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;display:flex;flex-direction:column;height:100vh;height:100dvh}
-canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;display:block;margin:0 auto;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;display:block;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);max-width:100%;max-height:100%}
 .top-bar{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:rgba(0,0,0,0.85);border-bottom:1px solid rgba(200,164,86,0.3);z-index:200;flex-shrink:0;min-height:44px;position:relative}
 .top-bar a,.top-bar button{background:rgba(30,24,18,0.8);border:1.5px solid #c8a456;color:#c8a456;font-family:inherit;font-size:14px;padding:5px 10px;border-radius:6px;cursor:pointer;text-decoration:none;white-space:nowrap;-webkit-tap-highlight-color:rgba(200,164,86,0.3)}
 .top-bar button{display:flex;align-items:center;justify-content:center}
@@ -65,8 +65,8 @@ const i18n={
     day:'第 {n} 天',weather_sun:'☀ 晴天',weather_rain:'🌧 雨天',
     weather_drought:'☀ 乾旱',weather_storm:'🌪 暴風',
     tutorial_title:'歡迎來到陽光農場！',
-    tutorial_body:'點擊下方按鈕選擇活動\n🌱 種田 ⛏️ 挖掘 🎣 釣魚 🧺 採集\n或選擇 💤 掛機自動收集（效率較低）\n\n完成村民委託，讓農場繁榮起來！',
-    tutorial_ok:'開始農場生活！',tap_start:'點擊開始',
+    tutorial_body:'① 點下方按鈕選活動\n\n🌱 種田：選作物 → 節奏點擊播種\n⛏️ 挖掘：點石頭/金礦收集資源\n🎣 釣魚：按住上移，對準魚\n🧺 採集：滑動碰果實收割\n💤 掛機：自動收集（效率低）\n\n② 成熟作物會閃金光，點它收穫\n③ 完成任務 → 農場升級！',
+    tutorial_ok:'我知道了！',tap_start:'點擊開始',
     score:'分數',time:'時間',reeling:'收線中...',
     catch_common:'普通魚',catch_rare:'稀有魚',catch_epic:'傳說魚',
     newday:'新的一天開始了！',
@@ -1247,8 +1247,10 @@ function resizeAll(){
   const availW=gameArea.clientWidth;
   const availH=gameArea.clientHeight;
   const sc=Math.min(availW/GW,availH/GH);
-  canvas.style.width=Math.floor(GW*sc)+'px';
-  canvas.style.height=Math.floor(GH*sc)+'px';
+  const w=Math.floor(GW*sc), h=Math.floor(GH*sc);
+  // Clamp to game-area bounds so canvas never overlaps action-bar
+  canvas.style.width=Math.min(w,availW)+'px';
+  canvas.style.height=Math.min(h,availH)+'px';
 }
 let resizeTimer;
 window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(resizeAll,100)});
