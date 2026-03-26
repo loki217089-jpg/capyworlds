@@ -6,48 +6,28 @@
 <title>陽光農場 Sunnyside Farm</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html{height:100%}
-body{background:#1a1408;overflow:hidden;font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;display:flex;flex-direction:column;height:100vh;height:100dvh}
-canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;display:block;position:absolute;top:0;left:0}
-.top-bar{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:rgba(0,0,0,0.85);border-bottom:1px solid rgba(200,164,86,0.3);z-index:200;flex-shrink:0;min-height:44px;position:relative}
-.top-bar a,.top-bar button{background:rgba(30,24,18,0.8);border:1.5px solid #c8a456;color:#c8a456;font-family:inherit;font-size:14px;padding:5px 10px;border-radius:6px;cursor:pointer;text-decoration:none;white-space:nowrap;-webkit-tap-highlight-color:rgba(200,164,86,0.3)}
-.top-bar button{display:flex;align-items:center;justify-content:center}
-.top-bar .btn-group{display:flex;gap:6px;align-items:center}
-.top-bar .mute-btn{font-size:18px;width:36px;height:36px;padding:0;color:#fff}
-.game-area{flex:1;position:relative;overflow:hidden;min-height:0}
-.action-bar{display:flex;justify-content:center;gap:6px;padding:8px 8px calc(env(safe-area-inset-bottom,6px) + 6px);background:rgba(0,0,0,0.85);border-top:1px solid rgba(200,164,86,0.3);flex-shrink:0;position:relative;z-index:200}
-.action-btn{background:rgba(30,24,18,0.9);border:2px solid #c8a456;color:#e8ddd0;font-family:inherit;font-size:13px;padding:8px 6px;border-radius:10px;cursor:pointer;flex:1;max-width:72px;text-align:center;transition:all .15s;-webkit-tap-highlight-color:rgba(200,164,86,0.3)}
-.action-btn:active{transform:scale(0.93);background:rgba(200,164,86,0.3)}
-.action-btn .btn-icon{font-size:20px;display:block;margin-bottom:1px}
-.action-btn.selected{border-color:#ffd700;background:rgba(200,164,86,0.25);box-shadow:0 0 10px rgba(200,164,86,0.3)}
+body{background:#1a1408;overflow:hidden;width:100vw;height:100vh;height:100dvh}
+canvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;position:absolute}
 </style>
 </head>
 <body>
-<div class="top-bar">
-  <a href="../">← 返回</a>
-  <div class="btn-group">
-    <button onclick="toggleLang()">繁中/EN</button>
-    <button onclick="togglePause()" id="pause-btn">⏸</button>
-    <button class="mute-btn" id="mute-btn" onclick="toggleMute()">🔊</button>
-  </div>
-</div>
-<div class="game-area">
-  <canvas id="game"></canvas>
-</div>
-<div class="action-bar" id="action-bar">
-  <button class="action-btn" data-action="farm"><span class="btn-icon">🌱</span><span class="btn-text">種田</span></button>
-  <button class="action-btn" data-action="dig"><span class="btn-icon">⛏️</span><span class="btn-text">挖掘</span></button>
-  <button class="action-btn" data-action="fish"><span class="btn-icon">🎣</span><span class="btn-text">釣魚</span></button>
-  <button class="action-btn" data-action="gather"><span class="btn-icon">🧺</span><span class="btn-text">採集</span></button>
-  <button class="action-btn" data-action="idle"><span class="btn-icon">💤</span><span class="btn-text">掛機</span></button>
-</div>
+<canvas id="game"></canvas>
 <script>
 'use strict';
 // __JS_START__
 // ═══════════════════════════════════════════
 // 常數 & 設定
 // ═══════════════════════════════════════════
-const GW=384, GH=560, TILE=16, SCALE=2, DTILE=TILE*SCALE;
+let GW=384, GH=680, TILE=16, SCALE=2, DTILE=TILE*SCALE;
+// UI layout constants (in game coordinates)
+const TOP_H=40, BOT_H=56, GAME_Y=TOP_H, GAME_H=GH-TOP_H-BOT_H;
+const ACTION_BTNS=[
+  {id:'farm',icon:'🌱',zh:'種田',en:'Farm'},
+  {id:'dig',icon:'⛏️',zh:'挖掘',en:'Dig'},
+  {id:'fish',icon:'🎣',zh:'釣魚',en:'Fish'},
+  {id:'gather',icon:'🧺',zh:'採集',en:'Gather'},
+  {id:'idle',icon:'💤',zh:'掛機',en:'Idle'},
+];
 const canvas=document.getElementById('game');
 const ctx=canvas.getContext('2d');
 canvas.width=GW; canvas.height=GH;
@@ -111,12 +91,7 @@ const i18n={
   }
 };
 function t(k,vars){let s=(i18n[lang]||i18n.zh)[k]||k;if(vars)Object.keys(vars).forEach(v=>{s=s.split('{'+v+'}').join(vars[v])});return s}
-function toggleLang(){lang=lang==='zh'?'en':'zh';updateUIText()}
-function updateUIText(){
-  const btns=document.querySelectorAll('.action-btn .btn-text');
-  const keys=['farm','dig','fish','gather','idle'];
-  btns.forEach((b,i)=>{b.textContent=t(keys[i])});
-}
+function toggleLang(){lang=lang==='zh'?'en':'zh'}
 
 // ═══════════════════════════════════════════
 // 音效系統
@@ -145,7 +120,6 @@ function startBGM(url){
 }
 function toggleMute(){
   audioMuted=!audioMuted;if(bgmGain)bgmGain.gain.value=audioMuted?0:0.18;
-  document.getElementById('mute-btn').textContent=audioMuted?'🔇':'🔊';
   localStorage.setItem('sunnyfarmMuted',audioMuted?'1':'0');
   if(!audioMuted&&!bgmLoaded)startBGM(BGM_URL);
 }
@@ -958,26 +932,52 @@ function drawFarmView(){
 // ═══════════════════════════════════════════
 // HUD & UI
 // ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+// Canvas-drawn UI (no HTML buttons)
+// ═══════════════════════════════════════════
+function drawTopBar(){
+  ctx.fillStyle='rgba(0,0,0,0.85)';ctx.fillRect(0,0,GW,TOP_H);
+  // Back button
+  ctx.fillStyle='#c8a456';ctx.font='bold 14px sans-serif';ctx.textAlign='left';
+  ctx.fillText('← '+( lang==='zh'?'返回':'Back'),10,26);
+  // Right buttons
+  ctx.textAlign='right';
+  ctx.fillText(lang==='zh'?'繁中/EN':'EN/繁中',GW-10,16);
+  ctx.fillText(state.paused?'▶':'⏸',GW-90,16);
+  ctx.fillText(audioMuted?'🔇':'🔊',GW-120,16);
+  // Day & resources (second line)
+  ctx.textAlign='left';ctx.font='12px sans-serif';ctx.fillStyle='#e8ddd0';
+  ctx.fillText(t('day',{n:state.day})+' '+t('weather_'+state.weather)+' | '+t('farmStage'+state.farmStage),10,38);
+}
 function drawHUD(){
-  // Top bar background
-  ctx.fillStyle='rgba(0,0,0,0.75)';ctx.fillRect(0,0,GW,54);
-  // Day & weather (left)
-  ctx.fillStyle='#c8a456';ctx.font='bold 15px sans-serif';ctx.textAlign='left';
-  ctx.fillText(t('day',{n:state.day})+' '+t('weather_'+state.weather),10,18);
-  // Farm stage name (center)
-  ctx.textAlign='center';ctx.fillStyle='#ffd700';ctx.font='bold 14px sans-serif';
-  ctx.fillText(t('farmStage'+state.farmStage),GW/2,18);
-  // Resources (second row, spread evenly)
-  ctx.font='13px sans-serif';ctx.textAlign='left';ctx.fillStyle='#e8ddd0';
-  ctx.fillText('🪵'+state.res.wood+'  🪨'+state.res.stone+'  🌾'+state.res.food+'  💰'+state.res.gold+'  🌱'+state.res.seed,10,36);
-  // Eco indicators (third row)
-  ctx.font='12px sans-serif';ctx.textAlign='left';
+  // Resources bar below top bar
+  ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(0,TOP_H,GW,20);
+  ctx.font='12px sans-serif';ctx.textAlign='left';ctx.fillStyle='#e8ddd0';
+  ctx.fillText('🪵'+state.res.wood+' 🪨'+state.res.stone+' 🌾'+state.res.food+' 💰'+state.res.gold+' 🌱'+state.res.seed,8,TOP_H+14);
+  ctx.textAlign='right';
   ctx.fillStyle=state.eco.bugs>20?'#ff6644':'#88aa44';
-  ctx.fillText('🐛'+Math.floor(state.eco.bugs),10,50);
-  ctx.fillStyle=state.eco.fertility>50?'#88ff88':'#ff8844';
-  ctx.fillText('🌿'+Math.floor(state.eco.fertility),100,50);
-  ctx.fillStyle=state.eco.weeds>30?'#ff8844':'#88aa44';
-  ctx.fillText('🌾'+Math.floor(100-state.eco.weeds)+'%',190,50);
+  ctx.fillText('🐛'+Math.floor(state.eco.bugs)+' 🌿'+Math.floor(state.eco.fertility)+' 🌾'+Math.floor(100-state.eco.weeds)+'%',GW-8,TOP_H+14);
+}
+function drawActionBar(){
+  const y=GH-BOT_H;
+  ctx.fillStyle='rgba(0,0,0,0.85)';ctx.fillRect(0,y,GW,BOT_H);
+  const btnW=GW/ACTION_BTNS.length;
+  ACTION_BTNS.forEach((b,i)=>{
+    const bx=i*btnW,by=y+4;
+    const sel=state.action===b.id;
+    // Button bg
+    ctx.fillStyle=sel?'rgba(200,164,86,0.3)':'rgba(30,24,18,0.8)';
+    drawRoundRect(bx+4,by,btnW-8,BOT_H-8,8);ctx.fill();
+    ctx.strokeStyle=sel?'#ffd700':'#c8a456';ctx.lineWidth=sel?2:1;
+    drawRoundRect(bx+4,by,btnW-8,BOT_H-8,8);ctx.stroke();
+    // Icon
+    ctx.font='20px sans-serif';ctx.textAlign='center';
+    ctx.fillStyle='#fff';
+    ctx.fillText(b.icon,bx+btnW/2,by+24);
+    // Label
+    ctx.font='12px sans-serif';ctx.fillStyle=sel?'#ffd700':'#e8ddd0';
+    ctx.fillText(lang==='zh'?b.zh:b.en,bx+btnW/2,by+40);
+  });
 }
 
 function drawQuestPanel(){
@@ -1106,6 +1106,23 @@ function getCanvasPos(e){
 }
 
 function handleTap(px,py){
+  // Top bar taps (always active)
+  if(py<TOP_H){
+    if(px<80){window.location.href='../';return}// Back
+    if(px>GW-140&&px<GW-100){togglePause();return}// Pause
+    if(px>GW-170&&px<GW-130){toggleMute();return}// Mute
+    if(px>GW-80){toggleLang();return}// Lang
+    return;
+  }
+  // Action bar taps (farm screen or result screen)
+  if(py>GH-BOT_H&&(state.screen==='farm'||(state.screen==='minigame'&&state.mg.phase==='result'))){
+    const btnW=GW/ACTION_BTNS.length;
+    const idx=Math.floor(px/btnW);
+    if(idx>=0&&idx<ACTION_BTNS.length){
+      selectAction(ACTION_BTNS[idx].id);
+    }
+    return;
+  }
   if(state.screen==='title'){
     if(loadCount>=totalAssets){
       loadGame();
@@ -1203,11 +1220,7 @@ canvas.addEventListener('touchmove',e=>{
 // ═══════════════════════════════════════════
 // Action bar
 // ═══════════════════════════════════════════
-function selectAction(action,e){
-  if(e)e.preventDefault();
-  document.querySelectorAll('.action-btn').forEach((b,i)=>{
-    b.classList.toggle('selected',['farm','dig','fish','gather','idle'][i]===action);
-  });
+function selectAction(action){
   if(action==='idle'){
     state.action='idle';state.screen='farm';
     addNotif(t('idleNotice'),'#aaaaff');
@@ -1225,7 +1238,6 @@ function selectAction(action,e){
 // ═══════════════════════════════════════════
 function togglePause(){
   state.paused=!state.paused;
-  document.getElementById('pause-btn').textContent=state.paused?'▶':'⏸';
 }
 function drawPauseOverlay(){
   ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(0,0,GW,GH);
@@ -1242,18 +1254,12 @@ document.addEventListener('keydown',e=>{
 // Canvas 縮放（手機響應式）
 // ═══════════════════════════════════════════
 function resizeAll(){
-  const gameArea=document.querySelector('.game-area');
-  if(!gameArea)return;
-  const availW=gameArea.clientWidth;
-  const availH=gameArea.clientHeight;
-  if(availW<=0||availH<=0)return;
-  const sc=Math.min(availW/GW,availH/GH);
-  const w=Math.floor(GW*sc), h=Math.floor(GH*sc);
-  // Explicit pixel position — canvas MUST stay inside game-area
-  canvas.style.width=w+'px';
-  canvas.style.height=h+'px';
-  canvas.style.left=Math.floor((availW-w)/2)+'px';
-  canvas.style.top=Math.floor((availH-h)/2)+'px';
+  const W=window.innerWidth, H=window.innerHeight;
+  const sc=Math.min(W/GW,H/GH);
+  canvas.style.width=Math.floor(GW*sc)+'px';
+  canvas.style.height=Math.floor(GH*sc)+'px';
+  canvas.style.left=Math.floor((W-GW*sc)/2)+'px';
+  canvas.style.top=Math.floor((H-GH*sc)/2)+'px';
 }
 let resizeTimer;
 window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(resizeAll,100)});
@@ -1320,6 +1326,8 @@ function gameLoop(ts){
       if(state.action==='gather')drawGatherGame();
     }
   }
+  // Always draw Canvas UI bars on top
+  if(state.screen==='farm'||state.screen==='minigame'){drawTopBar();drawActionBar()}
   drawParticles();
   drawNotifs();
   requestAnimationFrame(gameLoop);
@@ -1331,17 +1339,9 @@ function gameLoop(ts){
 function init(){
   loadAllAssets();
   resizeAll();
-  if(audioMuted)document.getElementById('mute-btn').textContent='🔇';
+  // audioMuted state already loaded from localStorage
   const startOnce=()=>{startBGM(BGM_URL);document.removeEventListener('click',startOnce);document.removeEventListener('touchend',startOnce)};
   document.addEventListener('click',startOnce);document.addEventListener('touchend',startOnce);
-  updateUIText();
-  // Bind action bar buttons via JS (inline ontouchend is unreliable on some mobile browsers)
-  document.querySelectorAll('.action-btn').forEach(btn=>{
-    const action=btn.dataset.action;
-    if(!action)return;
-    btn.addEventListener('click',()=>selectAction(action));
-    btn.addEventListener('touchend',e=>{e.preventDefault();selectAction(action)});
-  });
   requestAnimationFrame(gameLoop);
 }
 init();
