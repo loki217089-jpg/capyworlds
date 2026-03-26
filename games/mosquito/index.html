@@ -366,6 +366,7 @@ const i18n={
     tut_4:'🧪 按 [S] 開啟商店，用血珠買強化道具',
     tut_5:'⏸ 按 [P] 暫停遊戲',
     tut_ok:'知道了！',
+    hint_ready:'就緒',
   },
   en:{
     diff_normal_label:'Normal',diff_normal_desc:'Perfect for beginners',
@@ -456,6 +457,7 @@ const i18n={
     tut_4:'🧪 Press [S] to open shop and buy upgrades with blood',
     tut_5:'⏸ Press [P] to pause the game',
     tut_ok:'Got it!',
+    hint_ready:'Ready',
   }
 };
 let lang=localStorage.getItem('mosquitoLang')||'zh';
@@ -1332,14 +1334,14 @@ function updateShopUI(){
     if(upgrades.autoswat.level>0){
       if(upgrades.autoswat.level>=upgrades.autoswat.maxLevel){
         asEl.classList.add('maxed');
-        asLv.textContent=`Lv 3 (每${asIntervals[2]}秒自動)`;
-        asCost.textContent='已滿級';
+        asLv.textContent=`Lv 3 (${asIntervals[2]}s auto)`;
+        asCost.textContent=T('ui_maxed');
       } else {
         asEl.classList.remove('maxed');
-        asLv.textContent=`Lv ${upgrades.autoswat.level} (每${asIntervals[upgrades.autoswat.level-1]}秒)`;
+        asLv.textContent=`Lv ${upgrades.autoswat.level} (${asIntervals[upgrades.autoswat.level-1]}s)`;
         asCost.textContent=`🩸 ${asCosts[upgrades.autoswat.level]}`;
       }
-    } else { asEl.classList.remove('maxed'); asLv.textContent='未購買'; asCost.textContent='🩸 60'; }
+    } else { asEl.classList.remove('maxed'); asLv.textContent=T('ui_not_owned'); asCost.textContent='🩸 60'; }
   }
 }
 
@@ -1461,7 +1463,7 @@ canvas.addEventListener('click',e=>{
     if(upgrades.shield.owned){ if(mx>bx2-52&&mx<bx2){ activateShield(); return; } bx2-=60; }
     if(upgrades.freeze.owned){ if(mx>bx2-52&&mx<bx2){ activateFreeze(); return; } bx2-=60; }
     if(upgrades.zap.owned){ if(mx>bx2-52&&mx<bx2){ const cx=state.mouseX??W/2,cy=state.mouseY??H/2; useZap(cx,cy); return; } bx2-=60; }
-    if(upgrades.heal.stock>0){ if(mx>bx2-52&&mx<bx2){ if(state.hp<upgrades.maxHp){state.hp=Math.min(state.hp+3,upgrades.maxHp);upgrades.heal.stock--;Audio.SFX.upgradeBuy();state.floatingTexts.push(new FloatingText(W/2,H/2,'+3 HP','#88ccff',20))}else{showMsg(T('msg_hp_full'))} return; } bx2-=60; }
+    if(upgrades.heal.stock>0){ if(mx>bx2-52&&mx<bx2){ const maxHp=state.maxHp||5;if(state.hp<maxHp){state.hp=Math.min(state.hp+1,maxHp);upgrades.heal.stock--;Audio.SFX.upgradeBuy();state.floatingTexts.push(new FloatingText(W/2,H/2,'+1 HP','#88ccff',20))}else{showMsg(T('msg_hp_full'))} return; } bx2-=60; }
     if(upgrades.bomb.stock>0){ if(mx>bx2-52&&mx<bx2){ useBomb(); return; } bx2-=60; }
     if(upgrades.magnet.owned){ if(mx>bx2-52&&mx<bx2){ activateMagnet(); return; } bx2-=60; }
   }
@@ -1476,9 +1478,15 @@ canvas.addEventListener('click',e=>{
     .sort((a,b)=>({boss:0,mutant:1,invisible:2,fast:3,normal:4}[a.type]-{boss:0,mutant:1,invisible:2,fast:3,normal:4}[b.type]));
   for(const mq of sorted){
     if(!mq.alive||(mq.type==='invisible'&&mq.invisible)) continue;
-    if(Math.hypot(mx-mq.x,my-mq.y)<ATTACK_RADIUS+mq.size){
+    if(Math.hypot(mx-mq.x,my-mq.y)<ATTACK_RADIUS+bootsBonus()+mq.size){
       Audio.SFX.swat();
-      if(mq.hit(1)) killMosquito(mq);
+      // Crit check
+      let dmg=1;
+      if(upgrades.crit.owned){
+        const critChance=upgrades.crit.level*20;// 20% / 40%
+        if(Math.random()*100<critChance){dmg=2;state.floatingTexts.push(new FloatingText(mq.x,mq.y-25,'CRIT!','#ffd700',18));triggerShake(5,150)}
+      }
+      if(mq.hit(dmg)) killMosquito(mq);
       hit=true;break;
     }
   }
@@ -2278,6 +2286,10 @@ function loadPersist(){
 // ── 初始化 ────────────────────────────────────
 loadPrestige();
 loadPersist();
+// Recalculate derived values from loaded levels
+if(upgrades.coil.level>=2)upgrades.coil.interval=7000;
+if(upgrades.coil.level>=3)upgrades.coil.interval=4000;
+if(upgrades.bloodflow.level>=3)upgrades.bloodflow.interval=5000;
 state.bg=createBG();
 applyLang();
 // Offline earnings
