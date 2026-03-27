@@ -430,6 +430,59 @@ function getCharPortraitStyle(c, displaySize) {
 
 ---
 
+## Claude 可製作的視覺特效（Canvas + CSS）
+
+> 以下特效 Claude 可以直接用程式碼實現，不需要額外素材。
+> 新遊戲開發時，從這張表挑選適合的特效加入。
+
+### 粒子系統
+
+| 特效 | 適用場景 | 實作方式 |
+|------|---------|---------|
+| 金幣噴發 | 升級、獲獎、購買 | Canvas 粒子，重力+隨機速度 |
+| 星星飄落 | SSR 抽中、成就解鎖 | CSS absolute + animation fall |
+| 愛心冒泡 | 餵食、親密度提升 | Canvas 粒子，向上飄+淡出 |
+| 煙霧散開 | 角色登場、場景切換 | Canvas 半透明圓，擴散+淡出 |
+| 碎片爆散 | 擊破、拆箱 | Canvas 小方塊，放射狀散射 |
+
+### 光效 / 發光
+
+| 特效 | 適用場景 | 實作方式 |
+|------|---------|---------|
+| 脈動光暈 | SSR 卡片邊框、覺醒角色 | CSS box-shadow + animation pulse |
+| 旋轉魔法陣 | 召喚過程 | CSS rotate + radial-gradient |
+| 螢幕閃白 | SSR 出現瞬間 | CSS overlay opacity 0→1→0 (0.3s) |
+| 彩虹漸變邊框 | 最高稀有度 | CSS border-image + hue-rotate animation |
+
+### 動態 UI
+
+| 特效 | 適用場景 | 實作方式 |
+|------|---------|---------|
+| 數字飛出 +100🪙 | 資源獲取、收集 | CSS absolute + translateY + fadeOut |
+| 螢幕震動 | Boss、重要事件 | CSS transform translateX ±4px (0.3s) |
+| 卡片翻轉 3D | 抽卡揭曉 | CSS perspective + rotateY 180deg |
+| 彈跳縮放 | 按鈕點擊回饋 | CSS scale(0.95) → scale(1) transition |
+| 面板滑入 | 選單開啟、面板展開 | CSS translateY(100%) → 0 + opacity |
+| 計數器滾動 | 資源數字變化 | JS 逐幀遞增/遞減到目標值 |
+
+### 背景動態
+
+| 特效 | 適用場景 | 實作方式 |
+|------|---------|---------|
+| 漂浮氣泡 | 場景背景裝飾 | CSS animation float (slow, random delay) |
+| 閃爍星空 | 深色背景主題 | Canvas 隨機小點 + opacity 閃爍 |
+| 漸層流動 | 標題畫面、載入畫面 | CSS background-position animation |
+
+### 做不到的（需要外部素材/工具）
+
+- 骨骼動畫（需要 Spine / DragonBones）
+- 複雜角色序列幀動畫（走路、攻擊需要多幀 sprite）
+- 3D 模型渲染（需要 Three.js + 3D 模型檔）
+- 影片 / 預錄動畫（需要 mp4 檔）
+- 手繪風格粒子（需要粒子圖片素材）
+
+---
+
 ## 音效規範
 
 - **即時動作音效 <= 300ms**（撿道具、升級、購買、射擊、受傷等一瞬間的動作）
