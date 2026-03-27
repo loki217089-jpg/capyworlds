@@ -2288,26 +2288,28 @@ function applyScale(){
   const isPortrait=vh>vw;// mobile portrait detection
 
   if(isPortrait){
-    // Mobile portrait: hide HTML UI, canvas fills screen
+    // Mobile portrait: hide HTML UI, canvas fills screen height
     document.getElementById('titleBar').style.display='none';
     document.getElementById('statsBar').style.display='none';
     document.getElementById('legend').style.display='none';
-    document.getElementById('gameWrapper').style.paddingTop='0';
-    const s=Math.min(vw/960,vh/660);
+    // Scale by HEIGHT to fill screen vertically (crops sides slightly)
+    const s=vh/660;
     const gw=Math.floor(960*s), gh=Math.floor(660*s);
     const frame=document.getElementById('gameFrame');
-    frame.style.width=gw+'px';
+    frame.style.width=vw+'px';
+    frame.style.overflow='hidden';
     document.documentElement.style.setProperty('--gh',gh+'px');
     canvas.style.width=gw+'px';
     canvas.style.height=gh+'px';
-    // Center vertically
-    const pt=Math.max(0,Math.floor((vh-gh)/2));
-    document.getElementById('gameWrapper').style.paddingTop=pt+'px';
+    // Center horizontally (crop equal from both sides)
+    canvas.style.marginLeft=Math.floor((vw-gw)/2)+'px';
+    document.getElementById('gameWrapper').style.paddingTop='0';
   }else{
     // Desktop/landscape: show HTML UI
     document.getElementById('titleBar').style.display='';
     document.getElementById('statsBar').style.display='';
     document.getElementById('legend').style.display='';
+    canvas.style.marginLeft='0';
     const uiH=130;
     const totalH=660+uiH;
     const scaleX=vw/960;
