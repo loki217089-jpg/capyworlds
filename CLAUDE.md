@@ -253,6 +253,50 @@ fetch origin main
 
 ---
 
+## Sprite Sheet 裁切規則（最優先執行）
+
+**問題根因**：Claude 無法開瀏覽器，用估算座標切 sprite 必定出錯。
+
+### 強制流程：量測 → 定位 → 驗證
+
+1. **先用 `file` 指令取得圖片實際尺寸**（`file assets/xxx.png` → 得到 `1536 x 1024`）
+2. **用 Read 工具看圖片**，對照尺寸估算每個 sprite 的中心座標 (cx, cy)
+3. **寫完定位函式後，必須用 Read 重新看圖片**，人眼確認座標合理
+4. **不可用百分比猜測定位**（`background-position: 24.5% 38%` 這種寫法禁止）
+
+### 正確做法：像素級定位公式
+
+```javascript
+// 圓形頭像裁切（從合圖裁出一個角色）
+function getCharPortraitStyle(c, displaySize) {
+  const cropR = 110; // 要顯示的源圖半徑（像素）
+  const scale = displaySize / (cropR * 2);
+  const bgW = Math.round(sheetW * scale);
+  const bgH = Math.round(sheetH * scale);
+  const bgX = Math.round(-(c.cx - cropR) * scale);
+  const bgY = Math.round(-(c.cy - cropR) * scale);
+  return `background-image:url('sheet.png');`
+    + `background-size:${bgW}px ${bgH}px;`
+    + `background-position:${bgX}px ${bgY}px;`;
+}
+```
+
+### 場景背景裁切
+
+| 情境 | 做法 |
+|------|------|
+| 場景佔圖片的一個象限 | `background-size:cover; background-position:75% 20%`（用百分比指向象限中心） |
+| 場景排成一列（如 4 格） | 計算精確 `background-size` 和 `background-position`，用 px 值 |
+
+### 禁止事項
+
+- **不可**用估算座標直接 push，必須先 Read 圖片目視確認
+- **不可**用 `background-size:560%` 這種放大倍率猜測
+- **不可**混用百分比和像素（選一種，整個專案統一）
+- 發現裁切錯誤後**不可**微調 ±5px 試運氣，要重新看圖量測
+
+---
+
 ## 音效規範
 
 - **即時動作音效 <= 300ms**（撿道具、升級、購買、射擊、受傷等一瞬間的動作）

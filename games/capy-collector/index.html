@@ -281,8 +281,8 @@ const SCENES = [
   {id:'bedroom', nameEn:'Bedroom',     nameTw:'臥室',     slots:2, res:'heart',  resIcon:'❤️', sx:355, sy:658, sw:350, sh:180, sheet:1},
   {id:'dock',    nameEn:'Pirate Dock', nameTw:'海盜碼頭', slots:3, res:'chest',  resIcon:'📦', sx:710, sy:658, sw:350, sh:180, sheet:1},
   {id:'garden',  nameEn:'Garden',      nameTw:'花園',     slots:3, res:'flower', resIcon:'🌸', sx:1065,sy:658, sw:350, sh:180, sheet:1},
-  {id:'hotspring',nameEn:'Hot Spring', nameTw:'溫泉',     slots:2, res:'heart',  resIcon:'♨️', sx:700, sy:170, sw:400, sh:250, sheet:'extras'},
-  {id:'castle',  nameEn:'Castle',      nameTw:'城堡',     slots:4, res:'star',   resIcon:'⭐', sx:330, sy:430, sw:380, sh:210, sheet:'extras'}
+  {id:'hotspring',nameEn:'Hot Spring', nameTw:'溫泉',     slots:2, res:'heart',  resIcon:'♨️', bgPos:'75% 20%', sheet:'extras'},
+  {id:'castle',  nameEn:'Castle',      nameTw:'城堡',     slots:4, res:'star',   resIcon:'⭐', bgPos:'25% 75%', sheet:'extras'}
 ];
 
 const I18N = {
@@ -408,14 +408,9 @@ function getCharPortraitStyle(c, size){
 // Sheet1 scenes: 4 scenes in bottom ~25% of image, each ~380px wide
 function getSceneBgStyle(sc){
   if(sc.sheet==='extras'){
-    // extras.png: hot spring top-right, castle bottom-left
-    const scale = 300 / sc.sh; // scale scene to ~300px wide container
-    const bgW = Math.round(SW * (300/sc.sw));
-    const bgH = Math.round(SH * (300/sc.sw));
-    const bgX = Math.round(-sc.sx * (300/sc.sw));
-    const bgY = Math.round(-sc.sy * (300/sc.sw));
-    return `background-image:url('${EXTRAS}');background-size:${bgW}px ${bgH}px;`
-      +`background-position:${bgX}px ${bgY}px;`;
+    // extras.png: hot spring=top-right(75% 20%), castle=bottom-left(25% 75%)
+    return `background-image:url('${EXTRAS}');background-size:cover;`
+      +`background-position:${sc.bgPos};`;
   }
   // Sheet1: 4 scenes in bottom strip, roughly y=700-1024, each ~384px wide
   const scenePositions = [
