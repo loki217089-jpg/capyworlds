@@ -201,6 +201,7 @@
 | 機甲蟲蟲危機 | 🐛 | #60d040 | 綠 |
 | 農場三消 | 🌾 | #f5a623 | 橘 |
 | FPS 射擊 | 🔫 | #ff4444 | 紅 |
+| 斬魔忍者 | ⚔️ | #ff6644 | 橘紅 |
 
 ---
 
@@ -660,6 +661,7 @@ function toggleMute(){
 | `virus/` | VIRUS.EXE 系統清除 | 駭客防禦 | ~2446 |
 | `zombie-idle/` | 殭屍蔓延 Zombie Idle | 放置點擊 | ~1651 |
 | `zombie-spread/` | 末日求生 | 波次生存射擊 | ~817 |
+| `slash-monsters/` | 斬魔忍者 Slash Monsters | 動作 RPG（水果忍者風） | ~625 |
 
 ---
 
