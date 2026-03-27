@@ -22,52 +22,64 @@ a{color:var(--accent);text-decoration:none}
 .search-bar input{flex:1;min-width:200px;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:15px;outline:none}
 .search-bar input:focus{border-color:var(--accent)}
 .search-bar input::placeholder{color:var(--text2)}
-.filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
 .filter-btn{padding:5px 12px;border-radius:16px;cursor:pointer;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:13px;transition:.2s}
 .filter-btn:hover{border-color:var(--accent)}
 .filter-btn.active{background:rgba(200,164,86,.2);border-color:var(--accent);color:var(--accent)}
+.filter-sep{width:1px;height:20px;background:var(--border);margin:0 4px}
 .stats{color:var(--text2);font-size:13px;margin-bottom:12px}
 .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}
 .pk-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;transition:.2s;cursor:pointer}
 .pk-card:hover{border-color:var(--accent);transform:translateY(-2px)}
 .pk-card .header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-.pk-card .num{color:var(--text2);font-size:12px;min-width:36px}
+.pk-card .pk-sprite{width:48px;height:48px;image-rendering:pixelated;flex-shrink:0;background:var(--bg3);border-radius:8px}
+.pk-card .pk-info{flex:1;min-width:0}
+.pk-card .num{color:var(--text2);font-size:12px}
 .pk-card .name{font-size:16px;font-weight:600;color:var(--accent2)}
-.pk-card .skill{font-size:12px;padding:2px 8px;border-radius:10px;background:rgba(107,181,255,.15);color:var(--blue)}
+.pk-card .skills{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+.pk-card .skill{font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(107,181,255,.15);color:var(--blue)}
 .pk-card .tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
-.pk-card .tag{font-size:11px;padding:2px 6px;border-radius:6px}
+.tag{font-size:11px;padding:2px 6px;border-radius:6px}
 .tag-env{background:rgba(107,255,170,.12);color:var(--green)}
 .tag-taste{background:rgba(255,106,106,.12);color:var(--red)}
 .tag-like{background:rgba(176,107,255,.1);color:var(--purple)}
+.tag-drop{background:rgba(255,170,107,.12);color:var(--orange)}
 .pk-card .habitats{margin-top:8px;font-size:13px;color:var(--text2);border-top:1px solid var(--border);padding-top:8px}
-.pk-card .hab-item{margin-top:4px;padding:6px 8px;background:var(--bg3);border-radius:6px;font-size:12px;line-height:1.5}
+.hab-item{margin-top:4px;padding:6px 8px;background:var(--bg3);border-radius:6px;font-size:12px;line-height:1.5}
 .hab-item .hab-name{color:var(--accent);font-weight:600}
 .hab-item .hab-req{color:var(--orange);margin-left:4px}
-.hab-item .hab-pk{color:var(--text2);display:block;margin-top:2px}
-.hab-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;transition:.2s}
+.hab-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:.2s}
 .hab-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.hab-card .hab-img{width:100%;height:180px;object-fit:cover;background:var(--bg3);display:block}
+.hab-card .hab-body{padding:12px}
 .hab-card .hab-id{color:var(--text2);font-size:12px}
 .hab-card .hab-title{font-size:16px;font-weight:600;color:var(--accent2);margin:4px 0}
 .hab-card .hab-items{color:var(--orange);font-size:13px;margin-bottom:6px}
 .hab-card .hab-pokemon{font-size:13px;color:var(--text);line-height:1.6}
+.pk-tag{display:inline-block;margin:2px 4px 2px 0;padding:2px 8px;background:var(--bg3);border-radius:6px;font-size:12px}
 .detail-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;justify-content:center;align-items:center;padding:20px}
 .detail-overlay.show{display:flex}
 .detail-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:min(560px,calc(100vw - 32px));max-height:88vh;overflow-y:auto;width:100%}
 .detail-box .close{float:right;cursor:pointer;color:var(--text2);font-size:20px;padding:4px 8px;border-radius:8px}
 .detail-box .close:hover{background:var(--bg3);color:var(--text)}
-.detail-box h2{color:var(--accent2);font-size:22px;margin-bottom:4px}
-.detail-box .meta{color:var(--text2);font-size:13px;margin-bottom:12px}
-.detail-box .section{margin-top:14px}
-.detail-box .section h3{font-size:14px;color:var(--accent);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:4px}
-.detail-box .info-row{display:flex;gap:8px;margin-bottom:4px;font-size:13px}
-.detail-box .info-label{color:var(--text2);min-width:80px}
-.detail-box .info-val{color:var(--text)}
+.detail-header{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+.detail-sprite{width:80px;height:80px;image-rendering:pixelated;background:var(--bg3);border-radius:12px}
+.detail-box h2{color:var(--accent2);font-size:22px}
+.detail-box .meta{color:var(--text2);font-size:13px}
+.section{margin-top:14px}
+.section h3{font-size:14px;color:var(--accent);margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:4px}
+.info-row{display:flex;gap:8px;margin-bottom:4px;font-size:13px}
+.info-label{color:var(--text2);min-width:80px;flex-shrink:0}
+.info-val{color:var(--text)}
+.detail-hab{margin-top:8px;padding:10px;background:var(--bg3);border-radius:8px}
+.detail-hab-img{width:100%;max-height:200px;object-fit:cover;border-radius:6px;margin-bottom:8px}
 .empty{text-align:center;padding:60px 20px;color:var(--text2)}
 @media(max-width:600px){
   .card-grid{grid-template-columns:1fr}
   .container{padding:10px}
   .top-bar{padding:10px 14px}
   .top-bar h1{font-size:16px}
+  .pk-card .pk-sprite{width:40px;height:40px}
 }
 </style>
 </head>
@@ -403,219 +415,237 @@ const PK_DATA=[
 ["活動", "毽子棉", "栽培、亂撒", "棉花 ", "明亮", "柔軟、感受自然、感受風、花朵盛開、圓形", "酸 (番茄)", "綠色的地毯 / 悠然的花 ×4", "毽子草（★）、毽子花（★★）、毽子棉（★★★）", "蒲公英相伴的午餐 / 悠然的花×1、便當×1、花朵餐具套組×1、花朵靠枕×1", "毽子棉（★★★）", "", ""]
 ];
 const HAB_DATA=[
-["No.001", "綠色的草叢", "綠草 ×4", "妙蛙種子、小火龍、噴火龍、傑尼龜、走路草、小拳石（空空鎮)"],
-["No.002", "樹蔭的草叢", "大樹 ×1、綠草 ×4", "飛天螳螂、喇叭芽、巨鉗螳螂（空空鎮)、赫拉克羅斯、凱羅斯、貪心栗鼠（空空鎮)"],
-["No.003", "岩影的草地", "綠草 ×4、大石頭 ×1", "搬運小匠、鐵骨土人、腕力（空空鎮)"],
-["No.004", "濕潤的草地", "綠草 ×4、水 ×2", "傑尼龜、卡咪龜、水箭龜、黏美兒、古月鳥（空空鎮)"],
-["No.005", "海浪邊的草叢", "綠草 ×4、海水 ×2", "呆呆獸、呆呆王、呆殼獸"],
-["No.006", "高崗的草叢", "綠草 ×4、高處 ×1", "咕咕、波波、比比鳥"],
-["No.007", "光照的草叢", "草叢(任意) ×4、照明(任意) ×1", "毛球、摩魯蛾"],
-["No.008", "漂亮的花田", "原野之花 ×4", "咕咕、三蜜蜂、伊布、波波（空空鎮)、鴨嘴寶寶（空空鎮)"],
-["No.009", "樹蔭的花田", "原野之花 ×4", "黏黏寶、夢歌仙人掌、鍬農炮蟲（空空鎮)"],
-["No.010", "濕潤的花田", "原野之花 ×4、水 ×2", "甜甜螢、電螢蟲"],
-["No.011", "整片的花海", "原野之花 ×8", "妙蛙草、妙蛙花、蜂女王"],
-["No.012", "高崗的花海", "原野之花 ×4、高處 ×1", "派拉斯、派拉斯特"],
-["No.013", "花朵纏繞的墓地", "原野之花 ×4、墓碑 ×1", "卡拉卡拉、嘎啦嘎啦"],
-["No.014", "花園", "樹籬(任意) ×4、原野之花 ×4", "派拉斯、派拉斯特"],
-["No.015", "新鮮蔬菜田", "蔬菜田(任意) ×8", "螺釘地鼠、龍頭地鼠、木木梟（空空鎮)"],
-["No.016", "乘上暖風", "營火 ×3", "飄飄球"],
-["No.017", "露營組合", "營火 ×1、乾草桌 ×1、乾草椅 ×1", "火恐龍"],
-["No.018", "修行瀑布", "椅子(任意) ×1、水 ×2、瀑布 ×1", "無畏小子"],
-["No.019", "餓肚肚用餐區", "椅子(任意) ×1、桌子(任意) ×1、盤子上的食物 ×1", "溶食獸"],
-["No.020", "野餐風餐桌", "椅子(任意) ×2、桌子(任意) ×1、籃子 ×1", "皮丘(乾巴巴荒野)、皮卡丘（空空鎮)"],
-["No.021", "華麗的桌子", "椅子(任意) ×1、桌子(任意) ×1", "口呆花、大食花"],
-["No.022", "綠色的長椅", "樹籬(任意) ×2、椅子(長條) ×1", "妙蛙種子、妙蛙草、巨蔓藤(需連線去對方的島)"],
-["No.023", "光照的長椅", "椅子(長條) ×1、路燈(任意) ×1", "毛球"],
-["No.024", "健身區用餐區", "沙包 ×1、椅子(任意) ×1", "快拳郎"],
-["No.025", "緊急救護站", "椅子(任意) ×1、桌子(任意) ×1、急救箱 ×1", "飛腿郎"],
-["No.026", "健身區救護站", "桌子(任意) ×1、沙包 ×1、急救箱 ×1", "戰舞郎"],
-["No.027", "指路牌", "箭頭告示牌 ×1、木頭小路 ×3", "無殼海兔"],
-["No.028", "載上大行李", "手推車 ×1、木箱 ×2", "鐵骨土人、小鍛匠（空空鎮)、巧鍛匠（空空鎮)"],
-["No.029", "樵夫的工作區", "圓木椅 ×1、手推車 ×1、樹樁 ×1、圓木桌 ×1", "牙牙（★）、斧牙龍（★★）、雙斧戰龍（★★★）"],
-["No.030", "布偶伴好眠", "床鋪(任意) ×1", "飄飄球、小卡比獸（空空鎮)"],
-["No.031", "柔光伴好眠", "床鋪(任意) ×1、桌子(任意) ×1、細長蠟燭 ×1", "咕咕、貓頭夜鷹"],
-["No.032", "墓前的供品", "墓碑 ×1、細長蠟燭 ×2、盤子上的食物 ×1", "燭光靈"],
-["No.033", "詭異墓前的供品", "可疑的蠟燭 ×2、墓碑 ×1、盤子上的食物 ×1", "燭光靈、燈火幽靈、水晶燈火靈"],
-["No.034", "吉利蛋休息處", "樹籬(任意) ×6、椅子(長條) ×1", "霸王花、美麗花"],
-["No.035", "光與香氣的勾引", "盤子上的食物 ×1", "口呆花"],
-["No.036", "在陰涼處漂浮玩水", "海灘傘 ×1、水 ×2", "水箭龜"],
-["No.037", "乾爽草叢", "枯萎的綠草 ×4、沙沙岩石 ×1", "大岩蛇"],
-["No.038", "工廠倉庫", "路燈(任意) ×1", "小磁怪"],
-["No.039", "豪華小雞飼料", "裝有樹果的籃子 ×1、木製鳥巢箱 ×1", "大比鳥（★）"],
-["No.040", "樹果露營大餐", "晴天漂浮泡泡娃娃 ×2、營火 ×1、樹果籃 ×1、高處 ×1", "噴火龍"],
-["No.041", "求雨地點", "雨天漂浮泡泡娃娃 ×2、盤子上的食物 ×1", "黏黏寶"],
-["No.042", "大晴天地點", "晴天漂浮泡泡娃娃 ×2、盤子上的食物 ×1", "刺球仙人掌"],
-["No.043", "博士的寶物", "遺失物(大型) ×1、床鋪(全部) ×1、博士的寶物 ×1", "巨蔓藤博士（★）"],
-["No.044", "圓木的溫馨感", "圓木椅 ×1、圓木桌 ×1、圓木床 ×1", "牙牙（★）、斧牙龍（★★）、雙斧戰龍（★★★）"],
-["No.045", "樹果大集合", "(樹果籃與相關裝飾)", "黏美龍（★★）"],
-["No.046", "庭園陽台", "原野之花 ×4、花園燈 ×1、花園椅 ×1", "妙蛙花"],
-["No.047", "樹蔭下熟睡的卡比獸", "大樹 ×1、打瞌睡床 ×1", "小卡比獸（空空鎮)、卡比獸（空空鎮)"],
-["No.048", "懷舊古董", "古董衣櫃/床鋪/梳妝台/椅子 各1", "雙彈瓦斯（★）、卡比獸（★）"],
-["No.049", "滿滿是寶可夢球", "寶可夢球桌燈/床鋪/桌子/沙發 各1", "蔓藤怪（★）"],
-["No.050", "黃色的草叢", "黃草 ×4", "圓絲蛛、阿利多斯、強顎雞母蟲"],
-["No.051", "樹蔭的黃色草叢", "大樹 ×1、黃草 ×4", "幕下力士、超音蝠、大嘴蝠、鐵掌力士"],
-["No.052", "高崗的黃色草叢", "黃草 ×4、高處 ×1", "長翅鷗、大嘴鷗"],
-["No.053", "濕潤的黃色草叢", "黃草 ×4、水 ×2", "露力麗、瑪力露、波加曼、波皇子"],
-["No.054", "沼澤的草叢", "黃草 ×4", "帕底亞烏波(暗沉沉海邊)、土王"],
-["No.055", "草叢的自動販賣機", "黃草 ×4", "咩利羊"],
-["No.056", "涼爽的花田", "海邊之花 ×4", "布撥、索羅亞、索羅亞克"],
-["No.057", "南國氣氛", "大椰子樹 ×1、海邊之花 ×4", "椰蛋樹、臭臭花、蛋蛋"],
-["No.058", "風之花田", "海邊之花 ×4", "長翅鷗、大嘴鷗"],
-["No.059", "沙灘的樹蔭", "大椰子樹 ×1、海灘椅 ×1", "蛋蛋"],
-["No.060", "熱帶海岸邊", "大椰子樹 ×1、樹籬 ×4、海水 ×2", "拉普拉斯"],
-["No.061", "休息好地方", "紙箱 ×1、乾草床 ×1", "喵喵"],
-["No.062", "來收拾吧", "紙箱 ×1、玩具(任意) ×2", "卡蒂狗"],
-["No.063", "垃圾集中站", "垃圾桶 ×1、告示牌 ×1、垃圾袋 ×1", "破破袋、瓦斯彈（空空鎮)、雙彈瓦斯（空空鎮)、灰塵山"],
-["No.064", "垃圾桶擺好擺滿", "垃圾桶 ×4", "三合一磁怪、電擊獸"],
-["No.065", "垃圾場", "垃圾袋 ×1", "叉字蝠"],
-["No.066", "公園的長椅", "椅子(長條) ×1、垃圾桶 ×1", "霹靂電球"],
-["No.067", "餓肚肚餐廳", "椅子 ×1、菜單板 ×1、桌子 ×1、盤子食物 ×1", "布撥、布土撥"],
-["No.068", "雅緻餐廳", "盤中食物 ×1、單枝花瓶 ×1、推車 ×1、雅緻桌椅", "帝王拿波（★★）"],
-["No.069", "咕咕啾啾大餐", "木製鳥巢箱 ×1、桌子 ×1、盤子上的食物 ×1", "火雉雞、火焰雞"],
-["No.070", "咖啡空間", "椅子 ×2、馬克杯 ×1、菜單板 ×1", "布土撥、巴布土撥"],
-["No.071", "海灘套組", "海灘椅 ×1、海灘傘 ×1", "米立龍"],
-["No.072", "燈光舞台", "聚光燈 ×2、舞台 ×1", "電擊獸（★）、電擊魔獸（★★）"],
-["No.073", "小心機關", "氣球 ×2、驚嚇箱 ×1", "索羅亞克、耿鬼、鬼斯通"],
-["No.074", "夜晚的慶典會場", "氣球 ×2、雷丘告示牌 ×1", "茸茸羊"],
-["No.075", "更衣區", "衣櫥 ×1、鏡子(大型) ×1", "泡沫栗鼠"],
-["No.076", "更衣中別偷看", "隔板 ×2、衣櫃 ×1、梳妝台 ×1", "泡沫栗鼠（★）、奇諾栗鼠（★★）"],
-["No.077", "用毛線來織東西吧", "椅子 ×1、桌子 ×1、編織套組 ×1", "咩利羊、茸茸羊"],
-["No.078", "溫泉沖洗區", "椅子 ×1", "可達鴨、哥達鴨"],
-["No.079", "度假區的備餐時刻", "椰子樹 ×1、椅子 ×1、盤子食物 ×1、營火 ×1", "火雉雞、卡蒂狗"],
-["No.080", "打包好囉", "手推車 ×1、紙箱 ×2", "幕下力士、大蔥鴨"],
-["No.081", "痊癒前好好休息", "床鋪 ×1、急救箱 ×1、自然風櫃子 ×1", "淺淺丘（★★）、吉利蛋（★）"],
-["No.082", "鬧鐘床鋪空間", "床鋪 ×1、桌子 ×1", "小福蛋"],
-["No.083", "自動販賣機旁偷個閒", "椅子(長條) ×1", "強顎雞母蟲、蟲電寶"],
-["No.084", "自動販賣機套組", "垃圾桶 ×1", "電擊怪"],
-["No.085", "迷你遊戲城", "椅子 ×1、遊戲街機 ×1、打擊測力機 ×1", "三合一磁怪（★）、自爆磁怪（★★）"],
-["No.086", "水力發電廠", "水 ×2、瀑布 ×1", "波皇子"],
-["No.087", "火力發電廠", "金屬桶 x1、火力發電機 x1", "力壯雞、火焰雞"],
-["No.088", "碼頭", "棧橋 ×4、路燈 ×1、海水 ×2", "瑪力露、瑪力露麗"],
-["No.089", "詭異書房", "書架 ×1、自然風桌子 ×1、雅緻沙發 ×1、細蠟燭 ×1", "鬼斯（★）、鬼斯通（★★）"],
-["No.090", "水手家家酒", "木桶 ×2、發射筒 ×2、舵輪 ×1", "霹靂電球（★）、頑皮雷彈（★）"],
-["No.091", "到收銀檯結帳", "桌子 ×2", "喵喵、小福蛋、差不多娃娃、大嘴娃（空空鎮)"],
-["No.092", "小小畫室", "椅子 ×1、畫布 ×1", "圖圖犬(彩繪)（★）"],
-["No.093", "供奉美食", "(特殊組合)", "苔卡比獸"],
-["No.094", "皮卡丘空間", "皮卡丘沙發 ×1、皮卡丘布偶 ×1", "謎擬Ｑ"],
-["No.095", "超可愛空間", "可愛梳妝台/床鋪/檯燈/桌子/沙發 各1", "幸福蛋（★）"],
-["No.096", "歡迎光臨度假村", "度假村燈飾 ×1", "阿勃梭魯"],
-["No.097", "自然風格的生活", "自然風桌子/床鋪/檯燈/沙發 各1", "電龍（★★）"],
-["No.098", "紅色的草叢", "紅草 ×4", "炎兔兒、利歐路、圓法師、閃焰王牌"],
-["No.099", "樹蔭的紅色草叢", "大樹 ×1、紅草 ×4", "地鼠、盆才怪、三地鼠、樹才怪"],
-["No.100", "三角樹蔭下的岩石與草叢", "三角樹 ×1、紅草 ×4、大石頭 ×1", "投羽梟、狙射樹梟"],
-["No.101", "濕潤的紅色草叢", "紅草 ×4、水 ×2", "蓮葉童子、蓮帽小童"],
-["No.102", "高崗的紅色草叢", "紅草 ×4、高處 ×1", "聒噪鳥、黑暗鴉、烏鴉頭頭"],
-["No.103", "草叢訓練場", "沙包袋 ×2、紅草 ×4", "豪力、怪力"],
-["No.104", "優雅的花田", "岩場之花 ×4", "皮寶寶、狗仔包、皮皮、麻花犬、皮可西"],
-["No.105", "樹蔭的優雅花田", "岩場之花 ×4", "黑暗鴉、燃燒蟲、火神蛾"],
-["No.106", "濕潤的優雅花田", "水 ×2、岩場之花 ×4", "阿柏蛇、阿柏怪"],
-["No.107", "花田舞台", "岩場之花 ×4、樹樁 ×1、蘑菇燈 ×2", "胖丁、寶寶丁、蚊香蛙皇"],
-["No.108", "農活辛苦(推測)", "蔬菜田 ×4、獨輪手推車 ×1", "班基拉斯"],
-["No.109", "快樂無比的水坑", "浮萍 ×4、水 ×2", "樂天河童、蓮葉童子"],
-["No.110", "滿滿是苔", "青苔 ×4", "幼基拉斯、班基拉斯"],
-["No.111", "滿滿是苔的岩石", "青苔 ×4、苔岩 ×1", "隆隆石、隆隆岩"],
-["No.112", "生苔的溫泉", "青苔 ×4、溫泉 ×2", "煤炭龜"],
-["No.113", "露天溫泉", "(溫泉組)", "騰蹴小將"],
-["No.114", "養生溫泉", "水桶 ×1", "蚊香蛙皇"],
-["No.115", "熔岩熔岩熱呼呼", "滾燙岩石 ×1、岩漿 ×2", "炭小侍、火神蛾"],
-["No.116", "挖挖又燒燒", "獨輪手推車 ×1、熔爐 ×1、挖礦工具 ×1", "鴨嘴火獸"],
-["No.117", "鏘啷鏘啷鋼構工程", "獨輪手推車 ×1、沙包袋 ×1、挖礦工具 ×1", "大鋼蛇"],
-["No.118", "詭異的白色岩石", "青苔 ×4、木箱 ×1、提燈 ×1", "晶光芽"],
-["No.119", "在置物場吃點東西", "盤中食物/木箱/提燈/木桶 各1", "地鼠、晶光芽、晶光花（★）"],
-["No.120", "充滿期待的餐桌", "派對餐盤 ×4、椅子(長) ×2、桌子(大) ×1", "吞食獸（★）"],
-["No.121", "大口吃麵包工坊", "盤子上的食物 ×1", "狗仔包、麻花犬"],
-["No.122", "迷你廚房", "(廚房組)", "鴨嘴炎獸"],
-["No.123", "大家一起派對", "盤子上的食物 ×1", "樹才怪"],
-["No.124", "悠閒回顧照片", "(相框或相關)", "毒電嬰(凸隆隆山地)"],
-["No.125", "啁啁啾啾演唱會", "棲木 ×1、直立式麥克風 ×1", "聒噪鳥、烏鴉頭頭"],
-["No.126", "演唱會舞台", "喇叭 ×2、麥克風 ×1、舞台台座 ×1", "胖丁、胖可丁"],
-["No.127", "跟著節奏一二跳", "沙包 ×1、桌子 ×1、CD播放器 ×1", "豪力、利歐路、路卡利歐"],
-["No.128", "音樂和閱讀", "雜誌架 ×1", "圓法師、音箱蟀、音響洛托姆"],
-["No.129", "小小博物館", "隔板 ×3、台座 ×1、遺失物(大) ×1", "索財靈、風速狗"],
-["No.130", "清爽的更衣室", "椅子(長條) ×1", "騰蹴小將"],
-["No.131", "銅像景點", "樹籬 ×4、告示牌 ×1", "皮皮、皮可西"],
-["No.132", "平交道", "鐵軌 ×1、平交道柵欄 ×1", "大炭車、小炭仔"],
-["No.133", "主廚的廚房", "自然風桌子 ×1、時髦鍋子 ×1、盤子食物 ×1", "藏飽栗鼠(廚師)"],
-["No.134", "極致豪華", "豪華燈/沙發/床鋪/桌子 各1", "賽富豪（★★）"],
-["No.135", "沉甸甸的鐵", "鐵床鋪/鐵桌/鐵椅/提燈 各1", "巨炭山（★）"],
-["No.136", "現代生活", "工業風床鋪/桌子/椅子 各1", "狙射樹梟（★★）"],
-["No.137", "粉色的草叢", "粉紅草 ×4", "大顎蟻、超音波幼蟲、沙漠蜻蜓、青綿鳥、夜巡靈"],
-["No.138", "樹蔭的粉色草叢", "大樹 ×1、粉紅草 ×4", "沙基拉斯、多龍梅西亞/奇、新葉喵"],
-["No.139", "濕潤的粉色草叢", "粉紅草 ×4、水 ×2", "呱呱泡蛙、呱頭蛙、甲賀忍蛙"],
-["No.140", "高崗的粉色草叢", "粉紅草 ×4、高處 ×1", "藍鴉、電海燕、大電海燕、鋼鎧鴉"],
-["No.141", "水管秘密基地", "水管 ×3、草叢(任意) ×4", "火球鼠、火岩鼠"],
-["No.142", "軟綿綿的花田", "浮島之花 ×4", "六尾、九尾、夢妖、夢妖魔、稚山雀"],
-["No.143", "樹蔭的軟綿綿花田", "大樹 ×1、浮島之花 ×4", "麒麟奇、奇麒麟、青藤蛇"],
-["No.144", "濕潤的軟綿綿花田", "浮島之花 ×4、水 ×2", "迷你龍"],
-["No.145", "水邊小船", "浮萍 ×2、水 ×2", "快龍"],
-["No.146", "光照的瀑布", "水 ×3、踏石 ×3、火炬 ×2、瀑布 ×1", "暴鯉龍（★）"],
-["No.147", "鳥鳴花園", "木製鳥巢箱 ×1", "七夕青鳥"],
-["No.148", "簡約浴室", "(浴室組)", "迷你龍、哈克龍"],
-["No.149", "騎行中休息", "自動販賣機 ×4、自行車 ×1", "鐵啞鈴（★）"],
-["No.150", "暖爐旁打盹", "石製壁爐 ×1、椅子(長條) ×1", "火岩鼠、火爆獸"],
-["No.151", "滿溢的超能力", "(超能場地)", "胡地"],
-["No.152", "水晶占卜", "椅子 ×2、桌子 ×1", "凱西、勇基拉"],
-["No.153", "垃圾場的電視", "垃圾袋 ×2、電視 ×1", "彷徨夜靈、黑夜魔靈（★★）"],
-["No.154", "大型垃圾場", "鋼骨 ×3、垃圾桶組 ×1、輪胎 ×1、微波爐 ×1", "小鍛匠（空空鎮)"],
-["No.155", "跟搭檔一起調查", "風速狗布偶 ×1、折疊椅 ×2、桌燈 ×1", "新葉喵、蒂蕾喵"],
-["No.156", "正在保養人孔蓋", "掘山工具/鐵管堆/人孔蓋/三角錐 各1", "小鍛匠（空空鎮)、鋼鎧鴉、蚊香泳士（★★）"],
-["No.157", "亮晶晶洗手台", "壁掛鏡 ×1", "魔牆人偶"],
-["No.158", "家庭影院", "音響 ×2、電視 ×1、矮櫃組 ×1", "夢妖魔（★）"],
-["No.159", "學習空間", "書架 ×1", "拉魯拉絲、奇魯莉安"],
-["No.160", "律動客廳", "音符墊 ×4、音響 ×2、電視 ×1", "嗡蝠（★）、音波龍（★★）"],
-["No.161", "咻咻打掃", "清潔套組 ×1、浴缸 ×1", "蚊香蝌蚪（★）"],
-["No.162", "質感化妝台", "椅子 ×1、梳妝台 ×1、加濕器 ×1", "奇魯莉安（★）、沙奈朵（★★）"],
-["No.163", "迷你圖書館", "書架 ×2、梯子 ×1、桌子 ×1、照明 ×1", "沙奈朵"],
-["No.164", "遊戲連線對戰", "椅子 ×2、遊戲街機 ×2", "多邊獸Z（★）"],
-["No.165", "遊樂園", "玩具(任意) ×1", "藤藤蛇"],
-["No.166", "辦公桌", "電腦 ×1、馬克杯 ×1、辦公桌/椅 各1", "多邊獸2（★）"],
-["No.167", "辦公室倉庫", "梯子 ×1、紙箱 ×1", "夢妖、多龍奇、多龍巴魯托"],
-["No.168", "實驗空間", "實驗套組 ×1、顯微鏡 ×1、論文 ×1", "胡地（★）"],
-["No.169", "以博士為目標研究中", "桌子 ×1", "金屬怪"],
-["No.170", "研究員的桌子", "桌子 ×2", "多邊獸"],
-["No.171", "歡迎閱讀", "塞滿的書架 ×1、報紙 ×1", "魔尼尼（★）、君主蛇（★★）"],
-["No.172", "咚咚驚喜箱", "聚光燈 ×2、大太鼓 ×1、驚喜盒 ×1", "魔幻假面喵（★）"],
-["No.173", "惡作劇開關", "驚喜盒 ×1、平板電腦 ×1", "呱頭蛙（★）、甲賀忍蛙（★★）"],
-["No.174", "絕景拍照版", "人形立牌 ×1、高處 ×1", "正電拍拍、負電拍拍"],
-["No.175", "輪胎公園", "跳輪胎 ×2、輪胎 ×1、溜滑梯 ×1", "咚咚鼠(亮晶晶空島)"],
-["No.176", "大自然的市場", "大樹 ×1、大石頭 ×1、桌子 ×2", "雷丘"],
-["No.177", "施工地的發電站", "(施工器材)", "修建老匠"],
-["No.178", "在道場訓練", "怪力岩 ×2、掛軸 ×2", "蚊香泳士（★）、艾路雷朵（★★）"],
-["No.179", "邪惡組織的秘密基地", "(反派旗幟/電腦)", "貓老大"],
-["No.180", "九道火焰", "篝火 ×9", "九尾（★）"],
-["No.181", "被布偶圍滿", "常用布偶 ×4、飄飄球/隨風球", "隨風球"],
-["No.182", "絕佳的遊戲環境", "電競床/椅/冰箱/電腦/桌子 各1", "巨金怪（★★）"],
-["No.183", "流行潮流", "流行床/桌/沙發 各1", "火爆獸（★）"],
-["No.184", "釣魚池", "釣竿 ×1、椅子 ×1", "呆呆王、呆殼獸"],
-["No.185", "海釣", "釣竿 ×1、椅子 ×1、海水 ×1", "鯉魚王、海兔獸"],
-["No.186", "沼澤釣", "釣竿 ×1、椅子 ×1", "臭泥、臭臭泥"],
-["No.187", "溫泉釣", "釣竿 ×1、椅子 ×1", "蓮葉童子、蓮帽小童"],
-["No.188", "熔岩釣", "椅子 ×1、釣竿 ×1、熔岩 ×1", "風速狗（★）"],
-["No.189", "高調的搖滾舞台", "喇叭/舞台/麥克風 + 電吉他", "顫弦蠑螈-高調（★）"],
-["No.190", "低調的搖滾舞台", "喇叭/舞台/麥克風 + 電貝斯", "顫弦蠑螈-低調（★）"],
-["No.191", "怨念騎士的祭壇", "展示台、咒術之鎧、踏腳石、篝火", "蒼炎刃鬼"],
-["No.192", "忠誠騎士的祭壇", "展示台、慶祝之鎧、踏腳石、篝火", "紅蓮鎧騎"],
-["No.193", "飛翼化石展示台", "台座x1、飛翼化石 (頭/身/尾/左翼/右翼)", "化石翼龍（★）"],
-["No.194", "頭蓋化石展示台", "台座x1、頭蓋化石", "頭蓋龍（★）"],
-["No.195", "頭槌化石展示台", "台座x1、頭槌化石 (頭/身/尾)", "戰槌龍（★）"],
-["No.196", "盾甲化石展示台", "台座x1、盾甲化石", "盾甲龍（★）"],
-["No.197", "護盾化石展示台", "台座x1、護盾化石 (頭/身/尾)", "護城龍（★）"],
-["No.198", "顎之化石展示台", "台座x1、顎之化石", "寶寶暴龍（★）"],
-["No.199", "暴君化石展示台", "台座x2、暴君化石 (頭/身/尾/腳)", "怪顎龍（★）"],
-["No.200", "鰭之化石展示台", "台座x1、鰭之化石", "冰雪龍（★）"],
-["No.201", "凍原化石展示台", "台座x1、凍原化石 (頭/身/尾)", "冰雪巨龍（★）"],
-["No.202", "沁爽清藍", "椅子 ×1、桌子 ×1、冰淇淋汽水 ×1", "水伊布（空空鎮)"],
-["No.203", "麻麻薯餅", "椅子 ×1、桌子 ×1、炸薯條 ×1", "雷伊布（空空鎮)"],
-["No.204", "辣到噴火", "椅子 ×1、桌子 ×1、披薩 ×1", "火伊布（空空鎮)"],
-["No.205", "優雅的午後", "椅子 ×1、桌子 ×1、下午茶套餐 ×1", "太陽伊布（空空鎮)"],
-["No.206", "黑色的滋味", "椅子 ×1、桌子 ×1、巧克力餅乾 ×1", "月亮伊布（空空鎮)"],
-["No.207", "綠色三明治", "椅子 ×1、桌子 ×1、三明治 ×1", "葉伊布（空空鎮)"],
-["No.208", "沁涼刨冰", "椅子 ×1、桌子 ×1、刨冰 ×1", "冰伊布（空空鎮)"],
-["No.209", "可愛的蛋糕", "椅子 ×1、桌子 ×1、緞帶蛋糕 ×1", "仙子伊布（空空鎮)"],
-["No.001", "綠色的地毯", "悠然的花 ×4", "毽子草（★）、毽子花（★★）、毽子棉（★★★）"],
-["No.002", "遠足必備", "便當 ×1、毽子草水壺 ×1、花朵背包 ×1", "毽子花（★★）"],
-["No.003", "蒲公英相伴的午餐", "悠然的花×1、便當×1、花朵餐具套組×1、花朵靠枕×1", "毽子棉（★★★）"]
+["No.001", "綠色的草叢", "綠草 ×4", "妙蛙種子、小火龍、噴火龍、傑尼龜、走路草、小拳石（空空鎮)", "https://lh3.googleusercontent.com/d/1Zui1QKajr4K54-QnVN11axFwFdXqil_m=s400"],
+["No.002", "樹蔭的草叢", "大樹 ×1、綠草 ×4", "飛天螳螂、喇叭芽、巨鉗螳螂（空空鎮)、赫拉克羅斯、凱羅斯、貪心栗鼠（空空鎮)", "https://lh3.googleusercontent.com/d/19CrdN30HGmpE_sHBpHI0ykoC1Xzs3nFL=s400"],
+["No.003", "岩影的草地", "綠草 ×4、大石頭 ×1", "搬運小匠、鐵骨土人、腕力（空空鎮)", "https://lh3.googleusercontent.com/d/1ELHxpsZlcq5M83YhnRXD5C6FIN78pF-b=s400"],
+["No.004", "濕潤的草地", "綠草 ×4、水 ×2", "傑尼龜、卡咪龜、水箭龜、黏美兒、古月鳥（空空鎮)", "https://lh3.googleusercontent.com/d/1fwTkKzuuQxM9eaQ9Ln-6BPQEbC_bwkjJ=s400"],
+["No.005", "海浪邊的草叢", "綠草 ×4、海水 ×2", "呆呆獸、呆呆王、呆殼獸", "https://lh3.googleusercontent.com/d/1zKMMiq7r3vrF5UvmbZPtVtD_dfDYdUP3=s400"],
+["No.006", "高崗的草叢", "綠草 ×4、高處 ×1", "咕咕、波波、比比鳥", "https://lh3.googleusercontent.com/d/1Z5rKeD-bOwEO2zJCMhi8LMhShYWp-Ddb=s400"],
+["No.007", "光照的草叢", "草叢(任意) ×4、照明(任意) ×1", "毛球、摩魯蛾", "https://lh3.googleusercontent.com/d/1t8xnCYn4TFB4oYGXSu-SqsGqdBDu9QAV=s400"],
+["No.008", "漂亮的花田", "原野之花 ×4", "咕咕、三蜜蜂、伊布、波波（空空鎮)、鴨嘴寶寶（空空鎮)", "https://lh3.googleusercontent.com/d/1fZ5xoeCppudNCNreKNTA1N9jUYmH0NvG=s400"],
+["No.009", "樹蔭的花田", "原野之花 ×4", "黏黏寶、夢歌仙人掌、鍬農炮蟲（空空鎮)", "https://lh3.googleusercontent.com/d/1Pa_OwADXdwfpOXBTrfLWXVTRGQROALa4=s400"],
+["No.010", "濕潤的花田", "原野之花 ×4、水 ×2", "甜甜螢、電螢蟲", "https://lh3.googleusercontent.com/d/13GWQEZZL6FlM4c33is_47k5pEQD6fHjB=s400"],
+["No.011", "整片的花海", "原野之花 ×8", "妙蛙草、妙蛙花、蜂女王", "https://lh3.googleusercontent.com/d/1fBC42KzrWPHrGrKZSlsuPGUcffl2FbPM=s400"],
+["No.012", "高崗的花海", "原野之花 ×4、高處 ×1", "派拉斯、派拉斯特", "https://lh3.googleusercontent.com/d/1kb9nrzFjrr2IPcq4ATBQQOUw6vaTpFJ7=s400"],
+["No.013", "花朵纏繞的墓地", "原野之花 ×4、墓碑 ×1", "卡拉卡拉、嘎啦嘎啦", "https://lh3.googleusercontent.com/d/14MtBLuKH364jLo-v3egXmfdVfeh5Nhz9=s400"],
+["No.014", "花園", "樹籬(任意) ×4、原野之花 ×4", "派拉斯、派拉斯特", "https://lh3.googleusercontent.com/d/14nbZVUvlsjY-LDtwN3AQa2hzZWDlnvgf=s400"],
+["No.015", "新鮮蔬菜田", "蔬菜田(任意) ×8", "螺釘地鼠、龍頭地鼠、木木梟（空空鎮)", "https://lh3.googleusercontent.com/d/1nDD6CuoMnLoga-f0PpsRtqWD57UfRBkx=s400"],
+["No.016", "乘上暖風", "營火 ×3", "飄飄球", "https://lh3.googleusercontent.com/d/1GWhrzo7rxLbs37rHVEullF_ENsxgNAHk=s400"],
+["No.017", "露營組合", "營火 ×1、乾草桌 ×1、乾草椅 ×1", "火恐龍", "https://lh3.googleusercontent.com/d/1RhhU84KkyO7NlAJy7orPp0p9Gvcqfa7p=s400"],
+["No.018", "修行瀑布", "椅子(任意) ×1、水 ×2、瀑布 ×1", "無畏小子", "https://lh3.googleusercontent.com/d/1xjXqd9TAn4SNoGBre-Gwh6YcMaT9nnTd=s400"],
+["No.019", "餓肚肚用餐區", "椅子(任意) ×1、桌子(任意) ×1、盤子上的食物 ×1", "溶食獸", "https://lh3.googleusercontent.com/d/1NBZAjEUjlnSON7vZLet5XIsqsjVF3DG7=s400"],
+["No.020", "野餐風餐桌", "椅子(任意) ×2、桌子(任意) ×1、籃子 ×1", "皮丘(乾巴巴荒野)、皮卡丘（空空鎮)", "https://lh3.googleusercontent.com/d/1xLZR7Tsp1ZMTqDTbGVVvpw5bqZ1CuvGY=s400"],
+["No.021", "華麗的桌子", "椅子(任意) ×1、桌子(任意) ×1", "口呆花、大食花", "https://lh3.googleusercontent.com/d/1IG2TcQGWffGFN2F84WUiO2bM9zvaewoY=s400"],
+["No.022", "綠色的長椅", "樹籬(任意) ×2、椅子(長條) ×1", "妙蛙種子、妙蛙草、巨蔓藤(需連線去對方的島)", "https://lh3.googleusercontent.com/d/1yLkAA6Es4XvbY7OFs0wlQp1MtiuQ-Gqu=s400"],
+["No.023", "光照的長椅", "椅子(長條) ×1、路燈(任意) ×1", "毛球", "https://lh3.googleusercontent.com/d/1vZH2kamMfuXWmuQ4KlWODZnxqtptXSOp=s400"],
+["No.024", "健身區用餐區", "沙包 ×1、椅子(任意) ×1", "快拳郎", "https://lh3.googleusercontent.com/d/1Ym45okARDdkyfF_ZzR3BD0qawn-ye3gq=s400"],
+["No.025", "緊急救護站", "椅子(任意) ×1、桌子(任意) ×1、急救箱 ×1", "飛腿郎", "https://lh3.googleusercontent.com/d/1yBISxXekCdWZcFW5CppnNvAgf0qMIJHx=s400"],
+["No.026", "健身區救護站", "桌子(任意) ×1、沙包 ×1、急救箱 ×1", "戰舞郎", "https://lh3.googleusercontent.com/d/1h933OGLQfet6ZWMyP4kodMMC1eiYvZPz=s400"],
+["No.027", "指路牌", "箭頭告示牌 ×1、木頭小路 ×3", "無殼海兔", "https://lh3.googleusercontent.com/d/1Z1TRDksTSds7c2xIaT6z4Dpe09rP2pbJ=s400"],
+["No.028", "載上大行李", "手推車 ×1、木箱 ×2", "鐵骨土人、小鍛匠（空空鎮)、巧鍛匠（空空鎮)", "https://lh3.googleusercontent.com/d/1dd2IMbyTsIgCoxi6TfTAo7Y6cTjh_omG=s400"],
+["No.029", "樵夫的工作區", "圓木椅 ×1、手推車 ×1、樹樁 ×1、圓木桌 ×1", "牙牙（★）、斧牙龍（★★）、雙斧戰龍（★★★）", "https://lh3.googleusercontent.com/d/1uj8O15kVRxPvY-VhrExpqYdkyvoPY3dS=s400"],
+["No.030", "布偶伴好眠", "床鋪(任意) ×1", "飄飄球、小卡比獸（空空鎮)", "https://lh3.googleusercontent.com/d/1yTMvl-TTPdZvYO8Dss-kfVa18l1S8hKp=s400"],
+["No.031", "柔光伴好眠", "床鋪(任意) ×1、桌子(任意) ×1、細長蠟燭 ×1", "咕咕、貓頭夜鷹", "https://lh3.googleusercontent.com/d/1HDoKzr-bOVCO4MZBahsLi-5SukLEUApY=s400"],
+["No.032", "墓前的供品", "墓碑 ×1、細長蠟燭 ×2、盤子上的食物 ×1", "燭光靈", "https://lh3.googleusercontent.com/d/1lYfXfavq0TBl9HHF8eqIUvjJFvldc6GB=s400"],
+["No.033", "詭異墓前的供品", "可疑的蠟燭 ×2、墓碑 ×1、盤子上的食物 ×1", "燭光靈、燈火幽靈、水晶燈火靈", "https://lh3.googleusercontent.com/d/1NyGxjwiINsObEZv5eZydpDHkY7Noicfg=s400"],
+["No.034", "吉利蛋休息處", "樹籬(任意) ×6、椅子(長條) ×1", "霸王花、美麗花", "https://lh3.googleusercontent.com/d/1cKJ8IPz3WQ6DG1vQb1N7wvPVKF5UWM2J=s400"],
+["No.035", "光與香氣的勾引", "盤子上的食物 ×1", "口呆花", "https://lh3.googleusercontent.com/d/1joFxiLq6Xqr-ZXZ8-7vBKfpK-Yxb8iHd=s400"],
+["No.036", "在陰涼處漂浮玩水", "海灘傘 ×1、水 ×2", "水箭龜", "https://lh3.googleusercontent.com/d/1Viy3kDTiRGBHZphYMHRmYmkKuJx5NMWw=s400"],
+["No.037", "乾爽草叢", "枯萎的綠草 ×4、沙沙岩石 ×1", "大岩蛇", "https://lh3.googleusercontent.com/d/1LytccQl21AjbkiqUQqPcbN_TZYKmN7dr=s400"],
+["No.038", "工廠倉庫", "路燈(任意) ×1", "小磁怪", "https://lh3.googleusercontent.com/d/1sF8CRK36ZPLKDN3LDYnVNlnuoeIr2Yd5=s400"],
+["No.039", "豪華小雞飼料", "裝有樹果的籃子 ×1、木製鳥巢箱 ×1", "大比鳥（★）", "https://lh3.googleusercontent.com/d/1FD045dZ0IoiEuAzHpWD93NriuGWrxeyr=s400"],
+["No.040", "樹果露營大餐", "晴天漂浮泡泡娃娃 ×2、營火 ×1、樹果籃 ×1、高處 ×1", "噴火龍", "https://lh3.googleusercontent.com/d/1ZD2wQv6s7EnOb1yU2kl_utwfcAu33CUR=s400"],
+["No.041", "求雨地點", "雨天漂浮泡泡娃娃 ×2、盤子上的食物 ×1", "黏黏寶", "https://lh3.googleusercontent.com/d/19_FmcEfS-6SjCpmqN06rxWxqEjC0Yvmk=s400"],
+["No.042", "大晴天地點", "晴天漂浮泡泡娃娃 ×2、盤子上的食物 ×1", "刺球仙人掌", "https://lh3.googleusercontent.com/d/1H0V8Fdmr17Can4HqZ_kn86nlGowUtbfx=s400"],
+["No.043", "博士的寶物", "遺失物(大型) ×1、床鋪(全部) ×1、博士的寶物 ×1", "巨蔓藤博士（★）", "https://lh3.googleusercontent.com/d/1SLPkA9bY97lvvIYtDio7KCvgbvmfmxa4=s400"],
+["No.044", "圓木的溫馨感", "圓木椅 ×1、圓木桌 ×1、圓木床 ×1", "牙牙（★）、斧牙龍（★★）、雙斧戰龍（★★★）", "https://lh3.googleusercontent.com/d/1ADJagxmVD3qisbF8wZyyA42hfviJszKd=s400"],
+["No.045", "樹果大集合", "(樹果籃與相關裝飾)", "黏美龍（★★）", "https://lh3.googleusercontent.com/d/1NAInQBxrYUoTGzaaoM8Sue0xS76RWJu2=s400"],
+["No.046", "庭園陽台", "原野之花 ×4、花園燈 ×1、花園椅 ×1", "妙蛙花", "https://lh3.googleusercontent.com/d/1qyi1sEe_mSo-GI6Rv001JV8cjgE2BxI6=s400"],
+["No.047", "樹蔭下熟睡的卡比獸", "大樹 ×1、打瞌睡床 ×1", "小卡比獸（空空鎮)、卡比獸（空空鎮)", "https://lh3.googleusercontent.com/d/1PCKRG5pB-QE4sc8xjdHb0uOIiYD4lrYD=s400"],
+["No.048", "懷舊古董", "古董衣櫃/床鋪/梳妝台/椅子 各1", "雙彈瓦斯（★）、卡比獸（★）", "https://lh3.googleusercontent.com/d/1ohDxUQ0Qm6eGyctH6qsogGTzgYaD5pBC=s400"],
+["No.049", "滿滿是寶可夢球", "寶可夢球桌燈/床鋪/桌子/沙發 各1", "蔓藤怪（★）", "https://lh3.googleusercontent.com/d/1fmevb2bbfXZshEVAZHnl6UMm42K-I58v=s400"],
+["No.050", "黃色的草叢", "黃草 ×4", "圓絲蛛、阿利多斯、強顎雞母蟲", "https://lh3.googleusercontent.com/d/1EB79Pl5ambsyB1nZJCYXPpKBIAaY9j_G=s400"],
+["No.051", "樹蔭的黃色草叢", "大樹 ×1、黃草 ×4", "幕下力士、超音蝠、大嘴蝠、鐵掌力士", "https://lh3.googleusercontent.com/d/12nwCh5RCg_i-D4YjOvzO-2qf7OGt62N9=s400"],
+["No.052", "高崗的黃色草叢", "黃草 ×4、高處 ×1", "長翅鷗、大嘴鷗", "https://lh3.googleusercontent.com/d/1hLh6Fsmufcj7-aAQmd0pezJ3rmDh74Rl=s400"],
+["No.053", "濕潤的黃色草叢", "黃草 ×4、水 ×2", "露力麗、瑪力露、波加曼、波皇子", "https://lh3.googleusercontent.com/d/1X5jpWCj3zcY826cvMXqdz6DnlrLz33hW=s400"],
+["No.054", "沼澤的草叢", "黃草 ×4", "帕底亞烏波(暗沉沉海邊)、土王", "https://lh3.googleusercontent.com/d/1STxmdf-BcmA-jc34kq7YqZAcB8yd8Mxj=s400"],
+["No.055", "草叢的自動販賣機", "黃草 ×4", "咩利羊", "https://lh3.googleusercontent.com/d/1uDyG7_w5c8ibRNdoQPEeJQHAhBg68z1s=s400"],
+["No.056", "涼爽的花田", "海邊之花 ×4", "布撥、索羅亞、索羅亞克", "https://lh3.googleusercontent.com/d/1E0M2_J0iRdNPUDTqqgRvHLBrJuCE2pyM=s400"],
+["No.057", "南國氣氛", "大椰子樹 ×1、海邊之花 ×4", "椰蛋樹、臭臭花、蛋蛋", "https://lh3.googleusercontent.com/d/1iojjChVEG5UUsgKO0spUAFgFi5I3HFyJ=s400"],
+["No.058", "風之花田", "海邊之花 ×4", "長翅鷗、大嘴鷗", "https://lh3.googleusercontent.com/d/19nBuD_j1nyWqEMKloMignQPW-Aty4rSx=s400"],
+["No.059", "沙灘的樹蔭", "大椰子樹 ×1、海灘椅 ×1", "蛋蛋", "https://lh3.googleusercontent.com/d/1K-x6U1R5TwcfGZmJpT4Jfq0TwSitK0yW=s400"],
+["No.060", "熱帶海岸邊", "大椰子樹 ×1、樹籬 ×4、海水 ×2", "拉普拉斯", "https://lh3.googleusercontent.com/d/1bsdgIww8ksCeP9rs6Mth5mgemyYdAYXm=s400"],
+["No.061", "休息好地方", "紙箱 ×1、乾草床 ×1", "喵喵", "https://lh3.googleusercontent.com/d/12YlUaw2FaG0CyfaTVfyTthzhF3bHII_M=s400"],
+["No.062", "來收拾吧", "紙箱 ×1、玩具(任意) ×2", "卡蒂狗", "https://lh3.googleusercontent.com/d/1IoVi4K6ovzGGn1A_TvkaQis5yKpuxR3g=s400"],
+["No.063", "垃圾集中站", "垃圾桶 ×1、告示牌 ×1、垃圾袋 ×1", "破破袋、瓦斯彈（空空鎮)、雙彈瓦斯（空空鎮)、灰塵山", "https://lh3.googleusercontent.com/d/1jjhhd0j0QZWGdnQkI9QReb_VY6I5aLfR=s400"],
+["No.064", "垃圾桶擺好擺滿", "垃圾桶 ×4", "三合一磁怪、電擊獸", "https://lh3.googleusercontent.com/d/1Xa5IswDjpgsxb-XLZoZTCWGBBHljN2vr=s400"],
+["No.065", "垃圾場", "垃圾袋 ×1", "叉字蝠", "https://lh3.googleusercontent.com/d/1wjqAc6GQscy8Hn66S8-JtndnvqelwMsb=s400"],
+["No.066", "公園的長椅", "椅子(長條) ×1、垃圾桶 ×1", "霹靂電球", "https://lh3.googleusercontent.com/d/1MppskLBHgfOYqsgnRZAoYuNvxFMNuPPY=s400"],
+["No.067", "餓肚肚餐廳", "椅子 ×1、菜單板 ×1、桌子 ×1、盤子食物 ×1", "布撥、布土撥", "https://lh3.googleusercontent.com/d/113CXhZMNDxIUsiDpLoyu_HUh_oRWFDoX=s400"],
+["No.068", "雅緻餐廳", "盤中食物 ×1、單枝花瓶 ×1、推車 ×1、雅緻桌椅", "帝王拿波（★★）", "https://lh3.googleusercontent.com/d/18S7ZAuxq-oZUMAXJ6cgbqFr7JRwjuhhf=s400"],
+["No.069", "咕咕啾啾大餐", "木製鳥巢箱 ×1、桌子 ×1、盤子上的食物 ×1", "火雉雞、火焰雞", "https://lh3.googleusercontent.com/d/19GWfDhUNC9shoeGXxyxMP3odHvfkD4Mi=s400"],
+["No.070", "咖啡空間", "椅子 ×2、馬克杯 ×1、菜單板 ×1", "布土撥、巴布土撥", "https://lh3.googleusercontent.com/d/1R3ROkqoN9TPR29Mr8qY1qHD6BYQzDjG1=s400"],
+["No.071", "海灘套組", "海灘椅 ×1、海灘傘 ×1", "米立龍", "https://lh3.googleusercontent.com/d/1t-1nGGh81x1fwCPDKM2Og-LRJjxtiqLH=s400"],
+["No.072", "燈光舞台", "聚光燈 ×2、舞台 ×1", "電擊獸（★）、電擊魔獸（★★）", "https://lh3.googleusercontent.com/d/1lsc6oZZ-s2G4aNSGW0AEvD4ltw2BzY7v=s400"],
+["No.073", "小心機關", "氣球 ×2、驚嚇箱 ×1", "索羅亞克、耿鬼、鬼斯通", "https://lh3.googleusercontent.com/d/1ai78REM-eemzyYinMbxnh5WPEx6TQ00f=s400"],
+["No.074", "夜晚的慶典會場", "氣球 ×2、雷丘告示牌 ×1", "茸茸羊", "https://lh3.googleusercontent.com/d/1x2Cz9BCtYa160-D1uF813mibNMFzR7_h=s400"],
+["No.075", "更衣區", "衣櫥 ×1、鏡子(大型) ×1", "泡沫栗鼠", "https://lh3.googleusercontent.com/d/1iJdQ1uVu53wGBbQktIDGXuLaeA1qXGOI=s400"],
+["No.076", "更衣中別偷看", "隔板 ×2、衣櫃 ×1、梳妝台 ×1", "泡沫栗鼠（★）、奇諾栗鼠（★★）", "https://lh3.googleusercontent.com/d/1Fz5zba3oQByrvzmMqakxEk54294MmoDS=s400"],
+["No.077", "用毛線來織東西吧", "椅子 ×1、桌子 ×1、編織套組 ×1", "咩利羊、茸茸羊", "https://lh3.googleusercontent.com/d/1GThbROnRLNEAD7UCThDRkdiXn8BcwFzj=s400"],
+["No.078", "溫泉沖洗區", "椅子 ×1", "可達鴨、哥達鴨", "https://lh3.googleusercontent.com/d/1jqgmWru-hr0owVFVhi_xVlq39y-k-WoX=s400"],
+["No.079", "度假區的備餐時刻", "椰子樹 ×1、椅子 ×1、盤子食物 ×1、營火 ×1", "火雉雞、卡蒂狗", "https://lh3.googleusercontent.com/d/1HAJO4vktr3MTOddQq4RvdbeRhEC966jY=s400"],
+["No.080", "打包好囉", "手推車 ×1、紙箱 ×2", "幕下力士、大蔥鴨", "https://lh3.googleusercontent.com/d/1VQ4EzJlJCol4GUelGFZ7xJdryVIxifzP=s400"],
+["No.081", "痊癒前好好休息", "床鋪 ×1、急救箱 ×1、自然風櫃子 ×1", "淺淺丘（★★）、吉利蛋（★）", "https://lh3.googleusercontent.com/d/1LTyDHt1oOpWhy_2JPujWZv9E1-gp0SvM=s400"],
+["No.082", "鬧鐘床鋪空間", "床鋪 ×1、桌子 ×1", "小福蛋", "https://lh3.googleusercontent.com/d/1VshsAesA_bH6aeJkHOwd40kBXj7AoVgq=s400"],
+["No.083", "自動販賣機旁偷個閒", "椅子(長條) ×1", "強顎雞母蟲、蟲電寶", "https://lh3.googleusercontent.com/d/1fnhhAhblqFuJ3cwEEez6dxk6rF_7K7yq=s400"],
+["No.084", "自動販賣機套組", "垃圾桶 ×1", "電擊怪", "https://lh3.googleusercontent.com/d/1FGQgbJcMjOZdDHGKQh4nRfbDiIJgNkDB=s400"],
+["No.085", "迷你遊戲城", "椅子 ×1、遊戲街機 ×1、打擊測力機 ×1", "三合一磁怪（★）、自爆磁怪（★★）", "https://lh3.googleusercontent.com/d/1C9f8Bm5PsnCpAB9x9HVOzKEjRXO7pfJ8=s400"],
+["No.086", "水力發電廠", "水 ×2、瀑布 ×1", "波皇子", "https://lh3.googleusercontent.com/d/1Ik0ilv4oKYCPinSO8Gf-shw-RzxIq9Yr=s400"],
+["No.087", "火力發電廠", "金屬桶 x1、火力發電機 x1", "力壯雞、火焰雞", "https://lh3.googleusercontent.com/d/1cw4nIwPDdLHnyjDMQHqQN4OZuUXsFh2H=s400"],
+["No.088", "碼頭", "棧橋 ×4、路燈 ×1、海水 ×2", "瑪力露、瑪力露麗", "https://lh3.googleusercontent.com/d/1zB4edv_gXaqsT4x8NDqCQpYkw2CJSAMt=s400"],
+["No.089", "詭異書房", "書架 ×1、自然風桌子 ×1、雅緻沙發 ×1、細蠟燭 ×1", "鬼斯（★）、鬼斯通（★★）", "https://lh3.googleusercontent.com/d/193JslbARFcl0XwM03w1lK0v9eB04Zyvh=s400"],
+["No.090", "水手家家酒", "木桶 ×2、發射筒 ×2、舵輪 ×1", "霹靂電球（★）、頑皮雷彈（★）", "https://lh3.googleusercontent.com/d/1O1SrpWkapHoT-mG-ktdb0t-3fMnNt5TV=s400"],
+["No.091", "到收銀檯結帳", "桌子 ×2", "喵喵、小福蛋、差不多娃娃、大嘴娃（空空鎮)", "https://lh3.googleusercontent.com/d/1EnZB5poU8a1wIv5NwVGoo89Bsa1HnntY=s400"],
+["No.092", "小小畫室", "椅子 ×1、畫布 ×1", "圖圖犬(彩繪)（★）", "https://lh3.googleusercontent.com/d/1fw7PAjSn-T8rZdkousKFZUZ0h6vjk8Br=s400"],
+["No.093", "供奉美食", "(特殊組合)", "苔卡比獸", "https://lh3.googleusercontent.com/d/13mJNxfsg7aWfeSgzLTH6n5EAsdoCwtBK=s400"],
+["No.094", "皮卡丘空間", "皮卡丘沙發 ×1、皮卡丘布偶 ×1", "謎擬Ｑ", "https://lh3.googleusercontent.com/d/1o3Ed9-K_1SCfG8JtK5rVF9pKfS5ulK_9=s400"],
+["No.095", "超可愛空間", "可愛梳妝台/床鋪/檯燈/桌子/沙發 各1", "幸福蛋（★）", "https://lh3.googleusercontent.com/d/1zJXrHqinjWSEcvOf8zNYhXvFFGC49Tbg=s400"],
+["No.096", "歡迎光臨度假村", "度假村燈飾 ×1", "阿勃梭魯", "https://lh3.googleusercontent.com/d/1SykO3UOgIy_yHnUWErzxMIF6pkqz2nDo=s400"],
+["No.097", "自然風格的生活", "自然風桌子/床鋪/檯燈/沙發 各1", "電龍（★★）", "https://lh3.googleusercontent.com/d/108mRn_DjQym2jkd_qHJW1RqFFs_b6tK4=s400"],
+["No.098", "紅色的草叢", "紅草 ×4", "炎兔兒、利歐路、圓法師、閃焰王牌", "https://lh3.googleusercontent.com/d/1gkKfwUJbsXBK3_mp3LCn59gMzC4Dj8tB=s400"],
+["No.099", "樹蔭的紅色草叢", "大樹 ×1、紅草 ×4", "地鼠、盆才怪、三地鼠、樹才怪", "https://lh3.googleusercontent.com/d/1k3noqaRRNiEJzbucYArWXveYmcbr9827=s400"],
+["No.100", "三角樹蔭下的岩石與草叢", "三角樹 ×1、紅草 ×4、大石頭 ×1", "投羽梟、狙射樹梟", "https://lh3.googleusercontent.com/d/1pspQVmiWUDkcfoChhch7sQmYIp3M9eyQ=s400"],
+["No.101", "濕潤的紅色草叢", "紅草 ×4、水 ×2", "蓮葉童子、蓮帽小童", "https://lh3.googleusercontent.com/d/17sy9abe36MDr7xTISqJzGI1tN1YSQAbY=s400"],
+["No.102", "高崗的紅色草叢", "紅草 ×4、高處 ×1", "聒噪鳥、黑暗鴉、烏鴉頭頭", "https://lh3.googleusercontent.com/d/1GOdNRy5ja5LWORUqYvc9XlLqUm8wpWa4=s400"],
+["No.103", "草叢訓練場", "沙包袋 ×2、紅草 ×4", "豪力、怪力", "https://lh3.googleusercontent.com/d/1IEYNl38ZOXO8UPp1ntPdTskgjHcpdo_P=s400"],
+["No.104", "優雅的花田", "岩場之花 ×4", "皮寶寶、狗仔包、皮皮、麻花犬、皮可西", "https://lh3.googleusercontent.com/d/146JgxLj3i8xHlW4eRl3JmaQyybVITos4=s400"],
+["No.105", "樹蔭的優雅花田", "岩場之花 ×4", "黑暗鴉、燃燒蟲、火神蛾", "https://lh3.googleusercontent.com/d/1YM6A7EFdJoqRqMNXjauDJ6IWm6aFm8At=s400"],
+["No.106", "濕潤的優雅花田", "水 ×2、岩場之花 ×4", "阿柏蛇、阿柏怪", "https://lh3.googleusercontent.com/d/1Jq7F2-34qwnN2FeqM_iV8y22vXE0M1Tp=s400"],
+["No.107", "花田舞台", "岩場之花 ×4、樹樁 ×1、蘑菇燈 ×2", "胖丁、寶寶丁、蚊香蛙皇", "https://lh3.googleusercontent.com/d/1DM0zCwYIV0R3Bt_Kv7-YFT7uyv1kWYAU=s400"],
+["No.108", "農活辛苦(推測)", "蔬菜田 ×4、獨輪手推車 ×1", "班基拉斯", "https://lh3.googleusercontent.com/d/1sJy7PlLAnJNwsMfl1Kd8a1wIMc4bq54x=s400"],
+["No.109", "快樂無比的水坑", "浮萍 ×4、水 ×2", "樂天河童、蓮葉童子", "https://lh3.googleusercontent.com/d/1VB3-VBZktnj08gQ7c_6ef1yKEZeT-S_9=s400"],
+["No.110", "滿滿是苔", "青苔 ×4", "幼基拉斯、班基拉斯", "https://lh3.googleusercontent.com/d/1SAYmndMIku8qN6RzKf2NVKxHuVARCU3i=s400"],
+["No.111", "滿滿是苔的岩石", "青苔 ×4、苔岩 ×1", "隆隆石、隆隆岩", "https://lh3.googleusercontent.com/d/1hrqnW6nRRtWwxYg5Ce1YsEQJkRY5tF6B=s400"],
+["No.112", "生苔的溫泉", "青苔 ×4、溫泉 ×2", "煤炭龜", "https://lh3.googleusercontent.com/d/1cGxcu6RzQ4jhuxPfW-YL06Q4wx_viFKz=s400"],
+["No.113", "露天溫泉", "(溫泉組)", "騰蹴小將", "https://lh3.googleusercontent.com/d/12FmZmUtnhoS8XGay9mYTVtYCNIvVWO6_=s400"],
+["No.114", "養生溫泉", "水桶 ×1", "蚊香蛙皇", "https://lh3.googleusercontent.com/d/15DI_6pjmbDUy3RrRMk_OZWAdqda4Ksu0=s400"],
+["No.115", "熔岩熔岩熱呼呼", "滾燙岩石 ×1、岩漿 ×2", "炭小侍、火神蛾", "https://lh3.googleusercontent.com/d/1NGChOwZmkw6M3zQYWxhRxkoSOGhGuM7G=s400"],
+["No.116", "挖挖又燒燒", "獨輪手推車 ×1、熔爐 ×1、挖礦工具 ×1", "鴨嘴火獸", "https://lh3.googleusercontent.com/d/1R02VnJlKjzqwl6GefKg2Jmk3rqxX1fwK=s400"],
+["No.117", "鏘啷鏘啷鋼構工程", "獨輪手推車 ×1、沙包袋 ×1、挖礦工具 ×1", "大鋼蛇", "https://lh3.googleusercontent.com/d/1pk9eq3TpwTRBdoansEgXgWBLVtz9fap1=s400"],
+["No.118", "詭異的白色岩石", "青苔 ×4、木箱 ×1、提燈 ×1", "晶光芽", "https://lh3.googleusercontent.com/d/1kGJcTFs8HPRoJsrRQXeDA7yxvBd-2TI3=s400"],
+["No.119", "在置物場吃點東西", "盤中食物/木箱/提燈/木桶 各1", "地鼠、晶光芽、晶光花（★）", "https://lh3.googleusercontent.com/d/1E58EEU4ZjNrKeiWa9psA_gtRxoFxxcQv=s400"],
+["No.120", "充滿期待的餐桌", "派對餐盤 ×4、椅子(長) ×2、桌子(大) ×1", "吞食獸（★）", "https://lh3.googleusercontent.com/d/1y6IzDYs98FoTT5N7_yaFospC2E7J5Bef=s400"],
+["No.121", "大口吃麵包工坊", "盤子上的食物 ×1", "狗仔包、麻花犬", "https://lh3.googleusercontent.com/d/1YtX2_keh_1Zbkn1vDJYe-7Be3T06hehR=s400"],
+["No.122", "迷你廚房", "(廚房組)", "鴨嘴炎獸", "https://lh3.googleusercontent.com/d/1PqCrJkLIrRJBSU5XuyiwhtHwvU1Aea4C=s400"],
+["No.123", "大家一起派對", "盤子上的食物 ×1", "樹才怪", "https://lh3.googleusercontent.com/d/1JZ2jacBZoFP1sqJTJCqQe49VEERlSyag=s400"],
+["No.124", "悠閒回顧照片", "(相框或相關)", "毒電嬰(凸隆隆山地)", "https://lh3.googleusercontent.com/d/1bvvxwOBiLINeGD0UY48aWXne-hF7oecl=s400"],
+["No.125", "啁啁啾啾演唱會", "棲木 ×1、直立式麥克風 ×1", "聒噪鳥、烏鴉頭頭", "https://lh3.googleusercontent.com/d/1fpGP8NMLbIv5MoQNiTidzyaJ-iXJxefj=s400"],
+["No.126", "演唱會舞台", "喇叭 ×2、麥克風 ×1、舞台台座 ×1", "胖丁、胖可丁", "https://lh3.googleusercontent.com/d/10WGK5eWZ1p2fog3egNegtdM08Zv05-FE=s400"],
+["No.127", "跟著節奏一二跳", "沙包 ×1、桌子 ×1、CD播放器 ×1", "豪力、利歐路、路卡利歐", "https://lh3.googleusercontent.com/d/16c9kYK_ONzW09PVSGo8YlCfbgNlb0ajO=s400"],
+["No.128", "音樂和閱讀", "雜誌架 ×1", "圓法師、音箱蟀、音響洛托姆", "https://lh3.googleusercontent.com/d/1pyhrp4xILU1sgntUVFNNqO0vLddGUnLZ=s400"],
+["No.129", "小小博物館", "隔板 ×3、台座 ×1、遺失物(大) ×1", "索財靈、風速狗", "https://lh3.googleusercontent.com/d/1b7-IHi6GRiXgIgrmZ-qMb8vBsJLrbZqQ=s400"],
+["No.130", "清爽的更衣室", "椅子(長條) ×1", "騰蹴小將", "https://lh3.googleusercontent.com/d/1Ng7kXG7u4lFfO_bGk6_HI44xNhp0hbrz=s400"],
+["No.131", "銅像景點", "樹籬 ×4、告示牌 ×1", "皮皮、皮可西", "https://lh3.googleusercontent.com/d/1wgsUNYLEd0ssutK27Q0M03wh_vtT9Ahi=s400"],
+["No.132", "平交道", "鐵軌 ×1、平交道柵欄 ×1", "大炭車、小炭仔", "https://lh3.googleusercontent.com/d/1QiULuLATduwbKHunktz7aR81uBSj6O_7=s400"],
+["No.133", "主廚的廚房", "自然風桌子 ×1、時髦鍋子 ×1、盤子食物 ×1", "藏飽栗鼠(廚師)", "https://lh3.googleusercontent.com/d/1KspWe0i3nhsQvL2CLG0e9hbHB45S2ySM=s400"],
+["No.134", "極致豪華", "豪華燈/沙發/床鋪/桌子 各1", "賽富豪（★★）", "https://lh3.googleusercontent.com/d/1JMlppermeV5hDufz-hJ5o6to1kp1zoH_=s400"],
+["No.135", "沉甸甸的鐵", "鐵床鋪/鐵桌/鐵椅/提燈 各1", "巨炭山（★）", "https://lh3.googleusercontent.com/d/1lkEHdOMoKgr2Pe9NlwUdt8BJdPpcuGGM=s400"],
+["No.136", "現代生活", "工業風床鋪/桌子/椅子 各1", "狙射樹梟（★★）", "https://lh3.googleusercontent.com/d/1dg0xgWDUbOrXQKTh_MkUWfsaemdVNDvk=s400"],
+["No.137", "粉色的草叢", "粉紅草 ×4", "大顎蟻、超音波幼蟲、沙漠蜻蜓、青綿鳥、夜巡靈", "https://lh3.googleusercontent.com/d/1Kf2m8pKcblo2oFcUhFLD1RrEBwZdjZdV=s400"],
+["No.138", "樹蔭的粉色草叢", "大樹 ×1、粉紅草 ×4", "沙基拉斯、多龍梅西亞/奇、新葉喵", "https://lh3.googleusercontent.com/d/1VEiwtHaEiN-lBzhSbQLLlnLuQyr4Kxre=s400"],
+["No.139", "濕潤的粉色草叢", "粉紅草 ×4、水 ×2", "呱呱泡蛙、呱頭蛙、甲賀忍蛙", "https://lh3.googleusercontent.com/d/121iE4dkAqN7YQuxH5Vilq1n6s8r90css=s400"],
+["No.140", "高崗的粉色草叢", "粉紅草 ×4、高處 ×1", "藍鴉、電海燕、大電海燕、鋼鎧鴉", "https://lh3.googleusercontent.com/d/1uUZiAsBCJL2H-6e2ETtUiqpP7GRdLBUU=s400"],
+["No.141", "水管秘密基地", "水管 ×3、草叢(任意) ×4", "火球鼠、火岩鼠", "https://lh3.googleusercontent.com/d/1E4Vyb-c47trp4SNcqwz4fla3fCFG3HsU=s400"],
+["No.142", "軟綿綿的花田", "浮島之花 ×4", "六尾、九尾、夢妖、夢妖魔、稚山雀", "https://lh3.googleusercontent.com/d/13teYUEJFzjsGwSLKb9nbb_v1a8LQVCHd=s400"],
+["No.143", "樹蔭的軟綿綿花田", "大樹 ×1、浮島之花 ×4", "麒麟奇、奇麒麟、青藤蛇", "https://lh3.googleusercontent.com/d/1XNUingTp0kd11uwMt9vuE64xjrDT6FGy=s400"],
+["No.144", "濕潤的軟綿綿花田", "浮島之花 ×4、水 ×2", "迷你龍", "https://lh3.googleusercontent.com/d/1enmTRQoZdQWg6OJ0as8oKbBHJbMPvL7j=s400"],
+["No.145", "水邊小船", "浮萍 ×2、水 ×2", "快龍", "https://lh3.googleusercontent.com/d/1IR1TK-FHKQh4XwwXgsSq7FkylOxUSYXf=s400"],
+["No.146", "光照的瀑布", "水 ×3、踏石 ×3、火炬 ×2、瀑布 ×1", "暴鯉龍（★）", "https://lh3.googleusercontent.com/d/17_cQhUb49THeSyMLG8W3TMECWXe6w1MJ=s400"],
+["No.147", "鳥鳴花園", "木製鳥巢箱 ×1", "七夕青鳥", "https://lh3.googleusercontent.com/d/1qLMZjbLaC4CmCdiV3uJ13CYju79j9gKw=s400"],
+["No.148", "簡約浴室", "(浴室組)", "迷你龍、哈克龍", "https://lh3.googleusercontent.com/d/1g5NGzbvPExmYd0HZAtM8w-BwibDD4TJC=s400"],
+["No.149", "騎行中休息", "自動販賣機 ×4、自行車 ×1", "鐵啞鈴（★）", "https://lh3.googleusercontent.com/d/16aWA0eVvWVXK9OSnZxDMteeKqpirhJ6-=s400"],
+["No.150", "暖爐旁打盹", "石製壁爐 ×1、椅子(長條) ×1", "火岩鼠、火爆獸", "https://lh3.googleusercontent.com/d/1DOszPxMhJQz4Z7Kh3ACzUdomocd6tK9U=s400"],
+["No.151", "滿溢的超能力", "(超能場地)", "胡地", "https://lh3.googleusercontent.com/d/10zyYH8mC-qoUrVI-zqqmyhlHwFuTmbUT=s400"],
+["No.152", "水晶占卜", "椅子 ×2、桌子 ×1", "凱西、勇基拉", "https://lh3.googleusercontent.com/d/1jsglTAiKNoWlU3JBHE6Hx-YqUfHBWskT=s400"],
+["No.153", "垃圾場的電視", "垃圾袋 ×2、電視 ×1", "彷徨夜靈、黑夜魔靈（★★）", "https://lh3.googleusercontent.com/d/15wwHiLP9d3w8xx41KBH7qCN5FmvLq62u=s400"],
+["No.154", "大型垃圾場", "鋼骨 ×3、垃圾桶組 ×1、輪胎 ×1、微波爐 ×1", "小鍛匠（空空鎮)", "https://lh3.googleusercontent.com/d/1kWtxt6RjmeHCHl7-Gv_fLlhJbSH8jPjF=s400"],
+["No.155", "跟搭檔一起調查", "風速狗布偶 ×1、折疊椅 ×2、桌燈 ×1", "新葉喵、蒂蕾喵", "https://lh3.googleusercontent.com/d/1TP-I2a6YvhGosynrW8lN5GyU32Njun4m=s400"],
+["No.156", "正在保養人孔蓋", "掘山工具/鐵管堆/人孔蓋/三角錐 各1", "小鍛匠（空空鎮)、鋼鎧鴉、蚊香泳士（★★）", "https://lh3.googleusercontent.com/d/1Ig1Ifx9HsUcd2nPQZXqTwVhg4CQE76QR=s400"],
+["No.157", "亮晶晶洗手台", "壁掛鏡 ×1", "魔牆人偶", "https://lh3.googleusercontent.com/d/1WtVn0SYC_Hk4gHb_NSzTJq7N4y7g-6l-=s400"],
+["No.158", "家庭影院", "音響 ×2、電視 ×1、矮櫃組 ×1", "夢妖魔（★）", "https://lh3.googleusercontent.com/d/1iJ4soSHnnmVHz8kuQeMBM2qzJ62i0BNv=s400"],
+["No.159", "學習空間", "書架 ×1", "拉魯拉絲、奇魯莉安", "https://lh3.googleusercontent.com/d/1YTn7ymLWuwglsfxIxHAr9aE3Ge3p7FjS=s400"],
+["No.160", "律動客廳", "音符墊 ×4、音響 ×2、電視 ×1", "嗡蝠（★）、音波龍（★★）", "https://lh3.googleusercontent.com/d/13Mkg8ihhd0rbO2qCKNCojtuygq4Fgx2w=s400"],
+["No.161", "咻咻打掃", "清潔套組 ×1、浴缸 ×1", "蚊香蝌蚪（★）", "https://lh3.googleusercontent.com/d/1IAWdtvi_kLkW8Eyq7Ec3qe8Y8yt23dKC=s400"],
+["No.162", "質感化妝台", "椅子 ×1、梳妝台 ×1、加濕器 ×1", "奇魯莉安（★）、沙奈朵（★★）", "https://lh3.googleusercontent.com/d/1ob8nlaa0AZeB_wQaE9w2nk12vcAAi-mw=s400"],
+["No.163", "迷你圖書館", "書架 ×2、梯子 ×1、桌子 ×1、照明 ×1", "沙奈朵", "https://lh3.googleusercontent.com/d/1iW3L_TpupM7D6MPe0xebvGmEVQSS7mn4=s400"],
+["No.164", "遊戲連線對戰", "椅子 ×2、遊戲街機 ×2", "多邊獸Z（★）", "https://lh3.googleusercontent.com/d/1ZDRpuEeP7lAPMilE4N4HGiFL37O5TXPH=s400"],
+["No.165", "遊樂園", "玩具(任意) ×1", "藤藤蛇", "https://lh3.googleusercontent.com/d/1wq2nyzMn1XPKWnChrjqhIcmj9-fyTkCL=s400"],
+["No.166", "辦公桌", "電腦 ×1、馬克杯 ×1、辦公桌/椅 各1", "多邊獸2（★）", "https://lh3.googleusercontent.com/d/10Bm_ACEtInW9IP7o8oyIymUKFGyvJErD=s400"],
+["No.167", "辦公室倉庫", "梯子 ×1、紙箱 ×1", "夢妖、多龍奇、多龍巴魯托", "https://lh3.googleusercontent.com/d/1Xha6osGCVf8EaGciz861bLNQVz_JBaur=s400"],
+["No.168", "實驗空間", "實驗套組 ×1、顯微鏡 ×1、論文 ×1", "胡地（★）", "https://lh3.googleusercontent.com/d/1JgesowoNfYdG24T24eV3BPEikl62Lmv-=s400"],
+["No.169", "以博士為目標研究中", "桌子 ×1", "金屬怪", "https://lh3.googleusercontent.com/d/1yHc9-xlTIOfHSMXDROugt7TJU8KpGrWP=s400"],
+["No.170", "研究員的桌子", "桌子 ×2", "多邊獸", "https://lh3.googleusercontent.com/d/1_aviLYaAv9Oda8Z2UljBLwT65tmxxwwO=s400"],
+["No.171", "歡迎閱讀", "塞滿的書架 ×1、報紙 ×1", "魔尼尼（★）、君主蛇（★★）", "https://lh3.googleusercontent.com/d/1JOLVqjLO_A8x7Ivs6CUEYcfU9u87kWko=s400"],
+["No.172", "咚咚驚喜箱", "聚光燈 ×2、大太鼓 ×1、驚喜盒 ×1", "魔幻假面喵（★）", "https://lh3.googleusercontent.com/d/1JH2PhUzH5IWctP0oisAB74kgXMXYgh6I=s400"],
+["No.173", "惡作劇開關", "驚喜盒 ×1、平板電腦 ×1", "呱頭蛙（★）、甲賀忍蛙（★★）", "https://lh3.googleusercontent.com/d/1rIWm_oBVfSXJ1iwCgdibaI53mAakH6_C=s400"],
+["No.174", "絕景拍照版", "人形立牌 ×1、高處 ×1", "正電拍拍、負電拍拍", "https://lh3.googleusercontent.com/d/1omno-XGpEIy5QtVDCs4kSVroi737bMUq=s400"],
+["No.175", "輪胎公園", "跳輪胎 ×2、輪胎 ×1、溜滑梯 ×1", "咚咚鼠(亮晶晶空島)", "https://lh3.googleusercontent.com/d/1AyGNw_cuLg-pZW7gcEbJE0KRO_5Obtn0=s400"],
+["No.176", "大自然的市場", "大樹 ×1、大石頭 ×1、桌子 ×2", "雷丘", "https://lh3.googleusercontent.com/d/10UlQno1GCaEvg_ZIS5rekFZTlVwkWGef=s400"],
+["No.177", "施工地的發電站", "(施工器材)", "修建老匠", "https://lh3.googleusercontent.com/d/1fCFBdMuJMNmUUz0rnX91nTKO1TI510fr=s400"],
+["No.178", "在道場訓練", "怪力岩 ×2、掛軸 ×2", "蚊香泳士（★）、艾路雷朵（★★）", "https://lh3.googleusercontent.com/d/1KICLfGvqGnaknwbVxvqPOQN7dvZpyd5d=s400"],
+["No.179", "邪惡組織的秘密基地", "(反派旗幟/電腦)", "貓老大", "https://lh3.googleusercontent.com/d/1DlOwsJfgsu-2or-pWqGiw-r729YwafaK=s400"],
+["No.180", "九道火焰", "篝火 ×9", "九尾（★）", "https://lh3.googleusercontent.com/d/118bHa43lJ-cBj5L1ZU-4F6RfMXNS_15h=s400"],
+["No.181", "被布偶圍滿", "常用布偶 ×4、飄飄球/隨風球", "隨風球", "https://lh3.googleusercontent.com/d/1c9mphxUsgeo3l719_cJC-tFwB1faIrvr=s400"],
+["No.182", "絕佳的遊戲環境", "電競床/椅/冰箱/電腦/桌子 各1", "巨金怪（★★）", "https://lh3.googleusercontent.com/d/1x_hFtdfV7JlGRvCzLdvV6wISzl6mqJw2=s400"],
+["No.183", "流行潮流", "流行床/桌/沙發 各1", "火爆獸（★）", "https://lh3.googleusercontent.com/d/1nJ7HexA9_VdU4Keu2Jns_nQG_SD8eE_i=s400"],
+["No.184", "釣魚池", "釣竿 ×1、椅子 ×1", "呆呆王、呆殼獸", "https://lh3.googleusercontent.com/d/1LMf6mJfDZ3LqNqJ80GwKYUIKLw1LlJ9Q=s400"],
+["No.185", "海釣", "釣竿 ×1、椅子 ×1、海水 ×1", "鯉魚王、海兔獸", "https://lh3.googleusercontent.com/d/1LGBiyX_7N8MCuuf2Wtj7vZGUjs2tf40k=s400"],
+["No.186", "沼澤釣", "釣竿 ×1、椅子 ×1", "臭泥、臭臭泥", "https://lh3.googleusercontent.com/d/1oxzoNxCaSjFapLNYvxtQNGMaTyuGEKDf=s400"],
+["No.187", "溫泉釣", "釣竿 ×1、椅子 ×1", "蓮葉童子、蓮帽小童", "https://lh3.googleusercontent.com/d/1Zbxd8qDnZ7yYNsM6q0mQXXH7aEf12Ezg=s400"],
+["No.188", "熔岩釣", "椅子 ×1、釣竿 ×1、熔岩 ×1", "風速狗（★）", "https://lh3.googleusercontent.com/d/15B03Y7ux3Qb_wZNl5NTAXpY6sFtCWEmj=s400"],
+["No.189", "高調的搖滾舞台", "喇叭/舞台/麥克風 + 電吉他", "顫弦蠑螈-高調（★）", "https://lh3.googleusercontent.com/d/1nt7FYfOU0phAYFbfZPEP0SxjNEAB3vTF=s400"],
+["No.190", "低調的搖滾舞台", "喇叭/舞台/麥克風 + 電貝斯", "顫弦蠑螈-低調（★）", "https://lh3.googleusercontent.com/d/1DAl-idv0ZdLCeM8EYozDED6NUuG_1OS4=s400"],
+["No.191", "怨念騎士的祭壇", "展示台、咒術之鎧、踏腳石、篝火", "蒼炎刃鬼", "https://lh3.googleusercontent.com/d/11WCwS4rxIJwX20aZoEsOOleBcCaWu9As=s400"],
+["No.192", "忠誠騎士的祭壇", "展示台、慶祝之鎧、踏腳石、篝火", "紅蓮鎧騎", "https://lh3.googleusercontent.com/d/1cRy_6x9tIGbYYYxpXNp8iGTZ0tD-l5sE=s400"],
+["No.193", "飛翼化石展示台", "台座x1、飛翼化石 (頭/身/尾/左翼/右翼)", "化石翼龍（★）", "https://lh3.googleusercontent.com/d/1ukcnC5igwgpMhz2n8vIse5pRuxttkUn0=s400"],
+["No.194", "頭蓋化石展示台", "台座x1、頭蓋化石", "頭蓋龍（★）", "https://lh3.googleusercontent.com/d/1fo5Bu53B6ApQu61uLRqsWinbGGojqMBo=s400"],
+["No.195", "頭槌化石展示台", "台座x1、頭槌化石 (頭/身/尾)", "戰槌龍（★）", "https://lh3.googleusercontent.com/d/1xREAknIwLK0SHveAUCA3taUO6nqcoexn=s400"],
+["No.196", "盾甲化石展示台", "台座x1、盾甲化石", "盾甲龍（★）", "https://lh3.googleusercontent.com/d/18uF9Ofg5bLv58OqHcfPRjmGrxqrdGqHn=s400"],
+["No.197", "護盾化石展示台", "台座x1、護盾化石 (頭/身/尾)", "護城龍（★）", "https://lh3.googleusercontent.com/d/1HQKiAm7rv9dg1SCZ2GVgBExGS1nR7SBb=s400"],
+["No.198", "顎之化石展示台", "台座x1、顎之化石", "寶寶暴龍（★）", "https://lh3.googleusercontent.com/d/1wU-FZjCJoUnTPSbmSSUv3h7TCtN-YCQe=s400"],
+["No.199", "暴君化石展示台", "台座x2、暴君化石 (頭/身/尾/腳)", "怪顎龍（★）", "https://lh3.googleusercontent.com/d/1bUPWWlvMMS-uJRJ1Qy1dAc4P76ydg3Qd=s400"],
+["No.200", "鰭之化石展示台", "台座x1、鰭之化石", "冰雪龍（★）", "https://lh3.googleusercontent.com/d/1CI8cvizkLPCMAnk7KDMnpk7QxoJEZXWM=s400"],
+["No.201", "凍原化石展示台", "台座x1、凍原化石 (頭/身/尾)", "冰雪巨龍（★）", "https://lh3.googleusercontent.com/d/15dMTBCm7gP8tZCRfLbso1S12CmT6OVq_=s400"],
+["No.202", "沁爽清藍", "椅子 ×1、桌子 ×1、冰淇淋汽水 ×1", "水伊布（空空鎮)", "https://lh3.googleusercontent.com/d/1E6tjcXSPTvPzIjvSfRyCPXpnyH_mqOQd=s400"],
+["No.203", "麻麻薯餅", "椅子 ×1、桌子 ×1、炸薯條 ×1", "雷伊布（空空鎮)", "https://lh3.googleusercontent.com/d/1q4a7uAm-IwBR1YEqABFg0Ker02BtlAgP=s400"],
+["No.204", "辣到噴火", "椅子 ×1、桌子 ×1、披薩 ×1", "火伊布（空空鎮)", "https://lh3.googleusercontent.com/d/1qdOFX96jQ8_W6EiLI8yvKs4w9qruji22=s400"],
+["No.205", "優雅的午後", "椅子 ×1、桌子 ×1、下午茶套餐 ×1", "太陽伊布（空空鎮)", "https://lh3.googleusercontent.com/d/1Y71bzudHc37b2ZP5IPRnDTzh8-__LsC1=s400"],
+["No.206", "黑色的滋味", "椅子 ×1、桌子 ×1、巧克力餅乾 ×1", "月亮伊布（空空鎮)", "https://lh3.googleusercontent.com/d/1wgGhqBQUvLEBAMiFJ2n5hLwnBAAd8Sdw=s400"],
+["No.207", "綠色三明治", "椅子 ×1、桌子 ×1、三明治 ×1", "葉伊布（空空鎮)", "https://lh3.googleusercontent.com/d/1cCM0-J-lBIq-QMe6aim4BmIp_qKpYEJA=s400"],
+["No.208", "沁涼刨冰", "椅子 ×1、桌子 ×1、刨冰 ×1", "冰伊布（空空鎮)", "https://lh3.googleusercontent.com/d/1IFqhGEAC4eLEZ0j1OafrSVXZ-9UvOYyk=s400"],
+["No.209", "可愛的蛋糕", "椅子 ×1、桌子 ×1、緞帶蛋糕 ×1", "仙子伊布（空空鎮)", "https://lh3.googleusercontent.com/d/1JBldlix_mk1LMImWbccPcE9hSpP6eYO4=s400"],
+["No.001", "綠色的地毯", "悠然的花 ×4", "毽子草（★）、毽子花（★★）、毽子棉（★★★）", "https://lh3.googleusercontent.com/d/1FBjhrQlbmkUBmYGRgqQPI5dIsAxHWMEU=s400"],
+["No.002", "遠足必備", "便當 ×1、毽子草水壺 ×1、花朵背包 ×1", "毽子花（★★）", "https://lh3.googleusercontent.com/d/1SbQTHXJsGaTTo4sCosQcpq3-Km2th5Xz=s400"],
+["No.003", "蒲公英相伴的午餐", "悠然的花×1、便當×1、花朵餐具套組×1、花朵靠枕×1", "毽子棉（★★★）", "https://lh3.googleusercontent.com/d/1ivfaiYa-nRxHxzIrRLuZMDhY8--FyEHc=s400"]
 ];
+const DEX_MAP={"妙蛙種子":1,"妙蛙草":2,"妙蛙花":3,"小火龍":4,"火恐龍":5,"噴火龍":6,"傑尼龜":7,"卡咪龜":8,"水箭龜":9,"綠毛蟲":10,"鐵甲蛹":11,"巴大蝶":12,"獨角蟲":13,"鐵殼蛹":14,"大針蜂":15,"波波":16,"比比鳥":17,"大比鳥":18,"阿柏蛇":23,"阿柏怪":24,"皮卡丘":25,"雷丘":26,"皮皮":35,"皮可西":36,"六尾":37,"九尾":38,"胖丁":39,"胖可丁":40,"超音蝠":41,"大嘴蝠":42,"走路草":43,"臭臭花":44,"霸王花":45,"派拉斯":46,"派拉斯特":47,"毛球":48,"摩魯蛾":49,"地鼠":50,"三地鼠":51,"喵喵":52,"貓老大":53,"可達鴨":54,"哥達鴨":55,"卡蒂狗":58,"風速狗":59,"蚊香蝌蚪":60,"蚊香君":61,"蚊香蛙":62,"凱西":63,"勇基拉":64,"胡地":65,"腕力":66,"豪力":67,"怪力":68,"喇叭芽":69,"口呆花":70,"大食花":71,"瑪瑙水母":72,"毒刺水母":73,"小拳石":74,"隆隆石":75,"隆隆岩":76,"小火馬":77,"烈焰馬":78,"呆呆獸":79,"呆殼獸":80,"小磁怪":81,"三合一磁怪":82,"大蔥鴨":83,"小海獅":86,"白海獅":87,"臭泥":88,"臭臭泥":89,"大舌貝":90,"鐵甲貝":91,"鬼斯":92,"鬼斯通":93,"耿鬼":94,"大岩蛇":95,"催眠貘":96,"引夢貘人":97,"霹靂電球":100,"頑皮雷彈":101,"蛋蛋":102,"椰蛋樹":103,"卡拉卡拉":104,"嘎啦嘎啦":105,"飛腿郎":106,"快拳郎":107,"大舌頭":108,"瓦斯彈":109,"雙彈瓦斯":110,"鑽角犀獸":111,"鑽角犀王":112,"吉利蛋":113,"蔓藤怪":114,"袋獸":115,"墨海馬":116,"海刺龍":117,"角金魚":118,"金魚王":119,"海星星":120,"寶石海星":121,"魔牆人偶":122,"飛天螳螂":123,"電擊獸":125,"鴨嘴火獸":126,"凱羅斯":127,"鯉魚王":129,"暴鯉龍":130,"拉普拉斯":131,"百變怪":132,"伊布":133,"水伊布":134,"雷伊布":135,"火伊布":136,"多邊獸":137,"化石翼龍":142,"卡比獸":143,"急凍鳥":144,"閃電鳥":145,"火焰鳥":146,"迷你龍":147,"哈克龍":148,"快龍":149,"超夢":150,"夢幻":151,"菊草葉":152,"月桂葉":153,"大竺葵":154,"火球鼠":155,"火岩鼠":156,"火爆獸":157,"小鋸鱷":158,"藍鱷":159,"大力鱷":160,"咕咕":163,"貓頭夜鷹":164,"圓絲蛛":167,"阿利多斯":168,"叉字蝠":169,"皮丘":172,"皮寶寶":173,"寶寶丁":174,"咩利羊":179,"茸茸羊":180,"電龍":181,"美麗花":182,"瑪力露":183,"瑪力露麗":184,"樹才怪":185,"蚊香泳士":186,"蚊香蛙皇":186,"毽子草":187,"毽子花":188,"毽子棉":189,"長尾怪手":190,"向日種子":191,"向日花怪":192,"帕底亞烏波":194,"烏波":194,"土王":195,"沼王":195,"太陽伊布":196,"月亮伊布":197,"藍鴉":198,"黑暗鴉":198,"呆呆王":199,"夢妖":200,"奇麒麟":203,"麒麟奇":203,"天蠍":207,"大鋼蛇":208,"巨鉗螳螂":212,"赫拉克羅斯":214,"紐拉":215,"太陽珊瑚":222,"小球飛魚":226,"刺龍王":230,"多邊獸2":233,"圖圖犬(彩繪)":235,"無畏小子":236,"戰舞郎":237,"毒電嬰":239,"電擊怪":239,"鴨嘴寶寶":240,"幸福蛋":242,"雷公":243,"炎帝":244,"水君":245,"寶寶暴龍":246,"幼基拉斯":247,"沙基拉斯":248,"班基拉斯":248,"洛奇亞":249,"鳳王":250,"火雉雞":255,"力壯雞":256,"火焰雞":257,"水躍魚":258,"沼躍魚":259,"巨沼怪":260,"狩獵鳳蝶":267,"毒粉蝶":269,"蓮葉童子":270,"蓮帽小童":271,"樂天河童":272,"長翅鷗":278,"大嘴鷗":279,"拉魯拉絲":280,"奇魯莉安":281,"沙奈朵":282,"土居忍士":290,"鐵面忍者":291,"脫殼忍者":292,"幕下力士":296,"鐵掌力士":297,"露力麗":298,"大嘴娃":303,"正電拍拍":311,"負電拍拍":312,"電螢蟲":313,"甜甜螢":314,"百合根娃娃":315,"溶食獸":316,"吞食獸":317,"吼鯨王":321,"煤炭龜":324,"大顎蟻":328,"超音波幼蟲":329,"沙漠蜻蜓":330,"刺球仙人掌":331,"夢歌仙人掌":332,"青綿鳥":333,"七夕青鳥":334,"月石":337,"圓法師":337,"太陽岩":338,"米立龍":349,"夜巡靈":355,"彷徨夜靈":356,"阿勃梭魯":359,"雪童子":361,"冰鬼護":362,"海豹球":363,"海魔獅":364,"帝牙海獅":365,"鐵啞鈴":374,"金屬怪":375,"巨金怪":376,"拉帝亞斯":380,"拉帝歐斯":381,"蓋歐卡":382,"小火焰猴":390,"猛火猴":391,"烈焰猴":392,"波加曼":393,"波皇子":394,"帝王拿波":395,"音箱蟀":401,"電海燕":404,"大電海燕":405,"頭蓋龍":408,"盾甲龍":411,"護城龍":411,"三蜜蜂":415,"蜂女王":416,"櫻花兒":421,"無殼海兔":422,"海兔獸":423,"雙尾怪手":424,"飄飄球":425,"隨風球":426,"夢妖魔":429,"烏鴉頭頭":430,"盆才怪":438,"魔尼尼":439,"小福蛋":440,"聒噪鳥":441,"小卡比獸":446,"苔卡比獸":446,"利歐路":447,"路卡利歐":448,"雪笠怪":459,"暴雪王":460,"瑪狃拉":461,"自爆磁怪":462,"大舌舔":463,"超甲狂犀":464,"巨蔓藤":465,"巨蔓藤博士":465,"電擊魔獸":466,"鴨嘴焰龍":467,"鴨嘴炎獸":467,"葉伊布":470,"冰伊布":471,"天蠍王":472,"多邊獸Z":474,"艾路雷朵":475,"黑夜魔靈":477,"雪妖女":478,"音響洛托姆":479,"霏歐納":489,"瑪納霏":490,"藤藤蛇":495,"青藤蛇":496,"君主蛇":497,"差不多娃娃":531,"搬運小匠":532,"鐵骨土人":533,"修建老匠":534,"破破袋":568,"灰塵山":569,"索羅亞":570,"索羅亞克":571,"泡沫栗鼠":572,"奇諾栗鼠":573,"古月鳥":580,"燭光靈":607,"燈火幽靈":608,"水晶燈火靈":609,"牙牙":610,"斧牙龍":611,"雙斧戰龍":612,"音波龍":635,"燃燒蟲":636,"火神蛾":637,"呱呱泡蛙":656,"呱頭蛙":657,"甲賀忍蛙":658,"布撥":659,"布土撥":660,"巴布土撥":661,"稚山雀":661,"晶光芽":669,"晶光花":670,"百合根花怪":671,"小鍛匠":679,"巧鍛匠":680,"巨鍛匠":681,"怪顎龍":697,"仙子伊布":700,"咚咚鼠":702,"黏黏寶":704,"黏美兒":705,"黏美龍":706,"嗡蝠":714,"波爾凱尼恩":721,"木木梟":722,"投羽梟":723,"狙射樹梟":724,"強顎雞母蟲":736,"螺釘地鼠":749,"龍頭地鼠":750,"鍬農炮蟲":751,"夜盜火蜥":757,"焰后蜥":758,"謎擬Ｑ":778,"炎兔兒":813,"騰蹴小將":814,"閃焰王牌":815,"貪心栗鼠":819,"藏飽栗鼠":820,"藏飽栗鼠(廚師)":820,"鋼鎧鴉":823,"狗仔包":827,"麻花犬":834,"小炭仔":837,"大炭車":838,"巨炭山":839,"顫弦蠑螈":849,"炭小侍":878,"戰槌龍":880,"多龍奇":885,"多龍梅西亞":886,"多龍巴魯托":887,"冰雪龍":894,"冰雪巨龍":895,"新葉喵":906,"蒂蕾喵":907,"魔幻假面喵":908,"蟲電寶":917,"紅蓮鎧騎":936,"蒼炎刃鬼":937,"淺淺丘":960,"索財靈":999,"賽富豪":1000};
+
+const SPRITE_BASE = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/';
+function spriteUrl(name) {
+  const clean = name.replace(/（.*?）/g,'').replace(/\(.*?\)/g,'').replace(/（★.*）/,'').replace(/\(★.*\)/,'').trim();
+  const dex = DEX_MAP[clean];
+  return dex ? SPRITE_BASE + dex + '.png' : '';
+}
+
+// Find habitat image by name
+function habImg(habStr) {
+  if (!habStr) return '';
+  const hName = habStr.split(' / ')[0];
+  for (const h of HAB_DATA) {
+    if (h[1] === hName) return h[4] || '';
+  }
+  return '';
+}
 
 const i18n = {
   zh: {searchPh:'搜尋寶可夢名稱、專長、棲息地...',tabPk:'🐾 寶可夢查詢',tabHab:'🏠 棲息地查詢',tabSkill:'⚡ 專長一覽',
@@ -629,106 +659,111 @@ const i18n = {
     noResult:'No results found. Try different search terms.',reqItems:'Required Items',appearPk:'Pokémon',
     hab:'Habitat',pokemon:'Pokémon',detail:'Details',close:'✕',none:'None'}
 };
-let lang = 'zh', curTab = 'pokemon';
-const t = k => i18n[lang][k] || k;
-function toggleLang(){ lang = lang==='zh'?'en':'zh'; document.getElementById('lang-btn').textContent = lang==='zh'?'EN':'繁中'; renderAll(); }
+let lang='zh', curTab='pokemon';
+const t=k=>i18n[lang][k]||k;
+function toggleLang(){lang=lang==='zh'?'en':'zh';document.getElementById('lang-btn').textContent=lang==='zh'?'EN':'繁中';renderAll();}
 
-const ENVS = ['明亮','溫暖','滋潤','昏暗','乾燥','涼爽'];
-const TASTES = ['甜','辣','苦','酸','澀'];
-const SKILLS = [...new Set(PK_DATA.flatMap(p=>p[2]?p[2].split('、').map(s=>s.trim()):[]))].filter(s=>s&&s!=='-').sort();
-let filterEnv='', filterTaste='', filterSkill='';
+const ENVS=['明亮','溫暖','滋潤','昏暗','乾燥','涼爽'];
+const TASTES=['甜','辣','苦','酸','澀'];
+const SKILLS=[...new Set(PK_DATA.flatMap(p=>p[2]?p[2].split('、').map(s=>s.trim()):[]))].filter(s=>s&&s!=='-').sort();
+let filterEnv='',filterTaste='',filterSkill='';
 
-function switchTab(tab){ curTab=tab; document.querySelectorAll('.tab').forEach(el=>el.classList.toggle('active',el.dataset.tab===tab)); filterEnv='';filterTaste='';filterSkill=''; renderAll(); }
+function switchTab(tab){curTab=tab;document.querySelectorAll('.tab').forEach(el=>el.classList.toggle('active',el.dataset.tab===tab));filterEnv='';filterTaste='';filterSkill='';renderAll();}
 
 function renderFilters(){
-  const el = document.getElementById('filters');
-  let html = '';
+  const el=document.getElementById('filters');let html='';
   if(curTab==='pokemon'){
-    html += `<div class="filter-btn ${filterEnv?'':'active'}" onclick="filterEnv='';renderAll()">${t('allEnv')}</div>`;
-    ENVS.forEach(e=>{ html += `<div class="filter-btn ${filterEnv===e?'active':''}" onclick="filterEnv='${e}';renderAll()">${e}</div>`; });
-    html += '<span style="width:8px"></span>';
-    html += `<div class="filter-btn ${filterTaste?'':'active'}" onclick="filterTaste='';renderAll()">${t('allTaste')}</div>`;
-    TASTES.forEach(ts=>{ html += `<div class="filter-btn ${filterTaste===ts?'active':''}" onclick="filterTaste='${ts}';renderAll()">${ts}</div>`; });
+    html+=`<div class="filter-btn ${filterEnv?'':'active'}" onclick="filterEnv='';renderAll()">${t('allEnv')}</div>`;
+    ENVS.forEach(e=>{html+=`<div class="filter-btn ${filterEnv===e?'active':''}" onclick="filterEnv='${e}';renderAll()">${e}</div>`;});
+    html+='<div class="filter-sep"></div>';
+    html+=`<div class="filter-btn ${filterTaste?'':'active'}" onclick="filterTaste='';renderAll()">${t('allTaste')}</div>`;
+    TASTES.forEach(ts=>{html+=`<div class="filter-btn ${filterTaste===ts?'active':''}" onclick="filterTaste='${ts}';renderAll()">${ts}</div>`;});
   } else if(curTab==='skill'){
-    html += `<div class="filter-btn ${filterSkill?'':'active'}" onclick="filterSkill='';renderAll()">${t('allSkill')}</div>`;
-    SKILLS.forEach(s=>{ html += `<div class="filter-btn ${filterSkill===s?'active':''}" onclick="filterSkill='${s}';renderAll()">${s}</div>`; });
+    html+=`<div class="filter-btn ${filterSkill?'':'active'}" onclick="filterSkill='';renderAll()">${t('allSkill')}</div>`;
+    SKILLS.forEach(s=>{html+=`<div class="filter-btn ${filterSkill===s?'active':''}" onclick="filterSkill='${s}';renderAll()">${s}</div>`;});
   }
-  el.innerHTML = html;
+  el.innerHTML=html;
 }
 
-function renderAll(){ renderFilters(); const q = document.getElementById('search').value.trim().toLowerCase(); if(curTab==='pokemon'||curTab==='skill') renderPokemon(q); else renderHabitats(q); }
+function renderAll(){renderFilters();const q=document.getElementById('search').value.trim().toLowerCase();if(curTab==='pokemon'||curTab==='skill')renderPokemon(q);else renderHabitats(q);}
 
 function renderPokemon(q){
-  let filtered = PK_DATA.filter(p=>{
-    if(!p[1]) return false;
-    if(filterEnv && p[4]!==filterEnv) return false;
-    if(filterTaste && !p[6].includes(filterTaste)) return false;
-    if(curTab==='skill' && filterSkill && (!p[2]||!p[2].includes(filterSkill))) return false;
-    if(q){
-      const s = (p[1]+' '+p[2]+' '+p[4]+' '+p[5]+' '+p[6]+' '+p[7]+' '+p[9]+' '+p[11]).toLowerCase();
-      return s.includes(q);
-    }
+  let filtered=PK_DATA.filter(p=>{
+    if(!p[1])return false;
+    if(filterEnv&&p[4]!==filterEnv)return false;
+    if(filterTaste&&!p[6].includes(filterTaste))return false;
+    if(curTab==='skill'&&filterSkill&&(!p[2]||!p[2].includes(filterSkill)))return false;
+    if(q){const s=(p[1]+' '+p[2]+' '+p[4]+' '+p[5]+' '+p[6]+' '+p[7]+' '+p[9]+' '+p[11]).toLowerCase();return s.includes(q);}
     return true;
   });
-  document.getElementById('stats').textContent = `${t('found')} ${filtered.length} ${t('items')}`;
-  const el = document.getElementById('results');
-  if(!filtered.length){ el.innerHTML=`<div class="empty">${t('noResult')}</div>`; return; }
-  el.innerHTML = filtered.map(p=>{
-    let habHtml = '';
-    if(p[7]){ habHtml += `<div class="hab-item"><span class="hab-name">${p[7].split(' / ')[0]}</span><span class="hab-req">${p[7].split(' / ')[1]||''}</span></div>`; }
-    if(p[9]){ habHtml += `<div class="hab-item"><span class="hab-name">${p[9].split(' / ')[0]}</span><span class="hab-req">${p[9].split(' / ')[1]||''}</span></div>`; }
-    if(p[11]){ habHtml += `<div class="hab-item"><span class="hab-name">${p[11].split(' / ')[0]}</span><span class="hab-req">${p[11].split(' / ')[1]||''}</span></div>`; }
-    const skills = p[2]?p[2].split('、').map(s=>`<span class="skill">${s.trim()}</span>`).join(' '):'';
-    const likes = p[5]?p[5].split('、').map(l=>`<span class="tag tag-like">${l.trim()}</span>`).join(''):'';
+  document.getElementById('stats').textContent=`${t('found')} ${filtered.length} ${t('items')}`;
+  const el=document.getElementById('results');
+  if(!filtered.length){el.innerHTML=`<div class="empty">${t('noResult')}</div>`;return;}
+  el.innerHTML=filtered.map((p,i)=>{
+    const spr=spriteUrl(p[1]);
+    let habHtml='';
+    if(p[7]){const parts=p[7].split(' / ');habHtml+=`<div class="hab-item"><span class="hab-name">${parts[0]}</span><span class="hab-req">${parts[1]||''}</span></div>`;}
+    if(p[9]){const parts=p[9].split(' / ');habHtml+=`<div class="hab-item"><span class="hab-name">${parts[0]}</span><span class="hab-req">${parts[1]||''}</span></div>`;}
+    if(p[11]){const parts=p[11].split(' / ');habHtml+=`<div class="hab-item"><span class="hab-name">${parts[0]}</span><span class="hab-req">${parts[1]||''}</span></div>`;}
+    const skillsHtml=p[2]?p[2].split('、').map(s=>`<span class="skill">${s.trim()}</span>`).join(''):'';
+    const likesHtml=p[5]?p[5].split('、').slice(0,5).map(l=>`<span class="tag tag-like">${l.trim()}</span>`).join(''):'';
     return `<div class="pk-card" onclick="showDetail(${PK_DATA.indexOf(p)})">
-      <div class="header"><span class="num">#${p[0]}</span><span class="name">${p[1]}</span>${skills}</div>
-      <div class="tags">
-        ${p[4]?`<span class="tag tag-env">🌿 ${p[4]}</span>`:''}
-        ${p[6]&&p[6]!=='-'?`<span class="tag tag-taste">👅 ${p[6]}</span>`:''}
-        ${p[3]?`<span class="tag" style="background:rgba(255,170,107,.12);color:var(--orange)">📦 ${p[3]}</span>`:''}
+      <div class="header">
+        ${spr?`<img class="pk-sprite" src="${spr}" alt="${p[1]}" loading="lazy" onerror="this.style.display='none'">`:''}
+        <div class="pk-info"><div class="num">#${p[0]}</div><div class="name">${p[1]}</div>
+        <div class="skills">${skillsHtml}</div></div>
       </div>
-      ${likes?`<div class="tags" style="margin-top:4px">${likes}</div>`:''}
+      <div class="tags">
+        ${p[4]&&p[4]!=='-'?`<span class="tag tag-env">🌿 ${p[4]}</span>`:''}
+        ${p[6]&&p[6]!=='-'?`<span class="tag tag-taste">👅 ${p[6]}</span>`:''}
+        ${p[3]?`<span class="tag tag-drop">📦 ${p[3]}</span>`:''}
+      </div>
+      ${likesHtml?`<div class="tags" style="margin-top:4px">${likesHtml}</div>`:''}
       ${habHtml?`<div class="habitats">${habHtml}</div>`:''}
     </div>`;
   }).join('');
 }
 
 function renderHabitats(q){
-  let filtered = HAB_DATA.filter(h=>{
-    if(q){
-      const s = (h[1]+' '+h[2]+' '+h[3]).toLowerCase();
-      return s.includes(q);
-    }
+  let filtered=HAB_DATA.filter(h=>{
+    if(q){const s=(h[1]+' '+h[2]+' '+h[3]).toLowerCase();return s.includes(q);}
     return true;
   });
-  document.getElementById('stats').textContent = `${t('found')} ${filtered.length} ${t('items')}`;
-  const el = document.getElementById('results');
-  if(!filtered.length){ el.innerHTML=`<div class="empty">${t('noResult')}</div>`; return; }
-  el.innerHTML = filtered.map(h=>`<div class="hab-card">
-    <div class="hab-id">${h[0]}</div>
-    <div class="hab-title">${h[1]}</div>
-    <div class="hab-items">🔧 ${h[2]||t('none')}</div>
-    <div class="hab-pokemon">${(h[3]||'').split('、').map(pk=>`<span style="display:inline-block;margin:2px 4px 2px 0;padding:2px 8px;background:var(--bg3);border-radius:6px;font-size:12px">${pk}</span>`).join('')}</div>
+  document.getElementById('stats').textContent=`${t('found')} ${filtered.length} ${t('items')}`;
+  const el=document.getElementById('results');
+  if(!filtered.length){el.innerHTML=`<div class="empty">${t('noResult')}</div>`;return;}
+  el.innerHTML=filtered.map(h=>`<div class="hab-card">
+    ${h[4]?`<img class="hab-img" src="${h[4]}" alt="${h[1]}" loading="lazy" onerror="this.style.display='none'">`:`<div class="hab-img" style="display:flex;align-items:center;justify-content:center;font-size:48px">🏠</div>`}
+    <div class="hab-body">
+      <div class="hab-id">${h[0]}</div>
+      <div class="hab-title">${h[1]}</div>
+      <div class="hab-items">🔧 ${h[2]||t('none')}</div>
+      <div class="hab-pokemon">${(h[3]||'').split('、').map(pk=>`<span class="pk-tag">${pk}</span>`).join('')}</div>
+    </div>
   </div>`).join('');
 }
 
 function showDetail(idx){
-  const p = PK_DATA[idx];
-  if(!p) return;
-  const el = document.getElementById('detail');
-  let habSection = '';
+  const p=PK_DATA[idx];if(!p)return;
+  const spr=spriteUrl(p[1]);
+  const el=document.getElementById('detail');
+  let habSection='';
   [[p[7],p[8]],[p[9],p[10]],[p[11],p[12]]].forEach(([hab,pks],i)=>{
-    if(!hab) return;
-    const parts = hab.split(' / ');
-    habSection += `<div class="hab-item" style="margin-bottom:6px;padding:8px;background:var(--bg3);border-radius:8px">
+    if(!hab)return;
+    const parts=hab.split(' / ');
+    const img=habImg(hab);
+    habSection+=`<div class="detail-hab">
+      ${img?`<img class="detail-hab-img" src="${img}" alt="${parts[0]}" loading="lazy" onerror="this.style.display='none'">`:''}
       <div style="color:var(--accent);font-weight:600">${t('hab')}${i+1}: ${parts[0]}</div>
       <div style="color:var(--orange);font-size:12px;margin-top:2px">${t('reqItems')}: ${parts[1]||'—'}</div>
       ${pks?`<div style="color:var(--text2);font-size:12px;margin-top:2px">${t('appearPk')}: ${pks}</div>`:''}
     </div>`;
   });
-  el.innerHTML = `<span class="close" onclick="closeDetail()">${t('close')}</span>
-    <h2>#${p[0]} ${p[1]}</h2>
-    <div class="meta">${p[2]?t('skillLabel')+': '+p[2]:''}</div>
+  el.innerHTML=`<span class="close" onclick="closeDetail()">${t('close')}</span>
+    <div class="detail-header">
+      ${spr?`<img class="detail-sprite" src="${spr}" alt="${p[1]}">`:''}
+      <div><h2>#${p[0]} ${p[1]}</h2><div class="meta">${p[2]?t('skillLabel')+': '+p[2]:''}</div></div>
+    </div>
     <div class="section"><h3>📋 ${t('detail')}</h3>
       <div class="info-row"><span class="info-label">${t('envLabel')}</span><span class="info-val">${p[4]||'—'}</span></div>
       <div class="info-row"><span class="info-label">${t('tasteLabel')}</span><span class="info-val">${p[6]||'—'}</span></div>
@@ -738,9 +773,9 @@ function showDetail(idx){
     <div class="section"><h3>🏠 ${t('habLabel')}</h3>${habSection||`<div style="color:var(--text2)">${t('none')}</div>`}</div>`;
   document.getElementById('overlay').classList.add('show');
 }
-function closeDetail(){ document.getElementById('overlay').classList.remove('show'); }
-function doSearch(){ renderAll(); }
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeDetail(); });
+function closeDetail(){document.getElementById('overlay').classList.remove('show');}
+function doSearch(){renderAll();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDetail();});
 renderAll();
 
 </script>
