@@ -256,18 +256,18 @@ const CARD_BACK = '../../assets/capy-collector/card-back.png';
 const EXTRAS = '../../assets/capy-collector/extras.png';
 
 const CHARS = [
-  {id:'plain',    nameEn:'Capy',       nameTw:'水豚',     rarity:'N',   skill:'idleCoins',  skillVal:1,  sx:0,   sy:0,   row:0,col:0},
-  {id:'chef',     nameEn:'Chef Capy',  nameTw:'廚師豚',   rarity:'N',   skill:'idleCoins',  skillVal:2,  sx:170, sy:0,   row:0,col:1},
-  {id:'police',   nameEn:'Officer Capy',nameTw:'警察豚',  rarity:'R',   skill:'idleStars',  skillVal:1,  sx:350, sy:0,   row:0,col:2},
-  {id:'mage',     nameEn:'Mage Capy',  nameTw:'魔法豚',   rarity:'SR',  skill:'idleGems',   skillVal:1,  sx:530, sy:0,   row:0,col:3},
-  {id:'business', nameEn:'Boss Capy',  nameTw:'商務豚',   rarity:'R',   skill:'idleCoins',  skillVal:3,  sx:0,   sy:225, row:1,col:0},
-  {id:'doctor',   nameEn:'Dr. Capy',   nameTw:'醫生豚',   rarity:'R',   skill:'idleHearts', skillVal:2,  sx:170, sy:225, row:1,col:1},
-  {id:'dj',       nameEn:'DJ Capy',    nameTw:'DJ豚',     rarity:'SR',  skill:'idleStars',  skillVal:2,  sx:350, sy:225, row:1,col:2},
-  {id:'pirate',   nameEn:'Pirate Capy',nameTw:'海盜豚',   rarity:'SR',  skill:'idleGems',   skillVal:2,  sx:530, sy:225, row:1,col:3},
-  {id:'melon',    nameEn:'Melon Capy', nameTw:'西瓜豚',   rarity:'N',   skill:'idleHearts', skillVal:1,  sx:0,   sy:450, row:2,col:0},
-  {id:'bee',      nameEn:'Bee Capy',   nameTw:'蜜蜂豚',   rarity:'R',   skill:'idleCoins',  skillVal:4,  sx:170, sy:450, row:2,col:1},
-  {id:'angel',    nameEn:'Angel Capy', nameTw:'天使豚',   rarity:'SSR', skill:'idleAll',    skillVal:3,  sx:350, sy:450, row:2,col:2},
-  {id:'captain',  nameEn:'Captain Capy',nameTw:'船長豚',  rarity:'SSR', skill:'idleAll',    skillVal:5,  sx:530, sy:450, row:2,col:3}
+  {id:'plain',    nameEn:'Capy',       nameTw:'水豚',     rarity:'N',   skill:'idleCoins',  skillVal:1,  cx:90,  cy:145},
+  {id:'chef',     nameEn:'Chef Capy',  nameTw:'廚師豚',   rarity:'N',   skill:'idleCoins',  skillVal:2,  cx:275, cy:140},
+  {id:'police',   nameEn:'Officer Capy',nameTw:'警察豚',  rarity:'R',   skill:'idleStars',  skillVal:1,  cx:460, cy:130},
+  {id:'mage',     nameEn:'Mage Capy',  nameTw:'魔法豚',   rarity:'SR',  skill:'idleGems',   skillVal:1,  cx:645, cy:130},
+  {id:'business', nameEn:'Boss Capy',  nameTw:'商務豚',   rarity:'R',   skill:'idleCoins',  skillVal:3,  cx:90,  cy:395},
+  {id:'doctor',   nameEn:'Dr. Capy',   nameTw:'醫生豚',   rarity:'R',   skill:'idleHearts', skillVal:2,  cx:275, cy:390},
+  {id:'dj',       nameEn:'DJ Capy',    nameTw:'DJ豚',     rarity:'SR',  skill:'idleStars',  skillVal:2,  cx:460, cy:390},
+  {id:'pirate',   nameEn:'Pirate Capy',nameTw:'海盜豚',   rarity:'SR',  skill:'idleGems',   skillVal:2,  cx:645, cy:385},
+  {id:'melon',    nameEn:'Melon Capy', nameTw:'西瓜豚',   rarity:'N',   skill:'idleHearts', skillVal:1,  cx:95,  cy:645},
+  {id:'bee',      nameEn:'Bee Capy',   nameTw:'蜜蜂豚',   rarity:'R',   skill:'idleCoins',  skillVal:4,  cx:280, cy:640},
+  {id:'angel',    nameEn:'Angel Capy', nameTw:'天使豚',   rarity:'SSR', skill:'idleAll',    skillVal:3,  cx:460, cy:635},
+  {id:'captain',  nameEn:'Captain Capy',nameTw:'船長豚',  rarity:'SSR', skill:'idleAll',    skillVal:5,  cx:650, cy:640}
 ];
 
 const RARITY_WEIGHTS = {N:50, R:30, SR:15, SSR:5};
@@ -288,7 +288,7 @@ const SCENES = [
 const I18N = {
   en:{
     title:'Capy Collector', home:'Home', summon:'Summon', collection:'Collection',
-    scenes:'Scenes', upgrade:'Upgrade', summon1:'Summon ×1', summon10:'Summon ×10',
+    scenes:'Scenes', upgrade:'Upgrade', upgrades:'Upgrade', summon1:'Summon ×1', summon10:'Summon ×10',
     cost:'Cost', coins:'Coins', gems:'Gems', hearts:'Hearts', stars:'Stars',
     levelUp:'Level Up', level:'Lv.', owned:'Owned', locked:'???',
     tapContinue:'Tap to continue', noCoins:'Not enough coins!',
@@ -308,7 +308,7 @@ const I18N = {
   },
   tw:{
     title:'水豚收藏家', home:'首頁', summon:'召喚', collection:'收藏',
-    scenes:'場景', upgrade:'升級', summon1:'召喚 ×1', summon10:'召喚 ×10',
+    scenes:'場景', upgrade:'升級', upgrades:'升級', summon1:'召喚 ×1', summon10:'召喚 ×10',
     cost:'花費', coins:'金幣', gems:'寶石', hearts:'愛心', stars:'星星',
     levelUp:'升級', level:'Lv.', owned:'已擁有', locked:'???',
     tapContinue:'點擊繼續', noCoins:'金幣不足！',
@@ -387,45 +387,50 @@ function toggleMute(){
 }
 
 /* ===== SPRITE HELPERS ===== */
-const sheet2Img = new Image(); sheet2Img.src = SHEET2;
-const sheet1Img = new Image(); sheet1Img.src = SHEET1;
-const extrasImg = new Image(); extrasImg.src = EXTRAS;
+// All sheets are 1536×1024
+const SW=1536, SH=1024;
 
-// Character portrait: use sheet2 positions (individual capys)
-// Sheet2 layout: 4 chars per row, each ~170px wide, ~210px tall
-// Row0 y=0, Row1 y=225, Row2 y=450
-// Chars at x: col*170, but first char (plain) is smaller
-const S2W = 1456; // approximate sheet2 width
-const S2H = 816;  // approximate sheet2 height
-const CHAR_W = 155; const CHAR_H = 210;
-
-function getCharBgStyle(c){
-  // Use background-position to crop character from sheet2
-  const px = (c.col * 170 + 15) / S2W * 100;
-  const py = c.sy / S2H * 100;
-  return `background-image:url('${SHEET2}');background-size:${S2W/CHAR_W*100}% auto;`
-    +`background-position:${px}% ${py/(S2H-CHAR_H)*100}%;`;
+// getCharPortraitStyle: crops a circle around character center (cx,cy) from sheet2
+// cropR = radius in source pixels to show; size = CSS display size
+function getCharPortraitStyle(c, size){
+  size = size || 120;
+  const cropR = 110; // source pixels radius around center
+  const scale = size / (cropR * 2);
+  const bgW = Math.round(SW * scale);
+  const bgH = Math.round(SH * scale);
+  const bgX = Math.round(-(c.cx - cropR) * scale);
+  const bgY = Math.round(-(c.cy - cropR) * scale);
+  return `background-image:url('${SHEET2}');background-size:${bgW}px ${bgH}px;`
+    +`background-position:${bgX}px ${bgY}px;`;
 }
 
-function getCharPortraitStyle(c){
-  // Simpler: use percentage-based positioning
-  const cols = 4; const rows = 3;
-  const px = c.col / (cols - 1) * 100;
-  const py = c.row / (rows - 1) * 100;
-  return `background-image:url('${SHEET2}');background-size:${cols*140}%;`
-    +`background-position:${c.col*24.5}% ${c.row*38}%;`;
-}
-
+// Scene backgrounds from sheet1 (bottom row) or extras
+// Sheet1 scenes: 4 scenes in bottom ~25% of image, each ~380px wide
 function getSceneBgStyle(sc){
   if(sc.sheet==='extras'){
-    return `background-image:url('${EXTRAS}');background-size:cover;background-position:center;`;
+    // extras.png: hot spring top-right, castle bottom-left
+    const scale = 300 / sc.sh; // scale scene to ~300px wide container
+    const bgW = Math.round(SW * (300/sc.sw));
+    const bgH = Math.round(SH * (300/sc.sw));
+    const bgX = Math.round(-sc.sx * (300/sc.sw));
+    const bgY = Math.round(-sc.sy * (300/sc.sw));
+    return `background-image:url('${EXTRAS}');background-size:${bgW}px ${bgH}px;`
+      +`background-position:${bgX}px ${bgY}px;`;
   }
-  // Sheet1 bottom row has 4 scenes
+  // Sheet1: 4 scenes in bottom strip, roughly y=700-1024, each ~384px wide
+  const scenePositions = [
+    {x:0, y:700, w:380, h:310},    // beach
+    {x:385, y:700, w:380, h:310},   // bedroom
+    {x:770, y:700, w:380, h:310},   // dock
+    {x:1155, y:700, w:380, h:310}   // garden
+  ];
   const idx = SCENES.indexOf(sc);
-  if(idx>=4) return `background:var(--bg3);`;
-  const positions = ['0% 100%','33% 100%','66% 100%','100% 100%'];
-  return `background-image:url('${SHEET1}');background-size:400% auto;`
-    +`background-position:${positions[idx]};`;
+  if(idx<0||idx>=4) return 'background:var(--bg3);';
+  const p = scenePositions[idx];
+  // Scale to fill 100% width of container, keep aspect
+  return `background-image:url('${SHEET1}');`
+    +`background-size:${(SW/p.w)*100}% auto;`
+    +`background-position:${(p.x/(SW-p.w))*100}% ${(p.y/(SH-p.h))*100}%;`;
 }
 
 /* ===== UI HELPERS ===== */
@@ -583,8 +588,9 @@ function renderHome(){
   const totalLevels = Object.values(state.chars).reduce((s,c)=>s+c.level,0);
   const incomePerSec = calcTotalIncome();
   $('screen-home').innerHTML=`
-    <img class="home-bg" src="${SHEET2}" style="object-position:top right;object-fit:cover;
-      clip-path:inset(0 0 55% 45%);width:100%;height:180px;border-radius:12px;">
+    <div class="home-bg" style="width:100%;height:180px;border-radius:12px;overflow:hidden;
+      background-image:url('${SHEET2}');background-size:${SW/570*100}%;
+      background-position:${730/(SW-570)*100}% ${10/(SH-380)*100}%;"></div>
     <div class="home-welcome">
       <h2>${t('title')}</h2>
       <p>${t('welcomeMsg')}</p>
