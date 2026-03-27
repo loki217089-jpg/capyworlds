@@ -127,6 +127,22 @@ a:hover{text-decoration:underline}
 .timeline-canvas-wrap{width:100%;height:300px;position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .timeline-canvas-wrap canvas{width:100%;height:100%}
 
+/* Suggestion cards */
+.suggest-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.suggest-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:transform .2s}
+.suggest-card:hover{transform:translateY(-2px)}
+.suggest-header{padding:14px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:10px}
+.suggest-header .s-icon{font-size:24px}
+.suggest-header .s-type{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700}
+.suggest-body{padding:14px}
+.suggest-title{font-size:15px;font-weight:700;color:var(--h1);margin-bottom:6px}
+.suggest-desc{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px}
+.suggest-reasons{list-style:none;padding:0}
+.suggest-reasons li{font-size:11px;color:var(--text3);padding:3px 0;display:flex;align-items:flex-start;gap:6px}
+.suggest-reasons li::before{content:'📌';flex-shrink:0}
+.suggest-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.suggest-tags span{font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(var(--accent-rgb),0.1);color:var(--accent);border:1px solid rgba(var(--accent-rgb),0.2)}
+
 /* Gaming source tabs */
 .gsrc-tab{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;font-size:12px;transition:all .2s;display:flex;align-items:center;gap:4px}
 .gsrc-tab:hover{border-color:var(--accent)}
@@ -201,6 +217,7 @@ a:hover{text-decoration:underline}
     <div class="atab" data-panel="timeline" data-i18n="tabTimeline">📈 趨勢時間線</div>
     <div class="atab" data-panel="engagement" data-i18n="tabEngage">🏆 互動量排行</div>
     <div class="atab" data-panel="gaming" data-i18n="tabGaming">🎮 遊戲產業</div>
+    <div class="atab" data-panel="suggestions" data-i18n="tabSuggest">💡 開發建議</div>
   </div>
 
   <!-- Panel: Trending -->
@@ -256,8 +273,13 @@ a:hover{text-decoration:underline}
     <div class="trends-grid" id="gaming-grid"></div>
   </div>
 
+  <!-- Panel: Dev Suggestions -->
+  <div class="analysis-panel" id="panel-suggestions">
+    <div id="suggestions-content"></div>
+  </div>
+
   <div class="page-footer">
-    <span data-i18n="footer">資料來源：各平台公開趨勢頁 · 每 6 小時快照 · 僅供參考</span>
+    <span data-i18n="footer">資料來源：各平台公開趨勢頁 · 每 4 小時快照 · 僅供參考</span>
   </div>
 </div>
 
@@ -271,28 +293,32 @@ const I18N = {
     tabTrending:'🔥 即時熱門', tabKeywords:'☁️ 關鍵字雲', tabCross:'🔀 跨平台比較',
     tabCategories:'📊 分類統計', tabSentiment:'😊 情緒分析', tabTimeline:'📈 趨勢時間線',
     tabEngage:'🏆 互動量排行', thTopic:'話題', thPlatforms:'出現平台', thHeat:'綜合熱度',
-    thCategory:'分類', footer:'資料來源：各平台公開趨勢頁 · 每 6 小時快照 · 僅供參考',
+    thCategory:'分類', footer:'資料來源：各平台公開趨勢頁 · 每 4 小時快照 · 僅供參考',
     allPlatforms:'全部平台', engagement:'互動', views:'觀看', comments:'留言',
     positive:'正面', neutral:'中性', negative:'負面', loading:'載入中...',
     cat_entertainment:'娛樂', cat_politics:'政治', cat_tech:'科技', cat_sports:'體育',
     cat_finance:'財經', cat_life:'生活', cat_international:'國際', cat_games:'遊戲',
     cat_food:'美食', cat_education:'教育', cat_health:'健康', cat_other:'其他',
     noData:'無資料，請點擊「立即更新」', hot:'熱門', trending:'則熱議',
-    tabGaming:'🎮 遊戲產業', gamingAll:'全部', gamingNews:'新聞', gamingRelease:'新作', gamingEsports:'電競'
+    tabGaming:'🎮 遊戲產業', gamingAll:'全部', gamingNews:'新聞', gamingRelease:'新作', gamingEsports:'電競',
+    tabSuggest:'💡 開發建議', suggestGame:'遊戲', suggestSoftware:'軟體', suggestResearch:'研究',
+    suggestWhy:'為什麼推薦', suggestBased:'根據趨勢分析'
   },
   'en': {
     title:'Social Trends Radar', nextRefresh:'Next refresh', refreshNow:'Refresh Now',
     tabTrending:'🔥 Trending', tabKeywords:'☁️ Keywords', tabCross:'🔀 Cross-Platform',
     tabCategories:'📊 Categories', tabSentiment:'😊 Sentiment', tabTimeline:'📈 Timeline',
     tabEngage:'🏆 Engagement', thTopic:'Topic', thPlatforms:'Platforms', thHeat:'Heat',
-    thCategory:'Category', footer:'Sources: Public trend pages · 6hr snapshots · Reference only',
+    thCategory:'Category', footer:'Sources: Public trend pages · 4hr snapshots · Reference only',
     allPlatforms:'All', engagement:'engagement', views:'views', comments:'comments',
     positive:'Positive', neutral:'Neutral', negative:'Negative', loading:'Loading...',
     cat_entertainment:'Entertainment', cat_politics:'Politics', cat_tech:'Tech', cat_sports:'Sports',
     cat_finance:'Finance', cat_life:'Lifestyle', cat_international:'World', cat_games:'Games',
     cat_food:'Food', cat_education:'Education', cat_health:'Health', cat_other:'Other',
     noData:'No data. Click "Refresh Now"', hot:'Hot', trending:'trending',
-    tabGaming:'🎮 Gaming', gamingAll:'All', gamingNews:'News', gamingRelease:'Releases', gamingEsports:'Esports'
+    tabGaming:'🎮 Gaming', gamingAll:'All', gamingNews:'News', gamingRelease:'Releases', gamingEsports:'Esports',
+    tabSuggest:'💡 Dev Ideas', suggestGame:'Game', suggestSoftware:'Software', suggestResearch:'Research',
+    suggestWhy:'Why this?', suggestBased:'Based on trend analysis'
   }
 };
 let lang = localStorage.getItem('trendLang') || 'zh-TW';
@@ -325,18 +351,12 @@ function applyTheme(){
 function cycleTheme(){ themeIdx=(themeIdx+1)%3; applyTheme(); if(typeof drawTimeline==='function') drawTimeline(); }
 applyTheme();
 
-/* ── Platforms config ── */
+/* ── Platforms config (only real API sources) ── */
 const PLATFORMS = [
   {id:'all',   name:{zh:'全部',en:'All'},     icon:'🌐', color:'var(--accent)', url:null},
-  {id:'dcard', name:{zh:'Dcard',en:'Dcard'},   icon:'💬', color:'#006aa6', url:'https://www.dcard.tw/f'},
-  {id:'threads',name:{zh:'Threads',en:'Threads'},icon:'🔗',color:'#1d9bf0',url:'https://www.threads.net'},
-  {id:'yt',    name:{zh:'YouTube',en:'YouTube'},icon:'▶️', color:'#f00',    url:'https://www.youtube.com/feed/trending?gl=TW'},
-  {id:'yahoo', name:{zh:'Yahoo新聞',en:'Yahoo News'},icon:'📰',color:'#720e9e',url:'https://tw.news.yahoo.com/'},
-  {id:'ptt',   name:{zh:'PTT',en:'PTT'},       icon:'🟡', color:'#c8a456', url:'https://www.ptt.cc/bbs/hotboards.html'},
   {id:'google',name:{zh:'Google趨勢',en:'Google Trends'},icon:'📊',color:'#4285f4',url:'https://trends.google.com.tw/trending?geo=TW'},
-  {id:'x',     name:{zh:'X (Twitter)',en:'X (Twitter)'},icon:'𝕏',color:'#1d9bf0',url:'https://x.com/explore/tabs/trending'},
-  {id:'ig',    name:{zh:'Instagram',en:'Instagram'},icon:'📷',color:'#e1306c',url:'https://www.instagram.com/explore/'},
-  {id:'tiktok',name:{zh:'TikTok',en:'TikTok'}, icon:'🎵', color:'#00f2ea', url:'https://www.tiktok.com/trending'},
+  {id:'yahoo', name:{zh:'Yahoo新聞',en:'Yahoo News'},icon:'📰',color:'#720e9e',url:'https://tw.news.yahoo.com/'},
+  {id:'dcard', name:{zh:'Dcard',en:'Dcard'},   icon:'💬', color:'#006aa6', url:'https://www.dcard.tw/f'},
   {id:'gnn',   name:{zh:'巴哈 GNN',en:'Gamer GNN'},icon:'🎮',color:'#0070c0',url:'https://gnn.gamer.com.tw/'},
   {id:'4gamers',name:{zh:'4Gamers',en:'4Gamers'},icon:'🕹️',color:'#ff6600',url:'https://www.4gamers.com.tw/'},
   {id:'ign',   name:{zh:'IGN',en:'IGN'},       icon:'🌍', color:'#bf1313', url:'https://www.ign.com/'},
@@ -352,7 +372,7 @@ const CAT_COLORS = {entertainment:'#f59e0b',politics:'#ef4444',tech:'#3b82f6',sp
 function generateDemoData(){
   const now = new Date();
   const hour = now.getHours();
-  const seed = now.getDate()*100 + Math.floor(hour/6);
+  const seed = now.getDate()*100 + Math.floor(hour/4);
   function rng(s){ s=((s*1103515245+12345)&0x7fffffff); return s/0x7fffffff; }
   let s = seed;
   function rand(){ s=((s*1103515245+12345)&0x7fffffff); return s/0x7fffffff; }
@@ -411,7 +431,7 @@ function generateDemoData(){
         comments: randInt(50,8000),
         views: randInt(10000,5000000),
         sentiment: {pos:randInt(20,70), neu:randInt(10,40), neg:randInt(5,35)},
-        time: new Date(now.getTime() - randInt(0,21600000)).toISOString()
+        time: new Date(now.getTime() - randInt(0,14400000)).toISOString()
       });
     }
     items.sort((a,b)=>b.heat-a.heat);
@@ -429,9 +449,9 @@ function startCountdown(){
   if(countdownInterval) clearInterval(countdownInterval);
   const next = new Date();
   const h = next.getHours();
-  const nextSlot = Math.ceil((h+1)/6)*6;
+  const nextSlot = Math.ceil((h+1)/4)*4;
   next.setHours(nextSlot,0,0,0);
-  if(next<=new Date()) next.setTime(next.getTime()+6*3600000);
+  if(next<=new Date()) next.setTime(next.getTime()+4*3600000);
   countdownInterval = setInterval(()=>{
     const diff = next - new Date();
     if(diff<=0){ refreshAll(); return; }
@@ -668,7 +688,7 @@ function drawTimeline(){
     if(!items||!items.length) return;
     const points = [];
     for(let si=0;si<slots.length;si++){
-      const slotTime = now - (4-si)*6*3600000;
+      const slotTime = now - (4-si)*4*3600000;
       let heat = 0;
       items.forEach(it=>{
         const itTime = new Date(it.time).getTime();
@@ -778,6 +798,145 @@ function renderGaming(){
   }).join('');
 }
 
+/* ── Render dev suggestions based on trends ── */
+function renderSuggestions(){
+  const container = document.getElementById('suggestions-content');
+  // Analyze all trending topics to generate suggestions
+  const allTopics = [];
+  Object.values(trendData).forEach(items=>{
+    if(!items) return;
+    items.forEach(it=>allTopics.push(it));
+  });
+  Object.values(gamingData).forEach(items=>{
+    if(!items) return;
+    items.forEach(it=>allTopics.push(it));
+  });
+
+  // Count category frequencies
+  const catCount = {};
+  const keywords = {};
+  allTopics.forEach(it=>{
+    catCount[it.category]=(catCount[it.category]||0)+it.heat;
+    const words = it.title.replace(/[^\u4e00-\u9fff\w]/g,' ').split(/\s+/).filter(w=>w.length>=2);
+    words.forEach(w=>{ keywords[w]=(keywords[w]||0)+it.heat; });
+  });
+  const topCats = Object.entries(catCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const topKw = Object.entries(keywords).sort((a,b)=>b[1]-a[1]).slice(0,15).map(x=>x[0]);
+
+  // Build suggestion rules based on trending categories & keywords
+  const suggestions = [];
+  const zh = lang==='zh-TW';
+
+  // Game suggestions based on hot categories
+  if(catCount.games>0||Object.keys(gamingData).length>0){
+    const gameKw = [];
+    Object.values(gamingData).forEach(arr=>arr&&arr.forEach(it=>gameKw.push(it.title)));
+    const hasRPG = gameKw.some(t=>/rpg|角色|冒險/i.test(t));
+    const hasShooter = gameKw.some(t=>/fps|射擊|shooter|battle/i.test(t));
+    const hasIdle = gameKw.some(t=>/idle|放置|模擬|經營/i.test(t));
+    const hasMobile = gameKw.some(t=>/手遊|mobile|手機/i.test(t));
+    const hasIndie = gameKw.some(t=>/indie|獨立|像素/i.test(t));
+
+    if(hasRPG) suggestions.push({
+      type:zh?'遊戲':'Game', icon:'⚔️', color:'#9060ff',
+      title:zh?'RPG / 角色扮演遊戲':'RPG / Role-Playing Game',
+      desc:zh?'目前遊戲社群大量討論 RPG 相關內容，玩家對角色養成、裝備系統、劇情分支有高需求。':'RPG content is trending across gaming communities. Players show high demand for character growth, equipment systems, and story branching.',
+      reasons:[zh?'巴哈/4Gamers 多篇 RPG 新作報導':'Multiple RPG coverage on gaming sites',zh?'玩家討論度高，留存率佳的遊戲類型':'High engagement genre with good retention',zh?'可結合放置元素降低開發門檻':'Can combine idle elements to reduce dev complexity'],
+      tags:['RPG','Character Growth','Story','Equipment']
+    });
+    if(hasShooter) suggestions.push({
+      type:zh?'遊戲':'Game', icon:'🔫', color:'#ef4444',
+      title:zh?'輕量射擊 / 大逃殺遊戲':'Lightweight Shooter / Battle Royale',
+      desc:zh?'射擊遊戲話題持續火熱，適合做輕量 Web 版本搶佔 CrazyGames 市場。':'Shooter topics remain hot. A lightweight web version could capture the CrazyGames market.',
+      reasons:[zh?'射擊類在 CrazyGames 是高流量類別':'Shooters are high-traffic on CrazyGames',zh?'可用 Canvas raycasting 實現':'Achievable with Canvas raycasting',zh?'現有 FPS 遊戲可以延伸改進':'Can extend existing FPS game'],
+      tags:['FPS','Action','Multiplayer','Web']
+    });
+    if(hasIdle||hasMobile) suggestions.push({
+      type:zh?'遊戲':'Game', icon:'📱', color:'#22c55e',
+      title:zh?'手機放置型遊戲':'Mobile Idle Game',
+      desc:zh?'放置/模擬類持續有話題，手機端玩家數量龐大，適合輕開發高回報。':'Idle/simulation topics continue trending. Mobile player base is massive with high ROI for light dev.',
+      reasons:[zh?'手機遊戲市場佔全球 50%+ 營收':'Mobile gaming is 50%+ of global revenue',zh?'放置遊戲開發成本低、留存好':'Idle games have low dev cost, good retention',zh?'可加入 Prestige 系統增加深度':'Prestige system adds depth'],
+      tags:['Idle','Mobile','Prestige','Low Dev Cost']
+    });
+    if(hasIndie) suggestions.push({
+      type:zh?'遊戲':'Game', icon:'🎨', color:'#f59e0b',
+      title:zh?'像素風獨立遊戲':'Pixel Art Indie Game',
+      desc:zh?'獨立遊戲持續受關注，像素美術有懷舊魅力且製作門檻低。':'Indie games continue gaining attention. Pixel art has nostalgic appeal and lower production barrier.',
+      reasons:[zh?'Steam 獨立遊戲銷量穩定成長':'Steady growth in Steam indie sales',zh?'現有像素素材庫豐富':'Rich existing pixel asset library',zh?'itch.io + CrazyGames 雙平台上架':'Dual platform: itch.io + CrazyGames'],
+      tags:['Pixel Art','Indie','itch.io','Creative']
+    });
+  }
+
+  // Software suggestions based on hot social topics
+  if(catCount.tech>0) suggestions.push({
+    type:zh?'軟體':'Software', icon:'🤖', color:'#3b82f6',
+    title:zh?'AI 輔助工具 / 生產力工具':'AI-Powered Productivity Tool',
+    desc:zh?'科技話題火熱，AI 相關討論量高。可以做一個結合 AI 的實用小工具。':'Tech topics are hot with high AI discussion volume. Build a practical AI-powered mini tool.',
+    reasons:[zh?'Google Trends 科技類搜尋量上升':'Rising tech search volume on Google Trends',zh?'免費 API 可用（Cloudflare AI、OpenAI 免費額度）':'Free APIs available (CF AI, OpenAI free tier)',zh?'小工具容易推廣、SEO 友好':'Small tools are easy to promote, SEO-friendly'],
+    tags:['AI','Productivity','Web Tool','Free API']
+  });
+  if(catCount.finance>0) suggestions.push({
+    type:zh?'軟體':'Software', icon:'📈', color:'#a855f7',
+    title:zh?'財經數據視覺化工具':'Financial Data Visualization Tool',
+    desc:zh?'財經話題活躍，台股/加密貨幣討論度高。做一個直覺的數據儀表板。':'Finance topics are active with high stock/crypto discussion. Build an intuitive data dashboard.',
+    reasons:[zh?'Yahoo 財經 RSS 免費可用':'Yahoo Finance RSS is free',zh?'投資人需要簡潔的資訊整合':'Investors need clean info aggregation',zh?'可加入 Google Trends 搜尋熱度疊加':'Can overlay Google Trends search volume'],
+    tags:['Finance','Data Viz','Dashboard','Free Data']
+  });
+  if(catCount.education>0||catCount.life>0) suggestions.push({
+    type:zh?'軟體':'Software', icon:'📚', color:'#14b8a6',
+    title:zh?'互動學習 / 知識卡片工具':'Interactive Learning / Flashcard Tool',
+    desc:zh?'教育和生活類話題受關注，可以做一個結合趨勢話題的互動學習工具。':'Education and lifestyle topics are trending. Build an interactive learning tool tied to trending topics.',
+    reasons:[zh?'學生族群是主要網路使用者':'Students are major internet users',zh?'Dcard 教育板常有學習討論':'Dcard education board has active learning discussions',zh?'Spaced repetition 有科學根據':'Spaced repetition is scientifically proven'],
+    tags:['Education','Flashcard','Students','Web App']
+  });
+
+  // Research suggestions based on cross-platform hot topics
+  if(catCount.politics>0||catCount.international>0) suggestions.push({
+    type:zh?'研究':'Research', icon:'🔍', color:'#06b6d4',
+    title:zh?'社會議題追蹤與分析報告':'Social Issue Tracking & Analysis',
+    desc:zh?'政治/國際話題跨平台討論度高，可以做深度分析報告或資訊整合頁。':'Political/international topics have high cross-platform discussion. Build a deep analysis report or info aggregation page.',
+    reasons:[zh?'多平台同時討論表示話題有影響力':'Cross-platform discussion indicates impactful topic',zh?'可延伸現有議員追蹤工具':'Can extend existing legislator tracker',zh?'資訊整合頁 SEO 效果好':'Info aggregation pages have good SEO'],
+    tags:['Research','Analysis','Social Impact','SEO']
+  });
+  if(catCount.health>0) suggestions.push({
+    type:zh?'研究':'Research', icon:'🏥', color:'#10b981',
+    title:zh?'健康資訊整合與闢謠工具':'Health Info Aggregation & Fact-Check',
+    desc:zh?'健康類話題常有誤導資訊，做一個可信的資訊整合工具有社會價值。':'Health topics often contain misinformation. A trustworthy info aggregation tool has social value.',
+    reasons:[zh?'健康話題搜尋量穩定':'Stable health topic search volume',zh?'闢謠工具有公益價值':'Fact-check tools have public benefit',zh?'可結合衛福部公開資料':'Can integrate Ministry of Health open data'],
+    tags:['Health','Fact-Check','Public Good','Open Data']
+  });
+
+  // Always add a wildcard suggestion based on top keywords
+  if(topKw.length>=3) suggestions.push({
+    type:zh?'研究':'Research', icon:'🔮', color:'var(--accent)',
+    title:zh?`趨勢關鍵字深度報告：${topKw.slice(0,3).join('、')}`:`Trend Keyword Deep Dive: ${topKw.slice(0,3).join(', ')}`,
+    desc:zh?`這些關鍵字在過去 4 小時跨平台討論量最高，值得深入研究其背後脈絡與商業機會。`:`These keywords have the highest cross-platform discussion in the past 4 hours. Worth researching the context and business opportunities.`,
+    reasons:[zh?'跨平台高頻關鍵字代表大眾注意力':'High-freq cross-platform keywords = public attention',zh?'可寫成部落格文章搶 SEO':'Can write blog posts for SEO',zh?'內容行銷的好素材':'Great material for content marketing'],
+    tags:topKw.slice(0,5)
+  });
+
+  if(!suggestions.length){ container.innerHTML=`<div class="loading">${t('noData')}</div>`; return; }
+  const typeColors = {[zh?'遊戲':'Game']:'#8b5cf6',[zh?'軟體':'Software']:'#3b82f6',[zh?'研究':'Research']:'#06b6d4'};
+  container.innerHTML = `
+    <div style="margin-bottom:14px;font-size:13px;color:var(--text2)">
+      ${t('suggestBased')} · ${allTopics.length} ${zh?'筆資料':'data points'} · ${topCats.slice(0,3).map(([c])=>t('cat_'+c)).join(' / ')} ${zh?'最熱門':'hottest'}
+    </div>
+    <div class="suggest-grid">${suggestions.map(s=>`
+      <div class="suggest-card">
+        <div class="suggest-header">
+          <span class="s-icon">${s.icon}</span>
+          <span class="s-type" style="background:${s.color};color:#fff">${s.type}</span>
+        </div>
+        <div class="suggest-body">
+          <div class="suggest-title">${s.title}</div>
+          <div class="suggest-desc">${s.desc}</div>
+          <ul class="suggest-reasons">${s.reasons.map(r=>`<li>${r}</li>`).join('')}</ul>
+          <div class="suggest-tags">${s.tags.map(tg=>`<span>${tg}</span>`).join('')}</div>
+        </div>
+      </div>`).join('')}
+    </div>`;
+}
+
 /* ── Render all ── */
 function renderAll(){
   renderPlatformTabs();
@@ -788,6 +947,7 @@ function renderAll(){
   renderSentiment();
   renderEngagement();
   renderGaming();
+  renderSuggestions();
   if(document.getElementById('panel-timeline').classList.contains('active')) drawTimeline();
 }
 
@@ -956,7 +1116,7 @@ async function init(){
   let needFetch = true;
   if(cached && cachedTime){
     const elapsed = Date.now() - new Date(cachedTime).getTime();
-    if(elapsed < 6*3600000){
+    if(elapsed < 4*3600000){
       trendData = JSON.parse(cached);
       lastRefresh = new Date(cachedTime);
       needFetch = false;

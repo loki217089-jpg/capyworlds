@@ -540,9 +540,9 @@ export default {
       try {
         const r = await fetch(trendSrc.url, { headers:{'User-Agent':'Mozilla/5.0',...(trendSrc.extraHeaders||{})} });
         const body = await r.text();
-        const resp = new Response(body, { headers:{...cors,'Content-Type':trendSrc.type,'Cache-Control':'public, max-age=21600','X-Cache':'MISS'} });
-        // 存入快取（6小時 = 21600秒）
-        const cacheResp = new Response(body, { headers:{'Content-Type':trendSrc.type,'Cache-Control':'public, max-age=21600'} });
+        const resp = new Response(body, { headers:{...cors,'Content-Type':trendSrc.type,'Cache-Control':'public, max-age=14400','X-Cache':'MISS'} });
+        // 存入快取（4小時 = 14400秒）
+        const cacheResp = new Response(body, { headers:{'Content-Type':trendSrc.type,'Cache-Control':'public, max-age=14400'} });
         await cache.put(cacheKey, cacheResp);
         return resp;
       } catch(e){ return Response.json({error:'fetch failed'},{status:502,headers:cors}); }
