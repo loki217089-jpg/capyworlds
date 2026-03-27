@@ -320,6 +320,25 @@ img = Image.open('sheet.png')
 - **不可**微調 ±5px 試運氣（要用程式量測）
 - **不可**讓使用者反覆生成素材（第一次就把規格寫清楚）
 
+### 尺寸不一致時的容錯處理
+
+AI 生圖不一定能精確照規格尺寸。收到素材後：
+
+1. **Claude 調整格子大小來配合美術**，不要要求美術重做
+2. 用 `file` 或 Pillow 確認實際尺寸，重算 `cellW = 實際寬 / 欄數`
+3. 程式碼中的格子常數用變數（不寫死），方便隨時調整
+4. 背景不一致（透明 vs 米色）→ 用 Pillow 統一填充背景色
+5. AI 生圖的灰色棋盤格（假透明）→ 用 Pillow 掃描低飽和度灰色像素替換
+
+```python
+# 灰色棋盤格 → 米色背景的替換公式
+r, g, b = pixel
+saturation = max(r,g,b) - min(r,g,b)
+brightness = (r + g + b) / 3
+if saturation < 15 and 15 < brightness < 140:
+    pixel = bg_color  # (253, 250, 244)
+```
+
 ---
 
 ## 響應式設計規則
