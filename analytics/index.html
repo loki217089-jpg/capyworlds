@@ -183,7 +183,7 @@ document.getElementById('main-tabs').addEventListener('click',function(e){
 
 // Fetch helper
 function api(q,days){
-  return fetch(API_BASE+'/analytics-data?q='+q+'&days='+(days||getDays()),{
+  return fetch(API_BASE+'/t/data?q='+q+'&days='+(days||getDays()),{
     headers:{'Authorization':'Bearer '+API_KEY}
   }).then(r=>r.json());
 }

@@ -328,7 +328,7 @@ export default {
       return Response.json({ok:true},{headers:cors});
     }
 
-    if (url.pathname==='/analytics-data' && request.method==='GET') {
+    if (url.pathname==='/t/data' && request.method==='GET') {
       const auth=(request.headers.get('Authorization')||'').replace('Bearer ','');
       const adminKey=env.ADMIN_KEY||env.ANALYTICS_KEY||'';
       if (!adminKey||auth!==adminKey) return Response.json({error:'unauthorized'},{status:401,headers:cors});

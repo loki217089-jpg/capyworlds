@@ -461,7 +461,7 @@ JS: `document.documentElement.setAttribute('data-theme', t)` + `localStorage.set
 | `/leaderboard/:game` | GET/POST | 排行榜前 10 |
 | `/danmaku` | GET/POST | 彈幕（text<=40, color: hex） |
 | `/t` | POST | 流量追蹤（自動收集 path/referrer/UA/country/screen/sid） |
-| `/analytics-data` | GET | 流量查詢 API（需 Bearer ADMIN_KEY，支援 q=overview/daily/hourly/pages/countries/devices/referrers/languages） |
+| `/t/data` | GET | 流量查詢 API（需 Bearer ADMIN_KEY，支援 q=overview/daily/hourly/pages/countries/devices/referrers/languages） |
 
 資料庫：Cloudflare D1（`capyworlds-comments`）
 
