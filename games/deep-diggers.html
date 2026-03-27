@@ -463,21 +463,10 @@ function update(dt){
   if(row>=0&&row<ROWS&&col>=0&&col<COLS){
     const tile=world[row][col]||{type:'dirt'};
     if(tile.type==='rock'){
-      // Horizontal drilling: if pressing left/right into rock, drill through it (costs more fuel/dur)
-      const horizDrill=Math.abs(drill.vx)>80&&!boost&&!dash.active;
-      if(horizDrill){
-        drill.y-=vy*dt; // cancel downward drift into rock
-        ST.dur=Math.max(0,ST.dur-(ST.shielded?20:38)*dt);
-        ST.fuel=Math.max(0,+(ST.fuel-6*dt).toFixed(2));
-        world[row][col]={type:'empty'};
-        spawnPt(col*TILE+16,row*TILE,'#aab8cc',7);
-        for(let i=0;i<3;i++)spawnPt(col*TILE+16,row*TILE,'#ffffff',0.4);
-        if(Math.random()<.25)SFX.rock();
-      } else {
-        drill.y-=vy*dt*2;drill.x-=drill.vx*dt;
-        ST.dur=Math.max(0,ST.dur-(ST.shielded?10:20)*dt);ST.fuel=Math.max(0,+(ST.fuel-3*dt).toFixed(2));
-        spawnPt(col*TILE+16,row*TILE,'#8a9aaa',4);if(Math.random()<.11)SFX.rock();
-      }
+      // Rock is always a barrier — bounce from all directions
+      drill.y-=vy*dt*2;drill.x-=drill.vx*dt;
+      ST.dur=Math.max(0,ST.dur-(ST.shielded?10:20)*dt);ST.fuel=Math.max(0,+(ST.fuel-3*dt).toFixed(2));
+      spawnPt(col*TILE+16,row*TILE,'#8a9aaa',4);if(Math.random()<.11)SFX.rock();
     }else if(tile.type==='treasure'){
       collectT(tile,row,col);world[row][col]={type:'empty'};SFX.pickup();
     }else if(tile.type==='fuel'){
