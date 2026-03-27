@@ -743,18 +743,35 @@ const RECIPE_DATA = [
   ['多彩漢堡排','hamburger','無味','馬鈴薯＋任意沙拉','—',500,'none']
 ];
 const RECIPE_CATEGORIES = {
-  salad:{icon:'🥗',name:'沙拉',nameEn:'Salad',tool:'砧板',base:'樹葉',skill:'居合斬'},
-  bread:{icon:'🍞',name:'麵包',nameEn:'Bread',tool:'麵包窯',base:'小麥',skill:'碎岩'},
-  soup:{icon:'🍲',name:'湯',nameEn:'Soup',tool:'鍋子',base:'美味之水',skill:'水槍'},
-  hamburger:{icon:'🍔',name:'漢堡排',nameEn:'Hamburger',tool:'平底鍋',base:'豆子',skill:'碎岩'}
+  salad:{icon:'🥗',name:'沙拉',nameEn:'Salad',tool:'砧板',base:'樹葉',skill:'樹葉',skillEn:'Leafage',skillDesc:'擴大拔草範圍，可從水面拔浮萍、從石頭表面拔苔蘚'},
+  bread:{icon:'🍞',name:'麵包',nameEn:'Bread',tool:'麵包窯（需點火寶可夢）',base:'小麥',skill:'居合斬',skillEn:'Cut',skillDesc:'可遠距離砍切、切斷金屬柵欄'},
+  soup:{icon:'🍲',name:'湯',nameEn:'Soup',tool:'鍋子',base:'美味之水',skill:'水槍',skillEn:'Water Gun',skillDesc:'擴大澆水範圍，一次噴灑更多格子'},
+  hamburger:{icon:'🍔',name:'漢堡排',nameEn:'Hamburger',tool:'平底鍋',base:'豆子',skill:'碎岩',skillEn:'Rock Smash',skillDesc:'可擊碎花崗岩、鋼鐵、水晶、礦石，用於採集鐵/銅/金/寶可金屬礦'}
 };
 const OFFERING_EFFECTS = [
-  ['無味','none','容易和寶可夢成為朋友'],
-  ['甜','sweet','容易和寶可夢成為朋友（效果更好）'],
-  ['辣','spicy','棲息地容易出現寶可夢'],
-  ['苦','bitter','容易找到稀有物品'],
-  ['酸','sour','商店容易上架好東西'],
-  ['澀','astringent','鳳王和洛奇亞容易出現、容易找到羽毛']
+  ['無味','none','容易和寶可夢成為朋友（友好度上升加成）','🤝'],
+  ['甜','sweet','容易找到古代遺物（Ancient Artefacts）','🏺'],
+  ['辣','spicy','棲息地容易出現寶可夢（出現率提升）','🐾'],
+  ['苦','bitter','容易找到稀有物品（稀有掉落加成）','💎'],
+  ['酸','sour','商店容易上架好東西（商品品質提升）','🛒'],
+  ['澀','astringent','鳳王和洛奇亞容易出現、容易找到虹色/銀色羽毛','🪶']
+];
+const INGREDIENT_SOURCES = [
+  ['樹葉','🌿','地上拔起、砍藤蔓掉落、用「樹葉」技能製造草叢後用「居合斬」破壞'],
+  ['小麥','🌾','各島農田種植收穫、地圖閃光點隨機取得'],
+  ['美味之水','💧','水邊採集、自動販賣機購買'],
+  ['豆子','🫘','各島農田種植收穫、砍草叢隨機掉落'],
+  ['蘋野果','🍎','頭槌果樹掉落、種植蘋野果種子'],
+  ['桃桃果','🍑','頭槌果樹掉落、種植桃桃果種子'],
+  ['零餘果','🫐','頭槌果樹掉落、種植零餘果種子'],
+  ['莓莓果','🍓','頭槌果樹掉落、種植莓莓果種子'],
+  ['木子果','🥜','頭槌果樹掉落、種植木子果種子'],
+  ['利木果','🍋','頭槌果樹掉落、種植利木果種子'],
+  ['海藻','🌊','暗沉沉海邊水中採集'],
+  ['成熟的蘑菇','🍄','各島樹蔭下採集、乾巴巴荒野'],
+  ['番茄','🍅','農田種植收穫'],
+  ['馬鈴薯','🥔','農田種植收穫'],
+  ['成熟的胡蘿蔔','🥕','農田種植收穫']
 ];
 
 function renderAll(){renderFilters();const q=document.getElementById('search').value.trim().toLowerCase();if(curTab==='pokemon'||curTab==='skill')renderPokemon(q);else if(curTab==='recipe')renderRecipes(q);else renderHabitats(q);}
@@ -762,12 +779,22 @@ function renderAll(){renderFilters();const q=document.getElementById('search').v
 function renderRecipes(q){
   document.getElementById('stats').textContent='';
   const el=document.getElementById('results');
+  let html='';
   // Offering effects section
-  let html=`<div class="offering-section" style="grid-column:1/-1"><h3>🍽️ 供奉苔卡比獸效果（每日一次，凌晨5點刷新）</h3>`;
-  OFFERING_EFFECTS.forEach(([taste,cls,effect])=>{
-    html+=`<div class="offering-row"><span class="offering-taste rc-taste taste-${cls}">${taste}</span><span class="offering-effect">${effect}</span></div>`;
+  html+=`<div class="offering-section" style="grid-column:1/-1"><h3>🍽️ 供奉苔卡比獸效果（每日一次，凌晨5點刷新）</h3>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:8px">💡 熟食效果優於生食素材！建議優先供奉料理而非原材料。推薦：辣味（衝圖鑑）、甜味（古代遺物）、澀味（鳳王/洛奇亞）</div>`;
+  OFFERING_EFFECTS.forEach(([taste,cls,effect,icon])=>{
+    html+=`<div class="offering-row"><span class="offering-taste rc-taste taste-${cls}">${icon} ${taste}</span><span class="offering-effect">${effect}</span></div>`;
   });
   html+=`</div>`;
+  // Ingredient sources section
+  if(!q){
+    html+=`<div class="offering-section" style="grid-column:1/-1"><h3>🧺 料理素材取得方式</h3>`;
+    INGREDIENT_SOURCES.forEach(([name,icon,source])=>{
+      html+=`<div class="offering-row"><span style="min-width:120px;font-weight:600;color:var(--accent)">${icon} ${name}</span><span class="offering-effect">${source}</span></div>`;
+    });
+    html+=`<div style="font-size:12px;color:var(--text2);margin-top:8px;padding-top:6px;border-top:1px solid var(--border)">💡 多建收銀台（寶可夢中心、商店、大自然的集市）可讓寶可夢上架更多商品。閃光點有機會獲得種子，種下後可持續收穫。</div></div>`;
+  }
   // Group by category
   const cats=['salad','bread','soup','hamburger'];
   cats.forEach(cat=>{
@@ -778,7 +805,8 @@ function renderRecipes(q){
       <div class="recipe-group-header">
         <span class="rg-icon">${info.icon}</span>
         <div><div class="rg-title">${info.name} ${info.nameEn}</div>
-        <div class="rg-sub">廚具：${info.tool}｜基礎素材：${info.base}｜強化技能：${info.skill}</div></div>
+        <div class="rg-sub">廚具：${info.tool}｜基礎素材：${info.base}</div>
+        <div class="rg-sub" style="color:var(--green)">⚡ 強化技能：${info.skill}（${info.skillEn}）— ${info.skillDesc}</div></div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">`;
     recipes.forEach(r=>{
