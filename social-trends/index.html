@@ -127,6 +127,12 @@ a:hover{text-decoration:underline}
 .timeline-canvas-wrap{width:100%;height:300px;position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .timeline-canvas-wrap canvas{width:100%;height:100%}
 
+/* Gaming source tabs */
+.gsrc-tab{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;font-size:12px;transition:all .2s;display:flex;align-items:center;gap:4px}
+.gsrc-tab:hover{border-color:var(--accent)}
+.gsrc-tab.active{background:rgba(var(--accent-rgb),0.15);border-color:var(--accent);color:var(--accent);font-weight:600}
+.game-tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;margin-right:4px}
+
 /* Loading */
 .loading{text-align:center;padding:40px;color:var(--text3)}
 .loading .spinner{display:inline-block;width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:8px}
@@ -194,6 +200,7 @@ a:hover{text-decoration:underline}
     <div class="atab" data-panel="sentiment" data-i18n="tabSentiment">😊 情緒分析</div>
     <div class="atab" data-panel="timeline" data-i18n="tabTimeline">📈 趨勢時間線</div>
     <div class="atab" data-panel="engagement" data-i18n="tabEngage">🏆 互動量排行</div>
+    <div class="atab" data-panel="gaming" data-i18n="tabGaming">🎮 遊戲產業</div>
   </div>
 
   <!-- Panel: Trending -->
@@ -243,6 +250,12 @@ a:hover{text-decoration:underline}
     <ul class="engage-list" id="engage-list"></ul>
   </div>
 
+  <!-- Panel: Gaming Industry -->
+  <div class="analysis-panel" id="panel-gaming">
+    <div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap" id="gaming-source-tabs"></div>
+    <div class="trends-grid" id="gaming-grid"></div>
+  </div>
+
   <div class="page-footer">
     <span data-i18n="footer">資料來源：各平台公開趨勢頁 · 每 6 小時快照 · 僅供參考</span>
   </div>
@@ -264,7 +277,8 @@ const I18N = {
     cat_entertainment:'娛樂', cat_politics:'政治', cat_tech:'科技', cat_sports:'體育',
     cat_finance:'財經', cat_life:'生活', cat_international:'國際', cat_games:'遊戲',
     cat_food:'美食', cat_education:'教育', cat_health:'健康', cat_other:'其他',
-    noData:'無資料，請點擊「立即更新」', hot:'熱門', trending:'則熱議'
+    noData:'無資料，請點擊「立即更新」', hot:'熱門', trending:'則熱議',
+    tabGaming:'🎮 遊戲產業', gamingAll:'全部', gamingNews:'新聞', gamingRelease:'新作', gamingEsports:'電競'
   },
   'en': {
     title:'Social Trends Radar', nextRefresh:'Next refresh', refreshNow:'Refresh Now',
@@ -277,7 +291,8 @@ const I18N = {
     cat_entertainment:'Entertainment', cat_politics:'Politics', cat_tech:'Tech', cat_sports:'Sports',
     cat_finance:'Finance', cat_life:'Lifestyle', cat_international:'World', cat_games:'Games',
     cat_food:'Food', cat_education:'Education', cat_health:'Health', cat_other:'Other',
-    noData:'No data. Click "Refresh Now"', hot:'Hot', trending:'trending'
+    noData:'No data. Click "Refresh Now"', hot:'Hot', trending:'trending',
+    tabGaming:'🎮 Gaming', gamingAll:'All', gamingNews:'News', gamingRelease:'Releases', gamingEsports:'Esports'
   }
 };
 let lang = localStorage.getItem('trendLang') || 'zh-TW';
@@ -322,6 +337,10 @@ const PLATFORMS = [
   {id:'x',     name:{zh:'X (Twitter)',en:'X (Twitter)'},icon:'𝕏',color:'#1d9bf0',url:'https://x.com/explore/tabs/trending'},
   {id:'ig',    name:{zh:'Instagram',en:'Instagram'},icon:'📷',color:'#e1306c',url:'https://www.instagram.com/explore/'},
   {id:'tiktok',name:{zh:'TikTok',en:'TikTok'}, icon:'🎵', color:'#00f2ea', url:'https://www.tiktok.com/trending'},
+  {id:'gnn',   name:{zh:'巴哈 GNN',en:'Gamer GNN'},icon:'🎮',color:'#0070c0',url:'https://gnn.gamer.com.tw/'},
+  {id:'4gamers',name:{zh:'4Gamers',en:'4Gamers'},icon:'🕹️',color:'#ff6600',url:'https://www.4gamers.com.tw/'},
+  {id:'ign',   name:{zh:'IGN',en:'IGN'},       icon:'🌍', color:'#bf1313', url:'https://www.ign.com/'},
+  {id:'steam', name:{zh:'Steam',en:'Steam'},    icon:'🎯', color:'#1b2838', url:'https://store.steampowered.com/'},
 ];
 let activePlatform = 'all';
 
@@ -695,6 +714,70 @@ function renderEngagement(){
   }).join('');
 }
 
+/* ── Render gaming panel ── */
+let activeGameSrc = 'all';
+const GAME_SOURCES = [
+  {id:'all',icon:'🌐'},{id:'gnn',icon:'🎮',label:{zh:'巴哈 GNN',en:'Gamer GNN'},color:'#0070c0'},
+  {id:'4gamers',icon:'🕹️',label:{zh:'4Gamers',en:'4Gamers'},color:'#ff6600'},
+  {id:'ign',icon:'🌍',label:{zh:'IGN',en:'IGN'},color:'#bf1313'},
+  {id:'steam',icon:'🎯',label:{zh:'Steam',en:'Steam'},color:'#1b2838'},
+];
+const SUB_CAT_LABELS = {
+  news:{zh:'新聞',en:'News',color:'#3b82f6'},release:{zh:'新作',en:'Release',color:'#f59e0b'},
+  esports:{zh:'電競',en:'Esports',color:'#ef4444'},update:{zh:'更新',en:'Update',color:'#22c55e'},
+  review:{zh:'評測',en:'Review',color:'#a855f7'}
+};
+function selectGameSrc(id){ activeGameSrc=id; renderGaming(); }
+function renderGaming(){
+  // Source filter tabs
+  const tabsEl = document.getElementById('gaming-source-tabs');
+  tabsEl.innerHTML = GAME_SOURCES.map(s=>{
+    const nm = s.id==='all'? (lang==='zh-TW'?'全部':'All') : (lang==='zh-TW'?s.label.zh:s.label.en);
+    const act = activeGameSrc===s.id?'active':'';
+    return `<div class="gsrc-tab ${act}" onclick="selectGameSrc('${s.id}')">${s.icon} ${nm}</div>`;
+  }).join('');
+  // Collect items
+  let items = [];
+  if(activeGameSrc==='all'){
+    Object.values(gamingData).forEach(arr=>{ if(arr) items=items.concat(arr); });
+  } else {
+    items = gamingData[activeGameSrc]||[];
+  }
+  items.sort((a,b)=>b.heat-a.heat);
+  const grid = document.getElementById('gaming-grid');
+  if(!items.length){ grid.innerHTML=`<div class="loading">${t('noData')}</div>`; return; }
+  // Group by subCat
+  const groups = {};
+  items.forEach(it=>{
+    const k=it.subCat||'news';
+    if(!groups[k]) groups[k]=[];
+    groups[k].push(it);
+  });
+  grid.innerHTML = Object.entries(groups).map(([sub,list])=>{
+    const sc = SUB_CAT_LABELS[sub]||SUB_CAT_LABELS.news;
+    const label = lang==='zh-TW'?sc.zh:sc.en;
+    const srcMap = {gnn:'巴哈',['4gamers']:'4G',ign:'IGN',steam:'Steam'};
+    return `<div class="trend-card">
+      <div class="card-head">
+        <div class="platform-badge"><span class="game-tag" style="background:${sc.color};color:#fff">${label}</span> ${list.length} ${t('trending')}</div>
+      </div>
+      <div class="card-body">${list.slice(0,10).map((it,i)=>`
+        <div class="trend-item">
+          <div class="trend-rank ${i<3?'top3':'normal'}">${i+1}</div>
+          <div class="trend-info">
+            <div class="trend-title">${it.title}</div>
+            <div class="trend-meta">
+              <span style="color:${(GAME_SOURCES.find(s=>s.id===it.source)||{}).color||'#888'}">${srcMap[it.source]||it.source}</span>
+              <span>🔥 ${fmtNum(it.heat)}</span>
+              <span>👁 ${fmtNum(it.views)}</span>
+            </div>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
 /* ── Render all ── */
 function renderAll(){
   renderPlatformTabs();
@@ -704,6 +787,7 @@ function renderAll(){
   renderCategories();
   renderSentiment();
   renderEngagement();
+  renderGaming();
   if(document.getElementById('panel-timeline').classList.contains('active')) drawTimeline();
 }
 
@@ -784,6 +868,36 @@ function parseDcard(data){
   });
 }
 
+/* ── Parse gaming RSS (GNN / 4Gamers / IGN / Steam) ── */
+function parseGameRSS(xml, sourceId){
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xml, 'application/xml');
+  const items = doc.querySelectorAll('item');
+  const results = [];
+  items.forEach((item,i)=>{
+    const title = item.querySelector('title')?.textContent||'';
+    if(!title) return;
+    const heat = (items.length-i)*4000+Math.floor(Math.random()*3000);
+    const pubDate = item.querySelector('pubDate')?.textContent;
+    // Sub-classify gaming news
+    const tl = title.toLowerCase();
+    let subCat = 'news';
+    if(/發售|上市|發表|新作|預購|release|launch|announce|reveal|trailer/i.test(tl)) subCat='release';
+    if(/電競|賽事|冠軍|聯賽|世界賽|esport|tournament|championship|league/i.test(tl)) subCat='esports';
+    if(/更新|patch|update|dlc|季票|season pass/i.test(tl)) subCat='update';
+    if(/評測|review|評價|心得|分析/i.test(tl)) subCat='review';
+    results.push({
+      title, category:'games', heat, subCat, source:sourceId,
+      comments:Math.round(heat*0.04), views:heat*12,
+      sentiment:{pos:55+Math.floor(Math.random()*20),neu:15+Math.floor(Math.random()*15),neg:3+Math.floor(Math.random()*10)},
+      time:pubDate?new Date(pubDate).toISOString():new Date().toISOString()
+    });
+  });
+  return results.slice(0,15);
+}
+
+let gamingData = {}; // separate storage for gaming panel
+
 /* ── Fetch real data (with demo fallback) ── */
 async function fetchRealData(){
   const demo = generateDemoData();
@@ -793,6 +907,10 @@ async function fetchRealData(){
     { key:'google', url:API_BASE+'/trends/google', parse:'xml', handler:parseGoogleRSS },
     { key:'yahoo',  url:API_BASE+'/trends/yahoo',  parse:'xml', handler:parseYahooRSS },
     { key:'dcard',  url:API_BASE+'/trends/dcard',   parse:'json',handler:parseDcard },
+    { key:'gnn',     url:API_BASE+'/trends/gnn',     parse:'xml', handler:xml=>parseGameRSS(xml,'gnn') },
+    { key:'4gamers', url:API_BASE+'/trends/4gamers',  parse:'xml', handler:xml=>parseGameRSS(xml,'4gamers') },
+    { key:'ign',     url:API_BASE+'/trends/ign',      parse:'xml', handler:xml=>parseGameRSS(xml,'ign') },
+    { key:'steam',   url:API_BASE+'/trends/steam',    parse:'xml', handler:xml=>parseGameRSS(xml,'steam') },
   ];
 
   const promises = fetches.map(async ({key,url,parse,handler})=>{
@@ -805,6 +923,12 @@ async function fetchRealData(){
     } catch(e){ console.warn('Trends fetch failed:',key,e); }
   });
   await Promise.all(promises);
+  // Extract gaming data into separate object
+  const gameSources = ['gnn','4gamers','ign','steam'];
+  gameSources.forEach(k=>{
+    if(results[k]) gamingData[k]=results[k];
+  });
+  localStorage.setItem('gamingData', JSON.stringify(gamingData));
   return results;
 }
 
@@ -836,6 +960,7 @@ async function init(){
       trendData = JSON.parse(cached);
       lastRefresh = new Date(cachedTime);
       needFetch = false;
+      try { gamingData = JSON.parse(localStorage.getItem('gamingData'))||{}; } catch(e){}
     }
   }
   applyI18n();
