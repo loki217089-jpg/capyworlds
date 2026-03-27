@@ -120,7 +120,7 @@
     /* ── Hero ── */
     .hero {
       text-align: center;
-      padding: 52px 24px 44px;
+      padding: 28px 24px 22px;
       background: radial-gradient(ellipse at 50% -10%, var(--bg-hero) 0%, var(--bg) 68%);
       position: relative;
       overflow: hidden;
@@ -133,30 +133,80 @@
       height: 1px;
       background: linear-gradient(90deg, transparent, var(--accent) 40%, var(--accent) 60%, transparent);
     }
-
-    .capy-mascot {
-      width: 190px;
-      height: 170px;
-      margin: 0 auto 28px;
-      display: block;
-      filter: drop-shadow(0 8px 24px rgba(var(--accent-rgb), 0.22));
-    }
-
     .hero h1 {
-      font-size: clamp(36px, 7vw, 58px);
+      font-size: clamp(28px, 6vw, 46px);
       font-weight: 900;
       color: var(--h1);
       letter-spacing: 4px;
-      text-shadow: 0 0 50px rgba(var(--accent-rgb), 0.35);
+      text-shadow: 0 0 40px rgba(var(--accent-rgb), 0.35);
     }
     .hero h1 .accent { color: var(--accent); }
-
     .hero .tagline {
-      margin-top: 12px;
+      margin-top: 8px;
       color: var(--text2);
-      font-size: 15px;
+      font-size: 13px;
       letter-spacing: 1px;
     }
+
+    /* ── Recent Strip ── */
+    .recent-strip {
+      max-width: 900px;
+      margin: 24px auto 0;
+      padding: 0 24px;
+    }
+    .recent-strip-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+      padding-left: 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .recent-strip-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(var(--accent-rgb),.4), transparent);
+    }
+    .recent-scroll {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+    .recent-scroll::-webkit-scrollbar { height: 4px; }
+    .recent-scroll::-webkit-scrollbar-track { background: transparent; }
+    .recent-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .recent-item {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 12px;
+      padding: 9px 14px;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+      min-width: 140px;
+    }
+    .recent-item:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent);
+      box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.15);
+    }
+    .recent-icon { font-size: 22px; line-height: 1; }
+    .recent-info { display: flex; flex-direction: column; gap: 2px; }
+    .recent-name { font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; }
+    .recent-date { font-size: 10px; color: var(--accent); font-weight: 600; letter-spacing: 0.5px; }
 
     /* ── Nav Sections ── */
     .nav-sections {
@@ -586,65 +636,14 @@
   </div>
 
   <div class="hero">
-    <!-- Capybara mascot -->
-    <svg class="capy-mascot" viewBox="0 0 190 170" xmlns="http://www.w3.org/2000/svg">
-      <!-- Ground -->
-      <ellipse cx="95" cy="160" rx="82" ry="14" fill="#2d4a1e" opacity="0.45"/>
-      <!-- Grass blades -->
-      <path d="M18 158 Q14 142 22 132 Q26 143 18 158Z" fill="#3a6424" opacity="0.65"/>
-      <path d="M32 156 Q30 144 37 136 Q39 145 32 156Z" fill="#4a7a30" opacity="0.55"/>
-      <path d="M160 156 Q163 141 156 132 Q153 143 160 156Z" fill="#3a6424" opacity="0.65"/>
-      <path d="M172 158 Q175 143 168 133 Q165 144 172 158Z" fill="#4a7a30" opacity="0.55"/>
-      <!-- Body -->
-      <ellipse cx="95" cy="128" rx="55" ry="36" fill="#b8955a"/>
-      <!-- Tail bump -->
-      <ellipse cx="145" cy="133" rx="15" ry="13" fill="#a8854e"/>
-      <!-- Head -->
-      <ellipse cx="95" cy="80" rx="42" ry="38" fill="#c09a62"/>
-      <!-- Snout -->
-      <ellipse cx="95" cy="95" rx="26" ry="18" fill="#d4aa78"/>
-      <!-- Ears -->
-      <ellipse cx="63" cy="50" rx="14" ry="16" fill="#b8955a"/>
-      <ellipse cx="127" cy="50" rx="14" ry="16" fill="#b8955a"/>
-      <ellipse cx="63" cy="50" rx="9" ry="11" fill="#d0a874"/>
-      <ellipse cx="127" cy="50" rx="9" ry="11" fill="#d0a874"/>
-      <!-- Eyes -->
-      <circle cx="79" cy="72" r="9" fill="#1a0e06"/>
-      <circle cx="111" cy="72" r="9" fill="#1a0e06"/>
-      <circle cx="76" cy="69" r="3.5" fill="white"/>
-      <circle cx="108" cy="69" r="3.5" fill="white"/>
-      <circle cx="77" cy="70" r="1.5" fill="#3d2a10" opacity="0.5"/>
-      <circle cx="109" cy="70" r="1.5" fill="#3d2a10" opacity="0.5"/>
-      <!-- Nostrils -->
-      <ellipse cx="87" cy="95" rx="4" ry="3" fill="#7a5035"/>
-      <ellipse cx="103" cy="95" rx="4" ry="3" fill="#7a5035"/>
-      <!-- Smile -->
-      <path d="M 80 104 Q 95 115 110 104" stroke="#7a5035" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-      <!-- Paws -->
-      <ellipse cx="56" cy="153" rx="20" ry="11" fill="#b8955a"/>
-      <ellipse cx="134" cy="153" rx="20" ry="11" fill="#b8955a"/>
-      <!-- Paw toes -->
-      <path d="M49 152 L48 160 M56 151 L55 160 M63 152 L62 160" stroke="#8a6a40" stroke-width="1.5" stroke-linecap="round"/>
-      <path d="M127 152 L126 160 M134 151 L133 160 M141 152 L140 160" stroke="#8a6a40" stroke-width="1.5" stroke-linecap="round"/>
-      <!-- Yellow flower left -->
-      <circle cx="14" cy="144" r="5" fill="#ffd700" opacity="0.85"/>
-      <circle cx="14" cy="136" r="4" fill="#ffd700" opacity="0.65"/>
-      <circle cx="20" cy="140" r="4" fill="#ffd700" opacity="0.65"/>
-      <circle cx="8"  cy="140" r="4" fill="#ffd700" opacity="0.65"/>
-      <circle cx="14" cy="144" r="2.5" fill="#e07800"/>
-      <!-- Pink flower right -->
-      <circle cx="176" cy="142" r="5" fill="#ffb6d9" opacity="0.9"/>
-      <circle cx="176" cy="134" r="4" fill="#ffb6d9" opacity="0.65"/>
-      <circle cx="182" cy="138" r="4" fill="#ffb6d9" opacity="0.65"/>
-      <circle cx="170" cy="138" r="4" fill="#ffb6d9" opacity="0.65"/>
-      <circle cx="176" cy="142" r="2.5" fill="#d4609a"/>
-      <!-- Sparkles -->
-      <text x="158" y="68" font-size="12" opacity="0.6">✦</text>
-      <text x="22" y="80" font-size="10" opacity="0.5">✦</text>
-    </svg>
-
-    <h1>Capy<span class="accent">Worlds</span></h1>
+    <h1>🦫 Capy<span class="accent">Worlds</span></h1>
     <p class="tagline">我的創作小宇宙 &nbsp;·&nbsp; Welcome to my creative world</p>
+  </div>
+
+  <!-- 最近更新 strip (populated by JS) -->
+  <div class="recent-strip">
+    <div class="recent-strip-label">✦ 最近更新 · Recent</div>
+    <div class="recent-scroll" id="recentScroll"></div>
   </div>
 
   <div class="nav-sections">
@@ -653,27 +652,27 @@
     <div class="nav-section">
       <div class="section-label">🎮 遊戲 · Games</div>
       <nav class="nav-grid">
-        <a class="nav-card" href="games/">
+        <a class="nav-card" href="games/" data-date="2026-03-26">
           <div class="card-icon">🎮</div>
           <div class="card-label">Games</div>
           <div class="card-desc">獨立小遊戲收藏</div>
         </a>
-        <a class="nav-card" href="games/mobile.html">
+        <a class="nav-card" href="games/mobile.html" data-date="2026-03-23">
           <div class="card-icon">📱</div>
           <div class="card-label">手遊專區</div>
           <div class="card-desc">觸控優化手機遊戲</div>
         </a>
-        <a class="nav-card" href="games/battle.html">
+        <a class="nav-card" href="games/battle.html" data-date="2026-03-23">
           <div class="card-icon">⚔️</div>
           <div class="card-label">對戰遊戲</div>
           <div class="card-desc">即時 1v1 連線對戰</div>
         </a>
-        <a class="nav-card" href="games/chat-room/">
+        <a class="nav-card" href="games/chat-room/" data-date="2026-03-26">
           <div class="card-icon">💬</div>
           <div class="card-label">情境聊天室</div>
           <div class="card-desc">配對異性・5分鐘聊天</div>
         </a>
-        <a class="nav-card" href="games/black-hole/">
+        <a class="nav-card" href="games/black-hole/" data-date="2026-03-26">
           <div class="card-icon">🕳️</div>
           <div class="card-label">黑洞收割者</div>
           <div class="card-desc">操控黑洞吞噬世界</div>
@@ -685,17 +684,17 @@
     <div class="nav-section">
       <div class="section-label">🔮 神祕工具 · Mystical</div>
       <nav class="nav-grid">
-        <a class="nav-card" href="fortune/">
+        <a class="nav-card" href="fortune/" data-date="2026-03-23">
           <div class="card-icon">🌟</div>
           <div class="card-label">每日運勢</div>
           <div class="card-desc">輸入生日查看今日星座運勢</div>
         </a>
-        <a class="nav-card" href="tarot/">
+        <a class="nav-card" href="tarot/" data-date="2026-03-23">
           <div class="card-icon">🃏</div>
           <div class="card-label">塔羅抽牌</div>
           <div class="card-desc">三牌陣·探索過去現在未來</div>
         </a>
-        <a class="nav-card" href="soul-match/">
+        <a class="nav-card" href="soul-match/" data-date="2026-03-23">
           <div class="card-icon">🌀</div>
           <div class="card-label">靈魂配對</div>
           <div class="card-desc">測試你與對方的靈魂契合度</div>
@@ -707,17 +706,17 @@
     <div class="nav-section">
       <div class="section-label">🏛️ 台灣社會工具 · Social Tools</div>
       <nav class="nav-grid">
-        <a class="nav-card" href="rental-rights/">
+        <a class="nav-card" href="rental-rights/" data-date="2026-03-25">
           <div class="card-icon">📋</div>
           <div class="card-label">租屋糾紛自救包</div>
           <div class="card-desc">台灣房客權益 × 存證信函</div>
         </a>
-        <a class="nav-card" href="scam-detector/">
+        <a class="nav-card" href="scam-detector/" data-date="2026-03-25">
           <div class="card-icon">🔍</div>
           <div class="card-label">詐騙辨識器</div>
           <div class="card-desc">貼上可疑訊息立即分析</div>
         </a>
-        <a class="nav-card" href="legislator/">
+        <a class="nav-card" href="legislator/" data-date="2026-03-25">
           <div class="card-icon">🗳️</div>
           <div class="card-label">議員做了什麼？</div>
           <div class="card-desc">查立委投票 × 質詢 × 出席率</div>
@@ -734,7 +733,7 @@
     <div class="nav-section">
       <div class="section-label">📖 攻略專區 · Strategy Guides</div>
       <nav class="nav-grid">
-        <a class="nav-card" href="pokemon-guide/">
+        <a class="nav-card" href="pokemon-guide/" data-date="2026-03-26">
           <div class="card-icon">🔍</div>
           <div class="card-label">寶可夢喜好攻略</div>
           <div class="card-desc">306隻寶可夢 × 212棲息地查詢</div>
@@ -746,22 +745,22 @@
     <div class="nav-section">
       <div class="section-label">📖 關於 · About</div>
       <nav class="nav-grid">
-        <a class="nav-card" href="blog.html">
+        <a class="nav-card" href="blog.html" data-date="2026-03-22">
           <div class="card-icon">📝</div>
           <div class="card-label">Blog</div>
           <div class="card-desc">文章與想法</div>
         </a>
-        <a class="nav-card" href="books.html">
+        <a class="nav-card" href="books.html" data-date="2026-03-19">
           <div class="card-icon">📚</div>
           <div class="card-label">Books</div>
           <div class="card-desc">遊戲・書・影視推薦</div>
         </a>
-        <a class="nav-card" href="tools.html">
+        <a class="nav-card" href="tools.html" data-date="2026-03-19">
           <div class="card-icon">🛠</div>
           <div class="card-label">Tools</div>
           <div class="card-desc">常用工具與資源</div>
         </a>
-        <a class="nav-card" href="about.html">
+        <a class="nav-card" href="about.html" data-date="2026-03-19">
           <div class="card-icon">🦫</div>
           <div class="card-label">About</div>
           <div class="card-desc">關於我</div>
@@ -984,6 +983,62 @@
       }
       window.setTheme = setTheme;
       setTheme(saved);
+    })();
+
+    // ── 最近更新條 + 點擊排序 ──
+    (function() {
+      // 建立「最近更新」橫向條：讀所有 nav-card 的 data-date，排序後顯示前 8 個
+      function buildRecentStrip() {
+        const scroll = document.getElementById('recentScroll');
+        if (!scroll) return;
+        const cards = Array.from(document.querySelectorAll('.nav-card[data-date]'));
+        cards.sort((a, b) => b.dataset.date.localeCompare(a.dataset.date));
+        cards.slice(0, 8).forEach(card => {
+          const icon  = card.querySelector('.card-icon')?.textContent || '🔗';
+          const label = card.querySelector('.card-label')?.textContent || '';
+          const date  = card.dataset.date.slice(5).replace('-', '/'); // MM/DD
+          const href  = card.getAttribute('href');
+          const item  = document.createElement('a');
+          item.href = href;
+          item.className = 'recent-item';
+          item.innerHTML = `<div class="recent-icon">${icon}</div>
+            <div class="recent-info">
+              <div class="recent-name">${label}</div>
+              <div class="recent-date">${date}</div>
+            </div>`;
+          item.addEventListener('click', () => trackNavClick(href));
+          scroll.appendChild(item);
+        });
+      }
+
+      // localStorage 點擊計數
+      function trackNavClick(href) {
+        const k = 'capyNav_' + href;
+        localStorage.setItem(k, (parseInt(localStorage.getItem(k) || '0') + 1).toString());
+      }
+      function getClicks(href) {
+        return parseInt(localStorage.getItem('capyNav_' + href) || '0');
+      }
+
+      // 各分類內按點擊數排序（多人次點過的排前面）
+      function sortByClicks() {
+        document.querySelectorAll('.nav-grid').forEach(grid => {
+          const cards = Array.from(grid.querySelectorAll('.nav-card'));
+          // 只有任何一張被點過才重排，避免全是 0 時打亂設定順序
+          if (cards.some(c => getClicks(c.getAttribute('href')) > 0)) {
+            cards.sort((a, b) => getClicks(b.getAttribute('href')) - getClicks(a.getAttribute('href')));
+            cards.forEach(c => grid.appendChild(c));
+          }
+        });
+      }
+
+      // 綁定 nav-card 點擊追蹤
+      document.querySelectorAll('.nav-card').forEach(card => {
+        card.addEventListener('click', () => trackNavClick(card.getAttribute('href')));
+      });
+
+      buildRecentStrip();
+      sortByClicks();
     })();
   </script>
 
