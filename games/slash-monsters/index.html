@@ -249,18 +249,32 @@ function getSlashRange(){
   return WEAPONS[curWeapon].range*(1+save.skills.atk[2]*0.08);
 }
 
+// ===== WEAPON TRAIL STYLES =====
+const TRAIL_STYLES={
+  dagger:{color:'rgba(200,230,255,.7)',glow:'#88ccff',width:2,dashLen:0,particleColor:'#88ccff',trailType:'thin'},
+  greatsword:{color:'rgba(255,160,60,.7)',glow:'#ff8800',width:6,dashLen:0,particleColor:'#ff8800',trailType:'wide'},
+  spear:{color:'rgba(180,255,180,.7)',glow:'#44ff88',width:2,dashLen:8,particleColor:'#44ff88',trailType:'thrust'},
+  boomerang:{color:'rgba(180,140,255,.7)',glow:'#aa88ff',width:3,dashLen:0,particleColor:'#aa88ff',trailType:'spin'},
+  wand:{color:'rgba(255,100,200,.7)',glow:'#ff44aa',width:4,dashLen:0,particleColor:'#ff44aa',trailType:'magic'}
+};
+let activeSlashFX=[];// {type,x,y,angle,life,maxLife,weaponName}
+
+function spawnSlashFX(x,y,angle,wpnName){
+  activeSlashFX.push({x,y,angle,life:18,maxLife:18,weaponName:wpnName});
+}
+
 // ===== TOUCH / SLASH =====
 let touchPoints=[];let isTouching=false;
 function getCanvasPos(cx,cy){
   const r=canvas.getBoundingClientRect();
   return{x:(cx-r.left)/r.width*GW,y:(cy-r.top)/r.height*GH};
 }
-canvas.addEventListener('touchstart',e=>{e.preventDefault();if(state!=='play')return;isTouching=true;touchPoints=[];const p=getCanvasPos(e.touches[0].clientX,e.touches[0].clientY);touchPoints.push(p);slashTrail.push({...p,t:Date.now()});},{passive:false});
-canvas.addEventListener('touchmove',e=>{e.preventDefault();if(!isTouching||state!=='play')return;const p=getCanvasPos(e.touches[0].clientX,e.touches[0].clientY);touchPoints.push(p);slashTrail.push({...p,t:Date.now()});if(touchPoints.length>=2)performSlash();},{passive:false});
+canvas.addEventListener('touchstart',e=>{e.preventDefault();if(state!=='play')return;isTouching=true;touchPoints=[];const p=getCanvasPos(e.touches[0].clientX,e.touches[0].clientY);touchPoints.push(p);slashTrail.push({...p,t:Date.now(),w:curWeapon});},{passive:false});
+canvas.addEventListener('touchmove',e=>{e.preventDefault();if(!isTouching||state!=='play')return;const p=getCanvasPos(e.touches[0].clientX,e.touches[0].clientY);touchPoints.push(p);slashTrail.push({...p,t:Date.now(),w:curWeapon});if(touchPoints.length>=2)performSlash();},{passive:false});
 canvas.addEventListener('touchend',e=>{e.preventDefault();isTouching=false;touchPoints=[];},{passive:false});
 // Mouse fallback
-canvas.addEventListener('mousedown',e=>{if(state!=='play')return;isTouching=true;touchPoints=[];const p=getCanvasPos(e.clientX,e.clientY);touchPoints.push(p);slashTrail.push({...p,t:Date.now()});});
-canvas.addEventListener('mousemove',e=>{if(!isTouching||state!=='play')return;const p=getCanvasPos(e.clientX,e.clientY);touchPoints.push(p);slashTrail.push({...p,t:Date.now()});if(touchPoints.length>=2)performSlash();});
+canvas.addEventListener('mousedown',e=>{if(state!=='play')return;isTouching=true;touchPoints=[];const p=getCanvasPos(e.clientX,e.clientY);touchPoints.push(p);slashTrail.push({...p,t:Date.now(),w:curWeapon});});
+canvas.addEventListener('mousemove',e=>{if(!isTouching||state!=='play')return;const p=getCanvasPos(e.clientX,e.clientY);touchPoints.push(p);slashTrail.push({...p,t:Date.now(),w:curWeapon});if(touchPoints.length>=2)performSlash();});
 canvas.addEventListener('mouseup',()=>{isTouching=false;touchPoints=[];});
 
 function performSlash(){
@@ -277,6 +291,9 @@ function performSlash(){
 
   const range=getSlashRange();
   let hits=0;
+  const slashAngle=Math.atan2(last.y-prev.y,last.x-prev.x);
+  // Spawn weapon-specific VFX
+  spawnSlashFX((last.x+prev.x)/2,(last.y+prev.y)/2,slashAngle,wpn.name);
 
   if(wpn.name==='wand'){
     // AOE at touch point
@@ -529,11 +546,63 @@ function render(){
     else{ctx.fillStyle=p.color;ctx.fillRect(p.x-p.size/2,p.y-p.size/2,p.size,p.size);}
     ctx.restore();
   });
-  // Slash trail
+  // Slash trail (weapon-colored)
   if(slashTrail.length>=2){
-    ctx.save();ctx.strokeStyle='rgba(255,220,100,.6)';ctx.lineWidth=3;ctx.lineCap='round';ctx.lineJoin='round';ctx.shadowColor='#FFD700';ctx.shadowBlur=8;
+    const wName=WEAPONS[slashTrail[0].w||0].name;
+    const ts=TRAIL_STYLES[wName]||TRAIL_STYLES.dagger;
+    ctx.save();ctx.strokeStyle=ts.color;ctx.lineWidth=ts.width;ctx.lineCap='round';ctx.lineJoin='round';ctx.shadowColor=ts.glow;ctx.shadowBlur=12;
+    if(ts.dashLen>0)ctx.setLineDash([ts.dashLen,ts.dashLen]);
     ctx.beginPath();ctx.moveTo(slashTrail[0].x,slashTrail[0].y);
-    slashTrail.forEach(s=>ctx.lineTo(s.x,s.y));ctx.stroke();ctx.restore();
+    for(let i=1;i<slashTrail.length;i++){
+      const a=Math.min(1,(slashTrail.length-i)/slashTrail.length);
+      ctx.globalAlpha=a;ctx.lineTo(slashTrail[i].x,slashTrail[i].y);
+    }
+    ctx.stroke();if(ts.dashLen>0)ctx.setLineDash([]);ctx.restore();
+  }
+  // Weapon slash FX
+  for(let i=activeSlashFX.length-1;i>=0;i--){
+    const fx=activeSlashFX[i];const pct=fx.life/fx.maxLife;const ts=TRAIL_STYLES[fx.weaponName];
+    ctx.save();ctx.globalAlpha=pct*0.8;ctx.translate(fx.x,fx.y);ctx.rotate(fx.angle);
+    if(fx.weaponName==='dagger'){
+      // Quick double slash lines
+      ctx.strokeStyle=ts.glow;ctx.lineWidth=1.5;ctx.shadowColor=ts.glow;ctx.shadowBlur=6;
+      const len=40*(1-pct*0.3);
+      ctx.beginPath();ctx.moveTo(-len,-(4+6*(1-pct)));ctx.lineTo(len,-(4+6*(1-pct)));ctx.stroke();
+      ctx.beginPath();ctx.moveTo(-len*0.8,(4+6*(1-pct)));ctx.lineTo(len*0.8,(4+6*(1-pct)));ctx.stroke();
+    }else if(fx.weaponName==='greatsword'){
+      // Wide arc sweep
+      ctx.strokeStyle=ts.glow;ctx.lineWidth=4;ctx.shadowColor=ts.glow;ctx.shadowBlur=16;
+      const arcR=60*(1+0.3*(1-pct));
+      ctx.beginPath();ctx.arc(0,0,arcR,-Math.PI*0.4*(1-pct)-Math.PI*0.3,Math.PI*0.4*(1-pct)+Math.PI*0.3);ctx.stroke();
+      // Sparks along arc
+      for(let j=0;j<3;j++){const sa=-0.3+j*0.3;ctx.fillStyle=ts.glow;ctx.fillRect(Math.cos(sa)*arcR-2,Math.sin(sa)*arcR-2,4,4);}
+    }else if(fx.weaponName==='spear'){
+      // Thrust line with arrow
+      ctx.strokeStyle=ts.glow;ctx.lineWidth=2;ctx.shadowColor=ts.glow;ctx.shadowBlur=8;
+      const len=80*(1-pct*0.5);
+      ctx.setLineDash([6,4]);ctx.beginPath();ctx.moveTo(-20,0);ctx.lineTo(len,0);ctx.stroke();ctx.setLineDash([]);
+      // Arrow tip
+      ctx.fillStyle=ts.glow;ctx.beginPath();ctx.moveTo(len+8,0);ctx.lineTo(len-4,-6);ctx.lineTo(len-4,6);ctx.closePath();ctx.fill();
+    }else if(fx.weaponName==='boomerang'){
+      // Spinning arc
+      const spin=(1-pct)*Math.PI*4;
+      ctx.strokeStyle=ts.glow;ctx.lineWidth=2.5;ctx.shadowColor=ts.glow;ctx.shadowBlur=10;
+      ctx.beginPath();ctx.arc(0,0,25+15*(1-pct),spin,spin+Math.PI*1.2);ctx.stroke();
+      ctx.beginPath();ctx.arc(0,0,15+10*(1-pct),spin+Math.PI,spin+Math.PI*2.2);ctx.stroke();
+    }else if(fx.weaponName==='wand'){
+      // Expanding magic circle + runes
+      ctx.rotate(-fx.angle);// undo rotation for circular effect
+      const r=30+40*(1-pct);
+      ctx.strokeStyle=ts.glow;ctx.lineWidth=2;ctx.shadowColor=ts.glow;ctx.shadowBlur=14;
+      ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.stroke();
+      // Inner ring
+      ctx.globalAlpha=pct*0.5;ctx.beginPath();ctx.arc(0,0,r*0.6,0,Math.PI*2);ctx.stroke();
+      // Star points
+      ctx.fillStyle=ts.glow;
+      for(let j=0;j<6;j++){const a=j*Math.PI/3+(1-pct)*2;ctx.fillRect(Math.cos(a)*r-2,Math.sin(a)*r-2,4,4);}
+    }
+    ctx.restore();
+    fx.life--;if(fx.life<=0)activeSlashFX.splice(i,1);
   }
   // HUD on canvas
   ctx.fillStyle='rgba(0,0,0,.4)';ctx.fillRect(0,0,GW,32);
