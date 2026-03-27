@@ -57,8 +57,10 @@ body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;backgr
 .timer{font-size:22px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;min-width:60px;text-align:right;}
 .timer.urgent{color:#ff4444;animation:blink .6s step-end infinite;}
 @keyframes blink{50%{opacity:.3;}}
-.chat-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;}
-.msg-row{display:flex;gap:8px;align-items:flex-end;}
+.chat-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;transition:background .8s ease;}
+.scene-particle{position:absolute;opacity:.15;font-size:20px;animation:sceneDrift linear infinite;pointer-events:none;}
+@keyframes sceneDrift{0%{transform:translateY(0) rotate(0deg);opacity:.15;}50%{opacity:.2;}100%{transform:translateY(-100vh) rotate(180deg);opacity:0;}}
+.msg-row{display:flex;gap:8px;align-items:flex-end;position:relative;z-index:1;}
 .msg-row.me{flex-direction:row-reverse;}
 .bubble{max-width:72%;min-width:120px;padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;word-break:break-word;}
 .msg-row.other .bubble{background:var(--bg3);border-bottom-left-radius:4px;}
@@ -67,7 +69,7 @@ body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;backgr
 .msg-name{font-size:11px;color:var(--text2);margin-bottom:2px;}
 .msg-row.me .msg-name{text-align:right;}
 .msg-time{font-size:10px;color:var(--text2);margin:0 4px;flex-shrink:0;}
-.system-msg{text-align:center;font-size:12px;color:var(--text2);padding:4px 0;}
+.system-msg{text-align:center;font-size:12px;color:var(--text2);padding:4px 0;position:relative;z-index:1;}
 
 /* ── Chat Input ── */
 .chat-input-area{border-top:1px solid var(--border);background:var(--bg2);padding:10px 12px;display:flex;gap:8px;align-items:flex-end;}
@@ -172,7 +174,9 @@ body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;backgr
     </div>
   </div>
   <div id="oppOfflineBar" style="display:none;background:rgba(255,80,80,.15);border-bottom:1px solid rgba(255,80,80,.3);padding:6px 16px;font-size:12px;color:#ff8080;text-align:center;">⚠️ 對方可能已離線或沒在看</div>
-  <div class="chat-msgs" id="chatMsgs"></div>
+  <div class="chat-msgs" id="chatMsgs" style="position:relative;">
+    <div id="sceneAmbience" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0;"></div>
+  </div>
   <div class="sticker-panel" id="stickerPanel"></div>
   <div class="chat-input-area">
     <button class="ico-btn" id="stickerBtn" onclick="toggleStickers()">😊</button>
@@ -227,13 +231,13 @@ const API = 'https://capyworlds.loki217089.workers.dev';
 const CHAT_MS = 300000; // 5 min
 
 const SCENES = [
-  {id:0, emoji:'🌿', name:'無情境', desc:'自由聊天模式'},
-  {id:1, emoji:'🌙', name:'深夜告白', desc:'夜深了，兩個人獨處，想說些什麼...'},
-  {id:2, emoji:'☕', name:'咖啡廳偶遇', desc:'偶然坐在同一張桌子旁，相談甚歡'},
-  {id:3, emoji:'🎮', name:'遊戲隊友', desc:'剛一起打完遊戲，情緒高漲'},
-  {id:4, emoji:'🌸', name:'校園春天', desc:'春天的校園裡，路上偶遇'},
-  {id:5, emoji:'🌊', name:'海邊散步', desc:'傍晚一起在海邊漫步'},
-  {id:6, emoji:'🌃', name:'城市夜景', desc:'站在高處，一起看城市的燈光'},
+  {id:0, emoji:'🌿', name:'無情境', desc:'自由聊天模式', bg:'none'},
+  {id:1, emoji:'🌙', name:'深夜告白', desc:'夜深了，兩個人獨處，想說些什麼...', bg:'linear-gradient(180deg,#0a0a1a 0%,#1a1040 40%,#0c0820 100%)'},
+  {id:2, emoji:'☕', name:'咖啡廳偶遇', desc:'偶然坐在同一張桌子旁，相談甚歡', bg:'linear-gradient(180deg,#1a1610 0%,#2a2018 40%,#1a1408 100%)'},
+  {id:3, emoji:'🎮', name:'遊戲隊友', desc:'剛一起打完遊戲，情緒高漲', bg:'linear-gradient(180deg,#0a1018 0%,#101828 40%,#0a0c18 100%)'},
+  {id:4, emoji:'🌸', name:'校園春天', desc:'春天的校園裡，路上偶遇', bg:'linear-gradient(180deg,#1a1018 0%,#201828 40%,#18101a 100%)'},
+  {id:5, emoji:'🌊', name:'海邊散步', desc:'傍晚一起在海邊漫步', bg:'linear-gradient(180deg,#0c1820 0%,#162838 40%,#0a1018 100%)'},
+  {id:6, emoji:'🌃', name:'城市夜景', desc:'站在高處，一起看城市的燈光', bg:'linear-gradient(180deg,#0a0a14 0%,#141428 40%,#0c0c1a 100%)'},
 ];
 
 const STICKERS = [
@@ -583,9 +587,46 @@ function toggleStickers(){
 }
 
 // ── Scenario ──
+const SCENE_PARTICLES = {
+  0:[], // no particles
+  1:['🌙','✨','💫','⭐'], // deep night
+  2:['☕','🍰','🧁','💨'], // cafe
+  3:['🎮','🕹️','💥','⚡'], // gaming
+  4:['🌸','🌷','🍃','🦋'], // spring campus
+  5:['🌊','🐚','🏖️','🦀'], // beach
+  6:['🌃','🏙️','💡','🌟'], // city night
+};
+let sceneParticleTimer = null;
+
 function updateScenarioBadge(){
   const sc = SCENES[currentScenario] || SCENES[0];
   document.getElementById('scenarioBadge').textContent = currentScenario > 0 ? `${sc.emoji} ${sc.name}` : '自由聊天';
+  // Apply scene background
+  const msgsEl = document.getElementById('chatMsgs');
+  if(sc.bg && sc.bg !== 'none'){
+    msgsEl.style.background = sc.bg;
+  } else {
+    msgsEl.style.background = '';
+  }
+  // Scene ambience particles
+  const amb = document.getElementById('sceneAmbience');
+  amb.innerHTML = '';
+  if(sceneParticleTimer) clearInterval(sceneParticleTimer);
+  const emojis = SCENE_PARTICLES[currentScenario] || [];
+  if(emojis.length > 0){
+    sceneParticleTimer = setInterval(()=>{
+      if(amb.children.length > 12) amb.removeChild(amb.firstChild);
+      const sp = document.createElement('span');
+      sp.className = 'scene-particle';
+      sp.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+      sp.style.left = Math.random()*90 + '%';
+      sp.style.bottom = '0';
+      sp.style.animationDuration = (8+Math.random()*6) + 's';
+      sp.style.fontSize = (14+Math.random()*12) + 'px';
+      amb.appendChild(sp);
+      sp.addEventListener('animationend', ()=>sp.remove());
+    }, 2000);
+  }
 }
 
 function selectScene(id){
