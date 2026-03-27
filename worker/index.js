@@ -513,18 +513,22 @@ export default {
     }
 
     // ── 社群趨勢代理 (/trends/:source) ────────────────────────────
-    // 用 CF Cache API 快取 6 小時，避免重複打外部 API
+    // 用 CF Cache API 快取 4 小時，避免重複打外部 API
+    // 只用「確定不會擋」的公開 API
     const TREND_SOURCES = {
-      '/trends/google': { url:'https://trends.google.com.tw/trending/rss?geo=TW', type:'application/xml;charset=utf-8' },
-      '/trends/dcard':  { url:'https://www.dcard.tw/service/api/v2/posts?popular=true&limit=30', type:'application/json;charset=utf-8' },
-      '/trends/ptt':    { url:'https://www.ptt.cc/bbs/hotboards.html', type:'text/html;charset=utf-8', extraHeaders:{'Cookie':'over18=1'} },
-      '/trends/yahoo':  { url:'https://tw.news.yahoo.com/rss/', type:'application/xml;charset=utf-8' },
-      // 遊戲產業
-      '/trends/gnn':      { url:'https://gnn.gamer.com.tw/rss.xml', type:'application/xml;charset=utf-8' },
-      '/trends/4gamers':  { url:'https://www.4gamers.com.tw/rss/latest-news', type:'application/xml;charset=utf-8' },
-      '/trends/ign':      { url:'https://feeds.feedburner.com/ign/all', type:'application/xml;charset=utf-8' },
-      '/trends/steam':    { url:'https://store.steampowered.com/feeds/newreleases.xml', type:'application/xml;charset=utf-8' },
-      '/trends/dcard-game':{ url:'https://www.dcard.tw/service/api/v2/posts?popular=true&limit=30&topics=game', type:'application/json;charset=utf-8' },
+      // Reddit — 公開 .json 端點，玩家抱怨金礦
+      '/trends/reddit-steam':    { url:'https://www.reddit.com/r/Steam/hot.json?limit=30', type:'application/json;charset=utf-8', extraHeaders:{'User-Agent':'CapyWorlds/1.0'} },
+      '/trends/reddit-pcgaming': { url:'https://www.reddit.com/r/pcgaming/hot.json?limit=30', type:'application/json;charset=utf-8', extraHeaders:{'User-Agent':'CapyWorlds/1.0'} },
+      '/trends/reddit-games':    { url:'https://www.reddit.com/r/Games/hot.json?limit=30', type:'application/json;charset=utf-8', extraHeaders:{'User-Agent':'CapyWorlds/1.0'} },
+      '/trends/reddit-nintendo': { url:'https://www.reddit.com/r/NintendoSwitch/hot.json?limit=30', type:'application/json;charset=utf-8', extraHeaders:{'User-Agent':'CapyWorlds/1.0'} },
+      '/trends/reddit-gachagaming':{ url:'https://www.reddit.com/r/gachagaming/hot.json?limit=30', type:'application/json;charset=utf-8', extraHeaders:{'User-Agent':'CapyWorlds/1.0'} },
+      // Steam — 官方公開 API，不需 key
+      '/trends/steam-featured':  { url:'https://store.steampowered.com/api/featured/', type:'application/json;charset=utf-8' },
+      '/trends/steam-top':       { url:'https://store.steampowered.com/api/featuredcategories/', type:'application/json;charset=utf-8' },
+      // SteamSpy — 專門提供遊戲數據的公開 API
+      '/trends/steamspy-top':    { url:'https://steamspy.com/api.php?request=top100in2weeks', type:'application/json;charset=utf-8' },
+      // CheapShark — 遊戲特價比價 API
+      '/trends/deals':           { url:'https://www.cheapshark.com/api/1.0/deals?storeID=1&upperPrice=15&sortBy=recent&pageSize=20', type:'application/json;charset=utf-8' },
     };
     const trendSrc = TREND_SOURCES[url.pathname];
     if (trendSrc && request.method==='GET') {

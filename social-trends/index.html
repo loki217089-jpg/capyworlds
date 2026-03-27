@@ -143,7 +143,7 @@ const T = {
     title:'遊戲趨勢雷達',next:'下次更新',refresh:'立即更新',
     hot:'🔥 熱門遊戲',pain:'😤 玩家痛點',opp:'💡 攻略機會',
     all:'全部',items:'則',loading:'載入中...',noData:'無資料',
-    footer:'資料來源：Steam · 巴哈 · 4Gamers · IGN · Dcard 遊戲板 · 每 4 小時更新',
+    footer:'資料來源：Reddit · Steam · SteamSpy · CheapShark · 每 4 小時更新',
     painTitle:'玩家在抱怨什麼？',painDesc:'從各平台蒐集的負評、抱怨、求助',
     oppTitle:'可以做什麼幫他們？',oppDesc:'根據痛點分析，建議的攻略/工具方向',
     guide:'攻略',tool:'工具',video:'影片',
@@ -154,7 +154,7 @@ const T = {
     title:'Game Trends Radar',next:'Next update',refresh:'Refresh',
     hot:'🔥 Hot Games',pain:'😤 Pain Points',opp:'💡 Opportunities',
     all:'All',items:'items',loading:'Loading...',noData:'No data',
-    footer:'Sources: Steam · Bahamut · 4Gamers · IGN · Dcard Gaming · Updates every 4hrs',
+    footer:'Sources: Reddit · Steam · SteamSpy · CheapShark · Updates every 4hrs',
     painTitle:'What are players complaining about?',painDesc:'Negative reviews, complaints, and help requests across platforms',
     oppTitle:'What can we build to help?',oppDesc:'Guide/tool opportunities based on pain point analysis',
     guide:'Guide',tool:'Tool',video:'Video',
@@ -194,11 +194,14 @@ applyTheme();
 /* ── Sources ── */
 const SRCS=[
   {id:'all',name:{zh:'全部',en:'All'},icon:'🌐',color:'var(--accent)'},
-  {id:'steam',name:{zh:'Steam',en:'Steam'},icon:'🎯',color:'#1b2838'},
-  {id:'gnn',name:{zh:'巴哈 GNN',en:'Bahamut GNN'},icon:'🎮',color:'#0070c0'},
-  {id:'4gamers',name:{zh:'4Gamers',en:'4Gamers'},icon:'🕹️',color:'#ff6600'},
-  {id:'ign',name:{zh:'IGN',en:'IGN'},icon:'🌍',color:'#bf1313'},
-  {id:'dcard',name:{zh:'Dcard 遊戲',en:'Dcard Gaming'},icon:'💬',color:'#006aa6'},
+  {id:'r-steam',name:{zh:'r/Steam',en:'r/Steam'},icon:'🟠',color:'#ff4500'},
+  {id:'r-pcgaming',name:{zh:'r/pcgaming',en:'r/pcgaming'},icon:'🟠',color:'#ff4500'},
+  {id:'r-games',name:{zh:'r/Games',en:'r/Games'},icon:'🟠',color:'#ff4500'},
+  {id:'r-nintendo',name:{zh:'r/Switch',en:'r/Switch'},icon:'🔴',color:'#e60012'},
+  {id:'r-gacha',name:{zh:'r/gacha',en:'r/gacha'},icon:'🎰',color:'#9060ff'},
+  {id:'steam-feat',name:{zh:'Steam 精選',en:'Steam Featured'},icon:'🎯',color:'#1b2838'},
+  {id:'steamspy',name:{zh:'SteamSpy 熱玩',en:'SteamSpy Top'},icon:'📊',color:'#4a90d9'},
+  {id:'deals',name:{zh:'特價情報',en:'Deals'},icon:'💰',color:'#f59e0b'},
 ];
 let hotSrc='all', painSrc='all';
 const API=location.hostname==='localhost'||location.hostname==='127.0.0.1'?'':'https://capyworlds.com';
@@ -227,70 +230,100 @@ let lastRefresh=null;
 /* ── Detect pain type from title ── */
 function detectPain(text){
   const t=text.toLowerCase();
-  if(/bug|閃退|crash|壞|broken|glitch|卡死|當機|無法/.test(t)) return 'bug';
-  if(/平衡|不公|太強|太弱|nerf|buff|op|imba|削弱/.test(t)) return 'balance';
-  if(/新手|不會|怎麼|教學|攻略|卡關|help|how to|guide|stuck/.test(t)) return 'newbie';
-  if(/lag|fps|效能|loading|載入|優化|掉幀|卡頓/.test(t)) return 'perf';
-  if(/貴|價格|pay|課金|氪金|micro|dlc太貴|定價/.test(t)) return 'price';
-  if(/爛|垃圾|失望|退款|uninstall|差評|waste|worst|糞/.test(t)) return 'complaint';
+  if(/bug|crash|broken|glitch|error|stuck|freeze|corrupt|not work|can't|won't|issue/.test(t)) return 'bug';
+  if(/nerf|buff|balance|op |overpowered|underpowered|broken meta|unfair|p2w|pay.to.win/.test(t)) return 'balance';
+  if(/help|how to|how do|beginner|new player|noob|tips|guide|advice|recommend|stuck on/.test(t)) return 'newbie';
+  if(/lag|fps|performance|stutter|loading|optimization|frame|slow|ram|vram|cpu|gpu/.test(t)) return 'perf';
+  if(/price|expensive|overpriced|refund|not worth|rip.off|micro|monetiz|dlc|season pass|loot.?box/.test(t)) return 'price';
+  if(/worst|terrible|awful|garbage|trash|waste|disappoint|regret|uninstall|dead game|scam|ruined/.test(t)) return 'complaint';
   return null;
 }
 
-/* ── Parse game RSS (GNN/4Gamers/IGN/Steam) ── */
-function parseGameRSS(xml, srcId){
-  const doc=new DOMParser().parseFromString(xml,'application/xml');
-  const items=doc.querySelectorAll('item');
-  const results=[];
-  items.forEach((item,i)=>{
-    const title=item.querySelector('title')?.textContent||'';
-    if(!title) return;
-    const heat=(items.length-i)*4000+Math.floor(Math.random()*3000);
-    const pub=item.querySelector('pubDate')?.textContent;
-    const pain=detectPain(title);
-    results.push({
-      title, src:srcId, heat, pain,
-      comments:Math.round(heat*0.04), views:heat*12,
-      time:pub?new Date(pub).toISOString():new Date().toISOString()
-    });
-  });
-  return results.slice(0,20);
+/* ── Parse Reddit .json ── */
+function parseReddit(json, srcId){
+  if(!json?.data?.children) return [];
+  return json.data.children.filter(c=>c.kind==='t3').map(c=>{
+    const d=c.data;
+    const pain=detectPain((d.title||'')+(d.selftext||'').slice(0,200));
+    return {
+      title:d.title||'', src:srcId,
+      heat:(d.ups||0)+(d.num_comments||0)*3,
+      comments:d.num_comments||0,
+      views:d.ups||0,
+      pain,
+      excerpt:(d.selftext||'').slice(0,150),
+      url:'https://reddit.com'+d.permalink,
+      time:new Date((d.created_utc||0)*1000).toISOString(),
+      flair:d.link_flair_text||''
+    };
+  }).slice(0,25);
 }
 
-/* ── Parse Dcard gaming posts ── */
-function parseDcard(data){
-  if(!Array.isArray(data)) return [];
-  return data.slice(0,20).map((post,i)=>{
-    const heat=(post.likeCount||0)+(post.commentCount||0)*5;
-    const pain=detectPain(post.title||'');
-    return {
-      title:post.title||'(無標題)', src:'dcard',
-      heat:heat||((data.length-i)*2000), pain,
-      comments:post.commentCount||0, views:(post.likeCount||0)*20,
-      time:post.createdAt||new Date().toISOString(),
-      excerpt:(post.excerpt||'').slice(0,100)
-    };
+/* ── Parse Steam Featured ── */
+function parseSteamFeatured(json){
+  const items=[];
+  if(json?.featured_win) json.featured_win.forEach(g=>{
+    items.push({
+      title:g.name||'', src:'steam-feat', heat:g.discount_percent>0?80000:50000,
+      comments:0, views:0, pain:null,
+      excerpt:g.discount_percent>0?`-${g.discount_percent}% → $${(g.final_price/100).toFixed(2)}`:'',
+      time:new Date().toISOString()
+    });
   });
+  if(json?.large_capsules) json.large_capsules.forEach(g=>{
+    items.push({
+      title:g.name||'', src:'steam-feat', heat:90000,
+      comments:0, views:0, pain:null,
+      excerpt:g.discount_percent>0?`-${g.discount_percent}%`:'Featured',
+      time:new Date().toISOString()
+    });
+  });
+  return items.slice(0,15);
+}
+
+/* ── Parse SteamSpy top ── */
+function parseSteamSpy(json){
+  if(!json||typeof json!=='object') return [];
+  return Object.entries(json).map(([appid,g])=>({
+    title:g.name||'', src:'steamspy',
+    heat:(g.ccu||0)+(g.players_2weeks||0)/100,
+    comments:0, views:g.players_2weeks||0, pain:null,
+    excerpt:`${fmtNum(g.ccu||0)} playing · ${fmtNum(g.players_2weeks||0)} 2wk`,
+    time:new Date().toISOString()
+  })).sort((a,b)=>b.heat-a.heat).slice(0,20);
+}
+
+/* ── Parse CheapShark deals ── */
+function parseDeals(json){
+  if(!Array.isArray(json)) return [];
+  return json.map(d=>({
+    title:d.title||'', src:'deals',
+    heat:Math.round((d.dealRating||0)*10000),
+    comments:0, views:0,
+    pain:parseFloat(d.normalPrice)>30?'price':null,
+    excerpt:`$${d.salePrice} (was $${d.normalPrice}) -${Math.round((1-d.salePrice/d.normalPrice)*100)}%`,
+    time:new Date((d.lastChange||0)*1000).toISOString()
+  })).slice(0,15);
 }
 
 /* ── Fetch all sources ── */
 async function fetchAll(){
   const sources=[
-    {key:'steam',  url:API+'/trends/steam',   parse:'xml'},
-    {key:'gnn',    url:API+'/trends/gnn',     parse:'xml'},
-    {key:'4gamers',url:API+'/trends/4gamers',  parse:'xml'},
-    {key:'ign',    url:API+'/trends/ign',     parse:'xml'},
-    {key:'dcard',  url:API+'/trends/dcard-game',parse:'json'},
+    {key:'r-steam',    url:API+'/trends/reddit-steam',    handler:d=>parseReddit(d,'r-steam')},
+    {key:'r-pcgaming', url:API+'/trends/reddit-pcgaming', handler:d=>parseReddit(d,'r-pcgaming')},
+    {key:'r-games',    url:API+'/trends/reddit-games',    handler:d=>parseReddit(d,'r-games')},
+    {key:'r-nintendo', url:API+'/trends/reddit-nintendo', handler:d=>parseReddit(d,'r-nintendo')},
+    {key:'r-gacha',    url:API+'/trends/reddit-gachagaming',handler:d=>parseReddit(d,'r-gacha')},
+    {key:'steam-feat', url:API+'/trends/steam-featured',  handler:parseSteamFeatured},
+    {key:'steamspy',   url:API+'/trends/steamspy-top',    handler:parseSteamSpy},
+    {key:'deals',      url:API+'/trends/deals',           handler:parseDeals},
   ];
   const result={};
-  await Promise.all(sources.map(async ({key,url,parse})=>{
+  await Promise.all(sources.map(async ({key,url,handler})=>{
     try{
       const r=await fetch(url);
       if(!r.ok) throw new Error(r.status);
-      if(parse==='json'){
-        result[key]=parseDcard(await r.json());
-      } else {
-        result[key]=parseGameRSS(await r.text(),key);
-      }
+      result[key]=handler(await r.json());
     }catch(e){console.warn('fetch fail:',key,e); result[key]=[];}
   }));
   return result;
@@ -356,14 +389,16 @@ function renderHot(){
   }
 }
 function renderItem(it,i){
+  const link=it.url?`<a href="${it.url}" target="_blank" style="color:var(--h1)">${it.title}</a>`:it.title;
   return `<div class="item">
     <div class="rank ${i<3?'top':'n'}">${i+1}</div>
     <div class="info">
-      <div class="tt">${it.title}</div>
+      <div class="tt">${link}</div>
       <div class="meta">
         ${it.pain?`<span style="color:#f87171">😤 ${t(it.pain)}</span>`:''}
-        <span>💬 ${fmtNum(it.comments)}</span>
-        <span>👁 ${fmtNum(it.views)}</span>
+        ${it.flair?`<span style="color:var(--accent)">[${it.flair}]</span>`:''}
+        ${it.excerpt?`<span>${it.excerpt}</span>`:''}
+        <span>⬆${fmtNum(it.views)} 💬${fmtNum(it.comments)}</span>
       </div>
     </div>
     <div class="heat">🔥 ${fmtNum(it.heat)}</div>
@@ -396,14 +431,15 @@ function renderPain(){
         ${list.slice(0,8).map(it=>{
           const s=SRCS.find(x=>x.id===it.src);
           const sn=s?(lang==='zh-TW'?s.name.zh:s.name.en):it.src;
+          const link=it.url?`<a href="${it.url}" target="_blank" style="color:var(--h1)">${it.title}</a>`:it.title;
           return `<div class="complaint">
             <div class="c-head">
               <span class="c-src" style="background:${s?s.color:'#888'}">${sn}</span>
-              <span class="c-title">${it.title}</span>
+              <span class="c-title">${link}</span>
             </div>
-            ${it.excerpt?`<div class="c-body">${it.excerpt}</div>`:''}
+            ${it.excerpt?`<div class="c-body">${it.excerpt}...</div>`:''}
             <div class="c-tags">
-              <span class="c-tag">🔥 ${fmtNum(it.heat)}</span>
+              <span class="c-tag">⬆${fmtNum(it.views)}</span>
               <span class="c-tag">💬 ${fmtNum(it.comments)}</span>
             </div>
           </div>`;
