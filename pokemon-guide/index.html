@@ -73,6 +73,31 @@ a{color:var(--accent);text-decoration:none}
 .info-val{color:var(--text)}
 .detail-hab{margin-top:8px;padding:10px;background:var(--bg3);border-radius:8px}
 .detail-hab-img{width:100%;max-height:200px;object-fit:cover;border-radius:6px;margin-bottom:8px}
+/* Recipe section */
+.recipe-group{margin-bottom:24px}
+.recipe-group-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--border)}
+.recipe-group-header .rg-icon{font-size:28px}
+.recipe-group-header .rg-title{font-size:18px;font-weight:700;color:var(--accent2)}
+.recipe-group-header .rg-sub{font-size:13px;color:var(--text2)}
+.recipe-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;transition:.2s}
+.recipe-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.recipe-card .rc-name{font-size:15px;font-weight:600;color:var(--accent2);margin-bottom:4px}
+.recipe-card .rc-row{font-size:13px;color:var(--text);margin-bottom:3px;display:flex;gap:6px}
+.recipe-card .rc-label{color:var(--text2);min-width:60px;flex-shrink:0}
+.recipe-card .rc-taste{display:inline-block;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600}
+.taste-sweet{background:rgba(255,182,193,.2);color:#ffb6c1}
+.taste-spicy{background:rgba(255,106,106,.2);color:#ff6b6b}
+.taste-bitter{background:rgba(107,181,255,.2);color:#6bb5ff}
+.taste-sour{background:rgba(255,255,107,.2);color:#e8e860}
+.taste-astringent{background:rgba(176,107,255,.2);color:#b06bff}
+.taste-none{background:rgba(200,164,86,.15);color:var(--accent)}
+.recipe-card .rc-price{color:var(--orange);font-weight:600}
+.offering-section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px}
+.offering-section h3{font-size:16px;color:var(--accent2);margin-bottom:10px}
+.offering-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:14px}
+.offering-row:last-child{border:none}
+.offering-taste{min-width:48px;font-weight:600}
+.offering-effect{color:var(--text)}
 .empty{text-align:center;padding:60px 20px;color:var(--text2)}
 @media(max-width:600px){
   .card-grid{grid-template-columns:1fr}
@@ -94,6 +119,7 @@ a{color:var(--accent);text-decoration:none}
     <div class="tab active" data-tab="pokemon" onclick="switchTab('pokemon')">🐾 寶可夢查詢</div>
     <div class="tab" data-tab="habitat" onclick="switchTab('habitat')">🏠 棲息地查詢</div>
     <div class="tab" data-tab="skill" onclick="switchTab('skill')">⚡ 專長一覽</div>
+    <div class="tab" data-tab="recipe" onclick="switchTab('recipe')">🍳 料理食譜</div>
   </div>
   <div class="search-bar">
     <input id="search" type="text" placeholder="搜尋寶可夢名稱、專長、棲息地..." oninput="doSearch()">
@@ -685,7 +711,89 @@ function renderFilters(){
   el.innerHTML=html;
 }
 
-function renderAll(){renderFilters();const q=document.getElementById('search').value.trim().toLowerCase();if(curTab==='pokemon'||curTab==='skill')renderPokemon(q);else renderHabitats(q);}
+// Recipe data: [name, category, taste, specialIngredient, pokemonSkill, price, tasteClass]
+const RECIPE_DATA = [
+  // 沙拉 Salad
+  ['原味沙拉','salad','無味','—','—',100,'none'],
+  ['蘋野沙拉','salad','甜','蘋野果','—',100,'sweet'],
+  ['海藻沙拉','salad','苦','海藻','—',200,'bitter'],
+  ['絲絲沙拉','salad','酸','—','伐木',200,'sour'],
+  ['搗搗沙拉','salad','澀','零餘果','碾壓',500,'astringent'],
+  ['麵包丁沙拉','salad','辣','任意麵包','—',500,'spicy'],
+  // 麵包 Bread
+  ['原味麵包','bread','無味','—','—',100,'none'],
+  ['蘋野麵包','bread','酸','蘋野果','—',100,'sour'],
+  ['紅蘿蔔麵包','bread','辣','成熟的胡蘿蔔','—',200,'spicy'],
+  ['重製麵包','bread','苦','任意麵包','回收',200,'bitter'],
+  ['鬆軟麵包','bread','甜','桃桃果','滋潤',500,'sweet'],
+  ['熱騰騰的濃湯麵包','bread','辣','任意湯','點火',500,'spicy'],
+  // 湯 Soup
+  ['原味湯','soup','無味','—','—',100,'none'],
+  ['海藻湯','soup','苦','海藻','—',100,'bitter'],
+  ['蘑菇湯','soup','澀','成熟的蘑菇','—',200,'astringent'],
+  ['電電湯','soup','辣','—','發電',200,'spicy'],
+  ['藥膳湯','soup','辣','豆子＋葉子','—',500,'spicy'],
+  ['多滋湯','soup','酸','利木果＋任意漢堡排','—',500,'sour'],
+  // 漢堡排 Hamburger
+  ['原味漢堡排','hamburger','無味','—','—',100,'none'],
+  ['蘑菇漢堡排','hamburger','澀','成熟的蘑菇','—',100,'astringent'],
+  ['番茄漢堡排','hamburger','酸','番茄','—',200,'sour'],
+  ['馬鈴薯漢堡排','hamburger','甜','馬鈴薯','—',200,'sweet'],
+  ['成熟滋味漢堡排','hamburger','苦','莓莓果＋木子果','—',500,'bitter'],
+  ['多彩漢堡排','hamburger','無味','馬鈴薯＋任意沙拉','—',500,'none']
+];
+const RECIPE_CATEGORIES = {
+  salad:{icon:'🥗',name:'沙拉',nameEn:'Salad',tool:'砧板',base:'樹葉',skill:'居合斬'},
+  bread:{icon:'🍞',name:'麵包',nameEn:'Bread',tool:'麵包窯',base:'小麥',skill:'碎岩'},
+  soup:{icon:'🍲',name:'湯',nameEn:'Soup',tool:'鍋子',base:'美味之水',skill:'水槍'},
+  hamburger:{icon:'🍔',name:'漢堡排',nameEn:'Hamburger',tool:'平底鍋',base:'豆子',skill:'碎岩'}
+};
+const OFFERING_EFFECTS = [
+  ['無味','none','容易和寶可夢成為朋友'],
+  ['甜','sweet','容易和寶可夢成為朋友（效果更好）'],
+  ['辣','spicy','棲息地容易出現寶可夢'],
+  ['苦','bitter','容易找到稀有物品'],
+  ['酸','sour','商店容易上架好東西'],
+  ['澀','astringent','鳳王和洛奇亞容易出現、容易找到羽毛']
+];
+
+function renderAll(){renderFilters();const q=document.getElementById('search').value.trim().toLowerCase();if(curTab==='pokemon'||curTab==='skill')renderPokemon(q);else if(curTab==='recipe')renderRecipes(q);else renderHabitats(q);}
+
+function renderRecipes(q){
+  document.getElementById('stats').textContent='';
+  const el=document.getElementById('results');
+  // Offering effects section
+  let html=`<div class="offering-section" style="grid-column:1/-1"><h3>🍽️ 供奉苔卡比獸效果（每日一次，凌晨5點刷新）</h3>`;
+  OFFERING_EFFECTS.forEach(([taste,cls,effect])=>{
+    html+=`<div class="offering-row"><span class="offering-taste rc-taste taste-${cls}">${taste}</span><span class="offering-effect">${effect}</span></div>`;
+  });
+  html+=`</div>`;
+  // Group by category
+  const cats=['salad','bread','soup','hamburger'];
+  cats.forEach(cat=>{
+    const info=RECIPE_CATEGORIES[cat];
+    const recipes=RECIPE_DATA.filter(r=>r[1]===cat&&(!q||(r[0]+' '+r[2]+' '+r[3]+' '+r[4]).toLowerCase().includes(q)));
+    if(!recipes.length&&q)return;
+    html+=`<div class="recipe-group" style="grid-column:1/-1">
+      <div class="recipe-group-header">
+        <span class="rg-icon">${info.icon}</span>
+        <div><div class="rg-title">${info.name} ${info.nameEn}</div>
+        <div class="rg-sub">廚具：${info.tool}｜基礎素材：${info.base}｜強化技能：${info.skill}</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">`;
+    recipes.forEach(r=>{
+      html+=`<div class="recipe-card">
+        <div class="rc-name">${r[0]}</div>
+        <div class="rc-row"><span class="rc-label">口味</span><span class="rc-taste taste-${r[6]}">${r[2]}</span></div>
+        <div class="rc-row"><span class="rc-label">特殊素材</span><span>${r[3]}</span></div>
+        ${r[4]!=='—'?`<div class="rc-row"><span class="rc-label">寶可夢特長</span><span style="color:var(--blue)">${r[4]}</span></div>`:''}
+        <div class="rc-row"><span class="rc-label">售價</span><span class="rc-price">💰 ${r[5]}</span></div>
+      </div>`;
+    });
+    html+=`</div></div>`;
+  });
+  el.innerHTML=html;
+}
 
 function renderPokemon(q){
   let filtered=PK_DATA.filter(p=>{
