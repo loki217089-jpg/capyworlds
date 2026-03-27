@@ -946,6 +946,7 @@ const I18N = {
     summon_ready_max:'⚡ MAX COMBO — Super Summon ready!',
     summon_ready:'COMBO ×%1 — Burst Summon ready!',
     summon_cooldown:'Cooldown... (%1s)', summon_locked:'Build COMBO ×2.0 to unlock (current ×%1)',
+    emp_slow:'Enemies Slowed 50%',
     scan_progress:'Scanning... %1%', scan_complete:'Scan Complete — Entering Drive',
     threat_levels:['LOW ██░░░░','MED ███░░░','HIGH ████░░','CRIT ██████'],
     threat_label:'Threat Level: ', di_skip:'[ Click to Skip ]',
@@ -1007,6 +1008,7 @@ const I18N = {
     summon_ready_max:'⚡ MAX COMBO — 超級召喚可用！',
     summon_ready:'COMBO ×%1 — 爆發召喚可用！',
     summon_cooldown:'冷卻中… (%1s)', summon_locked:'累積COMBO至×2.0解鎖（目前×%1）',
+    emp_slow:'敵人減速50%',
     scan_progress:'掃描中... %1%', scan_complete:'掃描完成 — 進入磁碟',
     threat_levels:['低危 ██░░░░','中等 ███░░░','高危 ████░░','極危 ██████'],
     threat_label:'威脅等級：', di_skip:'[ 點擊跳過 ]',
@@ -1540,7 +1542,7 @@ function _doStartGame() {
     wDelay: 0, wActive: false, bossWave: false,
 
     combo: 0, maxCombo: 5, comboT: 0,
-    comboDecayMax: 180 + (META.upgrades.comboDecay||0)*60,
+    comboDecayMax: 120 + (META.upgrades.comboDecay||0)*40,
     summonReady: false, summonCD: 0,
     summonCDMax: Math.round(300 * (1 - (META.upgrades.summonCD||0)*0.15)),
 
@@ -1679,6 +1681,7 @@ function update() {
   if (G.empT > 0) G.empT--;
 
   // 自動射擊
+  if (G._drainHintCD > 0) G._drainHintCD--;
   G.fireT++;
   const adjRate = Math.round(G.fireRate / G.speedBuff);
   if (G.fireT >= adjRate) { G.fireT = 0; fireBullet(); }
@@ -1943,8 +1946,8 @@ function fireBullet() {
     // ── 吸取：近距離增幅，命中回血
     const bonus = d < 180 ? 1.5 : 1.0; // 近距離加成
     G.ents.push({ t:'PB', x:G.px, y:G.py, vx:(dx/d)*7, vy:(dy/d)*7, dmg:dmg*bonus, pierce:false, col:'#00ffaa', sz:5, special:'drain', drainAmt:dmg*bonus*0.12 });
-    // 近距時顯示增幅提示
-    if (d < 180 && Math.random()<0.08) flt('近距+50%','#00ffaa');
+    // 近距時顯示增幅提示（每30發一次，避免洗版）
+    if (d < 180 && !G._drainHintCD) { flt('近距+50%','#00ffaa'); G._drainHintCD=30; }
 
   } else if (sp==='pierce') {
     // ── 狙擊：高速穿透，細長白色
@@ -1982,7 +1985,7 @@ function triggerShockwave(cx, cy, dmg) {
 // lv6 Boss專屬: 三叉追蹤 + 12發圓形 + 2發側翼追蹤
 function fireEBullet(e) {
   // 子彈數量上限，避免畫面爆炸
-  if (G.ents.filter(x=>x.t==='EB').length >= 40) return;
+  if (G.ents.filter(x=>x.t==='EB').length >= 60) return;
   const isBoss = e.t === 'B';
   const wave   = G.wave;
   let lv;
@@ -2221,7 +2224,7 @@ function render() {
     ctx.textAlign='left';
   }
 
-  // EMP 閃光覆蓋（紫色干擾）
+  // EMP 閃光覆蓋（紫色干擾）+ 狀態提示
   if (G.empFlash > 0) {
     G.empFlash--;
     ctx.fillStyle=`rgba(80,0,160,${G.empFlash/60*0.55})`;
@@ -2232,6 +2235,11 @@ function render() {
       const y2=Math.random()*cv.height;
       ctx.beginPath(); ctx.moveTo(0,y2); ctx.lineTo(cv.width,y2); ctx.stroke();
     }
+    // EMP ACTIVE 提示文字
+    ctx.save(); ctx.globalAlpha=Math.min(1,G.empFlash/30);
+    ctx.font='bold 16px sans-serif'; ctx.textAlign='center';
+    ctx.fillStyle='#bf7fff'; ctx.fillText('⚡ EMP ACTIVE — '+t('emp_slow'),cv.width/2,36);
+    ctx.restore();
   }
 
   // 爆炸環 (EXP)
@@ -2638,6 +2646,7 @@ function showCPPopup(cpIdx) {
 function triggerGameOver() {
   if(!G||!G.running) return;
   G.running=false; cancelAnimationFrame(rafId);
+  document.querySelectorAll('.flt').forEach(el=>el.remove());
   stopBGM(); setTimeout(()=>sfx('gameover'),120);
   META.stats.totalScore+=G.score;
   if(G.score>META.stats.bestScore) META.stats.bestScore=G.score;
@@ -2677,6 +2686,7 @@ function pauseBack() {
   if(!G) return;
   G.running=false; cancelAnimationFrame(rafId);
   META.credits+=G.cred; META.stats.totalScore+=G.score;
+  document.querySelectorAll('.flt').forEach(el=>el.remove());
   saveMeta(); stopBGM(); goHub();
 }
 
