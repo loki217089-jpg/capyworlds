@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>Capy Match 水豚配對</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;background:#1a1410;color:#e8ddd0;display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden}
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:rgba(30,24,18,.95);flex-shrink:0;z-index:200;border-bottom:1px solid rgba(200,164,86,.2)}
+.top-bar a{color:#c8a456;text-decoration:none;font-size:14px}
+.btn-group{display:flex;gap:6px}
+.btn-group button{background:rgba(200,164,86,.15);border:1px solid rgba(200,164,86,.3);color:#c8a456;border-radius:6px;padding:4px 10px;font-size:13px;cursor:pointer}
+.game-area{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px}
+
+/* Menu Screen */
+.menu{text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px}
+.menu h1{font-size:32px;color:#c8a456;text-shadow:0 2px 12px rgba(200,164,86,.3)}
+.menu p{color:#b0a090;font-size:14px;max-width:320px}
+.diff-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.diff-btn{background:linear-gradient(135deg,#2a2018,#1e1812);border:2px solid rgba(200,164,86,.4);color:#e8ddd0;border-radius:12px;padding:16px 24px;cursor:pointer;font-size:15px;min-width:100px;transition:.2s}
+.diff-btn:hover{border-color:#c8a456;transform:scale(1.05);box-shadow:0 0 20px rgba(200,164,86,.2)}
+.diff-btn span{display:block;font-size:11px;color:#908070;margin-top:4px}
+
+/* Stats bar */
+.stats{display:flex;gap:16px;justify-content:center;padding:8px;font-size:14px;color:#c8a456;flex-shrink:0}
+.stats div{display:flex;align-items:center;gap:4px}
+
+/* Card Grid */
+.board{display:grid;gap:8px;padding:8px;justify-content:center;max-width:min(600px,calc(100vw - 16px))}
+.card{position:relative;cursor:pointer;aspect-ratio:3/4;border-radius:10px;perspective:600px;-webkit-tap-highlight-color:transparent}
+.card-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+.card.flipped .card-inner{transform:rotateY(180deg)}
+.card.matched .card-inner{transform:rotateY(180deg)}
+.card-face{position:absolute;inset:0;border-radius:10px;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden}
+.card-back{background:linear-gradient(135deg,#3a2a15,#2a1e10);border:2px solid rgba(200,164,86,.5);display:flex;align-items:center;justify-content:center}
+.card-back img{width:90%;height:90%;object-fit:contain;opacity:.85}
+.card-back-fallback{font-size:40px;color:#c8a456;text-shadow:0 0 20px rgba(200,164,86,.4)}
+.card-front{transform:rotateY(180deg);background:#faf4ed;border:2px solid rgba(200,164,86,.6);display:flex;align-items:center;justify-content:center}
+.card-front canvas{width:100%;height:100%;object-fit:contain;border-radius:8px}
+.card.matched{animation:matchPop .4s ease}
+.card.matched .card-face{border-color:#66cc66}
+@keyframes matchPop{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+.card.wrong .card-inner{animation:shake .4s ease}
+@keyframes shake{0%,100%{transform:rotateY(180deg) translateX(0)}25%{transform:rotateY(180deg) translateX(-6px)}75%{transform:rotateY(180deg) translateX(6px)}}
+
+/* Result Screen */
+.result{text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px}
+.result h2{font-size:28px;color:#c8a456}
+.stars{font-size:36px;letter-spacing:8px}
+.result-stats{color:#b0a090;font-size:14px;line-height:1.8}
+.result-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.result-btn{background:linear-gradient(135deg,#c8a456,#a08030);border:none;color:#1a1410;border-radius:10px;padding:12px 28px;font-size:15px;font-weight:bold;cursor:pointer;transition:.2s}
+.result-btn:hover{transform:scale(1.05)}
+.result-btn.secondary{background:rgba(200,164,86,.15);color:#c8a456;border:1px solid rgba(200,164,86,.3)}
+
+/* Tutorial Overlay */
+.tutorial{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;display:flex;align-items:center;justify-content:center}
+.tutorial-box{background:#1e1812;border:2px solid rgba(200,164,86,.4);border-radius:16px;padding:24px;max-width:min(360px,calc(100vw - 32px));text-align:center}
+.tutorial-box h3{color:#c8a456;font-size:20px;margin-bottom:12px}
+.tutorial-step{margin:10px 0;font-size:14px;color:#d0c4b0;line-height:1.6}
+.tutorial-step .icon{font-size:24px;display:block;margin-bottom:4px}
+.tut-close{margin-top:16px;background:#c8a456;color:#1a1410;border:none;border-radius:8px;padding:10px 32px;font-size:15px;font-weight:bold;cursor:pointer}
+
+/* Combo popup */
+.combo-popup{position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);font-size:32px;font-weight:bold;color:#ffd700;text-shadow:0 0 20px rgba(255,215,0,.5);pointer-events:none;animation:comboUp .8s ease forwards;z-index:300}
+@keyframes comboUp{0%{opacity:1;transform:translate(-50%,-50%) scale(.5)}50%{transform:translate(-50%,-70%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-90%) scale(1)}}
+
+@media(max-width:480px){
+  .menu h1{font-size:24px}
+  .diff-btn{padding:12px 18px;font-size:14px}
+  .stats{font-size:13px;gap:10px}
+}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <a href="../" id="back-link">← Back</a>
+  <div class="btn-group">
+    <button id="lang-btn" onclick="toggleLang()">繁中</button>
+    <button id="mute-btn" onclick="toggleMute()">🔊</button>
+  </div>
+</div>
+<div class="game-area" id="gameArea"></div>
+
+<div style="position:fixed;bottom:4px;left:8px;z-index:9999;opacity:0.4;font-size:10px"><a href="/privacy.html" target="_blank" style="color:#888;text-decoration:none">Privacy Policy</a></div>
+
+<script>
+// ─── Config ───
+const SPRITE_URL = '../../assets/capy-collector/capy-match.png';
+const CARD_BACK_URL = '../../assets/capy-collector/card-back.png';
+const SHEET_W = 1536, SHEET_H = 1024, COLS = 4, ROWS = 3;
+const CELL_W = SHEET_W / COLS, CELL_H = Math.floor(SHEET_H / ROWS);
+const CHARS = [
+  {id:0,col:0,row:0,name:'Capybara',nameTw:'水豚'},
+  {id:1,col:1,row:0,name:'Chef',nameTw:'主廚'},
+  {id:2,col:2,row:0,name:'Captain',nameTw:'隊長'},
+  {id:3,col:3,row:0,name:'Princess',nameTw:'公主'},
+  {id:4,col:0,row:1,name:'Business',nameTw:'上班族'},
+  {id:5,col:1,row:1,name:'Doctor',nameTw:'醫生'},
+  {id:6,col:2,row:1,name:'Aviator',nameTw:'飛行員'},
+  {id:7,col:3,row:1,name:'Pirate',nameTw:'海盜'},
+  {id:8,col:0,row:2,name:'Watermelon',nameTw:'西瓜豚'},
+  {id:9,col:1,row:2,name:'Bee',nameTw:'蜜蜂豚'},
+  {id:10,col:2,row:2,name:'Angel',nameTw:'天使'},
+  {id:11,col:3,row:2,name:'Captain Hook',nameTw:'虎克船長'}
+];
+const DIFFICULTIES = {
+  easy:   {pairs:4, cols:4, rows:2, label:'Easy',   labelTw:'簡單',  starMoves:[8,12]},
+  normal: {pairs:8, cols:4, rows:4, label:'Normal', labelTw:'普通',  starMoves:[16,24]},
+  hard:   {pairs:12,cols:6, rows:4, label:'Hard',   labelTw:'困難',  starMoves:[24,36]}
+};
+
+// ─── i18n ───
+let lang = localStorage.getItem('capyMatchLang') || 'en';
+const I = {
+  title:     {en:'Capy Match',        tw:'水豚配對'},
+  subtitle:  {en:'Find matching capybara pairs!', tw:'找出相同的水豚角色！'},
+  easy:      {en:'Easy',              tw:'簡單'},
+  normal:    {en:'Normal',            tw:'普通'},
+  hard:      {en:'Hard',              tw:'困難'},
+  easyDesc:  {en:'4 pairs · 8 cards', tw:'4 組 · 8 張'},
+  normalDesc:{en:'8 pairs · 16 cards',tw:'8 組 · 16 張'},
+  hardDesc:  {en:'12 pairs · 24 cards',tw:'12 組 · 24 張'},
+  moves:     {en:'Moves', tw:'步數'},
+  time:      {en:'Time',  tw:'時間'},
+  combo:     {en:'Combo', tw:'連擊'},
+  best:      {en:'Best',  tw:'最佳'},
+  complete:  {en:'Complete!', tw:'完成！'},
+  newBest:   {en:'New Best!', tw:'新紀錄！'},
+  again:     {en:'Play Again', tw:'再玩一次'},
+  menu:      {en:'Menu', tw:'選單'},
+  back:      {en:'← Back', tw:'← 返回'},
+  tutTitle:  {en:'How to Play', tw:'遊戲說明'},
+  tut1:      {en:'Tap a card to flip it', tw:'點擊卡片翻開'},
+  tut2:      {en:'Find two matching capybaras', tw:'找出兩張相同的水豚'},
+  tut3:      {en:'Match all pairs to win!', tw:'配對全部完成即過關！'},
+  tut4:      {en:'Fewer moves = more stars ⭐', tw:'步數越少，星星越多 ⭐'},
+  gotIt:     {en:'Got it!', tw:'了解！'}
+};
+function t(key){ return I[key]?.[lang==='tw'?'tw':'en'] || key; }
+
+// ─── Audio ───
+const AUDIO_CTX = new (window.AudioContext||window.webkitAudioContext)();
+const AUDIO_BUFS = {};
+let audioMuted = localStorage.getItem('capyMatchMuted')==='1';
+function loadAudio(name,url){
+  fetch(url).then(r=>r.arrayBuffer()).then(ab=>AUDIO_CTX.decodeAudioData(ab))
+    .then(buf=>{AUDIO_BUFS[name]=buf}).catch(()=>{});
+}
+function playAudio(name,vol=0.7,rate=1,maxMs=0){
+  if(audioMuted)return;
+  const buf=AUDIO_BUFS[name];if(!buf)return;
+  if(AUDIO_CTX.state==='suspended')AUDIO_CTX.resume();
+  const src=AUDIO_CTX.createBufferSource();src.buffer=buf;src.playbackRate.value=rate;
+  const gain=AUDIO_CTX.createGain();gain.gain.value=vol;
+  src.connect(gain);gain.connect(AUDIO_CTX.destination);
+  src.start(0,0,maxMs>0?maxMs/1000:buf.duration);
+}
+loadAudio('flip','../../assets/sfx/400 Sounds Pack/UI/select_1.wav');
+loadAudio('match','../../assets/sfx/GameSFX3/PowerUp/Retro PowerUP 09.wav');
+loadAudio('wrong','../../assets/sfx/400 Sounds Pack/Musical Effects/8_bit_negative.wav');
+loadAudio('win','../../assets/sfx/400 Sounds Pack/Musical Effects/brass_level_complete.wav');
+loadAudio('combo','../../assets/sfx/GameSFX0/Ascending/Retro Ascending Short 20.wav');
+function toggleMute(){
+  audioMuted=!audioMuted;
+  document.getElementById('mute-btn').textContent=audioMuted?'🔇':'🔊';
+  localStorage.setItem('capyMatchMuted',audioMuted?'1':'0');
+}
+
+// ─── State ───
+let spriteImg = null, cardBackImg = null;
+let charDataUrls = {};
+let cards=[], flippedCards=[], matchedCount=0, moves=0, combo=0, timerSec=0, timerInterval=null;
+let currentDiff='', locked=false, gameActive=false;
+const GA = document.getElementById('gameArea');
+
+// ─── Sprite Loading ───
+function loadSprite(){
+  return new Promise((resolve)=>{
+    const img = new Image();
+    img.crossOrigin='anonymous';
+    img.onload = ()=>{ spriteImg=img; cropCharacters(); resolve(true); };
+    img.onerror = ()=>{ resolve(false); };
+    img.src = SPRITE_URL;
+  });
+}
+function cropCharacters(){
+  if(!spriteImg) return;
+  const cropSize = Math.min(CELL_W, CELL_H) - 20;
+  CHARS.forEach(c=>{
+    const cv = document.createElement('canvas');
+    cv.width = cropSize; cv.height = cropSize;
+    const ctx = cv.getContext('2d');
+    const sx = c.col * CELL_W + (CELL_W - cropSize)/2;
+    const sy = c.row * CELL_H + (CELL_H - cropSize)/2;
+    ctx.drawImage(spriteImg, sx, sy, cropSize, cropSize, 0, 0, cropSize, cropSize);
+    charDataUrls[c.id] = cv.toDataURL();
+  });
+}
+function loadCardBack(){
+  return new Promise(resolve=>{
+    const img = new Image();
+    img.onload=()=>{cardBackImg=img;resolve(true);};
+    img.onerror=()=>{resolve(false);};
+    img.src=CARD_BACK_URL;
+  });
+}
+
+// ─── Screens ───
+function showMenu(){
+  gameActive=false; clearInterval(timerInterval);
+  GA.innerHTML = `
+    <div class="menu">
+      <h1>${t('title')}</h1>
+      <p>${t('subtitle')}</p>
+      <div class="diff-btns">
+        <button class="diff-btn" onclick="startGame('easy')">
+          ${t('easy')}<span>${t('easyDesc')}</span>
+          ${getBestHTML('easy')}
+        </button>
+        <button class="diff-btn" onclick="startGame('normal')">
+          ${t('normal')}<span>${t('normalDesc')}</span>
+          ${getBestHTML('normal')}
+        </button>
+        <button class="diff-btn" onclick="startGame('hard')">
+          ${t('hard')}<span>${t('hardDesc')}</span>
+          ${getBestHTML('hard')}
+        </button>
+      </div>
+    </div>`;
+}
+function getBestHTML(diff){
+  const best = localStorage.getItem('capyMatch_best_'+diff);
+  if(!best) return '';
+  return `<span style="color:#66cc66;font-size:11px;margin-top:2px">🏆 ${best} ${t('moves').toLowerCase()}</span>`;
+}
+
+function startGame(diff){
+  currentDiff = diff;
+  const d = DIFFICULTIES[diff];
+  const selected = shuffle([...CHARS]).slice(0, d.pairs);
+  cards = shuffle([...selected, ...selected].map((c,i)=>({...c, uid: i})));
+  flippedCards=[]; matchedCount=0; moves=0; combo=0; timerSec=0; locked=false; gameActive=true;
+
+  const cardW = diff==='hard' ? 'min(80px,calc((100vw - 72px)/6))' : 'min(100px,calc((100vw - 56px)/4))';
+  let html = `<div class="stats">
+    <div>⏱ <span id="timer">0:00</span></div>
+    <div>👆 <span id="moveCount">0</span> ${t('moves')}</div>
+    <div>🔥 <span id="comboCount">0</span></div>
+  </div>
+  <div class="board" style="grid-template-columns:repeat(${d.cols},${cardW});">`;
+
+  cards.forEach((c,i)=>{
+    const frontContent = charDataUrls[c.id]
+      ? `<img src="${charDataUrls[c.id]}" style="width:100%;height:100%;object-fit:contain;border-radius:8px">`
+      : `<div style="font-size:40px">${getFallbackEmoji(c.id)}</div>`;
+    const backContent = cardBackImg
+      ? `<img src="${CARD_BACK_URL}" style="width:85%;height:85%;object-fit:contain">`
+      : `<div class="card-back-fallback">🦫</div>`;
+    html += `<div class="card" data-idx="${i}" onclick="flipCard(this,${i})">
+      <div class="card-inner">
+        <div class="card-face card-back">${backContent}</div>
+        <div class="card-face card-front">${frontContent}</div>
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  GA.innerHTML = html;
+  playAudio('flip',0.3);
+
+  clearInterval(timerInterval);
+  timerInterval = setInterval(()=>{
+    if(!gameActive) return;
+    timerSec++;
+    const el = document.getElementById('timer');
+    if(el) el.textContent = Math.floor(timerSec/60)+':'+(timerSec%60<10?'0':'')+timerSec%60;
+  },1000);
+}
+
+function flipCard(el, idx){
+  if(locked || !gameActive) return;
+  if(el.classList.contains('flipped') || el.classList.contains('matched')) return;
+  if(flippedCards.length >= 2) return;
+
+  el.classList.add('flipped');
+  playAudio('flip',0.5,1,150);
+  flippedCards.push({el, idx, id: cards[idx].id});
+
+  if(flippedCards.length === 2){
+    moves++;
+    document.getElementById('moveCount').textContent = moves;
+    locked = true;
+
+    if(flippedCards[0].id === flippedCards[1].id){
+      combo++;
+      matchedCount++;
+      document.getElementById('comboCount').textContent = combo;
+      playAudio(combo>=3?'combo':'match', 0.6, 1, 280);
+      if(combo >= 2) showComboPopup(combo);
+
+      setTimeout(()=>{
+        flippedCards[0].el.classList.add('matched');
+        flippedCards[1].el.classList.add('matched');
+        flippedCards = [];
+        locked = false;
+        if(matchedCount === DIFFICULTIES[currentDiff].pairs) endGame();
+      }, 400);
+    } else {
+      combo = 0;
+      document.getElementById('comboCount').textContent = 0;
+      playAudio('wrong',0.5,1,300);
+      setTimeout(()=>{
+        flippedCards[0].el.classList.add('wrong');
+        flippedCards[1].el.classList.add('wrong');
+      },200);
+      setTimeout(()=>{
+        flippedCards[0].el.classList.remove('flipped','wrong');
+        flippedCards[1].el.classList.remove('flipped','wrong');
+        flippedCards = [];
+        locked = false;
+      }, 900);
+    }
+  }
+}
+
+function showComboPopup(n){
+  const pop = document.createElement('div');
+  pop.className = 'combo-popup';
+  pop.textContent = `${n}x ${t('combo')}!`;
+  document.body.appendChild(pop);
+  setTimeout(()=>pop.remove(), 800);
+}
+
+function endGame(){
+  gameActive = false;
+  clearInterval(timerInterval);
+  playAudio('win',0.7);
+
+  const d = DIFFICULTIES[currentDiff];
+  const s3 = d.starMoves[0], s2 = d.starMoves[1];
+  const stars = moves <= s3 ? 3 : moves <= s2 ? 2 : 1;
+  const starStr = '⭐'.repeat(stars) + '☆'.repeat(3-stars);
+
+  const bestKey = 'capyMatch_best_'+currentDiff;
+  const prev = parseInt(localStorage.getItem(bestKey))||Infinity;
+  const isNew = moves < prev;
+  if(isNew) localStorage.setItem(bestKey, moves);
+
+  const timeStr = Math.floor(timerSec/60)+':'+(timerSec%60<10?'0':'')+timerSec%60;
+
+  setTimeout(()=>{
+    GA.innerHTML = `<div class="result">
+      <h2>${t('complete')}</h2>
+      <div class="stars">${starStr}</div>
+      ${isNew ? `<div style="color:#66cc66;font-size:16px">🎉 ${t('newBest')}</div>` : ''}
+      <div class="result-stats">
+        ${t('moves')}: ${moves}<br>
+        ${t('time')}: ${timeStr}<br>
+        ${t('best')}: ${isNew ? moves : prev === Infinity ? '-' : prev} ${t('moves').toLowerCase()}
+      </div>
+      <div class="result-btns">
+        <button class="result-btn" onclick="startGame('${currentDiff}')">${t('again')}</button>
+        <button class="result-btn secondary" onclick="showMenu()">${t('menu')}</button>
+      </div>
+    </div>`;
+  }, 600);
+}
+
+// ─── Helpers ───
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}
+  return arr;
+}
+function getFallbackEmoji(id){
+  return ['🦫','👨‍🍳','👮','👸','💼','🩺','🕶️','🏴‍☠️','🍉','🐝','👼','☠️'][id]||'🦫';
+}
+function toggleLang(){
+  lang = lang==='en'?'tw':'en';
+  localStorage.setItem('capyMatchLang', lang);
+  document.getElementById('lang-btn').textContent = lang==='en'?'繁中':'EN';
+  document.getElementById('back-link').textContent = t('back');
+  if(!gameActive) showMenu();
+}
+function showTutorial(){
+  if(localStorage.getItem('capyMatchTut')) return;
+  const div = document.createElement('div');
+  div.className = 'tutorial';
+  div.innerHTML = `<div class="tutorial-box">
+    <h3>${t('tutTitle')}</h3>
+    <div class="tutorial-step"><span class="icon">👆</span>${t('tut1')}</div>
+    <div class="tutorial-step"><span class="icon">🦫🦫</span>${t('tut2')}</div>
+    <div class="tutorial-step"><span class="icon">🏆</span>${t('tut3')}</div>
+    <div class="tutorial-step"><span class="icon">⭐</span>${t('tut4')}</div>
+    <button class="tut-close" onclick="this.parentElement.parentElement.remove()">${t('gotIt')}</button>
+  </div>`;
+  document.body.appendChild(div);
+  localStorage.setItem('capyMatchTut','1');
+}
+
+// ─── Init ───
+async function init(){
+  if(audioMuted) document.getElementById('mute-btn').textContent='🔇';
+  document.getElementById('lang-btn').textContent = lang==='en'?'繁中':'EN';
+  document.getElementById('back-link').textContent = t('back');
+  await Promise.all([loadSprite(), loadCardBack()]);
+  showMenu();
+  showTutorial();
+}
+init();
+</script>
+</body>
+</html>
