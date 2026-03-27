@@ -42,6 +42,9 @@ canvas{display:block;position:fixed;top:0;left:0}
 .esc-btn.danger{border-color:rgba(255,80,80,.3);color:#ff9090}
 .esc-btn.danger:hover{background:rgba(255,80,80,.12)}
 .up-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+#ship-prev{width:100%;height:130px;border-radius:10px;background:transparent;border:1px solid rgba(74,248,255,.18);margin-bottom:10px;display:block}
+.up-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);border-radius:6px;transition:background .15s;cursor:default}
+.up-row:hover{background:rgba(74,248,255,.06)}
 .up-ttl{font-size:16px;font-weight:700;color:#4af8ff}
 .up-x{background:none;border:none;color:rgba(255,255,255,.38);font-size:20px;cursor:pointer;padding:2px 8px}
 .up-x:hover{color:#fff}
@@ -49,7 +52,6 @@ canvas{display:block;position:fixed;top:0;left:0}
 .up-tab-bar{display:flex;gap:4px;margin-bottom:12px}
 .up-tab{flex:1;padding:7px 0;border:1px solid rgba(255,255,255,.1);border-radius:6px;background:none;color:rgba(255,255,255,.4);font-size:13px;cursor:pointer;transition:all .15s}
 .up-tab.active{border-color:rgba(74,248,255,.4);background:rgba(74,248,255,.1);color:#4af8ff}
-.up-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)}
 .up-ico{font-size:22px;width:28px;text-align:center}
 .up-inf{flex:1}
 .up-nm{font-size:14px;font-weight:700;color:#e8ddd0}
@@ -112,6 +114,7 @@ canvas{display:block;position:fixed;top:0;left:0}
 <div id="upg-overlay" onclick="toggleUpg()"></div>
 <div id="upg-panel">
   <div class="up-hd"><span class="up-ttl" id="up-ttl">⚓ 船艦強化</span><button class="up-x" onclick="toggleUpg()">✕</button></div>
+  <canvas id="ship-prev"></canvas>
   <div class="up-tab-bar" id="up-tabs"></div>
   <div id="up-list"></div>
 </div>
@@ -1064,24 +1067,118 @@ function tickSpawn(dt){
   if(STATE.floatItems.filter(f=>!f.collected).length<3) spawnItem();
 }
 
+// ─── Ship Preview Canvas ───────────────────────────────────
+let _prevRAF=null, _prevT=0, _prevHL=null; // highlight: {ti,si} or null
+
+function _drawShipOnCtx(px,PW,PH,lv,t){
+  const sp=lv[0][0],hu=lv[2][0],sp2=lv[3][0];
+  const bob=Math.sin(t*1.2)*2;
+  const sx=PW*.5, sy=PH*.62+bob;
+  px.save(); px.translate(sx,sy);
+  if(sp2>0){px.save();px.shadowBlur=14+sp2*6;px.shadowColor='#4af8ff';}
+  // Hull
+  const hw=38+hu*8,hh=20+hu*4;
+  px.fillStyle=hu>=2?'#2a5a8a':hu>=1?'#1a4a7a':'#1a3a6a';
+  px.beginPath();px.moveTo(-hw,0);px.lineTo(hw,0);px.lineTo(hw-10,hh);px.lineTo(-hw+6,hh);px.closePath();px.fill();
+  px.strokeStyle='rgba(255,255,255,.2)';px.lineWidth=1.5;
+  px.beginPath();px.moveTo(-hw+4,-1);px.lineTo(hw-4,-1);px.stroke();
+  if(hu>=2){px.fillStyle='rgba(74,248,255,.2)';for(let i=0;i<3;i++)px.fillRect(-hw+10+i*22,2,16,hh-4);}
+  // Deck
+  px.fillStyle=hu>=1?'#3a6a8a':'#2a5a7a';
+  px.fillRect(-hw+4,-8,hw*2-8,9);
+  // Cabin
+  const cw=18+sp*4,ch=14+sp*3;
+  px.fillStyle='#1a2a4a';px.fillRect(-cw/2,-8-ch,cw,ch);
+  px.fillStyle='#4af8ff';px.globalAlpha=.7;
+  px.beginPath();px.arc(0,-8-ch/2,3,0,Math.PI*2);px.fill();px.globalAlpha=1;
+  // Mast
+  px.strokeStyle='#8a7a60';px.lineWidth=2+sp*.5;
+  px.beginPath();px.moveTo(6,-8-ch);px.lineTo(6,-8-ch-35-sp*8);px.stroke();
+  // Sail
+  const sailH=28+sp*7,sailW=20+sp*5;
+  const sailBulge=3+sp*2+Math.sin(t*2)*(1+sp*.5);
+  px.fillStyle=sp>=2?'rgba(255,240,180,.92)':sp>=1?'rgba(255,255,220,.88)':'rgba(255,255,255,.85)';
+  px.beginPath();px.moveTo(6,-8-ch);
+  px.quadraticCurveTo(6+sailW+sailBulge,-8-ch-sailH/2,6,-8-ch-sailH);
+  px.closePath();px.fill();
+  // Flag
+  const fc=COUNTRIES[STATE.country];
+  px.font=(12+sp)+'px sans-serif';px.textAlign='center';
+  px.fillText(fc.flag,6+8+sp,-8-ch-sailH-2);
+  // Engine smoke
+  if(sp>=3){
+    px.globalAlpha=.3;px.fillStyle='#aaa';
+    for(let i=0;i<3;i++){const a=((t*60+i*40)%100)/100;px.beginPath();px.arc(-hw+5,-(a*22),4+a*4,0,Math.PI*2);px.fill();}
+    px.globalAlpha=1;
+  }
+  if(sp2>0)px.restore();
+  px.restore();
+}
+
+function drawShipPreview(){
+  const pc=document.getElementById('ship-prev');if(!pc)return;
+  const px=pc.getContext('2d');
+  // Sync canvas pixel size to CSS size
+  const rect=pc.getBoundingClientRect();
+  const PW=Math.round(rect.width),PH=130;
+  if(pc.width!==PW){pc.width=PW;} pc.height=PH;
+  const ci=STATE.country,c=COUNTRIES[ci];
+  // Sky gradient
+  const gsky=px.createLinearGradient(0,0,0,PH*.55);
+  gsky.addColorStop(0,c.sky[0]);gsky.addColorStop(1,c.sky[1]);
+  px.fillStyle=gsky;px.fillRect(0,0,PW,PH*.55);
+  // Ocean
+  const goc=px.createLinearGradient(0,PH*.45,0,PH);
+  goc.addColorStop(0,c.ocean[0]);goc.addColorStop(1,c.ocean[1]);
+  px.fillStyle=goc;px.fillRect(0,PH*.45,PW,PH*.55);
+  // Wave
+  px.beginPath();
+  for(let x=0;x<=PW;x+=5){
+    const wy=PH*.52+Math.sin(x*.035+_prevT*2)*4+Math.sin(x*.07+_prevT*2.5)*2;
+    x===0?px.moveTo(x,wy):px.lineTo(x,wy);
+  }
+  px.lineTo(PW,PH);px.lineTo(0,PH);px.closePath();
+  px.fillStyle=c.wave+'cc';px.fill();
+  // Build effective upgrade levels (with hover preview)
+  const lv=STATE.upgLevels.map(t=>[...t]);
+  if(_prevHL){const{ti,si}=_prevHL;if(lv[ti][si]<3)lv[ti][si]++;}
+  _drawShipOnCtx(px,PW,PH,lv,_prevT);
+  // Bottom label
+  if(_prevHL){
+    px.fillStyle='rgba(10,22,40,.72)';px.fillRect(0,PH-22,PW,22);
+    px.fillStyle='#4af8ff';px.font='bold 11px sans-serif';px.textAlign='center';
+    px.fillText(lang==='zh'?'✦ 升級後預覽':'✦ After Upgrade',PW/2,PH-7);
+  }
+}
+
+function startShipPreview(){
+  if(_prevRAF)return;
+  function frame(ts){_prevT=ts/1000;drawShipPreview();_prevRAF=requestAnimationFrame(frame);}
+  _prevRAF=requestAnimationFrame(frame);
+}
+function stopShipPreview(){
+  if(_prevRAF){cancelAnimationFrame(_prevRAF);_prevRAF=null;}
+  _prevHL=null;
+}
+
 // ─── Upgrade Panel ────────────────────────────────────────
 function toggleUpg(){
   STATE.upgPanelOpen=!STATE.upgPanelOpen;
   if(!STATE.bossActive) STATE.paused=STATE.upgPanelOpen;
   document.getElementById('upg-panel').classList.toggle('open',STATE.upgPanelOpen);
   document.getElementById('upg-overlay').classList.toggle('open',STATE.upgPanelOpen);
-  if(STATE.upgPanelOpen) renderUpgPanel();
+  if(STATE.upgPanelOpen){renderUpgPanel();startShipPreview();}
+  else stopShipPreview();
 }
 function renderUpgPanel(){
-  // Coin display
+  // Coin display (insert once before tabs)
   let coinsEl=document.getElementById('up-coins-display');
   if(!coinsEl){
     coinsEl=document.createElement('div');
     coinsEl.id='up-coins-display'; coinsEl.className='up-coins';
-    document.getElementById('up-list').before(coinsEl);
+    document.getElementById('up-tabs').before(coinsEl);
   }
-  const c=coins();
-  coinsEl.textContent='💰 '+(lang==='zh'?'持有金幣：':'Coins: ')+c;
+  coinsEl.textContent='💰 '+(lang==='zh'?'持有金幣：':'Coins: ')+coins();
   // Tabs
   const tabs=document.getElementById('up-tabs');
   tabs.innerHTML='';
@@ -1112,6 +1209,11 @@ function renderUpgPanel(){
         onclick="buyUpg(${STATE.activeTab},${si})">
         ${maxed?t('maxLv'):'💰'+cost}
       </button>`;
+    // Hover → ship preview highlight
+    if(!maxed){
+      row.addEventListener('mouseenter',()=>{ _prevHL={ti:STATE.activeTab,si}; });
+      row.addEventListener('mouseleave',()=>{ _prevHL=null; });
+    }
     list.appendChild(row);
   });
   document.getElementById('upg-lbl').textContent=t('upg').replace('⚓ ','');
