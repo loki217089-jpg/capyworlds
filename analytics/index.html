@@ -158,10 +158,7 @@ function tryLogin(){
   if(!k){document.getElementById('login-err').style.display='block';return;}
   API_KEY=k;
   localStorage.setItem('capy_analytics_key',k);
-  fetch(API_BASE+'/analytics-data?q=overview&days=1',{headers:{'Authorization':'Bearer '+k}})
-    .then(r=>{if(!r.ok)throw 0;return r.json();})
-    .then(()=>{showDashboard();})
-    .catch(()=>{document.getElementById('login-err').style.display='block';API_KEY='';});
+  showDashboard();
 }
 function logout(){API_KEY='';localStorage.removeItem('capy_analytics_key');location.reload();}
 function showDashboard(){
