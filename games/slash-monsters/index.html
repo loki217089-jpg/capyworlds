@@ -101,6 +101,12 @@ body{display:flex;flex-direction:column;height:100vh;height:100dvh;background:#0
   <h2 id="pause-title">暫停</h2>
   <button class="ov-btn primary" id="resume-btn">繼續</button>
 </div>
+<!-- Tutorial overlay -->
+<div class="overlay" id="tut-ov" style="gap:0;padding:24px;">
+  <h2 id="tut-title" style="margin-bottom:16px;">新手教學</h2>
+  <div id="tut-steps" style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:14px;"></div>
+  <button class="ov-btn primary" id="tut-ok" style="margin-top:20px;">了解！開始斬殺</button>
+</div>
 <!-- Upgrade panel -->
 <div class="upgrade-panel" id="upgrade-panel">
   <div class="up-header">
@@ -167,11 +173,11 @@ let weaponCDs=[0,0,0,0,0];
 
 // ===== MONSTER DEFINITIONS =====
 const MON_TYPES=[
-  {name:'slime',emoji:'🟢',hp:1,speed:1,score:10,gold:2,exp:5,size:28,behavior:'straight'},
+  {name:'slime',emoji:'🟩',hp:1,speed:1,score:10,gold:2,exp:5,size:28,behavior:'straight'},
   {name:'bat',emoji:'🦇',hp:1,speed:2,score:15,gold:3,exp:8,size:24,behavior:'zigzag'},
-  {name:'skeleton',emoji:'💀',hp:2,speed:1.2,score:25,gold:5,exp:12,size:30,behavior:'straight'},
-  {name:'goblin',emoji:'👺',hp:3,speed:1.5,score:40,gold:8,exp:20,size:30,behavior:'dodge'},
-  {name:'knight',emoji:'🛡️',hp:5,speed:0.8,score:60,gold:15,exp:35,size:36,behavior:'shielded'}
+  {name:'skeleton',emoji:'☠️',hp:2,speed:1.2,score:25,gold:5,exp:12,size:30,behavior:'straight'},
+  {name:'goblin',emoji:'👹',hp:3,speed:1.5,score:40,gold:8,exp:20,size:30,behavior:'dodge'},
+  {name:'knight',emoji:'⚫',hp:5,speed:0.8,score:60,gold:15,exp:35,size:36,behavior:'shielded'}
 ];
 
 // ===== GAME STATE =====
@@ -394,10 +400,14 @@ function updateHUD(){
 }
 function updateWeaponBar(){
   document.querySelectorAll('.weapon-slot').forEach((el,i)=>{
-    el.classList.toggle('active',i===curWeapon);
-    el.classList.toggle('locked',save.weapons[i]===0);
+    const unlocked=save.weapons[i]>0;
+    el.classList.toggle('active',i===curWeapon&&unlocked);
+    el.classList.toggle('locked',!unlocked);
     const nameEl=el.querySelector('.wn');
-    if(nameEl)nameEl.textContent=lang==='zh'?I18N.zh.wpnNames[i]:I18N.en.wpnNames[i];
+    if(nameEl){
+      if(unlocked){nameEl.textContent=lang==='zh'?I18N.zh.wpnNames[i]:I18N.en.wpnNames[i];}
+      else{nameEl.textContent='Lv.'+WEAPONS[i].unlockLv;}
+    }
   });
 }
 
@@ -484,8 +494,11 @@ function render(){
   monsters.forEach(m=>{
     ctx.save();
     if(m.flashTimer>0){ctx.globalAlpha=0.5+Math.sin(m.flashTimer*2)*0.5;}
+    // Glow behind monster for visibility
+    const glowColors={slime:'rgba(100,255,100,.35)',bat:'rgba(180,120,255,.3)',skeleton:'rgba(255,255,200,.3)',goblin:'rgba(255,100,60,.3)',knight:'rgba(120,140,255,.3)'};
+    ctx.shadowColor=glowColors[m.name]||'rgba(255,255,255,.3)';ctx.shadowBlur=16;
     ctx.font=m.size+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(m.emoji,m.x,m.y);
+    ctx.fillText(m.emoji,m.x,m.y);ctx.shadowBlur=0;
     if(m.shieldUp){ctx.strokeStyle='#88aaff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(m.x,m.y,m.size+4,0,Math.PI*2);ctx.stroke();}
     if(m.maxHp>1&&m.hp>0){
       const bw=m.size*1.5,bx=m.x-bw/2,by=m.y-m.size-8;
@@ -611,15 +624,45 @@ function applyLang(){
   updateWeaponBar();
 }
 
+// Tutorial system
+const TUT_STEPS={
+  zh:[
+    {icon:'👆',title:'滑動斬殺',desc:'手指在螢幕上滑動，斬擊路徑上的怪物'},
+    {icon:'🗡️',title:'切換武器',desc:'點底部武器列切換，每種武器攻擊方式不同'},
+    {icon:'⚔️',title:'武器解鎖',desc:'升級角色等級解鎖新武器（Lv.3/5/8）'},
+    {icon:'👹',title:'Boss 戰',desc:'每 5 波出現 Boss，注意閃避火球攻擊！'},
+    {icon:'⬆',title:'強化養成',desc:'點右上角 ⬆ 進入強化，升級武器和技能'}
+  ],
+  en:[
+    {icon:'👆',title:'Swipe to Slash',desc:'Swipe across the screen to slash monsters in your path'},
+    {icon:'🗡️',title:'Switch Weapons',desc:'Tap weapon bar at bottom. Each weapon has unique range & speed'},
+    {icon:'⚔️',title:'Unlock Weapons',desc:'Level up to unlock new weapons (Lv.3/5/8)'},
+    {icon:'👹',title:'Boss Fight',desc:'Boss appears every 5 waves. Dodge fireballs!'},
+    {icon:'⬆',title:'Upgrade',desc:'Tap ⬆ button to upgrade weapons and skills'}
+  ]
+};
+function showTutorial(){
+  const steps=TUT_STEPS[lang]||TUT_STEPS.zh;
+  document.getElementById('tut-title').textContent=lang==='zh'?'新手教學':'Tutorial';
+  document.getElementById('tut-ok').textContent=lang==='zh'?'了解！開始斬殺':'Got it! Let\'s slash!';
+  let html='';
+  steps.forEach(s=>{
+    html+='<div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:rgba(255,255,255,.05);border-radius:10px;border:1px solid rgba(255,255,255,.08)"><span style="font-size:28px;flex-shrink:0">'+s.icon+'</span><div><div style="font-size:14px;font-weight:bold;color:#FFD700">'+s.title+'</div><div style="font-size:12px;color:#aaa;margin-top:2px">'+s.desc+'</div></div></div>';
+  });
+  document.getElementById('tut-steps').innerHTML=html;
+  document.getElementById('tut-ov').classList.add('show');
+}
+document.getElementById('tut-ok').addEventListener('click',()=>{
+  document.getElementById('tut-ov').classList.remove('show');
+  save.tutSeen=true;writeSave();
+});
+
 // Init
 if(audioMuted)document.getElementById('mute-btn').textContent='🔇';
 if(lang==='en')document.getElementById('lang-btn').textContent='繁中';
 updateHUD();updateWeaponBar();applyLang();
-// Tutorial
-if(!save.tutSeen){
-  document.getElementById('subtitle-text').textContent=t('tutorial');
-  save.tutSeen=true;writeSave();
-}
+// Show tutorial for first time
+if(!save.tutSeen){showTutorial();}
 </script>
 </body>
 </html>

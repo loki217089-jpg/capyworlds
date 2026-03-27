@@ -158,6 +158,7 @@
      <div style="position:fixed;bottom:4px;left:8px;z-index:9999;opacity:0.4;font-size:10px"><a href="/privacy.html" target="_blank" style="color:#888;text-decoration:none">Privacy Policy</a></div>
      ```
    - **必須有 localStorage 存檔**（如果遊戲有進度/升級/分數）
+   - **必須有簡易新手教學**：首次進入顯示教學覆蓋層（3~5 步驟，icon + 標題 + 說明），用 localStorage 記住已看過。教學內容需雙語。
 2. 在 `games/index.html` 加入遊戲卡片（參考現有格式）
 3. 若為觸控友善遊戲，同步加入 `games/mobile.html`
 4. commit -> push 到指定 `claude/` 分支
