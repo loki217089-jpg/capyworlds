@@ -3,489 +3,216 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>社群趨勢雷達 | Social Trends Radar</title>
+<title>遊戲趨勢雷達 | Game Trends Radar</title>
 <style>
-:root {
-  --bg:#13100c;--bg2:#1e1812;--bg3:#171210;--border:#3d3020;--border2:#2a1e14;
-  --accent:#c8a456;--accent-rgb:200,164,86;--text:#e8ddd0;--text2:#907a60;
-  --text3:#7a6a58;--h1:#ffffff;--cancel-bg:#2a1e14;
-  --card-shadow:0 2px 12px rgba(0,0,0,0.4);
-  --dcard:#006aa6;--threads:#000;--yt:#f00;--yahoo:#720e9e;--ptt:#c8a456;
-  --google:#4285f4;--x:#1d9bf0;--ig:#e1306c;
-}
-[data-theme="light"]{
-  --bg:#f5f0e8;--bg2:#ffffff;--bg3:#f0ebe0;--border:#d4c4a0;--border2:#e0d4b8;
-  --accent:#9a6e1e;--accent-rgb:154,110,30;--text:#2a1e0e;--text2:#7a6a50;
-  --text3:#6a5a48;--h1:#1a0e06;--cancel-bg:#e0d8c8;--threads:#333;
-  --card-shadow:0 2px 12px rgba(0,0,0,0.1);
-}
-[data-theme="pink"]{
-  --bg:#1a0810;--bg2:#260a18;--bg3:#1a0810;--border:#6a2050;--border2:#4a1038;
-  --accent:#e060a8;--accent-rgb:224,96,168;--text:#f8d8ec;--text2:#c06898;
-  --text3:#a05880;--h1:#fff0f8;--cancel-bg:#3a1028;--threads:#e060a8;
-  --card-shadow:0 2px 12px rgba(224,96,168,0.15);
-}
+:root{--bg:#13100c;--bg2:#1e1812;--bg3:#171210;--border:#3d3020;--border2:#2a1e14;--accent:#c8a456;--accent-rgb:200,164,86;--text:#e8ddd0;--text2:#907a60;--text3:#7a6a58;--h1:#fff;--card-shadow:0 2px 12px rgba(0,0,0,0.4)}
+[data-theme="light"]{--bg:#f5f0e8;--bg2:#fff;--bg3:#f0ebe0;--border:#d4c4a0;--border2:#e0d4b8;--accent:#9a6e1e;--accent-rgb:154,110,30;--text:#2a1e0e;--text2:#7a6a50;--text3:#6a5a48;--h1:#1a0e06;--card-shadow:0 2px 12px rgba(0,0,0,0.1)}
+[data-theme="pink"]{--bg:#1a0810;--bg2:#260a18;--bg3:#1a0810;--border:#6a2050;--border2:#4a1038;--accent:#e060a8;--accent-rgb:224,96,168;--text:#f8d8ec;--text2:#c06898;--text3:#a05880;--h1:#fff0f8;--card-shadow:0 2px 12px rgba(224,96,168,0.15)}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background .3s,color .3s}
+body{font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 a{color:var(--accent);text-decoration:none}
-a:hover{text-decoration:underline}
 
-/* Header */
 .header{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:100}
 .header-left{display:flex;align-items:center;gap:12px}
-.header-left a.back{color:var(--text2);font-size:14px}
-.header h1{font-size:20px;color:var(--h1);display:flex;align-items:center;gap:8px}
-.header-right{display:flex;align-items:center;gap:8px}
-.header-right button{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;transition:all .2s}
-.header-right button:hover{border-color:var(--accent);color:var(--accent)}
-.header-right button.active{background:rgba(var(--accent-rgb),0.15);border-color:var(--accent);color:var(--accent)}
+.header-left a{color:var(--text2);font-size:14px}
+.header h1{font-size:18px;color:var(--h1);display:flex;align-items:center;gap:8px}
+.hdr-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px}
+.hdr-btn:hover{border-color:var(--accent);color:var(--accent)}
 
-/* Refresh bar */
-.refresh-bar{background:var(--bg2);border-bottom:1px solid var(--border2);padding:8px 20px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text2)}
-.refresh-bar .timer{display:flex;align-items:center;gap:6px}
-.refresh-bar .timer span{color:var(--accent);font-weight:bold}
-.refresh-bar button{background:var(--accent);color:#000;border:none;padding:4px 14px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600}
-.refresh-bar button:hover{opacity:0.85}
+.bar{background:var(--bg2);border-bottom:1px solid var(--border2);padding:8px 20px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text2)}
+.bar span.t{color:var(--accent);font-weight:bold}
+.bar button{background:var(--accent);color:#000;border:none;padding:4px 14px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600}
 
-/* Main layout */
-.main{max-width:1400px;margin:0 auto;padding:16px}
+.main{max-width:1200px;margin:0 auto;padding:16px}
 
-/* Platform tabs */
-.platform-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;padding:0 4px}
-.ptab{padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;font-size:13px;transition:all .2s;display:flex;align-items:center;gap:6px;white-space:nowrap}
-.ptab:hover{border-color:var(--accent)}
-.ptab.active{background:rgba(var(--accent-rgb),0.15);border-color:var(--accent);color:var(--accent);font-weight:600}
-.ptab .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.tabs{display:flex;gap:4px;margin-bottom:16px;background:var(--bg2);padding:6px;border-radius:10px;border:1px solid var(--border)}
+.tab{padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text2);transition:all .2s;font-weight:500}
+.tab:hover{color:var(--text)}
+.tab.on{background:rgba(var(--accent-rgb),0.2);color:var(--accent);font-weight:700}
 
-/* Analysis section tabs */
-.analysis-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px;background:var(--bg2);padding:6px;border-radius:10px;border:1px solid var(--border)}
-.atab{padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--text2);transition:all .2s}
-.atab:hover{color:var(--text)}
-.atab.active{background:rgba(var(--accent-rgb),0.2);color:var(--accent);font-weight:600}
+.panel{display:none}.panel.on{display:block}
 
-/* Grid */
-.trends-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;margin-bottom:20px}
-@media(max-width:740px){.trends-grid{grid-template-columns:1fr}}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+@media(max-width:740px){.grid{grid-template-columns:1fr}}
 
-/* Card */
-.trend-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:transform .2s,box-shadow .2s}
-.trend-card:hover{transform:translateY(-2px);box-shadow:var(--card-shadow)}
-.card-head{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border2)}
-.card-head .platform-badge{display:flex;align-items:center;gap:6px;font-weight:700;font-size:14px}
-.card-head .platform-badge .icon{font-size:18px}
-.card-head .trend-count{font-size:11px;color:var(--text3);background:var(--bg3);padding:2px 8px;border-radius:10px}
-.card-body{padding:12px 14px}
-.trend-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid rgba(var(--accent-rgb),0.08)}
-.trend-item:last-child{border-bottom:none}
-.trend-rank{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
-.trend-rank.top3{background:rgba(var(--accent-rgb),0.25);color:var(--accent)}
-.trend-rank.normal{background:var(--bg3);color:var(--text3)}
-.trend-info{flex:1;min-width:0}
-.trend-title{font-size:13px;font-weight:600;color:var(--h1);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.trend-meta{font-size:11px;color:var(--text3);display:flex;gap:8px;flex-wrap:wrap}
-.trend-heat{font-size:11px;color:var(--accent);font-weight:600;white-space:nowrap;flex-shrink:0}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:transform .2s}
+.card:hover{transform:translateY(-2px);box-shadow:var(--card-shadow)}
+.card-h{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border2)}
+.card-h .badge{display:flex;align-items:center;gap:6px;font-weight:700;font-size:14px}
+.card-h .cnt{font-size:11px;color:var(--text3);background:var(--bg3);padding:2px 8px;border-radius:10px}
+.card-b{padding:12px 14px}
 
-/* Analysis panels */
-.analysis-panel{display:none}
-.analysis-panel.active{display:block}
+.item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid rgba(var(--accent-rgb),0.08)}
+.item:last-child{border-bottom:none}
+.rank{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.rank.top{background:rgba(var(--accent-rgb),0.25);color:var(--accent)}
+.rank.n{background:var(--bg3);color:var(--text3)}
+.info{flex:1;min-width:0}
+.info .tt{font-size:13px;font-weight:600;color:var(--h1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.info .meta{font-size:11px;color:var(--text3);display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+.heat{font-size:11px;color:var(--accent);font-weight:600;white-space:nowrap;flex-shrink:0}
 
-/* Keyword cloud */
-.keyword-cloud{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:20px;min-height:200px}
-.kw-tag{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--bg2);cursor:default;transition:all .2s;white-space:nowrap}
-.kw-tag:hover{border-color:var(--accent);background:rgba(var(--accent-rgb),0.1)}
+/* Complaint card */
+.complaint{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px}
+.complaint .c-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.complaint .c-src{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;color:#fff}
+.complaint .c-title{font-size:14px;font-weight:700;color:var(--h1);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.complaint .c-body{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:6px}
+.complaint .c-tags{display:flex;gap:4px;flex-wrap:wrap}
+.complaint .c-tag{font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.2)}
 
-/* Cross platform table */
-.cross-table{width:100%;border-collapse:collapse;font-size:13px}
-.cross-table th{text-align:left;padding:10px 12px;background:var(--bg3);color:var(--accent);border-bottom:2px solid var(--border);font-size:12px;position:sticky;top:0}
-.cross-table td{padding:8px 12px;border-bottom:1px solid var(--border2)}
-.cross-table tr:hover td{background:rgba(var(--accent-rgb),0.05)}
-.platform-dots{display:flex;gap:4px}
-.platform-dots .pd{width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;opacity:0.3}
-.platform-dots .pd.on{opacity:1}
+/* Opportunity card */
+.opp{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px}
+.opp-h{padding:12px 14px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:10px}
+.opp-h .icon{font-size:22px}
+.opp-h .type{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;color:#fff}
+.opp-b{padding:14px}
+.opp-title{font-size:15px;font-weight:700;color:var(--h1);margin-bottom:4px}
+.opp-desc{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px}
+.opp-why{list-style:none;padding:0}
+.opp-why li{font-size:11px;color:var(--text3);padding:2px 0}
+.opp-why li::before{content:'→ ';color:var(--accent)}
+.opp-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.opp-tags span{font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(var(--accent-rgb),0.1);color:var(--accent);border:1px solid rgba(var(--accent-rgb),0.2)}
 
-/* Category chart */
-.category-bars{padding:10px 0}
-.cat-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.cat-label{width:80px;font-size:12px;color:var(--text2);text-align:right;flex-shrink:0}
-.cat-bar-bg{flex:1;height:24px;background:var(--bg3);border-radius:6px;overflow:hidden;position:relative}
-.cat-bar{height:100%;border-radius:6px;transition:width .6s ease;display:flex;align-items:center;padding-left:8px;font-size:11px;font-weight:600;color:#fff}
-.cat-pct{font-size:11px;color:var(--text3);width:40px;text-align:right;flex-shrink:0}
-
-/* Sentiment */
-.sentiment-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
-.sentiment-card{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:14px}
-.sentiment-card .s-platform{font-weight:700;font-size:14px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.sentiment-bars{display:flex;height:20px;border-radius:6px;overflow:hidden;margin-bottom:8px}
-.sentiment-bars .sb{transition:width .6s}
-.sentiment-legend{display:flex;gap:12px;font-size:11px;color:var(--text2)}
-.sentiment-legend span::before{content:'';display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:middle}
-.legend-pos::before{background:#4ade80}
-.legend-neu::before{background:#60a5fa}
-.legend-neg::before{background:#f87171}
-
-/* Timeline */
-.timeline-canvas-wrap{width:100%;height:300px;position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.timeline-canvas-wrap canvas{width:100%;height:100%}
-
-/* Suggestion cards */
-.suggest-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
-.suggest-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:transform .2s}
-.suggest-card:hover{transform:translateY(-2px)}
-.suggest-header{padding:14px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:10px}
-.suggest-header .s-icon{font-size:24px}
-.suggest-header .s-type{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700}
-.suggest-body{padding:14px}
-.suggest-title{font-size:15px;font-weight:700;color:var(--h1);margin-bottom:6px}
-.suggest-desc{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px}
-.suggest-reasons{list-style:none;padding:0}
-.suggest-reasons li{font-size:11px;color:var(--text3);padding:3px 0;display:flex;align-items:flex-start;gap:6px}
-.suggest-reasons li::before{content:'📌';flex-shrink:0}
-.suggest-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
-.suggest-tags span{font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(var(--accent-rgb),0.1);color:var(--accent);border:1px solid rgba(var(--accent-rgb),0.2)}
-
-/* Gaming source tabs */
-.gsrc-tab{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;font-size:12px;transition:all .2s;display:flex;align-items:center;gap:4px}
-.gsrc-tab:hover{border-color:var(--accent)}
-.gsrc-tab.active{background:rgba(var(--accent-rgb),0.15);border-color:var(--accent);color:var(--accent);font-weight:600}
-.game-tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;margin-right:4px}
-
-/* Loading */
 .loading{text-align:center;padding:40px;color:var(--text3)}
-.loading .spinner{display:inline-block;width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:8px}
-@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;margin-bottom:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
 
-/* Engagement ranking */
-.engage-list{list-style:none}
-.engage-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border2)}
-.engage-item:last-child{border-bottom:none}
-.engage-rank{font-size:18px;font-weight:800;color:var(--accent);width:30px;text-align:center}
-.engage-info{flex:1;min-width:0}
-.engage-title{font-size:13px;font-weight:600;color:var(--h1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.engage-sub{font-size:11px;color:var(--text3);margin-top:2px}
-.engage-stat{text-align:right;flex-shrink:0}
-.engage-num{font-size:16px;font-weight:700;color:var(--accent)}
-.engage-label{font-size:10px;color:var(--text3)}
+.src-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.src-tab{padding:5px 12px;border-radius:16px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;font-size:12px;transition:all .2s}
+.src-tab:hover{border-color:var(--accent)}
+.src-tab.on{background:rgba(var(--accent-rgb),0.15);border-color:var(--accent);color:var(--accent);font-weight:600}
 
-/* Footer */
-.page-footer{text-align:center;padding:20px;font-size:11px;color:var(--text3);border-top:1px solid var(--border2);margin-top:20px}
+.footer{text-align:center;padding:16px;font-size:11px;color:var(--text3);border-top:1px solid var(--border2);margin-top:20px}
+.priv{position:fixed;bottom:4px;left:8px;z-index:9999;opacity:0.4;font-size:10px}
+.priv a{color:#888;text-decoration:none}
 
-/* Privacy */
-.privacy-link{position:fixed;bottom:4px;left:8px;z-index:9999;opacity:0.4;font-size:10px}
-.privacy-link a{color:#888;text-decoration:none}
-
-@media(max-width:600px){
-  .header h1{font-size:16px}
-  .header-right button{padding:4px 8px;font-size:11px}
-  .trends-grid{grid-template-columns:1fr}
-  .sentiment-grid{grid-template-columns:1fr}
-  .cross-table{font-size:11px}
-  .cross-table th,.cross-table td{padding:6px 8px}
-}
+@media(max-width:600px){.header h1{font-size:15px}.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
 <div class="header">
   <div class="header-left">
-    <a class="back" href="/">← 返回</a>
-    <h1>📡 <span data-i18n="title">社群趨勢雷達</span></h1>
+    <a href="/">← 返回</a>
+    <h1>🎯 <span id="title">遊戲趨勢雷達</span></h1>
   </div>
-  <div class="header-right">
-    <button id="theme-btn" onclick="cycleTheme()">🌙</button>
-    <button id="lang-btn" onclick="toggleLang()">EN</button>
+  <div style="display:flex;gap:6px">
+    <button class="hdr-btn" id="theme-btn" onclick="cycleTheme()">🌙</button>
+    <button class="hdr-btn" id="lang-btn" onclick="toggleLang()">EN</button>
   </div>
 </div>
 
-<div class="refresh-bar">
-  <div class="timer">
-    <span data-i18n="nextRefresh">下次更新</span>：<span id="countdown">--:--:--</span>
+<div class="bar">
+  <div>
+    <span id="lbl-next">下次更新</span>：<span class="t" id="countdown">--:--:--</span>
   </div>
-  <button onclick="refreshAll()" data-i18n="refreshNow">立即更新</button>
+  <button onclick="refreshAll()" id="btn-refresh">立即更新</button>
 </div>
 
 <div class="main">
-  <!-- Platform tabs -->
-  <div class="platform-tabs" id="platform-tabs"></div>
-
-  <!-- Analysis angle tabs -->
-  <div class="analysis-tabs" id="analysis-tabs">
-    <div class="atab active" data-panel="trending" data-i18n="tabTrending">🔥 即時熱門</div>
-    <div class="atab" data-panel="keywords" data-i18n="tabKeywords">☁️ 關鍵字雲</div>
-    <div class="atab" data-panel="crossplatform" data-i18n="tabCross">🔀 跨平台比較</div>
-    <div class="atab" data-panel="categories" data-i18n="tabCategories">📊 分類統計</div>
-    <div class="atab" data-panel="sentiment" data-i18n="tabSentiment">😊 情緒分析</div>
-    <div class="atab" data-panel="timeline" data-i18n="tabTimeline">📈 趨勢時間線</div>
-    <div class="atab" data-panel="engagement" data-i18n="tabEngage">🏆 互動量排行</div>
-    <div class="atab" data-panel="gaming" data-i18n="tabGaming">🎮 遊戲產業</div>
-    <div class="atab" data-panel="suggestions" data-i18n="tabSuggest">💡 開發建議</div>
+  <div class="tabs" id="tabs">
+    <div class="tab on" data-p="hot">🔥 熱門遊戲</div>
+    <div class="tab" data-p="pain">😤 玩家痛點</div>
+    <div class="tab" data-p="opp">💡 攻略機會</div>
   </div>
 
-  <!-- Panel: Trending -->
-  <div class="analysis-panel active" id="panel-trending">
-    <div class="trends-grid" id="trends-grid"></div>
+  <div class="panel on" id="p-hot">
+    <div class="src-tabs" id="hot-srcs"></div>
+    <div class="grid" id="hot-grid"></div>
   </div>
 
-  <!-- Panel: Keywords -->
-  <div class="analysis-panel" id="panel-keywords">
-    <div class="keyword-cloud" id="keyword-cloud"></div>
+  <div class="panel" id="p-pain">
+    <div class="src-tabs" id="pain-srcs"></div>
+    <div id="pain-list"></div>
   </div>
 
-  <!-- Panel: Cross-platform -->
-  <div class="analysis-panel" id="panel-crossplatform">
-    <div style="overflow-x:auto">
-      <table class="cross-table" id="cross-table">
-        <thead><tr>
-          <th data-i18n="thTopic">話題</th>
-          <th data-i18n="thPlatforms">出現平台</th>
-          <th data-i18n="thHeat">綜合熱度</th>
-          <th data-i18n="thCategory">分類</th>
-        </tr></thead>
-        <tbody id="cross-tbody"></tbody>
-      </table>
-    </div>
+  <div class="panel" id="p-opp">
+    <div id="opp-list"></div>
   </div>
 
-  <!-- Panel: Categories -->
-  <div class="analysis-panel" id="panel-categories">
-    <div class="category-bars" id="category-bars"></div>
-  </div>
-
-  <!-- Panel: Sentiment -->
-  <div class="analysis-panel" id="panel-sentiment">
-    <div class="sentiment-grid" id="sentiment-grid"></div>
-  </div>
-
-  <!-- Panel: Timeline -->
-  <div class="analysis-panel" id="panel-timeline">
-    <div class="timeline-canvas-wrap">
-      <canvas id="timeline-canvas"></canvas>
-    </div>
-  </div>
-
-  <!-- Panel: Engagement -->
-  <div class="analysis-panel" id="panel-engagement">
-    <ul class="engage-list" id="engage-list"></ul>
-  </div>
-
-  <!-- Panel: Gaming Industry -->
-  <div class="analysis-panel" id="panel-gaming">
-    <div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap" id="gaming-source-tabs"></div>
-    <div class="trends-grid" id="gaming-grid"></div>
-  </div>
-
-  <!-- Panel: Dev Suggestions -->
-  <div class="analysis-panel" id="panel-suggestions">
-    <div id="suggestions-content"></div>
-  </div>
-
-  <div class="page-footer">
-    <span data-i18n="footer">資料來源：各平台公開趨勢頁 · 每 4 小時快照 · 僅供參考</span>
-  </div>
+  <div class="footer" id="footer">資料來源：Steam · 巴哈 · 4Gamers · IGN · Dcard 遊戲板 · 每 4 小時更新</div>
 </div>
-
-<div class="privacy-link"><a href="/privacy.html" target="_blank" style="color:#888;text-decoration:none">Privacy Policy</a></div>
+<div class="priv"><a href="/privacy.html" target="_blank">Privacy Policy</a></div>
 
 <script>
 /* ── i18n ── */
-const I18N = {
-  'zh-TW': {
-    title:'社群趨勢雷達', nextRefresh:'下次更新', refreshNow:'立即更新',
-    tabTrending:'🔥 即時熱門', tabKeywords:'☁️ 關鍵字雲', tabCross:'🔀 跨平台比較',
-    tabCategories:'📊 分類統計', tabSentiment:'😊 情緒分析', tabTimeline:'📈 趨勢時間線',
-    tabEngage:'🏆 互動量排行', thTopic:'話題', thPlatforms:'出現平台', thHeat:'綜合熱度',
-    thCategory:'分類', footer:'資料來源：各平台公開趨勢頁 · 每 4 小時快照 · 僅供參考',
-    allPlatforms:'全部平台', engagement:'互動', views:'觀看', comments:'留言',
-    positive:'正面', neutral:'中性', negative:'負面', loading:'載入中...',
-    cat_entertainment:'娛樂', cat_politics:'政治', cat_tech:'科技', cat_sports:'體育',
-    cat_finance:'財經', cat_life:'生活', cat_international:'國際', cat_games:'遊戲',
-    cat_food:'美食', cat_education:'教育', cat_health:'健康', cat_other:'其他',
-    noData:'無資料，請點擊「立即更新」', hot:'熱門', trending:'則熱議',
-    tabGaming:'🎮 遊戲產業', gamingAll:'全部', gamingNews:'新聞', gamingRelease:'新作', gamingEsports:'電競',
-    tabSuggest:'💡 開發建議', suggestGame:'遊戲', suggestSoftware:'軟體', suggestResearch:'研究',
-    suggestWhy:'為什麼推薦', suggestBased:'根據趨勢分析'
+const T = {
+  'zh-TW':{
+    title:'遊戲趨勢雷達',next:'下次更新',refresh:'立即更新',
+    hot:'🔥 熱門遊戲',pain:'😤 玩家痛點',opp:'💡 攻略機會',
+    all:'全部',items:'則',loading:'載入中...',noData:'無資料',
+    footer:'資料來源：Steam · 巴哈 · 4Gamers · IGN · Dcard 遊戲板 · 每 4 小時更新',
+    painTitle:'玩家在抱怨什麼？',painDesc:'從各平台蒐集的負評、抱怨、求助',
+    oppTitle:'可以做什麼幫他們？',oppDesc:'根據痛點分析，建議的攻略/工具方向',
+    guide:'攻略',tool:'工具',video:'影片',
+    complaint:'抱怨',bug:'Bug',balance:'平衡',newbie:'新手卡關',perf:'效能',price:'價格',
+    why:'為什麼值得做',
   },
-  'en': {
-    title:'Social Trends Radar', nextRefresh:'Next refresh', refreshNow:'Refresh Now',
-    tabTrending:'🔥 Trending', tabKeywords:'☁️ Keywords', tabCross:'🔀 Cross-Platform',
-    tabCategories:'📊 Categories', tabSentiment:'😊 Sentiment', tabTimeline:'📈 Timeline',
-    tabEngage:'🏆 Engagement', thTopic:'Topic', thPlatforms:'Platforms', thHeat:'Heat',
-    thCategory:'Category', footer:'Sources: Public trend pages · 4hr snapshots · Reference only',
-    allPlatforms:'All', engagement:'engagement', views:'views', comments:'comments',
-    positive:'Positive', neutral:'Neutral', negative:'Negative', loading:'Loading...',
-    cat_entertainment:'Entertainment', cat_politics:'Politics', cat_tech:'Tech', cat_sports:'Sports',
-    cat_finance:'Finance', cat_life:'Lifestyle', cat_international:'World', cat_games:'Games',
-    cat_food:'Food', cat_education:'Education', cat_health:'Health', cat_other:'Other',
-    noData:'No data. Click "Refresh Now"', hot:'Hot', trending:'trending',
-    tabGaming:'🎮 Gaming', gamingAll:'All', gamingNews:'News', gamingRelease:'Releases', gamingEsports:'Esports',
-    tabSuggest:'💡 Dev Ideas', suggestGame:'Game', suggestSoftware:'Software', suggestResearch:'Research',
-    suggestWhy:'Why this?', suggestBased:'Based on trend analysis'
+  'en':{
+    title:'Game Trends Radar',next:'Next update',refresh:'Refresh',
+    hot:'🔥 Hot Games',pain:'😤 Pain Points',opp:'💡 Opportunities',
+    all:'All',items:'items',loading:'Loading...',noData:'No data',
+    footer:'Sources: Steam · Bahamut · 4Gamers · IGN · Dcard Gaming · Updates every 4hrs',
+    painTitle:'What are players complaining about?',painDesc:'Negative reviews, complaints, and help requests across platforms',
+    oppTitle:'What can we build to help?',oppDesc:'Guide/tool opportunities based on pain point analysis',
+    guide:'Guide',tool:'Tool',video:'Video',
+    complaint:'Complaint',bug:'Bug',balance:'Balance',newbie:'Stuck',perf:'Performance',price:'Price',
+    why:'Why it\'s worth doing',
   }
 };
-let lang = localStorage.getItem('trendLang') || 'zh-TW';
-function t(k){ return (I18N[lang]||I18N['zh-TW'])[k] || k; }
-function applyI18n(){
-  document.querySelectorAll('[data-i18n]').forEach(el=>{
-    const k = el.getAttribute('data-i18n');
-    if(I18N[lang][k]) el.textContent = I18N[lang][k];
-  });
-  document.getElementById('lang-btn').textContent = lang==='zh-TW'?'EN':'繁中';
-}
+let lang=localStorage.getItem('trendLang')||'zh-TW';
+const t=k=>(T[lang]||T['zh-TW'])[k]||k;
 function toggleLang(){
-  lang = lang==='zh-TW'?'en':'zh-TW';
-  localStorage.setItem('trendLang', lang);
-  applyI18n(); renderAll();
+  lang=lang==='zh-TW'?'en':'zh-TW';
+  localStorage.setItem('trendLang',lang);
+  document.getElementById('lang-btn').textContent=lang==='zh-TW'?'EN':'繁中';
+  applyLang(); renderAll();
+}
+function applyLang(){
+  document.getElementById('title').textContent=t('title');
+  document.getElementById('lbl-next').textContent=t('next');
+  document.getElementById('btn-refresh').textContent=t('refresh');
+  document.getElementById('footer').textContent=t('footer');
+  document.querySelectorAll('.tab').forEach(el=>{ if(T[lang][el.dataset.p]) el.textContent=T[lang][el.dataset.p]; });
 }
 
 /* ── Theme ── */
-const themes = ['dark','light','pink'];
-const themeIcons = {dark:'🌙',light:'☀️',pink:'🌸'};
-let themeIdx = themes.indexOf(localStorage.getItem('theme')||'dark');
-if(themeIdx<0) themeIdx=0;
+const themes=['dark','light','pink'],tIcons={dark:'🌙',light:'☀️',pink:'🌸'};
+let ti=themes.indexOf(localStorage.getItem('theme')||'dark'); if(ti<0)ti=0;
 function applyTheme(){
-  const th = themes[themeIdx];
+  const th=themes[ti];
   if(th==='dark') document.documentElement.removeAttribute('data-theme');
-  else document.documentElement.setAttribute('data-theme', th);
-  document.getElementById('theme-btn').textContent = themeIcons[th];
-  localStorage.setItem('theme', th);
+  else document.documentElement.setAttribute('data-theme',th);
+  document.getElementById('theme-btn').textContent=tIcons[th];
+  localStorage.setItem('theme',th);
 }
-function cycleTheme(){ themeIdx=(themeIdx+1)%3; applyTheme(); if(typeof drawTimeline==='function') drawTimeline(); }
+function cycleTheme(){ti=(ti+1)%3;applyTheme();}
 applyTheme();
 
-/* ── Platforms config (only real API sources) ── */
-const PLATFORMS = [
-  {id:'all',   name:{zh:'全部',en:'All'},     icon:'🌐', color:'var(--accent)', url:null},
-  {id:'google',name:{zh:'Google趨勢',en:'Google Trends'},icon:'📊',color:'#4285f4',url:'https://trends.google.com.tw/trending?geo=TW'},
-  {id:'yahoo', name:{zh:'Yahoo新聞',en:'Yahoo News'},icon:'📰',color:'#720e9e',url:'https://tw.news.yahoo.com/'},
-  {id:'dcard', name:{zh:'Dcard',en:'Dcard'},   icon:'💬', color:'#006aa6', url:'https://www.dcard.tw/f'},
-  {id:'gnn',   name:{zh:'巴哈 GNN',en:'Gamer GNN'},icon:'🎮',color:'#0070c0',url:'https://gnn.gamer.com.tw/'},
-  {id:'4gamers',name:{zh:'4Gamers',en:'4Gamers'},icon:'🕹️',color:'#ff6600',url:'https://www.4gamers.com.tw/'},
-  {id:'ign',   name:{zh:'IGN',en:'IGN'},       icon:'🌍', color:'#bf1313', url:'https://www.ign.com/'},
-  {id:'steam', name:{zh:'Steam',en:'Steam'},    icon:'🎯', color:'#1b2838', url:'https://store.steampowered.com/'},
+/* ── Sources ── */
+const SRCS=[
+  {id:'all',name:{zh:'全部',en:'All'},icon:'🌐',color:'var(--accent)'},
+  {id:'steam',name:{zh:'Steam',en:'Steam'},icon:'🎯',color:'#1b2838'},
+  {id:'gnn',name:{zh:'巴哈 GNN',en:'Bahamut GNN'},icon:'🎮',color:'#0070c0'},
+  {id:'4gamers',name:{zh:'4Gamers',en:'4Gamers'},icon:'🕹️',color:'#ff6600'},
+  {id:'ign',name:{zh:'IGN',en:'IGN'},icon:'🌍',color:'#bf1313'},
+  {id:'dcard',name:{zh:'Dcard 遊戲',en:'Dcard Gaming'},icon:'💬',color:'#006aa6'},
 ];
-let activePlatform = 'all';
+let hotSrc='all', painSrc='all';
+const API=location.hostname==='localhost'||location.hostname==='127.0.0.1'?'':'https://capyworlds.com';
 
-/* ── Categories ── */
-const CATS = ['entertainment','politics','tech','sports','finance','life','international','games','food','education','health','other'];
-const CAT_COLORS = {entertainment:'#f59e0b',politics:'#ef4444',tech:'#3b82f6',sports:'#22c55e',finance:'#a855f7',life:'#ec4899',international:'#06b6d4',games:'#8b5cf6',food:'#f97316',education:'#14b8a6',health:'#10b981',other:'#6b7280'};
-
-/* ── Demo data generator ── */
-function generateDemoData(){
-  const now = new Date();
-  const hour = now.getHours();
-  const seed = now.getDate()*100 + Math.floor(hour/4);
-  function rng(s){ s=((s*1103515245+12345)&0x7fffffff); return s/0x7fffffff; }
-  let s = seed;
-  function rand(){ s=((s*1103515245+12345)&0x7fffffff); return s/0x7fffffff; }
-  function pick(arr){ return arr[Math.floor(rand()*arr.length)]; }
-  function randInt(a,b){ return Math.floor(rand()*(b-a+1))+a; }
-
-  const topicsZh = [
-    {t:'台積電法說會創新高',c:'finance'},{t:'蘋果 WWDC 2026 懶人包',c:'tech'},
-    {t:'中職冠軍賽精彩回顧',c:'sports'},{t:'Netflix 新劇《暗潮》爆紅',c:'entertainment'},
-    {t:'央行利率決策會議',c:'finance'},{t:'全台高溫破紀錄',c:'life'},
-    {t:'立院預算案攻防戰',c:'politics'},{t:'日本排放核廢水最新',c:'international'},
-    {t:'Switch 2 預購秒殺',c:'games'},{t:'米其林新名單公布',c:'food'},
-    {t:'AI 教育革命來了',c:'education'},{t:'少子化對策懶人包',c:'politics'},
-    {t:'手搖飲暗藏熱量排行',c:'health'},{t:'三體第三季預告曝光',c:'entertainment'},
-    {t:'比特幣突破新高',c:'finance'},{t:'台鐵改點懶人包',c:'life'},
-    {t:'LOL 世界賽台灣隊伍',c:'games'},{t:'黃仁勳來台演講',c:'tech'},
-    {t:'颱風動態即時更新',c:'life'},{t:'奧運資格賽名單',c:'sports'},
-    {t:'OpenAI 發表 GPT-5',c:'tech'},{t:'日圓匯率再探低',c:'finance'},
-    {t:'鼎泰豐漲價引議論',c:'food'},{t:'年輕人躺平現象',c:'life'},
-    {t:'陸劇《繁花》回歸',c:'entertainment'},{t:'新冠新變種注意',c:'health'},
-    {t:'Tesla Robotaxi 上路',c:'tech'},{t:'大谷翔平破紀錄',c:'sports'},
-    {t:'LINE AI 翻譯新功能',c:'tech'},{t:'詐騙手法大公開',c:'life'},
-  ];
-  const topicsEn = [
-    {t:'TSMC Earnings Beat Expectations',c:'finance'},{t:'Apple WWDC 2026 Recap',c:'tech'},
-    {t:'CPBL Championship Highlights',c:'sports'},{t:'Netflix "Dark Tide" Goes Viral',c:'entertainment'},
-    {t:'Central Bank Rate Decision',c:'finance'},{t:'Record High Temperatures',c:'life'},
-    {t:'Budget Battle in Legislature',c:'politics'},{t:'Japan Nuclear Water Update',c:'international'},
-    {t:'Switch 2 Pre-orders Sold Out',c:'games'},{t:'Michelin New List Revealed',c:'food'},
-    {t:'AI Transforming Education',c:'education'},{t:'Low Birth Rate Policy Debate',c:'politics'},
-    {t:'Hidden Calories in Bubble Tea',c:'health'},{t:'Three-Body S3 Trailer Drops',c:'entertainment'},
-    {t:'Bitcoin Hits New ATH',c:'finance'},{t:'Rail Schedule Changes Guide',c:'life'},
-    {t:'LoL Worlds: Taiwan Teams',c:'games'},{t:'Jensen Huang Visits Taiwan',c:'tech'},
-    {t:'Typhoon Live Tracker',c:'life'},{t:'Olympic Qualifier Roster',c:'sports'},
-    {t:'OpenAI Launches GPT-5',c:'tech'},{t:'Yen Drops to New Low',c:'finance'},
-    {t:'Din Tai Fung Price Hike Debate',c:'food'},{t:'Youth "Lying Flat" Trend',c:'life'},
-    {t:'C-Drama "Blossoms" Returns',c:'entertainment'},{t:'New COVID Variant Alert',c:'health'},
-    {t:'Tesla Robotaxi Goes Live',c:'tech'},{t:'Ohtani Breaks Record',c:'sports'},
-    {t:'LINE AI Translation Feature',c:'tech'},{t:'Scam Tactics Exposed',c:'life'},
-  ];
-
-  const pids = PLATFORMS.filter(p=>p.id!=='all').map(p=>p.id);
-  const data = {};
-  pids.forEach(pid=>{
-    const count = randInt(8,12);
-    const items = [];
-    const usedIdx = new Set();
-    for(let i=0;i<count;i++){
-      let idx; do{ idx=randInt(0,topicsZh.length-1); }while(usedIdx.has(idx)&&usedIdx.size<topicsZh.length);
-      usedIdx.add(idx);
-      const topic = lang==='zh-TW'?topicsZh[idx]:topicsEn[idx];
-      items.push({
-        title: topic.t,
-        category: topic.c,
-        heat: randInt(1000,99999),
-        comments: randInt(50,8000),
-        views: randInt(10000,5000000),
-        sentiment: {pos:randInt(20,70), neu:randInt(10,40), neg:randInt(5,35)},
-        time: new Date(now.getTime() - randInt(0,14400000)).toISOString()
-      });
-    }
-    items.sort((a,b)=>b.heat-a.heat);
-    data[pid] = items;
-  });
-  return data;
-}
-
-let trendData = {};
-let lastRefresh = null;
-
-/* ── Countdown ── */
-let countdownInterval = null;
-function startCountdown(){
-  if(countdownInterval) clearInterval(countdownInterval);
-  const next = new Date();
-  const h = next.getHours();
-  const nextSlot = Math.ceil((h+1)/4)*4;
-  next.setHours(nextSlot,0,0,0);
-  if(next<=new Date()) next.setTime(next.getTime()+4*3600000);
-  countdownInterval = setInterval(()=>{
-    const diff = next - new Date();
-    if(diff<=0){ refreshAll(); return; }
-    const hh=Math.floor(diff/3600000), mm=Math.floor((diff%3600000)/60000), ss=Math.floor((diff%60000)/1000);
-    document.getElementById('countdown').textContent =
-      String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0');
-  },1000);
-}
-
-/* ── Render platform tabs ── */
-function renderPlatformTabs(){
-  const c = document.getElementById('platform-tabs');
-  c.innerHTML = PLATFORMS.map(p=>{
-    const nm = lang==='zh-TW'?p.name.zh:p.name.en;
-    const active = activePlatform===p.id?'active':'';
-    return `<div class="ptab ${active}" onclick="selectPlatform('${p.id}')">
-      <span class="dot" style="background:${p.color}"></span>${p.icon} ${nm}</div>`;
-  }).join('');
-}
-function selectPlatform(id){ activePlatform=id; renderPlatformTabs(); renderAll(); }
-
-/* ── Analysis tab switching ── */
-document.getElementById('analysis-tabs').addEventListener('click',e=>{
-  const tab = e.target.closest('.atab');
-  if(!tab) return;
-  document.querySelectorAll('.atab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.analysis-panel').forEach(p=>p.classList.remove('active'));
-  tab.classList.add('active');
-  const panel = document.getElementById('panel-'+tab.dataset.panel);
-  if(panel) panel.classList.add('active');
-  if(tab.dataset.panel==='timeline') drawTimeline();
+/* ── Tab switching ── */
+document.getElementById('tabs').addEventListener('click',e=>{
+  const tab=e.target.closest('.tab'); if(!tab) return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  tab.classList.add('on');
+  document.getElementById('p-'+tab.dataset.p).classList.add('on');
 });
 
-/* ── Format number ── */
+/* ── Helpers ── */
 function fmtNum(n){
   if(n>=1000000) return (n/1000000).toFixed(1)+'M';
   if(n>=10000) return (n/10000).toFixed(1)+(lang==='zh-TW'?'萬':'0K');
@@ -493,647 +220,336 @@ function fmtNum(n){
   return String(n);
 }
 
-/* ── Get filtered data ── */
-function getFiltered(){
-  if(activePlatform==='all') return trendData;
-  const r = {}; r[activePlatform]=trendData[activePlatform]; return r;
+/* ── Data ── */
+let allData={}; // {steam:[], gnn:[], ...}
+let lastRefresh=null;
+
+/* ── Detect pain type from title ── */
+function detectPain(text){
+  const t=text.toLowerCase();
+  if(/bug|閃退|crash|壞|broken|glitch|卡死|當機|無法/.test(t)) return 'bug';
+  if(/平衡|不公|太強|太弱|nerf|buff|op|imba|削弱/.test(t)) return 'balance';
+  if(/新手|不會|怎麼|教學|攻略|卡關|help|how to|guide|stuck/.test(t)) return 'newbie';
+  if(/lag|fps|效能|loading|載入|優化|掉幀|卡頓/.test(t)) return 'perf';
+  if(/貴|價格|pay|課金|氪金|micro|dlc太貴|定價/.test(t)) return 'price';
+  if(/爛|垃圾|失望|退款|uninstall|差評|waste|worst|糞/.test(t)) return 'complaint';
+  return null;
 }
 
-/* ── Render trending grid ── */
-function renderTrending(){
-  const grid = document.getElementById('trends-grid');
-  const filtered = getFiltered();
-  if(!Object.keys(filtered).length){ grid.innerHTML=`<div class="loading">${t('noData')}</div>`; return; }
-  grid.innerHTML = Object.entries(filtered).map(([pid,items])=>{
-    if(!items) return '';
-    const p = PLATFORMS.find(x=>x.id===pid);
-    const nm = lang==='zh-TW'?p.name.zh:p.name.en;
-    return `<div class="trend-card">
-      <div class="card-head">
-        <div class="platform-badge"><span class="icon">${p.icon}</span>${nm}
-          ${p.url?`<a href="${p.url}" target="_blank" style="font-size:11px;color:var(--text3);margin-left:4px">↗</a>`:''}</div>
-        <span class="trend-count">${items.length} ${t('trending')}</span>
-      </div>
-      <div class="card-body">${items.slice(0,10).map((it,i)=>`
-        <div class="trend-item">
-          <div class="trend-rank ${i<3?'top3':'normal'}">${i+1}</div>
-          <div class="trend-info">
-            <div class="trend-title">${it.title}</div>
-            <div class="trend-meta">
-              <span>${t('cat_'+it.category)}</span>
-              <span>💬 ${fmtNum(it.comments)}</span>
-              <span>👁 ${fmtNum(it.views)}</span>
-            </div>
-          </div>
-          <div class="trend-heat">🔥 ${fmtNum(it.heat)}</div>
-        </div>`).join('')}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-/* ── Render keyword cloud ── */
-function renderKeywords(){
-  const cloud = document.getElementById('keyword-cloud');
-  const all = [];
-  const filtered = getFiltered();
-  Object.values(filtered).forEach(items=>{
-    if(!items) return;
-    items.forEach(it=>{
-      const words = it.title.replace(/[^\u4e00-\u9fff\w\s]/g,' ').split(/\s+/).filter(w=>w.length>=2);
-      words.forEach(w=>all.push({word:w,heat:it.heat}));
-    });
-  });
-  const freq = {};
-  all.forEach(({word,heat})=>{ freq[word]=(freq[word]||0)+heat; });
-  const sorted = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,40);
-  if(!sorted.length){ cloud.innerHTML=`<div class="loading">${t('noData')}</div>`; return; }
-  const maxH = sorted[0][1], minH = sorted[sorted.length-1][1];
-  cloud.innerHTML = sorted.map(([w,h])=>{
-    const ratio = maxH>minH?(h-minH)/(maxH-minH):0.5;
-    const size = 12+ratio*24;
-    const op = 0.5+ratio*0.5;
-    return `<span class="kw-tag" style="font-size:${size}px;opacity:${op};color:${ratio>0.6?'var(--accent)':'var(--text)'}">${w}</span>`;
-  }).join('');
-}
-
-/* ── Render cross-platform ── */
-function renderCross(){
-  const tbody = document.getElementById('cross-tbody');
-  const topicMap = {};
-  Object.entries(trendData).forEach(([pid,items])=>{
-    if(!items) return;
-    items.forEach(it=>{
-      const key = it.title;
-      if(!topicMap[key]) topicMap[key]={title:it.title,platforms:new Set(),heat:0,category:it.category};
-      topicMap[key].platforms.add(pid);
-      topicMap[key].heat += it.heat;
-    });
-  });
-  const sorted = Object.values(topicMap).sort((a,b)=>b.platforms.size-a.platforms.size||b.heat-a.heat).slice(0,20);
-  if(!sorted.length){ tbody.innerHTML=`<tr><td colspan="4" style="text-align:center">${t('noData')}</td></tr>`; return; }
-  const pids = PLATFORMS.filter(p=>p.id!=='all');
-  tbody.innerHTML = sorted.map(item=>{
-    const dots = pids.map(p=>{
-      const on = item.platforms.has(p.id);
-      return `<span class="pd ${on?'on':''}" style="background:${on?p.color:'var(--bg3)'}" title="${lang==='zh-TW'?p.name.zh:p.name.en}">${p.icon}</span>`;
-    }).join('');
-    return `<tr>
-      <td style="font-weight:600;color:var(--h1);max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.title}</td>
-      <td><div class="platform-dots">${dots}</div></td>
-      <td style="color:var(--accent);font-weight:700">🔥 ${fmtNum(item.heat)}</td>
-      <td><span style="color:${CAT_COLORS[item.category]||'#888'}">${t('cat_'+item.category)}</span></td>
-    </tr>`;
-  }).join('');
-}
-
-/* ── Render categories ── */
-function renderCategories(){
-  const container = document.getElementById('category-bars');
-  const counts = {};
-  const filtered = getFiltered();
-  Object.values(filtered).forEach(items=>{
-    if(!items) return;
-    items.forEach(it=>{ counts[it.category]=(counts[it.category]||0)+it.heat; });
-  });
-  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-  const maxVal = sorted.length?sorted[0][1]:1;
-  if(!sorted.length){ container.innerHTML=`<div class="loading">${t('noData')}</div>`; return; }
-  container.innerHTML = sorted.map(([cat,val])=>{
-    const pct = Math.round(val/maxVal*100);
-    return `<div class="cat-row">
-      <div class="cat-label">${t('cat_'+cat)}</div>
-      <div class="cat-bar-bg"><div class="cat-bar" style="width:${pct}%;background:${CAT_COLORS[cat]||'#888'}">${pct>15?fmtNum(val):''}</div></div>
-      <div class="cat-pct">${pct}%</div>
-    </div>`;
-  }).join('');
-}
-
-/* ── Render sentiment ── */
-function renderSentiment(){
-  const grid = document.getElementById('sentiment-grid');
-  const filtered = getFiltered();
-  if(!Object.keys(filtered).length){ grid.innerHTML=`<div class="loading">${t('noData')}</div>`; return; }
-  grid.innerHTML = Object.entries(filtered).map(([pid,items])=>{
-    if(!items||!items.length) return '';
-    const p = PLATFORMS.find(x=>x.id===pid);
-    const nm = lang==='zh-TW'?p.name.zh:p.name.en;
-    let tp=0,tn=0,tne=0;
-    items.forEach(it=>{
-      const s=it.sentiment; const tot=s.pos+s.neu+s.neg;
-      tp+=s.pos/tot; tn+=s.neu/tot; tne+=s.neg/tot;
-    });
-    const total=tp+tn+tne;
-    const pp=Math.round(tp/total*100), pn=Math.round(tn/total*100), pne=100-pp-pn;
-    return `<div class="sentiment-card">
-      <div class="s-platform">${p.icon} ${nm}</div>
-      <div class="sentiment-bars">
-        <div class="sb" style="width:${pp}%;background:#4ade80"></div>
-        <div class="sb" style="width:${pn}%;background:#60a5fa"></div>
-        <div class="sb" style="width:${pne}%;background:#f87171"></div>
-      </div>
-      <div class="sentiment-legend">
-        <span class="legend-pos">${t('positive')} ${pp}%</span>
-        <span class="legend-neu">${t('neutral')} ${pn}%</span>
-        <span class="legend-neg">${t('negative')} ${pne}%</span>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-/* ── Draw timeline (canvas) ── */
-function drawTimeline(){
-  const wrap = document.querySelector('.timeline-canvas-wrap');
-  const canvas = document.getElementById('timeline-canvas');
-  const W = wrap.clientWidth, H = wrap.clientHeight;
-  canvas.width = W * (window.devicePixelRatio||1);
-  canvas.height = H * (window.devicePixelRatio||1);
-  canvas.style.width = W+'px'; canvas.style.height = H+'px';
-  const ctx = canvas.getContext('2d');
-  ctx.scale(window.devicePixelRatio||1, window.devicePixelRatio||1);
-
-  const isDark = !document.documentElement.getAttribute('data-theme') || document.documentElement.getAttribute('data-theme')==='pink';
-  const gridColor = isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)';
-  const textColor = isDark?'rgba(255,255,255,0.4)':'rgba(0,0,0,0.4)';
-
-  ctx.clearRect(0,0,W,H);
-  const pad = {top:30,right:20,bottom:40,left:50};
-  const gW = W-pad.left-pad.right, gH = H-pad.top-pad.bottom;
-
-  // Time axis: last 24h in 6h slots
-  const now = Date.now();
-  const slots = ['-24h','-18h','-12h','-6h',t('title').includes('雷達')?'現在':'Now'];
-  ctx.font = '11px sans-serif'; ctx.fillStyle = textColor; ctx.textAlign='center';
-  slots.forEach((label,i)=>{
-    const x = pad.left + (i/(slots.length-1))*gW;
-    ctx.fillText(label, x, H-pad.bottom+20);
-    ctx.strokeStyle=gridColor; ctx.beginPath(); ctx.moveTo(x,pad.top); ctx.lineTo(x,H-pad.bottom); ctx.stroke();
-  });
-
-  // Y axis
-  ctx.textAlign='right'; ctx.textBaseline='middle';
-  for(let i=0;i<=4;i++){
-    const y = pad.top + (i/4)*gH;
-    ctx.fillStyle=textColor; ctx.fillText(fmtNum((4-i)*25000), pad.left-8, y);
-    ctx.strokeStyle=gridColor; ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(W-pad.right,y); ctx.stroke();
-  }
-
-  // Lines per platform
-  const filtered = getFiltered();
-  const pids = Object.keys(filtered);
-  pids.forEach((pid,pi)=>{
-    const p = PLATFORMS.find(x=>x.id===pid);
-    if(!p) return;
-    const items = filtered[pid];
-    if(!items||!items.length) return;
-    const points = [];
-    for(let si=0;si<slots.length;si++){
-      const slotTime = now - (4-si)*4*3600000;
-      let heat = 0;
-      items.forEach(it=>{
-        const itTime = new Date(it.time).getTime();
-        heat += it.heat * Math.max(0, 1 - Math.abs(itTime-slotTime)/(12*3600000));
-      });
-      points.push({x: pad.left+(si/(slots.length-1))*gW, y: pad.top+gH-Math.min(heat/100000,1)*gH});
-    }
-    ctx.strokeStyle = p.color; ctx.lineWidth=2; ctx.lineJoin='round';
-    ctx.beginPath(); points.forEach((pt,i)=>i===0?ctx.moveTo(pt.x,pt.y):ctx.lineTo(pt.x,pt.y)); ctx.stroke();
-    // Dot at last point
-    const last=points[points.length-1];
-    ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(last.x,last.y,4,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle=p.color; ctx.font='11px sans-serif'; ctx.textAlign='left';
-    ctx.fillText(lang==='zh-TW'?p.name.zh:p.name.en, last.x+8, last.y+3);
-  });
-}
-
-/* ── Render engagement ── */
-function renderEngagement(){
-  const list = document.getElementById('engage-list');
-  const all = [];
-  const filtered = getFiltered();
-  Object.entries(filtered).forEach(([pid,items])=>{
-    if(!items) return;
-    items.forEach(it=>all.push({...it,platform:pid}));
-  });
-  all.sort((a,b)=>(b.views+b.comments*100)-(a.views+a.comments*100));
-  const top = all.slice(0,20);
-  if(!top.length){ list.innerHTML=`<li class="loading">${t('noData')}</li>`; return; }
-  list.innerHTML = top.map((it,i)=>{
-    const p = PLATFORMS.find(x=>x.id===it.platform);
-    return `<li class="engage-item">
-      <div class="engage-rank">${i+1}</div>
-      <div class="engage-info">
-        <div class="engage-title">${p?p.icon:''} ${it.title}</div>
-        <div class="engage-sub">${t('cat_'+it.category)} · ${lang==='zh-TW'?p.name.zh:p.name.en} · 💬${fmtNum(it.comments)}</div>
-      </div>
-      <div class="engage-stat">
-        <div class="engage-num">${fmtNum(it.views)}</div>
-        <div class="engage-label">${t('views')}</div>
-      </div>
-    </li>`;
-  }).join('');
-}
-
-/* ── Render gaming panel ── */
-let activeGameSrc = 'all';
-const GAME_SOURCES = [
-  {id:'all',icon:'🌐'},{id:'gnn',icon:'🎮',label:{zh:'巴哈 GNN',en:'Gamer GNN'},color:'#0070c0'},
-  {id:'4gamers',icon:'🕹️',label:{zh:'4Gamers',en:'4Gamers'},color:'#ff6600'},
-  {id:'ign',icon:'🌍',label:{zh:'IGN',en:'IGN'},color:'#bf1313'},
-  {id:'steam',icon:'🎯',label:{zh:'Steam',en:'Steam'},color:'#1b2838'},
-];
-const SUB_CAT_LABELS = {
-  news:{zh:'新聞',en:'News',color:'#3b82f6'},release:{zh:'新作',en:'Release',color:'#f59e0b'},
-  esports:{zh:'電競',en:'Esports',color:'#ef4444'},update:{zh:'更新',en:'Update',color:'#22c55e'},
-  review:{zh:'評測',en:'Review',color:'#a855f7'}
-};
-function selectGameSrc(id){ activeGameSrc=id; renderGaming(); }
-function renderGaming(){
-  // Source filter tabs
-  const tabsEl = document.getElementById('gaming-source-tabs');
-  tabsEl.innerHTML = GAME_SOURCES.map(s=>{
-    const nm = s.id==='all'? (lang==='zh-TW'?'全部':'All') : (lang==='zh-TW'?s.label.zh:s.label.en);
-    const act = activeGameSrc===s.id?'active':'';
-    return `<div class="gsrc-tab ${act}" onclick="selectGameSrc('${s.id}')">${s.icon} ${nm}</div>`;
-  }).join('');
-  // Collect items
-  let items = [];
-  if(activeGameSrc==='all'){
-    Object.values(gamingData).forEach(arr=>{ if(arr) items=items.concat(arr); });
-  } else {
-    items = gamingData[activeGameSrc]||[];
-  }
-  items.sort((a,b)=>b.heat-a.heat);
-  const grid = document.getElementById('gaming-grid');
-  if(!items.length){ grid.innerHTML=`<div class="loading">${t('noData')}</div>`; return; }
-  // Group by subCat
-  const groups = {};
-  items.forEach(it=>{
-    const k=it.subCat||'news';
-    if(!groups[k]) groups[k]=[];
-    groups[k].push(it);
-  });
-  grid.innerHTML = Object.entries(groups).map(([sub,list])=>{
-    const sc = SUB_CAT_LABELS[sub]||SUB_CAT_LABELS.news;
-    const label = lang==='zh-TW'?sc.zh:sc.en;
-    const srcMap = {gnn:'巴哈',['4gamers']:'4G',ign:'IGN',steam:'Steam'};
-    return `<div class="trend-card">
-      <div class="card-head">
-        <div class="platform-badge"><span class="game-tag" style="background:${sc.color};color:#fff">${label}</span> ${list.length} ${t('trending')}</div>
-      </div>
-      <div class="card-body">${list.slice(0,10).map((it,i)=>`
-        <div class="trend-item">
-          <div class="trend-rank ${i<3?'top3':'normal'}">${i+1}</div>
-          <div class="trend-info">
-            <div class="trend-title">${it.title}</div>
-            <div class="trend-meta">
-              <span style="color:${(GAME_SOURCES.find(s=>s.id===it.source)||{}).color||'#888'}">${srcMap[it.source]||it.source}</span>
-              <span>🔥 ${fmtNum(it.heat)}</span>
-              <span>👁 ${fmtNum(it.views)}</span>
-            </div>
-          </div>
-        </div>`).join('')}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-/* ── Render dev suggestions based on trends ── */
-function renderSuggestions(){
-  const container = document.getElementById('suggestions-content');
-  // Analyze all trending topics to generate suggestions
-  const allTopics = [];
-  Object.values(trendData).forEach(items=>{
-    if(!items) return;
-    items.forEach(it=>allTopics.push(it));
-  });
-  Object.values(gamingData).forEach(items=>{
-    if(!items) return;
-    items.forEach(it=>allTopics.push(it));
-  });
-
-  // Count category frequencies
-  const catCount = {};
-  const keywords = {};
-  allTopics.forEach(it=>{
-    catCount[it.category]=(catCount[it.category]||0)+it.heat;
-    const words = it.title.replace(/[^\u4e00-\u9fff\w]/g,' ').split(/\s+/).filter(w=>w.length>=2);
-    words.forEach(w=>{ keywords[w]=(keywords[w]||0)+it.heat; });
-  });
-  const topCats = Object.entries(catCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const topKw = Object.entries(keywords).sort((a,b)=>b[1]-a[1]).slice(0,15).map(x=>x[0]);
-
-  // Build suggestion rules based on trending categories & keywords
-  const suggestions = [];
-  const zh = lang==='zh-TW';
-
-  // Game suggestions based on hot categories
-  if(catCount.games>0||Object.keys(gamingData).length>0){
-    const gameKw = [];
-    Object.values(gamingData).forEach(arr=>arr&&arr.forEach(it=>gameKw.push(it.title)));
-    const hasRPG = gameKw.some(t=>/rpg|角色|冒險/i.test(t));
-    const hasShooter = gameKw.some(t=>/fps|射擊|shooter|battle/i.test(t));
-    const hasIdle = gameKw.some(t=>/idle|放置|模擬|經營/i.test(t));
-    const hasMobile = gameKw.some(t=>/手遊|mobile|手機/i.test(t));
-    const hasIndie = gameKw.some(t=>/indie|獨立|像素/i.test(t));
-
-    if(hasRPG) suggestions.push({
-      type:zh?'遊戲':'Game', icon:'⚔️', color:'#9060ff',
-      title:zh?'RPG / 角色扮演遊戲':'RPG / Role-Playing Game',
-      desc:zh?'目前遊戲社群大量討論 RPG 相關內容，玩家對角色養成、裝備系統、劇情分支有高需求。':'RPG content is trending across gaming communities. Players show high demand for character growth, equipment systems, and story branching.',
-      reasons:[zh?'巴哈/4Gamers 多篇 RPG 新作報導':'Multiple RPG coverage on gaming sites',zh?'玩家討論度高，留存率佳的遊戲類型':'High engagement genre with good retention',zh?'可結合放置元素降低開發門檻':'Can combine idle elements to reduce dev complexity'],
-      tags:['RPG','Character Growth','Story','Equipment']
-    });
-    if(hasShooter) suggestions.push({
-      type:zh?'遊戲':'Game', icon:'🔫', color:'#ef4444',
-      title:zh?'輕量射擊 / 大逃殺遊戲':'Lightweight Shooter / Battle Royale',
-      desc:zh?'射擊遊戲話題持續火熱，適合做輕量 Web 版本搶佔 CrazyGames 市場。':'Shooter topics remain hot. A lightweight web version could capture the CrazyGames market.',
-      reasons:[zh?'射擊類在 CrazyGames 是高流量類別':'Shooters are high-traffic on CrazyGames',zh?'可用 Canvas raycasting 實現':'Achievable with Canvas raycasting',zh?'現有 FPS 遊戲可以延伸改進':'Can extend existing FPS game'],
-      tags:['FPS','Action','Multiplayer','Web']
-    });
-    if(hasIdle||hasMobile) suggestions.push({
-      type:zh?'遊戲':'Game', icon:'📱', color:'#22c55e',
-      title:zh?'手機放置型遊戲':'Mobile Idle Game',
-      desc:zh?'放置/模擬類持續有話題，手機端玩家數量龐大，適合輕開發高回報。':'Idle/simulation topics continue trending. Mobile player base is massive with high ROI for light dev.',
-      reasons:[zh?'手機遊戲市場佔全球 50%+ 營收':'Mobile gaming is 50%+ of global revenue',zh?'放置遊戲開發成本低、留存好':'Idle games have low dev cost, good retention',zh?'可加入 Prestige 系統增加深度':'Prestige system adds depth'],
-      tags:['Idle','Mobile','Prestige','Low Dev Cost']
-    });
-    if(hasIndie) suggestions.push({
-      type:zh?'遊戲':'Game', icon:'🎨', color:'#f59e0b',
-      title:zh?'像素風獨立遊戲':'Pixel Art Indie Game',
-      desc:zh?'獨立遊戲持續受關注，像素美術有懷舊魅力且製作門檻低。':'Indie games continue gaining attention. Pixel art has nostalgic appeal and lower production barrier.',
-      reasons:[zh?'Steam 獨立遊戲銷量穩定成長':'Steady growth in Steam indie sales',zh?'現有像素素材庫豐富':'Rich existing pixel asset library',zh?'itch.io + CrazyGames 雙平台上架':'Dual platform: itch.io + CrazyGames'],
-      tags:['Pixel Art','Indie','itch.io','Creative']
-    });
-  }
-
-  // Software suggestions based on hot social topics
-  if(catCount.tech>0) suggestions.push({
-    type:zh?'軟體':'Software', icon:'🤖', color:'#3b82f6',
-    title:zh?'AI 輔助工具 / 生產力工具':'AI-Powered Productivity Tool',
-    desc:zh?'科技話題火熱，AI 相關討論量高。可以做一個結合 AI 的實用小工具。':'Tech topics are hot with high AI discussion volume. Build a practical AI-powered mini tool.',
-    reasons:[zh?'Google Trends 科技類搜尋量上升':'Rising tech search volume on Google Trends',zh?'免費 API 可用（Cloudflare AI、OpenAI 免費額度）':'Free APIs available (CF AI, OpenAI free tier)',zh?'小工具容易推廣、SEO 友好':'Small tools are easy to promote, SEO-friendly'],
-    tags:['AI','Productivity','Web Tool','Free API']
-  });
-  if(catCount.finance>0) suggestions.push({
-    type:zh?'軟體':'Software', icon:'📈', color:'#a855f7',
-    title:zh?'財經數據視覺化工具':'Financial Data Visualization Tool',
-    desc:zh?'財經話題活躍，台股/加密貨幣討論度高。做一個直覺的數據儀表板。':'Finance topics are active with high stock/crypto discussion. Build an intuitive data dashboard.',
-    reasons:[zh?'Yahoo 財經 RSS 免費可用':'Yahoo Finance RSS is free',zh?'投資人需要簡潔的資訊整合':'Investors need clean info aggregation',zh?'可加入 Google Trends 搜尋熱度疊加':'Can overlay Google Trends search volume'],
-    tags:['Finance','Data Viz','Dashboard','Free Data']
-  });
-  if(catCount.education>0||catCount.life>0) suggestions.push({
-    type:zh?'軟體':'Software', icon:'📚', color:'#14b8a6',
-    title:zh?'互動學習 / 知識卡片工具':'Interactive Learning / Flashcard Tool',
-    desc:zh?'教育和生活類話題受關注，可以做一個結合趨勢話題的互動學習工具。':'Education and lifestyle topics are trending. Build an interactive learning tool tied to trending topics.',
-    reasons:[zh?'學生族群是主要網路使用者':'Students are major internet users',zh?'Dcard 教育板常有學習討論':'Dcard education board has active learning discussions',zh?'Spaced repetition 有科學根據':'Spaced repetition is scientifically proven'],
-    tags:['Education','Flashcard','Students','Web App']
-  });
-
-  // Research suggestions based on cross-platform hot topics
-  if(catCount.politics>0||catCount.international>0) suggestions.push({
-    type:zh?'研究':'Research', icon:'🔍', color:'#06b6d4',
-    title:zh?'社會議題追蹤與分析報告':'Social Issue Tracking & Analysis',
-    desc:zh?'政治/國際話題跨平台討論度高，可以做深度分析報告或資訊整合頁。':'Political/international topics have high cross-platform discussion. Build a deep analysis report or info aggregation page.',
-    reasons:[zh?'多平台同時討論表示話題有影響力':'Cross-platform discussion indicates impactful topic',zh?'可延伸現有議員追蹤工具':'Can extend existing legislator tracker',zh?'資訊整合頁 SEO 效果好':'Info aggregation pages have good SEO'],
-    tags:['Research','Analysis','Social Impact','SEO']
-  });
-  if(catCount.health>0) suggestions.push({
-    type:zh?'研究':'Research', icon:'🏥', color:'#10b981',
-    title:zh?'健康資訊整合與闢謠工具':'Health Info Aggregation & Fact-Check',
-    desc:zh?'健康類話題常有誤導資訊，做一個可信的資訊整合工具有社會價值。':'Health topics often contain misinformation. A trustworthy info aggregation tool has social value.',
-    reasons:[zh?'健康話題搜尋量穩定':'Stable health topic search volume',zh?'闢謠工具有公益價值':'Fact-check tools have public benefit',zh?'可結合衛福部公開資料':'Can integrate Ministry of Health open data'],
-    tags:['Health','Fact-Check','Public Good','Open Data']
-  });
-
-  // Always add a wildcard suggestion based on top keywords
-  if(topKw.length>=3) suggestions.push({
-    type:zh?'研究':'Research', icon:'🔮', color:'var(--accent)',
-    title:zh?`趨勢關鍵字深度報告：${topKw.slice(0,3).join('、')}`:`Trend Keyword Deep Dive: ${topKw.slice(0,3).join(', ')}`,
-    desc:zh?`這些關鍵字在過去 4 小時跨平台討論量最高，值得深入研究其背後脈絡與商業機會。`:`These keywords have the highest cross-platform discussion in the past 4 hours. Worth researching the context and business opportunities.`,
-    reasons:[zh?'跨平台高頻關鍵字代表大眾注意力':'High-freq cross-platform keywords = public attention',zh?'可寫成部落格文章搶 SEO':'Can write blog posts for SEO',zh?'內容行銷的好素材':'Great material for content marketing'],
-    tags:topKw.slice(0,5)
-  });
-
-  if(!suggestions.length){ container.innerHTML=`<div class="loading">${t('noData')}</div>`; return; }
-  const typeColors = {[zh?'遊戲':'Game']:'#8b5cf6',[zh?'軟體':'Software']:'#3b82f6',[zh?'研究':'Research']:'#06b6d4'};
-  container.innerHTML = `
-    <div style="margin-bottom:14px;font-size:13px;color:var(--text2)">
-      ${t('suggestBased')} · ${allTopics.length} ${zh?'筆資料':'data points'} · ${topCats.slice(0,3).map(([c])=>t('cat_'+c)).join(' / ')} ${zh?'最熱門':'hottest'}
-    </div>
-    <div class="suggest-grid">${suggestions.map(s=>`
-      <div class="suggest-card">
-        <div class="suggest-header">
-          <span class="s-icon">${s.icon}</span>
-          <span class="s-type" style="background:${s.color};color:#fff">${s.type}</span>
-        </div>
-        <div class="suggest-body">
-          <div class="suggest-title">${s.title}</div>
-          <div class="suggest-desc">${s.desc}</div>
-          <ul class="suggest-reasons">${s.reasons.map(r=>`<li>${r}</li>`).join('')}</ul>
-          <div class="suggest-tags">${s.tags.map(tg=>`<span>${tg}</span>`).join('')}</div>
-        </div>
-      </div>`).join('')}
-    </div>`;
-}
-
-/* ── Render all ── */
-function renderAll(){
-  renderPlatformTabs();
-  renderTrending();
-  renderKeywords();
-  renderCross();
-  renderCategories();
-  renderSentiment();
-  renderEngagement();
-  renderGaming();
-  renderSuggestions();
-  if(document.getElementById('panel-timeline').classList.contains('active')) drawTimeline();
-}
-
-/* ── API base (same Cloudflare Worker) ── */
-const API_BASE = location.hostname==='localhost'||location.hostname==='127.0.0.1'
-  ? '' : 'https://capyworlds.com';
-
-/* ── Classify topic by keywords ── */
-function classifyTopic(text){
-  const t = text.toLowerCase();
-  if(/股|台積|指數|漲|跌|財報|央行|利率|匯率|etf|bitcoin|btc|投資|金融|營收/.test(t)) return 'finance';
-  if(/選舉|立法|政府|總統|政黨|立院|罷免|公投|立委|議員/.test(t)) return 'politics';
-  if(/ai|apple|google|手機|晶片|iphone|科技|nvidia|openai|軟體|app/.test(t)) return 'tech';
-  if(/棒球|籃球|足球|奧運|world cup|nba|mlb|中職|球員|賽事|體育/.test(t)) return 'sports';
-  if(/電影|劇|netflix|演員|mv|歌手|演唱會|金曲|偶像|節目|youtube|直播|動漫/.test(t)) return 'entertainment';
-  if(/遊戲|switch|ps5|xbox|steam|lol|手遊|電競/.test(t)) return 'games';
-  if(/餐廳|美食|食譜|料理|咖啡|甜點|米其林|小吃/.test(t)) return 'food';
-  if(/地震|颱風|氣候|俄|烏|戰爭|聯合國|國際|日本|韓國|美國/.test(t)) return 'international';
-  if(/學校|考試|大學|指考|學測|教育|老師|教授/.test(t)) return 'education';
-  if(/疫苗|covid|病毒|醫院|健康|癌|疾病|流感/.test(t)) return 'health';
-  return 'life';
-}
-
-/* ── Parse Google Trends RSS XML ── */
-function parseGoogleRSS(xml){
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(xml, 'application/xml');
-  const items = doc.querySelectorAll('item');
-  const results = [];
+/* ── Parse game RSS (GNN/4Gamers/IGN/Steam) ── */
+function parseGameRSS(xml, srcId){
+  const doc=new DOMParser().parseFromString(xml,'application/xml');
+  const items=doc.querySelectorAll('item');
+  const results=[];
   items.forEach((item,i)=>{
-    const title = item.querySelector('title')?.textContent||'';
-    const traffic = item.querySelector('ht\\:approx_traffic, approx_traffic')?.textContent||'';
-    const heat = parseInt((traffic||'0').replace(/[^0-9]/g,''))||((items.length-i)*5000);
-    results.push({
-      title, category:classifyTopic(title), heat,
-      comments:Math.round(heat*0.05), views:heat*10,
-      sentiment:{pos:45+Math.floor(Math.random()*20),neu:20+Math.floor(Math.random()*15),neg:5+Math.floor(Math.random()*15)},
-      time:new Date().toISOString()
-    });
-  });
-  return results;
-}
-
-/* ── Parse Yahoo RSS XML ── */
-function parseYahooRSS(xml){
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(xml, 'application/xml');
-  const items = doc.querySelectorAll('item');
-  const results = [];
-  items.forEach((item,i)=>{
-    const title = item.querySelector('title')?.textContent||'';
+    const title=item.querySelector('title')?.textContent||'';
     if(!title) return;
-    const heat = (items.length-i)*3000+Math.floor(Math.random()*2000);
+    const heat=(items.length-i)*4000+Math.floor(Math.random()*3000);
+    const pub=item.querySelector('pubDate')?.textContent;
+    const pain=detectPain(title);
     results.push({
-      title, category:classifyTopic(title), heat,
-      comments:Math.round(heat*0.03), views:heat*8,
-      sentiment:{pos:40+Math.floor(Math.random()*20),neu:25+Math.floor(Math.random()*15),neg:5+Math.floor(Math.random()*15)},
-      time:item.querySelector('pubDate')?.textContent ? new Date(item.querySelector('pubDate').textContent).toISOString() : new Date().toISOString()
+      title, src:srcId, heat, pain,
+      comments:Math.round(heat*0.04), views:heat*12,
+      time:pub?new Date(pub).toISOString():new Date().toISOString()
     });
   });
-  return results.slice(0,15);
+  return results.slice(0,20);
 }
 
-/* ── Parse Dcard API JSON ── */
+/* ── Parse Dcard gaming posts ── */
 function parseDcard(data){
   if(!Array.isArray(data)) return [];
-  return data.slice(0,15).map((post,i)=>{
-    const heat = (post.likeCount||0)+(post.commentCount||0)*5;
+  return data.slice(0,20).map((post,i)=>{
+    const heat=(post.likeCount||0)+(post.commentCount||0)*5;
+    const pain=detectPain(post.title||'');
     return {
-      title:post.title||'(無標題)',
-      category:classifyTopic(post.title||''),
-      heat:heat||((data.length-i)*2000),
-      comments:post.commentCount||0,
-      views:(post.likeCount||0)*20,
-      sentiment:{pos:50+Math.floor(Math.random()*15),neu:20+Math.floor(Math.random()*15),neg:5+Math.floor(Math.random()*10)},
-      time:post.createdAt||new Date().toISOString()
+      title:post.title||'(無標題)', src:'dcard',
+      heat:heat||((data.length-i)*2000), pain,
+      comments:post.commentCount||0, views:(post.likeCount||0)*20,
+      time:post.createdAt||new Date().toISOString(),
+      excerpt:(post.excerpt||'').slice(0,100)
     };
   });
 }
 
-/* ── Parse gaming RSS (GNN / 4Gamers / IGN / Steam) ── */
-function parseGameRSS(xml, sourceId){
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(xml, 'application/xml');
-  const items = doc.querySelectorAll('item');
-  const results = [];
-  items.forEach((item,i)=>{
-    const title = item.querySelector('title')?.textContent||'';
-    if(!title) return;
-    const heat = (items.length-i)*4000+Math.floor(Math.random()*3000);
-    const pubDate = item.querySelector('pubDate')?.textContent;
-    // Sub-classify gaming news
-    const tl = title.toLowerCase();
-    let subCat = 'news';
-    if(/發售|上市|發表|新作|預購|release|launch|announce|reveal|trailer/i.test(tl)) subCat='release';
-    if(/電競|賽事|冠軍|聯賽|世界賽|esport|tournament|championship|league/i.test(tl)) subCat='esports';
-    if(/更新|patch|update|dlc|季票|season pass/i.test(tl)) subCat='update';
-    if(/評測|review|評價|心得|分析/i.test(tl)) subCat='review';
-    results.push({
-      title, category:'games', heat, subCat, source:sourceId,
-      comments:Math.round(heat*0.04), views:heat*12,
-      sentiment:{pos:55+Math.floor(Math.random()*20),neu:15+Math.floor(Math.random()*15),neg:3+Math.floor(Math.random()*10)},
-      time:pubDate?new Date(pubDate).toISOString():new Date().toISOString()
-    });
-  });
-  return results.slice(0,15);
-}
-
-let gamingData = {}; // separate storage for gaming panel
-
-/* ── Fetch real data (with demo fallback) ── */
-async function fetchRealData(){
-  const demo = generateDemoData();
-  const results = {...demo}; // start with demo as fallback
-
-  const fetches = [
-    { key:'google', url:API_BASE+'/trends/google', parse:'xml', handler:parseGoogleRSS },
-    { key:'yahoo',  url:API_BASE+'/trends/yahoo',  parse:'xml', handler:parseYahooRSS },
-    { key:'dcard',  url:API_BASE+'/trends/dcard',   parse:'json',handler:parseDcard },
-    { key:'gnn',     url:API_BASE+'/trends/gnn',     parse:'xml', handler:xml=>parseGameRSS(xml,'gnn') },
-    { key:'4gamers', url:API_BASE+'/trends/4gamers',  parse:'xml', handler:xml=>parseGameRSS(xml,'4gamers') },
-    { key:'ign',     url:API_BASE+'/trends/ign',      parse:'xml', handler:xml=>parseGameRSS(xml,'ign') },
-    { key:'steam',   url:API_BASE+'/trends/steam',    parse:'xml', handler:xml=>parseGameRSS(xml,'steam') },
+/* ── Fetch all sources ── */
+async function fetchAll(){
+  const sources=[
+    {key:'steam',  url:API+'/trends/steam',   parse:'xml'},
+    {key:'gnn',    url:API+'/trends/gnn',     parse:'xml'},
+    {key:'4gamers',url:API+'/trends/4gamers',  parse:'xml'},
+    {key:'ign',    url:API+'/trends/ign',     parse:'xml'},
+    {key:'dcard',  url:API+'/trends/dcard-game',parse:'json'},
   ];
-
-  const promises = fetches.map(async ({key,url,parse,handler})=>{
-    try {
-      const r = await fetch(url);
+  const result={};
+  await Promise.all(sources.map(async ({key,url,parse})=>{
+    try{
+      const r=await fetch(url);
       if(!r.ok) throw new Error(r.status);
-      const data = parse==='xml'? await r.text() : await r.json();
-      const parsed = handler(data);
-      if(parsed.length>0) results[key]=parsed;
-    } catch(e){ console.warn('Trends fetch failed:',key,e); }
-  });
-  await Promise.all(promises);
-  // Extract gaming data into separate object
-  const gameSources = ['gnn','4gamers','ign','steam'];
-  gameSources.forEach(k=>{
-    if(results[k]) gamingData[k]=results[k];
-  });
-  localStorage.setItem('gamingData', JSON.stringify(gamingData));
-  return results;
+      if(parse==='json'){
+        result[key]=parseDcard(await r.json());
+      } else {
+        result[key]=parseGameRSS(await r.text(),key);
+      }
+    }catch(e){console.warn('fetch fail:',key,e); result[key]=[];}
+  }));
+  return result;
 }
+
+/* ── Countdown ── */
+let cdInterval=null;
+function startCountdown(){
+  if(cdInterval) clearInterval(cdInterval);
+  const next=new Date();
+  const h=next.getHours();
+  next.setHours(Math.ceil((h+1)/4)*4,0,0,0);
+  if(next<=new Date()) next.setTime(next.getTime()+4*3600000);
+  cdInterval=setInterval(()=>{
+    const d=next-new Date();
+    if(d<=0){refreshAll();return;}
+    const hh=Math.floor(d/3600000),mm=Math.floor((d%3600000)/60000),ss=Math.floor((d%60000)/1000);
+    document.getElementById('countdown').textContent=
+      String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0');
+  },1000);
+}
+
+/* ── Render source filter tabs ── */
+function renderSrcTabs(containerId, active, onClick){
+  document.getElementById(containerId).innerHTML=SRCS.map(s=>{
+    const nm=lang==='zh-TW'?s.name.zh:s.name.en;
+    return `<div class="src-tab ${active===s.id?'on':''}" onclick="${onClick}('${s.id}')">${s.icon} ${nm}</div>`;
+  }).join('');
+}
+function setHotSrc(id){hotSrc=id;renderHot();}
+function setPainSrc(id){painSrc=id;renderPain();}
+
+/* ── Get items by source filter ── */
+function getItems(srcFilter){
+  if(srcFilter==='all') return Object.values(allData).flat();
+  return allData[srcFilter]||[];
+}
+
+/* ── Render: Hot Games ── */
+function renderHot(){
+  renderSrcTabs('hot-srcs',hotSrc,'setHotSrc');
+  const items=getItems(hotSrc).sort((a,b)=>b.heat-a.heat);
+  const grid=document.getElementById('hot-grid');
+  if(!items.length){grid.innerHTML=`<div class="loading">${t('noData')}</div>`;return;}
+  // Group by source
+  const groups={};
+  items.forEach(it=>{if(!groups[it.src])groups[it.src]=[];groups[it.src].push(it);});
+  const srcNames={steam:'Steam',gnn:'巴哈 GNN','4gamers':'4Gamers',ign:'IGN',dcard:'Dcard'};
+  if(hotSrc==='all'){
+    grid.innerHTML=Object.entries(groups).map(([sid,list])=>{
+      const s=SRCS.find(x=>x.id===sid);
+      const nm=s?(lang==='zh-TW'?s.name.zh:s.name.en):(srcNames[sid]||sid);
+      const ic=s?s.icon:'📰';
+      return `<div class="card">
+        <div class="card-h"><div class="badge">${ic} ${nm}</div><span class="cnt">${list.length} ${t('items')}</span></div>
+        <div class="card-b">${list.slice(0,8).map((it,i)=>renderItem(it,i)).join('')}</div>
+      </div>`;
+    }).join('');
+  } else {
+    grid.innerHTML=`<div class="card" style="grid-column:1/-1">
+      <div class="card-b">${items.slice(0,15).map((it,i)=>renderItem(it,i)).join('')}</div>
+    </div>`;
+  }
+}
+function renderItem(it,i){
+  return `<div class="item">
+    <div class="rank ${i<3?'top':'n'}">${i+1}</div>
+    <div class="info">
+      <div class="tt">${it.title}</div>
+      <div class="meta">
+        ${it.pain?`<span style="color:#f87171">😤 ${t(it.pain)}</span>`:''}
+        <span>💬 ${fmtNum(it.comments)}</span>
+        <span>👁 ${fmtNum(it.views)}</span>
+      </div>
+    </div>
+    <div class="heat">🔥 ${fmtNum(it.heat)}</div>
+  </div>`;
+}
+
+/* ── Render: Pain Points ── */
+function renderPain(){
+  renderSrcTabs('pain-srcs',painSrc,'setPainSrc');
+  const items=getItems(painSrc).filter(it=>it.pain).sort((a,b)=>b.heat-a.heat);
+  const container=document.getElementById('pain-list');
+  if(!items.length){
+    container.innerHTML=`<div class="loading">${lang==='zh-TW'?'目前沒有偵測到明顯痛點，稍後再試':'No pain points detected, try again later'}</div>`;
+    return;
+  }
+  // Group by pain type
+  const groups={};
+  items.forEach(it=>{if(!groups[it.pain])groups[it.pain]=[];groups[it.pain].push(it);});
+  const painColors={bug:'#ef4444',balance:'#f59e0b',newbie:'#3b82f6',perf:'#a855f7',price:'#f97316',complaint:'#ef4444'};
+  const painIcons={bug:'🐛',balance:'⚖️',newbie:'🆘',perf:'🐌',price:'💸',complaint:'😡'};
+  container.innerHTML=`
+    <div style="margin-bottom:12px;font-size:13px;color:var(--text2)">
+      ${t('painDesc')} · ${items.length} ${t('items')}
+    </div>
+    ${Object.entries(groups).sort((a,b)=>b[1].length-a[1].length).map(([type,list])=>`
+      <div style="margin-bottom:16px">
+        <div style="font-size:14px;font-weight:700;color:${painColors[type]||'#f87171'};margin-bottom:8px;display:flex;align-items:center;gap:6px">
+          ${painIcons[type]||'😤'} ${t(type)} <span style="font-size:11px;font-weight:400;color:var(--text3)">(${list.length})</span>
+        </div>
+        ${list.slice(0,8).map(it=>{
+          const s=SRCS.find(x=>x.id===it.src);
+          const sn=s?(lang==='zh-TW'?s.name.zh:s.name.en):it.src;
+          return `<div class="complaint">
+            <div class="c-head">
+              <span class="c-src" style="background:${s?s.color:'#888'}">${sn}</span>
+              <span class="c-title">${it.title}</span>
+            </div>
+            ${it.excerpt?`<div class="c-body">${it.excerpt}</div>`:''}
+            <div class="c-tags">
+              <span class="c-tag">🔥 ${fmtNum(it.heat)}</span>
+              <span class="c-tag">💬 ${fmtNum(it.comments)}</span>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    `).join('')}
+  `;
+}
+
+/* ── Render: Opportunities ── */
+function renderOpp(){
+  const items=Object.values(allData).flat();
+  const pains=items.filter(it=>it.pain);
+  const container=document.getElementById('opp-list');
+  if(!items.length){container.innerHTML=`<div class="loading">${t('noData')}</div>`;return;}
+
+  // Count pain types
+  const painCount={};
+  pains.forEach(it=>{painCount[it.pain]=(painCount[it.pain]||0)+1;});
+
+  // Count hot keywords
+  const kw={};
+  items.forEach(it=>{
+    it.title.replace(/[^\u4e00-\u9fff\w]/g,' ').split(/\s+/).filter(w=>w.length>=2)
+      .forEach(w=>{kw[w]=(kw[w]||0)+it.heat;});
+  });
+  const topKw=Object.entries(kw).sort((a,b)=>b[1]-a[1]).slice(0,8).map(x=>x[0]);
+  const zh=lang==='zh-TW';
+
+  const opps=[];
+
+  if(painCount.newbie>0) opps.push({
+    icon:'📖',type:t('guide'),color:'#3b82f6',
+    title:zh?`新手攻略：${topKw.slice(0,2).join('、')} 相關`:`Beginner Guide: ${topKw.slice(0,2).join(', ')}`,
+    desc:zh?`偵測到 ${painCount.newbie} 則新手求助/卡關內容。這些玩家需要清楚的入門攻略。繁中攻略在 Steam 上很稀缺，大部分只有簡中。`
+      :`Detected ${painCount.newbie} newbie help requests. These players need clear beginner guides. Traditional Chinese guides are rare on Steam.`,
+    why:[zh?'Steam 繁中攻略缺口大，簡中不完全適用台灣玩家':'Trad. Chinese guides are scarce on Steam',
+         zh?'新手攻略搜尋量穩定，長尾 SEO 效果好':'Beginner guide searches are stable, good long-tail SEO',
+         zh?'可做成網頁版，比 Steam 社群指南更好讀':'Web version is more readable than Steam community guides'],
+    tags:[t('guide'),'Steam','SEO',zh?'繁中':'Trad. Chinese']
+  });
+
+  if(painCount.bug>0) opps.push({
+    icon:'🔧',type:t('tool'),color:'#ef4444',
+    title:zh?'Bug 回報追蹤工具 / 已知問題整理':'Bug Tracker / Known Issues Summary',
+    desc:zh?`偵測到 ${painCount.bug} 則 Bug 相關抱怨。玩家找不到官方回應時很挫折，整理已知問題 + 暫時解法會很有幫助。`
+      :`Detected ${painCount.bug} bug-related complaints. Players get frustrated without official response. A known issues + workarounds page helps.`,
+    why:[zh?'玩家第一反應是搜尋「遊戲名 + bug」':'Players first search "game name + bug"',
+         zh?'收集社群回報的暫時解法很有價值':'Community workarounds are valuable',
+         zh?'可用 RSS 自動追蹤更新':'Can auto-track updates via RSS'],
+    tags:[t('tool'),zh?'問題追蹤':'Issue Tracker','Community']
+  });
+
+  if(painCount.balance>0) opps.push({
+    icon:'📊',type:t('guide'),color:'#f59e0b',
+    title:zh?'平衡性分析 / Meta 攻略':'Balance Analysis / Meta Guide',
+    desc:zh?`偵測到 ${painCount.balance} 則平衡性討論。玩家想知道當前 meta、最強角色/裝備/策略。`
+      :`Detected ${painCount.balance} balance discussions. Players want to know current meta, strongest characters/builds.`,
+    why:[zh?'Meta 攻略每次更新都有流量':'Meta guides get traffic every patch',
+         zh?'資料視覺化（tier list）容易分享':'Data viz (tier lists) are highly shareable',
+         zh?'可結合數據做自動更新的 tier list 網頁':'Can build auto-updating tier list pages'],
+    tags:[t('guide'),'Meta','Tier List',zh?'資料分析':'Data Analysis']
+  });
+
+  if(painCount.perf>0) opps.push({
+    icon:'⚡',type:t('guide'),color:'#a855f7',
+    title:zh?'效能優化設定攻略':'Performance Optimization Guide',
+    desc:zh?`偵測到 ${painCount.perf} 則效能問題抱怨（FPS 低、Lag、載入慢）。最佳設定攻略永遠有人找。`
+      :`Detected ${painCount.perf} performance complaints (low FPS, lag, slow loading). Optimal settings guides are always in demand.`,
+    why:[zh?'「遊戲名 + 設定」是高搜尋量關鍵字':'Game name + settings is high search volume',
+         zh?'針對不同硬體等級的推薦設定很實用':'Settings recommendations by hardware tier are practical',
+         zh?'做成互動網頁比文章更有價值':'Interactive web tool > static article'],
+    tags:[t('tool'),'FPS','Settings','Hardware']
+  });
+
+  if(painCount.price>0) opps.push({
+    icon:'💰',type:t('guide'),color:'#f97316',
+    title:zh?'省錢攻略 / 免費替代方案整理':'Money-Saving Guide / Free Alternatives',
+    desc:zh?`偵測到 ${painCount.price} 則價格相關抱怨。整理特價時機、免費替代品、CP 值分析。`
+      :`Detected ${painCount.price} price complaints. Compile sale timing, free alternatives, value analysis.`,
+    why:[zh?'價格比較文章 SEO 效果極好':'Price comparison articles have great SEO',
+         zh?'Steam 特價追蹤有穩定需求':'Steam sale tracking has stable demand',
+         zh?'可做成價格歷史查詢工具':'Can build price history lookup tool'],
+    tags:[t('tool'),zh?'特價':'Sales','F2P',zh?'CP值':'Value']
+  });
+
+  // Always add a trend-based suggestion
+  if(topKw.length>=3) opps.push({
+    icon:'🔮',type:zh?'趨勢':'Trend',color:'var(--accent)',
+    title:zh?`熱門關鍵字攻略機會：${topKw.slice(0,3).join('、')}`:`Trending Keyword Opportunity: ${topKw.slice(0,3).join(', ')}`,
+    desc:zh?'這些關鍵字在過去 4 小時討論量最高。可以針對這些話題快速產出繁中內容搶佔搜尋排名。'
+      :'These keywords have the highest discussion volume in the past 4 hours. Quick Trad. Chinese content can capture search rankings.',
+    why:[zh?'搶先產出繁中內容 = 搜尋第一頁':'First Trad. Chinese content = page 1 search',
+         zh?'趨勢話題自帶流量':'Trending topics bring organic traffic',
+         zh?'可做成部落格文章或攻略頁面':'Can be blog posts or guide pages'],
+    tags:topKw.slice(0,5)
+  });
+
+  container.innerHTML=`
+    <div style="margin-bottom:14px">
+      <div style="font-size:15px;font-weight:700;color:var(--h1);margin-bottom:4px">${t('oppTitle')}</div>
+      <div style="font-size:12px;color:var(--text2)">${t('oppDesc')} · ${pains.length} ${zh?'個痛點偵測到':'pain points detected'}</div>
+    </div>
+    ${opps.map(o=>`
+      <div class="opp">
+        <div class="opp-h">
+          <span class="icon">${o.icon}</span>
+          <span class="type" style="background:${o.color}">${o.type}</span>
+        </div>
+        <div class="opp-b">
+          <div class="opp-title">${o.title}</div>
+          <div class="opp-desc">${o.desc}</div>
+          <div style="font-size:11px;color:var(--accent);margin-bottom:4px;font-weight:600">${t('why')}</div>
+          <ul class="opp-why">${o.why.map(w=>`<li>${w}</li>`).join('')}</ul>
+          <div class="opp-tags">${o.tags.map(tg=>`<span>${tg}</span>`).join('')}</div>
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+/* ── Render all ── */
+function renderAll(){ renderHot(); renderPain(); renderOpp(); }
 
 /* ── Refresh ── */
 async function refreshAll(){
-  // Show loading
-  document.getElementById('trends-grid').innerHTML='<div class="loading"><div class="spinner"></div><div>'+t('loading')+'</div></div>';
-  try {
-    trendData = await fetchRealData();
-  } catch(e){
-    trendData = generateDemoData();
-  }
-  lastRefresh = new Date();
-  localStorage.setItem('trendData', JSON.stringify(trendData));
-  localStorage.setItem('trendRefresh', lastRefresh.toISOString());
-  renderAll();
-  startCountdown();
+  document.getElementById('hot-grid').innerHTML=`<div class="loading"><div class="spinner"></div><div>${t('loading')}</div></div>`;
+  try{ allData=await fetchAll(); }catch(e){ allData={}; }
+  lastRefresh=new Date();
+  localStorage.setItem('trendData2',JSON.stringify(allData));
+  localStorage.setItem('trendRefresh2',lastRefresh.toISOString());
+  renderAll(); startCountdown();
 }
 
 /* ── Init ── */
 async function init(){
-  // Load cached data first (instant render)
-  const cached = localStorage.getItem('trendData');
-  const cachedTime = localStorage.getItem('trendRefresh');
-  let needFetch = true;
-  if(cached && cachedTime){
-    const elapsed = Date.now() - new Date(cachedTime).getTime();
-    if(elapsed < 4*3600000){
-      trendData = JSON.parse(cached);
-      lastRefresh = new Date(cachedTime);
-      needFetch = false;
-      try { gamingData = JSON.parse(localStorage.getItem('gamingData'))||{}; } catch(e){}
-    }
+  const cached=localStorage.getItem('trendData2');
+  const cachedTime=localStorage.getItem('trendRefresh2');
+  let needFetch=true;
+  if(cached&&cachedTime){
+    const elapsed=Date.now()-new Date(cachedTime).getTime();
+    if(elapsed<4*3600000){ allData=JSON.parse(cached); lastRefresh=new Date(cachedTime); needFetch=false; }
   }
-  applyI18n();
-  if(needFetch){
-    // First load or cache expired → fetch real data
-    await refreshAll();
-  } else {
-    renderAll();
-    startCountdown();
-  }
-  window.addEventListener('resize', ()=>{
-    if(document.getElementById('panel-timeline').classList.contains('active')) drawTimeline();
-  });
+  applyLang();
+  if(needFetch) await refreshAll();
+  else { renderAll(); startCountdown(); }
 }
 init();
 </script>

@@ -606,6 +606,7 @@ export default {
       '/trends/4gamers':  { url:'https://www.4gamers.com.tw/rss/latest-news', type:'application/xml;charset=utf-8' },
       '/trends/ign':      { url:'https://feeds.feedburner.com/ign/all', type:'application/xml;charset=utf-8' },
       '/trends/steam':    { url:'https://store.steampowered.com/feeds/newreleases.xml', type:'application/xml;charset=utf-8' },
+      '/trends/dcard-game':{ url:'https://www.dcard.tw/service/api/v2/posts?popular=true&limit=30&topics=game', type:'application/json;charset=utf-8' },
     };
     const trendSrc = TREND_SOURCES[url.pathname];
     if (trendSrc && request.method==='GET') {
