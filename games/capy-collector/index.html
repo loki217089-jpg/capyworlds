@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Capy Collector 水豚收藏家</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#1a1410;--bg2:#261e16;--bg3:#332a1f;
+  --accent:#f0c040;--accent2:#e8a020;
+  --text:#f0e6d6;--text2:#b8a890;
+  --card-n:#d0c8b8;--card-r:#60b0f0;--card-sr:#c070f0;--card-ssr:#f0c040;
+  --cream:#faf4ed;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;}
+body{display:flex;flex-direction:column;height:100vh;height:100dvh;}
+
+/* Top Bar */
+.top-bar{position:relative;z-index:200;flex-shrink:0;display:flex;align-items:center;
+  justify-content:space-between;padding:6px 12px;background:var(--bg2);
+  border-bottom:1px solid rgba(240,192,64,0.2);height:48px;}
+.top-bar .title{font-size:16px;font-weight:bold;color:var(--accent);}
+.top-bar .res-bar{display:flex;gap:10px;font-size:13px;}
+.res-item{display:flex;align-items:center;gap:3px;}
+.res-item .icon{width:18px;height:18px;}
+.btn-group{display:flex;gap:6px;}
+.top-btn{background:none;border:1px solid rgba(240,192,64,0.3);color:var(--accent);
+  border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;}
+.top-btn:active{transform:scale(0.95);}
+
+/* Main Content */
+.main-area{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;position:relative;}
+
+/* Tab Screens */
+.screen{display:none;padding:12px;min-height:100%;}
+.screen.active{display:block;}
+
+/* Bottom Tabs */
+.tab-bar{position:relative;z-index:200;flex-shrink:0;display:flex;
+  background:var(--bg2);border-top:1px solid rgba(240,192,64,0.2);height:58px;}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;cursor:pointer;color:var(--text2);font-size:10px;transition:color 0.2s;
+  border:none;background:none;-webkit-tap-highlight-color:transparent;}
+.tab .tab-icon{font-size:22px;line-height:1;}
+.tab.active{color:var(--accent);}
+.tab.active .tab-icon{transform:scale(1.15);}
+.tab .badge{position:absolute;top:4px;right:calc(50% - 16px);width:8px;height:8px;
+  background:#ff3030;border-radius:50%;display:none;}
+
+/* Home Screen */
+.home-bg{width:100%;border-radius:12px;margin-bottom:12px;object-fit:cover;max-height:200px;}
+.home-welcome{text-align:center;padding:16px 0;}
+.home-welcome h2{font-size:20px;color:var(--accent);margin-bottom:6px;}
+.home-welcome p{font-size:13px;color:var(--text2);}
+.home-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+.stat-card{background:var(--bg2);border-radius:10px;padding:12px;text-align:center;
+  border:1px solid rgba(240,192,64,0.15);}
+.stat-card .val{font-size:22px;font-weight:bold;color:var(--accent);}
+.stat-card .label{font-size:11px;color:var(--text2);margin-top:2px;}
+
+/* Summon Screen */
+.summon-area{text-align:center;}
+.summon-stage{position:relative;width:100%;max-width:320px;margin:0 auto;
+  height:300px;display:flex;align-items:center;justify-content:center;}
+.card-display{width:180px;height:250px;perspective:600px;cursor:pointer;}
+.card-inner{position:relative;width:100%;height:100%;transition:transform 0.6s;
+  transform-style:preserve-3d;}
+.card-inner.flipped{transform:rotateY(180deg);}
+.card-front,.card-back{position:absolute;width:100%;height:100%;
+  backface-visibility:hidden;border-radius:12px;overflow:hidden;}
+.card-front{background:var(--bg3);border:3px solid var(--card-n);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotateY(180deg);}
+.card-back{background-image:url('../../assets/capy-collector/card-back.png');
+  background-size:cover;background-position:center;border-radius:12px;}
+.card-front .char-img{width:120px;height:120px;border-radius:50%;
+  background-color:var(--cream);background-size:cover;background-position:center;margin-bottom:8px;}
+.card-front .char-name{font-size:15px;font-weight:bold;color:var(--text);}
+.card-front .char-rarity{font-size:12px;font-weight:bold;padding:2px 10px;
+  border-radius:10px;margin-top:4px;}
+.rarity-N{color:var(--card-n);border:1px solid var(--card-n);}
+.rarity-R{color:var(--card-r);border:1px solid var(--card-r);}
+.rarity-SR{color:var(--card-sr);border:1px solid var(--card-sr);}
+.rarity-SSR{color:var(--card-ssr);border:1px solid var(--card-ssr);
+  text-shadow:0 0 8px rgba(240,192,64,0.6);}
+.summon-glow{position:absolute;width:200px;height:200px;border-radius:50%;
+  pointer-events:none;opacity:0;transition:opacity 0.3s;}
+.summon-btns{display:flex;gap:12px;justify-content:center;margin-top:16px;}
+.summon-btn{padding:14px 28px;border-radius:12px;border:none;font-size:16px;
+  font-weight:bold;cursor:pointer;transition:transform 0.1s;color:#1a1410;}
+.summon-btn:active{transform:scale(0.95);}
+.summon-btn.s1{background:linear-gradient(135deg,#f0c040,#e8a020);}
+.summon-btn.s10{background:linear-gradient(135deg,#c070f0,#9050d0);color:#fff;}
+.summon-cost{font-size:11px;font-weight:normal;opacity:0.8;display:block;margin-top:2px;}
+
+/* Collection Screen */
+.coll-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;}
+.coll-card{background:var(--bg2);border-radius:10px;padding:8px;text-align:center;
+  border:2px solid var(--bg3);cursor:pointer;transition:transform 0.15s;}
+.coll-card:active{transform:scale(0.96);}
+.coll-card.owned{border-color:var(--card-n);}
+.coll-card.rarity-R-border{border-color:var(--card-r);}
+.coll-card.rarity-SR-border{border-color:var(--card-sr);}
+.coll-card.rarity-SSR-border{border-color:var(--card-ssr);box-shadow:0 0 12px rgba(240,192,64,0.3);}
+.coll-card .portrait{width:64px;height:64px;border-radius:50%;margin:0 auto 4px;
+  background-color:var(--cream);background-size:cover;background-position:center;}
+.coll-card .cname{font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.coll-card .clevel{font-size:10px;color:var(--accent);margin-top:2px;}
+.coll-card.locked{opacity:0.35;border-color:var(--bg3);}
+.coll-card.locked .portrait{filter:brightness(0.3);}
+
+/* Scene Screen */
+.scene-list{display:flex;flex-direction:column;gap:12px;}
+.scene-card{background:var(--bg2);border-radius:12px;overflow:hidden;
+  border:1px solid rgba(240,192,64,0.15);}
+.scene-banner{height:100px;background-size:cover;background-position:center;
+  position:relative;display:flex;align-items:flex-end;padding:8px;}
+.scene-banner::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(transparent 40%,rgba(0,0,0,0.7));}
+.scene-banner .scene-name{position:relative;z-index:1;font-size:14px;font-weight:bold;color:#fff;}
+.scene-slots{display:flex;gap:8px;padding:10px;flex-wrap:wrap;}
+.scene-slot{width:52px;height:52px;border-radius:50%;border:2px dashed var(--text2);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  background:var(--bg3);transition:border-color 0.2s;}
+.scene-slot:active{border-color:var(--accent);}
+.scene-slot.filled{border-style:solid;border-color:var(--accent);}
+.scene-slot .slot-img{width:44px;height:44px;border-radius:50%;
+  background-color:var(--cream);background-size:cover;background-position:center;}
+.scene-slot .slot-empty{font-size:20px;color:var(--text2);}
+.scene-income{padding:0 10px 10px;font-size:12px;color:var(--text2);}
+
+/* Upgrade Screen */
+.upgrade-panel{background:var(--bg2);border-radius:12px;padding:16px;
+  border:1px solid rgba(240,192,64,0.15);margin-bottom:12px;}
+.upgrade-char{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.upgrade-portrait{width:72px;height:72px;border-radius:50%;
+  background-color:var(--cream);background-size:cover;background-position:center;
+  border:3px solid var(--card-n);flex-shrink:0;}
+.upgrade-info{flex:1;}
+.upgrade-info .uname{font-size:16px;font-weight:bold;}
+.upgrade-info .ulevel{font-size:13px;color:var(--accent);}
+.upgrade-info .uskill{font-size:12px;color:var(--text2);margin-top:2px;}
+.upgrade-btn{width:100%;padding:12px;border-radius:10px;border:none;
+  background:linear-gradient(135deg,#f0c040,#e8a020);color:#1a1410;
+  font-size:15px;font-weight:bold;cursor:pointer;transition:transform 0.1s;}
+.upgrade-btn:active{transform:scale(0.97);}
+.upgrade-btn:disabled{opacity:0.4;cursor:default;}
+
+/* Animations */
+@keyframes glow-pulse{0%,100%{opacity:0.3;transform:scale(0.95);}50%{opacity:1;transform:scale(1.05);}}
+@keyframes card-shine{0%{left:-100%;}100%{left:200%;}}
+@keyframes float-up{0%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-40px);}}
+@keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
+.glow-anim{animation:glow-pulse 1.5s ease-in-out infinite;}
+.shake-anim{animation:shake 0.3s ease-in-out;}
+.float-num{position:absolute;pointer-events:none;font-weight:bold;font-size:16px;
+  color:var(--accent);animation:float-up 1s ease-out forwards;}
+
+/* Assign Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);
+  z-index:400;align-items:center;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--bg2);border-radius:16px;padding:20px;
+  max-width:min(400px,calc(100vw - 32px));max-height:80vh;overflow-y:auto;
+  border:2px solid var(--accent);}
+.modal h3{font-size:16px;color:var(--accent);margin-bottom:12px;text-align:center;}
+.modal-chars{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.modal-char{background:var(--bg3);border-radius:10px;padding:8px;text-align:center;
+  cursor:pointer;border:2px solid transparent;transition:border-color 0.2s;}
+.modal-char:active{border-color:var(--accent);}
+.modal-char .mc-img{width:52px;height:52px;border-radius:50%;margin:0 auto 4px;
+  background-color:var(--cream);background-size:cover;background-position:center;}
+.modal-char .mc-name{font-size:11px;color:var(--text);}
+.modal-close{margin-top:12px;width:100%;padding:10px;border-radius:8px;border:none;
+  background:var(--bg3);color:var(--text);font-size:14px;cursor:pointer;}
+
+/* Scrollbar */
+.main-area::-webkit-scrollbar{width:4px;}
+.main-area::-webkit-scrollbar-thumb{background:var(--accent);border-radius:2px;}
+</style>
+</head>
+<body>
+<!-- Top Bar -->
+<div class="top-bar">
+  <div class="title" id="game-title">Capy Collector</div>
+  <div class="res-bar">
+    <div class="res-item"><span class="icon">🪙</span><span id="res-coins">0</span></div>
+    <div class="res-item"><span class="icon">💎</span><span id="res-gems">0</span></div>
+    <div class="res-item"><span class="icon">❤️</span><span id="res-hearts">0</span></div>
+    <div class="res-item"><span class="icon">⭐</span><span id="res-stars">0</span></div>
+  </div>
+  <div class="btn-group">
+    <button class="top-btn" id="lang-btn">繁中</button>
+    <button class="top-btn" id="mute-btn">🔊</button>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="main-area">
+  <div class="screen active" id="screen-home"></div>
+  <div class="screen" id="screen-summon"></div>
+  <div class="screen" id="screen-collection"></div>
+  <div class="screen" id="screen-scenes"></div>
+  <div class="screen" id="screen-upgrades"></div>
+</div>
+
+<!-- Bottom Tabs -->
+<div class="tab-bar">
+  <button class="tab active" data-tab="home"><span class="tab-icon">🏠</span><span class="tab-label">Home</span></button>
+  <button class="tab" data-tab="summon"><span class="tab-icon">✨</span><span class="tab-label">Summon</span></button>
+  <button class="tab" data-tab="collection"><span class="tab-icon">📦</span><span class="tab-label">Collection</span></button>
+  <button class="tab" data-tab="scenes"><span class="tab-icon">🏝️</span><span class="tab-label">Scenes</span></button>
+  <button class="tab" data-tab="upgrades"><span class="tab-icon">⬆️</span><span class="tab-label">Upgrade</span></button>
+</div>
+
+<!-- Summon Overlay -->
+<div id="summon-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);
+  z-index:500;display:none;align-items:center;justify-content:center;flex-direction:column;">
+  <div class="card-display" id="summon-card">
+    <div class="card-inner" id="summon-card-inner">
+      <div class="card-back"></div>
+      <div class="card-front" id="summon-card-front">
+        <div class="char-img" id="summon-char-img"></div>
+        <div class="char-name" id="summon-char-name"></div>
+        <div class="char-rarity" id="summon-char-rarity"></div>
+      </div>
+    </div>
+  </div>
+  <div id="summon-glow" class="summon-glow"></div>
+  <p style="color:var(--text2);margin-top:20px;font-size:13px;" id="summon-tap-hint">Tap to continue</p>
+</div>
+
+<!-- Tutorial Overlay -->
+<div id="tutorial-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);
+  z-index:600;align-items:center;justify-content:center;">
+  <div style="max-width:min(360px,calc(100vw - 32px));background:var(--bg2);border-radius:16px;
+    padding:24px;text-align:center;border:2px solid var(--accent);">
+    <div id="tutorial-content"></div>
+    <button id="tutorial-next" style="margin-top:16px;padding:10px 32px;border-radius:10px;
+      border:none;background:var(--accent);color:#1a1410;font-size:15px;font-weight:bold;cursor:pointer;">
+      Next
+    </button>
+  </div>
+</div>
+
+<div style="position:fixed;bottom:4px;left:8px;z-index:9999;opacity:0.4;font-size:10px">
+  <a href="/privacy.html" target="_blank" style="color:#888;text-decoration:none">Privacy Policy</a>
+</div>
+
+<script>
+/* ===== CONSTANTS & SPRITE MAP ===== */
+const SHEET1 = '../../assets/capy-collector/sheet1.png';
+const SHEET2 = '../../assets/capy-collector/sheet2.png';
+const CARD_BACK = '../../assets/capy-collector/card-back.png';
+const EXTRAS = '../../assets/capy-collector/extras.png';
+
+const CHARS = [
+  {id:'plain',    nameEn:'Capy',       nameTw:'水豚',     rarity:'N',   skill:'idleCoins',  skillVal:1,  sx:0,   sy:0,   row:0,col:0},
+  {id:'chef',     nameEn:'Chef Capy',  nameTw:'廚師豚',   rarity:'N',   skill:'idleCoins',  skillVal:2,  sx:170, sy:0,   row:0,col:1},
+  {id:'police',   nameEn:'Officer Capy',nameTw:'警察豚',  rarity:'R',   skill:'idleStars',  skillVal:1,  sx:350, sy:0,   row:0,col:2},
+  {id:'mage',     nameEn:'Mage Capy',  nameTw:'魔法豚',   rarity:'SR',  skill:'idleGems',   skillVal:1,  sx:530, sy:0,   row:0,col:3},
+  {id:'business', nameEn:'Boss Capy',  nameTw:'商務豚',   rarity:'R',   skill:'idleCoins',  skillVal:3,  sx:0,   sy:225, row:1,col:0},
+  {id:'doctor',   nameEn:'Dr. Capy',   nameTw:'醫生豚',   rarity:'R',   skill:'idleHearts', skillVal:2,  sx:170, sy:225, row:1,col:1},
+  {id:'dj',       nameEn:'DJ Capy',    nameTw:'DJ豚',     rarity:'SR',  skill:'idleStars',  skillVal:2,  sx:350, sy:225, row:1,col:2},
+  {id:'pirate',   nameEn:'Pirate Capy',nameTw:'海盜豚',   rarity:'SR',  skill:'idleGems',   skillVal:2,  sx:530, sy:225, row:1,col:3},
+  {id:'melon',    nameEn:'Melon Capy', nameTw:'西瓜豚',   rarity:'N',   skill:'idleHearts', skillVal:1,  sx:0,   sy:450, row:2,col:0},
+  {id:'bee',      nameEn:'Bee Capy',   nameTw:'蜜蜂豚',   rarity:'R',   skill:'idleCoins',  skillVal:4,  sx:170, sy:450, row:2,col:1},
+  {id:'angel',    nameEn:'Angel Capy', nameTw:'天使豚',   rarity:'SSR', skill:'idleAll',    skillVal:3,  sx:350, sy:450, row:2,col:2},
+  {id:'captain',  nameEn:'Captain Capy',nameTw:'船長豚',  rarity:'SSR', skill:'idleAll',    skillVal:5,  sx:530, sy:450, row:2,col:3}
+];
+
+const RARITY_WEIGHTS = {N:50, R:30, SR:15, SSR:5};
+const RARITY_COLORS = {N:'var(--card-n)',R:'var(--card-r)',SR:'var(--card-sr)',SSR:'var(--card-ssr)'};
+const SUMMON_COST_1 = 100;
+const SUMMON_COST_10 = 900;
+const LEVEL_UP_BASE = 50;
+
+const SCENES = [
+  {id:'beach',   nameEn:'Beach',       nameTw:'海灘',     slots:3, res:'shell',  resIcon:'🐚', sx:0,   sy:658, sw:350, sh:180, sheet:1},
+  {id:'bedroom', nameEn:'Bedroom',     nameTw:'臥室',     slots:2, res:'heart',  resIcon:'❤️', sx:355, sy:658, sw:350, sh:180, sheet:1},
+  {id:'dock',    nameEn:'Pirate Dock', nameTw:'海盜碼頭', slots:3, res:'chest',  resIcon:'📦', sx:710, sy:658, sw:350, sh:180, sheet:1},
+  {id:'garden',  nameEn:'Garden',      nameTw:'花園',     slots:3, res:'flower', resIcon:'🌸', sx:1065,sy:658, sw:350, sh:180, sheet:1},
+  {id:'hotspring',nameEn:'Hot Spring', nameTw:'溫泉',     slots:2, res:'heart',  resIcon:'♨️', sx:700, sy:170, sw:400, sh:250, sheet:'extras'},
+  {id:'castle',  nameEn:'Castle',      nameTw:'城堡',     slots:4, res:'star',   resIcon:'⭐', sx:330, sy:430, sw:380, sh:210, sheet:'extras'}
+];
+
+const I18N = {
+  en:{
+    title:'Capy Collector', home:'Home', summon:'Summon', collection:'Collection',
+    scenes:'Scenes', upgrade:'Upgrade', summon1:'Summon ×1', summon10:'Summon ×10',
+    cost:'Cost', coins:'Coins', gems:'Gems', hearts:'Hearts', stars:'Stars',
+    levelUp:'Level Up', level:'Lv.', owned:'Owned', locked:'???',
+    tapContinue:'Tap to continue', noCoins:'Not enough coins!',
+    deploy:'Deploy', remove:'Remove', empty:'Empty', income:'Income',
+    perSec:'/sec', collected:'Collected', total:'Total',
+    newCapy:'New!', duplicate:'Duplicate → Level Up!',
+    tutTitle:'Welcome to Capy Collector!',
+    tut1:'🪙 Earn coins to summon capybaras',
+    tut2:'✨ Summon to collect 12 unique capybaras (N/R/SR/SSR)',
+    tut3:'🏝️ Deploy capybaras to scenes for idle income',
+    tut4:'⬆️ Get duplicates to level up and boost production',
+    tut5:'Have fun collecting them all!',
+    gotIt:'Got it!', skip:'Skip',
+    assign:'Assign Capy', close:'Close',
+    welcomeMsg:'Collect capybaras & build your paradise!',
+    statOwned:'Owned', statTotal:'Total', statLevel:'Total Levels', statIncome:'Income/sec'
+  },
+  tw:{
+    title:'水豚收藏家', home:'首頁', summon:'召喚', collection:'收藏',
+    scenes:'場景', upgrade:'升級', summon1:'召喚 ×1', summon10:'召喚 ×10',
+    cost:'花費', coins:'金幣', gems:'寶石', hearts:'愛心', stars:'星星',
+    levelUp:'升級', level:'Lv.', owned:'已擁有', locked:'???',
+    tapContinue:'點擊繼續', noCoins:'金幣不足！',
+    deploy:'部署', remove:'移除', empty:'空位', income:'收入',
+    perSec:'/秒', collected:'已收集', total:'全部',
+    newCapy:'新角色！', duplicate:'重複 → 升級！',
+    tutTitle:'歡迎來到水豚收藏家！',
+    tut1:'🪙 賺取金幣來召喚水豚',
+    tut2:'✨ 召喚收集 12 隻獨特水豚（N/R/SR/SSR）',
+    tut3:'🏝️ 把水豚部署到場景賺取被動收入',
+    tut4:'⬆️ 抽到重複角色可以升級，提升產量',
+    tut5:'收集它們全部吧！',
+    gotIt:'了解！', skip:'跳過',
+    assign:'指派水豚', close:'關閉',
+    welcomeMsg:'收集水豚，打造你的樂園！',
+    statOwned:'已擁有', statTotal:'全部', statLevel:'總等級', statIncome:'收入/秒'
+  }
+};
+
+/* ===== GAME STATE ===== */
+let lang = localStorage.getItem('capyCollLang') || 'en';
+let audioMuted = localStorage.getItem('capyCollMuted') === '1';
+let state = {
+  coins: 500, gems: 10, hearts: 0, stars: 0,
+  chars: {},       // {charId: {level, count}}
+  deployed: {},    // {sceneId: [charId, charId, ...]}
+  totalSummons: 0,
+  lastTick: Date.now()
+};
+
+function t(key){ return I18N[lang][key] || key; }
+
+function saveGame(){
+  localStorage.setItem('capyCollSave', JSON.stringify(state));
+}
+function loadGame(){
+  const s = localStorage.getItem('capyCollSave');
+  if(s){ try{ Object.assign(state, JSON.parse(s)); }catch(e){} }
+  state.lastTick = Date.now();
+  SCENES.forEach(sc=>{ if(!state.deployed[sc.id]) state.deployed[sc.id]=[]; });
+}
+
+/* ===== AUDIO ===== */
+const AUDIO_CTX = new (window.AudioContext||window.webkitAudioContext)();
+const AUDIO_BUFS = {};
+let bgmSource=null, bgmGain=null, bgmLoaded=false;
+const BGM_URL = '../../assets/JDSherbert - Minigame Music Pack [FREE]/JDSherbert - Minigame Music Pack - Beach Vibes.ogg';
+
+function loadAudio(name,url){
+  fetch(url).then(r=>r.arrayBuffer()).then(ab=>AUDIO_CTX.decodeAudioData(ab))
+    .then(buf=>{AUDIO_BUFS[name]=buf;}).catch(()=>{});
+}
+function playAudio(name,vol=0.7,rate=1,maxMs=0){
+  if(audioMuted)return;const buf=AUDIO_BUFS[name];if(!buf)return;
+  if(AUDIO_CTX.state==='suspended')AUDIO_CTX.resume();
+  const src=AUDIO_CTX.createBufferSource();src.buffer=buf;src.playbackRate.value=rate;
+  const gain=AUDIO_CTX.createGain();gain.gain.value=vol;
+  src.connect(gain);gain.connect(AUDIO_CTX.destination);
+  src.start(0,0,maxMs>0?maxMs/1000:buf.duration);
+}
+function startBGM(url){
+  if(bgmLoaded||audioMuted)return;bgmLoaded=true;
+  fetch(url).then(r=>r.arrayBuffer()).then(ab=>AUDIO_CTX.decodeAudioData(ab)).then(buf=>{
+    if(AUDIO_CTX.state==='suspended')AUDIO_CTX.resume();
+    bgmSource=AUDIO_CTX.createBufferSource();bgmSource.buffer=buf;bgmSource.loop=true;
+    bgmGain=AUDIO_CTX.createGain();bgmGain.gain.value=0.18;
+    bgmSource.connect(bgmGain);bgmGain.connect(AUDIO_CTX.destination);bgmSource.start();
+  }).catch(()=>{});
+}
+function toggleMute(){
+  audioMuted=!audioMuted;
+  if(bgmGain)bgmGain.gain.value=audioMuted?0:0.18;
+  document.getElementById('mute-btn').textContent=audioMuted?'🔇':'🔊';
+  localStorage.setItem('capyCollMuted',audioMuted?'1':'0');
+  if(!audioMuted&&!bgmLoaded)startBGM(BGM_URL);
+}
+
+/* ===== SPRITE HELPERS ===== */
+const sheet2Img = new Image(); sheet2Img.src = SHEET2;
+const sheet1Img = new Image(); sheet1Img.src = SHEET1;
+const extrasImg = new Image(); extrasImg.src = EXTRAS;
+
+// Character portrait: use sheet2 positions (individual capys)
+// Sheet2 layout: 4 chars per row, each ~170px wide, ~210px tall
+// Row0 y=0, Row1 y=225, Row2 y=450
+// Chars at x: col*170, but first char (plain) is smaller
+const S2W = 1456; // approximate sheet2 width
+const S2H = 816;  // approximate sheet2 height
+const CHAR_W = 155; const CHAR_H = 210;
+
+function getCharBgStyle(c){
+  // Use background-position to crop character from sheet2
+  const px = (c.col * 170 + 15) / S2W * 100;
+  const py = c.sy / S2H * 100;
+  return `background-image:url('${SHEET2}');background-size:${S2W/CHAR_W*100}% auto;`
+    +`background-position:${px}% ${py/(S2H-CHAR_H)*100}%;`;
+}
+
+function getCharPortraitStyle(c){
+  // Simpler: use percentage-based positioning
+  const cols = 4; const rows = 3;
+  const px = c.col / (cols - 1) * 100;
+  const py = c.row / (rows - 1) * 100;
+  return `background-image:url('${SHEET2}');background-size:${cols*140}%;`
+    +`background-position:${c.col*24.5}% ${c.row*38}%;`;
+}
+
+function getSceneBgStyle(sc){
+  if(sc.sheet==='extras'){
+    return `background-image:url('${EXTRAS}');background-size:cover;background-position:center;`;
+  }
+  // Sheet1 bottom row has 4 scenes
+  const idx = SCENES.indexOf(sc);
+  if(idx>=4) return `background:var(--bg3);`;
+  const positions = ['0% 100%','33% 100%','66% 100%','100% 100%'];
+  return `background-image:url('${SHEET1}');background-size:400% auto;`
+    +`background-position:${positions[idx]};`;
+}
+
+/* ===== UI HELPERS ===== */
+function $(id){return document.getElementById(id);}
+function updateResDisplay(){
+  $('res-coins').textContent = Math.floor(state.coins).toLocaleString();
+  $('res-gems').textContent = Math.floor(state.gems);
+  $('res-hearts').textContent = Math.floor(state.hearts);
+  $('res-stars').textContent = Math.floor(state.stars);
+}
+
+function floatNumber(el, text, color){
+  const f = document.createElement('div');
+  f.className='float-num';f.textContent=text;f.style.color=color||'var(--accent)';
+  el.style.position='relative';el.appendChild(f);
+  setTimeout(()=>f.remove(),1000);
+}
+
+function switchTab(tabName){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  $('screen-'+tabName).classList.add('active');
+  document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
+  if(tabName==='home') renderHome();
+  if(tabName==='summon') renderSummon();
+  if(tabName==='collection') renderCollection();
+  if(tabName==='scenes') renderScenes();
+  if(tabName==='upgrades') renderUpgrades();
+}
+
+/* ===== GACHA / SUMMON ===== */
+function rollRarity(){
+  const r = Math.random()*100;
+  let cum=0;
+  for(const [rarity,w] of Object.entries(RARITY_WEIGHTS)){
+    cum+=w; if(r<cum) return rarity;
+  }
+  return 'N';
+}
+function rollChar(){
+  const rarity = rollRarity();
+  const pool = CHARS.filter(c=>c.rarity===rarity);
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+function addChar(c){
+  if(!state.chars[c.id]){
+    state.chars[c.id] = {level:1, count:1};
+    return 'new';
+  } else {
+    state.chars[c.id].count++;
+    // Auto level up on 3 duplicates
+    const ch = state.chars[c.id];
+    if(ch.count >= 3){
+      ch.level++; ch.count -= 3;
+    }
+    return 'dup';
+  }
+}
+
+let summonQueue = [];
+let summonShowing = false;
+
+function doSummon(count){
+  const cost = count===1 ? SUMMON_COST_1 : SUMMON_COST_10;
+  if(state.coins < cost){
+    showToast(t('noCoins'));
+    return;
+  }
+  state.coins -= cost;
+  updateResDisplay();
+  playAudio('summon', 0.6, 1, 280);
+
+  summonQueue = [];
+  for(let i=0;i<count;i++){
+    const c = rollChar();
+    const result = addChar(c);
+    summonQueue.push({char:c, result});
+  }
+  state.totalSummons += count;
+  saveGame();
+  showNextSummon();
+}
+
+function showNextSummon(){
+  if(summonQueue.length===0){
+    $('summon-overlay').style.display='none';
+    summonShowing=false;
+    renderSummon();
+    return;
+  }
+  summonShowing=true;
+  const item = summonQueue.shift();
+  const c = item.char;
+  const overlay = $('summon-overlay');
+  overlay.style.display='flex';
+
+  // Set card back, prepare flip
+  const inner = $('summon-card-inner');
+  inner.classList.remove('flipped');
+
+  // Set character on front
+  const charImg = $('summon-char-img');
+  charImg.style.cssText = getCharPortraitStyle(c);
+
+  $('summon-char-name').textContent = lang==='tw'?c.nameTw:c.nameEn;
+  const rarityEl = $('summon-char-rarity');
+  rarityEl.textContent = c.rarity + (item.result==='new'?' ✨'+t('newCapy'):' '+t('duplicate'));
+  rarityEl.className = 'char-rarity rarity-'+c.rarity;
+
+  // Card border color
+  const front = $('summon-card-front');
+  front.style.borderColor = RARITY_COLORS[c.rarity];
+
+  // Glow effect
+  const glow = $('summon-glow');
+  const glowColors = {N:'rgba(200,200,180,0.3)',R:'rgba(96,176,240,0.4)',
+    SR:'rgba(192,112,240,0.5)',SSR:'rgba(240,192,64,0.6)'};
+  glow.style.background = `radial-gradient(circle,${glowColors[c.rarity]},transparent 70%)`;
+  glow.style.opacity='0';
+
+  // Flip after delay
+  setTimeout(()=>{
+    inner.classList.add('flipped');
+    glow.style.opacity='1';
+    glow.classList.add('glow-anim');
+    if(c.rarity==='SSR') playAudio('ssr',0.8,1,0);
+    else if(c.rarity==='SR') playAudio('upgrade',0.6,1,280);
+    else playAudio('collect',0.5,1,280);
+  }, 600);
+
+  $('summon-tap-hint').textContent = t('tapContinue') +
+    (summonQueue.length>0?` (${summonQueue.length} left)`:'');
+}
+
+function onSummonOverlayTap(){
+  if(!summonShowing) return;
+  $('summon-glow').classList.remove('glow-anim');
+  $('summon-glow').style.opacity='0';
+  showNextSummon();
+}
+
+function showToast(msg){
+  const d=document.createElement('div');
+  d.style.cssText='position:fixed;top:56px;left:50%;transform:translateX(-50%);'
+    +'background:var(--bg2);color:var(--accent);padding:8px 20px;border-radius:8px;'
+    +'font-size:14px;z-index:700;border:1px solid var(--accent);pointer-events:none;'
+    +'max-width:min(300px,calc(100vw - 32px));text-align:center;';
+  d.textContent=msg;document.body.appendChild(d);
+  setTimeout(()=>d.remove(),1800);
+}
+
+/* ===== RENDER: HOME ===== */
+function renderHome(){
+  const ownedCount = Object.keys(state.chars).length;
+  const totalLevels = Object.values(state.chars).reduce((s,c)=>s+c.level,0);
+  const incomePerSec = calcTotalIncome();
+  $('screen-home').innerHTML=`
+    <img class="home-bg" src="${SHEET2}" style="object-position:top right;object-fit:cover;
+      clip-path:inset(0 0 55% 45%);width:100%;height:180px;border-radius:12px;">
+    <div class="home-welcome">
+      <h2>${t('title')}</h2>
+      <p>${t('welcomeMsg')}</p>
+    </div>
+    <div class="home-stats">
+      <div class="stat-card"><div class="val">${ownedCount}/12</div><div class="label">${t('statOwned')}</div></div>
+      <div class="stat-card"><div class="val">${state.totalSummons}</div><div class="label">${t('summon')}</div></div>
+      <div class="stat-card"><div class="val">${totalLevels}</div><div class="label">${t('statLevel')}</div></div>
+      <div class="stat-card"><div class="val">🪙${incomePerSec.toFixed(1)}</div><div class="label">${t('statIncome')}</div></div>
+    </div>`;
+}
+
+/* ===== RENDER: SUMMON ===== */
+function renderSummon(){
+  $('screen-summon').innerHTML=`
+    <div class="summon-area">
+      <div class="summon-stage">
+        <div class="card-display" style="cursor:default;">
+          <div class="card-inner">
+            <div class="card-back" style="background-image:url('${CARD_BACK}');
+              background-size:cover;background-position:center;border-radius:12px;
+              width:100%;height:100%;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="summon-btns">
+        <button class="summon-btn s1" onclick="doSummon(1)">
+          ${t('summon1')}<span class="summon-cost">🪙 ${SUMMON_COST_1}</span>
+        </button>
+        <button class="summon-btn s10" onclick="doSummon(10)">
+          ${t('summon10')}<span class="summon-cost">🪙 ${SUMMON_COST_10}</span>
+        </button>
+      </div>
+      <p style="margin-top:16px;font-size:12px;color:var(--text2);">
+        N: ${RARITY_WEIGHTS.N}% &nbsp; R: ${RARITY_WEIGHTS.R}% &nbsp;
+        SR: ${RARITY_WEIGHTS.SR}% &nbsp; SSR: ${RARITY_WEIGHTS.SSR}%
+      </p>
+    </div>`;
+}
+
+/* ===== SCENES + IDLE INCOME ===== */
+function calcCharIncome(charId){
+  const cd = state.chars[charId]; if(!cd) return {coins:0,gems:0,hearts:0,stars:0};
+  const c = CHARS.find(x=>x.id===charId);
+  const base = c.skillVal * cd.level;
+  const out = {coins:0,gems:0,hearts:0,stars:0};
+  if(c.skill==='idleCoins') out.coins=base;
+  else if(c.skill==='idleGems') out.gems=base*0.2;
+  else if(c.skill==='idleHearts') out.hearts=base*0.5;
+  else if(c.skill==='idleStars') out.stars=base*0.3;
+  else if(c.skill==='idleAll'){ out.coins=base; out.gems=base*0.1; out.hearts=base*0.3; out.stars=base*0.2; }
+  return out;
+}
+
+function calcTotalIncome(){
+  let total=0;
+  SCENES.forEach(sc=>{
+    (state.deployed[sc.id]||[]).forEach(cid=>{
+      if(cid){const inc=calcCharIncome(cid); total+=inc.coins+inc.gems*5+inc.hearts*2+inc.stars*3;}
+    });
+  });
+  return total;
+}
+
+function tickIncome(){
+  const now = Date.now();
+  const dt = (now - state.lastTick)/1000;
+  state.lastTick = now;
+  if(dt<=0||dt>3600) return; // cap at 1hr offline
+
+  SCENES.forEach(sc=>{
+    (state.deployed[sc.id]||[]).forEach(cid=>{
+      if(!cid) return;
+      const inc = calcCharIncome(cid);
+      state.coins += inc.coins * dt;
+      state.gems += inc.gems * dt;
+      state.hearts += inc.hearts * dt;
+      state.stars += inc.stars * dt;
+    });
+  });
+  updateResDisplay();
+}
+
+let assigningScene = null;
+let assigningSlot = null;
+
+function renderScenes(){
+  let html='<div class="scene-list">';
+  SCENES.forEach(sc=>{
+    const deployed = state.deployed[sc.id]||[];
+    const sceneName = lang==='tw'?sc.nameTw:sc.nameEn;
+
+    // Calculate scene income
+    let scIncome = 0;
+    deployed.forEach(cid=>{
+      if(cid){const inc=calcCharIncome(cid); scIncome+=inc.coins+inc.gems*5+inc.hearts*2+inc.stars*3;}
+    });
+
+    html+=`<div class="scene-card">
+      <div class="scene-banner" style="${getSceneBgStyle(sc)}">
+        <span class="scene-name">${sceneName}</span>
+      </div>
+      <div class="scene-slots">`;
+
+    for(let i=0;i<sc.slots;i++){
+      const cid = deployed[i];
+      if(cid && state.chars[cid]){
+        const c = CHARS.find(x=>x.id===cid);
+        html+=`<div class="scene-slot filled" onclick="onSlotClick('${sc.id}',${i})">
+          <div class="slot-img" style="${getCharPortraitStyle(c)}"></div>
+        </div>`;
+      } else {
+        html+=`<div class="scene-slot" onclick="onSlotClick('${sc.id}',${i})">
+          <span class="slot-empty">+</span>
+        </div>`;
+      }
+    }
+    html+=`</div>`;
+    if(scIncome>0) html+=`<div class="scene-income">${t('income')}: 🪙${scIncome.toFixed(1)}${t('perSec')}</div>`;
+    html+=`</div>`;
+  });
+  html+='</div>';
+  $('screen-scenes').innerHTML=html;
+}
+
+function onSlotClick(sceneId, slotIdx){
+  const deployed = state.deployed[sceneId]||[];
+  const current = deployed[slotIdx];
+
+  if(current){
+    // Remove
+    deployed[slotIdx] = null;
+    saveGame();
+    renderScenes();
+    return;
+  }
+  // Show assign modal
+  assigningScene = sceneId;
+  assigningSlot = slotIdx;
+  showAssignModal();
+}
+
+function showAssignModal(){
+  const modal = $('assign-modal');
+  if(!modal){
+    const m=document.createElement('div');
+    m.id='assign-modal';m.className='modal-overlay';
+    m.innerHTML=`<div class="modal">
+      <h3 id="assign-title">${t('assign')}</h3>
+      <div class="modal-chars" id="assign-chars"></div>
+      <button class="modal-close" onclick="closeAssignModal()">${t('close')}</button>
+    </div>`;
+    document.body.appendChild(m);
+  }
+  // Get available chars (owned and not deployed elsewhere)
+  const allDeployed = new Set();
+  Object.values(state.deployed).forEach(arr=>arr.forEach(c=>{if(c)allDeployed.add(c);}));
+
+  const available = Object.keys(state.chars).filter(cid=>!allDeployed.has(cid));
+  let html='';
+  if(available.length===0){
+    html=`<p style="color:var(--text2);text-align:center;padding:20px;">No available capybaras. Summon more!</p>`;
+  } else {
+    available.forEach(cid=>{
+      const c=CHARS.find(x=>x.id===cid);
+      const cd=state.chars[cid];
+      html+=`<div class="modal-char" onclick="assignChar('${cid}')">
+        <div class="mc-img" style="${getCharPortraitStyle(c)}"></div>
+        <div class="mc-name">${lang==='tw'?c.nameTw:c.nameEn}</div>
+        <div style="font-size:10px;color:var(--accent);">${t('level')}${cd.level}</div>
+      </div>`;
+    });
+  }
+  $('assign-chars').innerHTML=html;
+  $('assign-modal').classList.add('show');
+}
+
+function closeAssignModal(){
+  const m=$('assign-modal');if(m)m.classList.remove('show');
+}
+
+function assignChar(charId){
+  if(!assigningScene) return;
+  if(!state.deployed[assigningScene]) state.deployed[assigningScene]=[];
+  state.deployed[assigningScene][assigningSlot] = charId;
+  saveGame();
+  closeAssignModal();
+  renderScenes();
+  playAudio('collect',0.5,1,200);
+}
+
+/* ===== COLLECTION ===== */
+function renderCollection(){
+  let html=`<p style="margin-bottom:10px;font-size:13px;color:var(--text2);">
+    ${t('collected')}: ${Object.keys(state.chars).length}/12</p>`;
+  html+='<div class="coll-grid">';
+  CHARS.forEach(c=>{
+    const owned = state.chars[c.id];
+    const borderClass = owned ? `owned rarity-${c.rarity}-border` : 'locked';
+    const name = owned ? (lang==='tw'?c.nameTw:c.nameEn) : t('locked');
+    const levelText = owned ? `${t('level')}${owned.level}` : '';
+    html+=`<div class="coll-card ${borderClass}" onclick="${owned?`switchTab('upgrades')`:''}">
+      <div class="portrait" style="${owned?getCharPortraitStyle(c):'background:var(--bg3);'}"></div>
+      <div class="cname">${name}</div>
+      <div class="clevel">${levelText}</div>
+    </div>`;
+  });
+  html+='</div>';
+  $('screen-collection').innerHTML=html;
+}
+
+/* ===== UPGRADES ===== */
+function getLevelUpCost(level){
+  return Math.floor(LEVEL_UP_BASE * Math.pow(1.5, level-1));
+}
+
+function renderUpgrades(){
+  const owned = Object.keys(state.chars);
+  if(owned.length===0){
+    $('screen-upgrades').innerHTML=`<p style="text-align:center;color:var(--text2);padding:40px;">
+      No capybaras yet! Go summon some first.</p>`;
+    return;
+  }
+  let html='';
+  owned.forEach(cid=>{
+    const c = CHARS.find(x=>x.id===cid);
+    const cd = state.chars[cid];
+    const cost = getLevelUpCost(cd.level);
+    const canAfford = state.coins >= cost;
+    const skillDesc = getSkillDesc(c);
+    const inc = calcCharIncome(cid);
+    const incStr = Object.entries(inc).filter(([k,v])=>v>0)
+      .map(([k,v])=>`${k==='coins'?'🪙':k==='gems'?'💎':k==='hearts'?'❤️':'⭐'}${v.toFixed(1)}`).join(' ');
+
+    html+=`<div class="upgrade-panel">
+      <div class="upgrade-char">
+        <div class="upgrade-portrait" style="${getCharPortraitStyle(c)};border-color:${RARITY_COLORS[c.rarity]};"></div>
+        <div class="upgrade-info">
+          <div class="uname" style="color:${RARITY_COLORS[c.rarity]}">${lang==='tw'?c.nameTw:c.nameEn}
+            <span style="font-size:12px;opacity:0.7;">[${c.rarity}]</span></div>
+          <div class="ulevel">${t('level')}${cd.level} (×${cd.count}/3)</div>
+          <div class="uskill">${skillDesc}: ${incStr}${t('perSec')}</div>
+        </div>
+      </div>
+      <button class="upgrade-btn" ${canAfford?'':`disabled`}
+        onclick="doLevelUp('${cid}')">
+        ${t('levelUp')} — 🪙 ${cost}
+      </button>
+    </div>`;
+  });
+  $('screen-upgrades').innerHTML=html;
+}
+
+function doLevelUp(charId){
+  const cd = state.chars[charId]; if(!cd) return;
+  const cost = getLevelUpCost(cd.level);
+  if(state.coins < cost) return;
+  state.coins -= cost;
+  cd.level++;
+  saveGame();
+  updateResDisplay();
+  playAudio('upgrade',0.7,1,280);
+  renderUpgrades();
+}
+
+function getSkillDesc(c){
+  const skills = {
+    idleCoins: lang==='tw'?'產生金幣':'Produces coins',
+    idleGems: lang==='tw'?'產生寶石':'Produces gems',
+    idleHearts: lang==='tw'?'產生愛心':'Produces hearts',
+    idleStars: lang==='tw'?'產生星星':'Produces stars',
+    idleAll: lang==='tw'?'產生所有資源':'Produces all resources'
+  };
+  return skills[c.skill]||c.skill;
+}
+
+/* ===== TUTORIAL ===== */
+const TUTORIAL_STEPS = [
+  c => `<div style="font-size:40px;margin-bottom:12px;">🦫</div><h3 style="color:var(--accent);margin-bottom:8px;">${t('tutTitle')}</h3>`,
+  c => `<div style="font-size:32px;margin-bottom:8px;">🪙</div><p>${t('tut1')}</p>`,
+  c => `<div style="font-size:32px;margin-bottom:8px;">✨</div><p>${t('tut2')}</p>`,
+  c => `<div style="font-size:32px;margin-bottom:8px;">🏝️</div><p>${t('tut3')}</p>`,
+  c => `<div style="font-size:32px;margin-bottom:8px;">⬆️</div><p>${t('tut4')}</p>`,
+  c => `<div style="font-size:32px;margin-bottom:8px;">🎉</div><p>${t('tut5')}</p>`
+];
+let tutStep=0;
+
+function showTutorial(){
+  if(localStorage.getItem('capyCollTutDone')) return;
+  tutStep=0;
+  $('tutorial-overlay').style.display='flex';
+  renderTutStep();
+}
+function renderTutStep(){
+  $('tutorial-content').innerHTML = TUTORIAL_STEPS[tutStep]();
+  $('tutorial-next').textContent = tutStep>=TUTORIAL_STEPS.length-1 ? t('gotIt') : 'Next →';
+}
+function nextTutStep(){
+  tutStep++;
+  if(tutStep>=TUTORIAL_STEPS.length){
+    $('tutorial-overlay').style.display='none';
+    localStorage.setItem('capyCollTutDone','1');
+    return;
+  }
+  renderTutStep();
+}
+
+/* ===== LANGUAGE ===== */
+function applyLang(){
+  $('game-title').textContent = t('title');
+  document.querySelectorAll('.tab').forEach(tab=>{
+    const key = tab.dataset.tab;
+    const label = tab.querySelector('.tab-label');
+    if(label) label.textContent = t(key);
+  });
+  $('lang-btn').textContent = lang==='en'?'繁中':'EN';
+  // Re-render active screen
+  const active = document.querySelector('.tab.active');
+  if(active) switchTab(active.dataset.tab);
+}
+function toggleLang(){
+  lang = lang==='en'?'tw':'en';
+  localStorage.setItem('capyCollLang', lang);
+  applyLang();
+}
+
+/* ===== INIT ===== */
+function init(){
+  loadGame();
+  updateResDisplay();
+
+  // Load SFX
+  loadAudio('collect','../../assets/sfx/400 Sounds Pack/Items/coin_collect.wav');
+  loadAudio('summon','../../assets/sfx/400 Sounds Pack/UI/synth_confirmation.wav');
+  loadAudio('upgrade','../../assets/sfx/GameSFX3/PowerUp/Retro PowerUP 09.wav');
+  loadAudio('ssr','../../assets/sfx/400 Sounds Pack/Musical Effects/brass_level_complete.wav');
+  loadAudio('error','../../assets/sfx/400 Sounds Pack/Musical Effects/8_bit_negative.wav');
+
+  // Mute button
+  if(audioMuted) $('mute-btn').textContent='🔇';
+
+  // BGM on first interaction
+  const startOnce=()=>{startBGM(BGM_URL);document.removeEventListener('click',startOnce);
+    document.removeEventListener('touchend',startOnce);};
+  document.addEventListener('click',startOnce);
+  document.addEventListener('touchend',startOnce);
+
+  // Tab navigation
+  document.querySelectorAll('.tab').forEach(tab=>{
+    tab.addEventListener('click',()=>switchTab(tab.dataset.tab));
+    tab.addEventListener('touchend',(e)=>{e.preventDefault();switchTab(tab.dataset.tab);});
+  });
+
+  // Top buttons
+  $('lang-btn').addEventListener('click',toggleLang);
+  $('mute-btn').addEventListener('click',toggleMute);
+
+  // Summon overlay
+  $('summon-overlay').addEventListener('click',onSummonOverlayTap);
+  $('summon-overlay').addEventListener('touchend',(e)=>{e.preventDefault();onSummonOverlayTap();});
+
+  // Tutorial
+  $('tutorial-next').addEventListener('click',nextTutStep);
+
+  // Apply language
+  applyLang();
+
+  // Show tutorial on first visit
+  showTutorial();
+
+  // Render home
+  renderHome();
+
+  // Main loop: tick income every second
+  setInterval(()=>{
+    tickIncome();
+    saveGame();
+  }, 1000);
+
+  // Auto-save every 30s
+  setInterval(saveGame, 30000);
+}
+
+// Start
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
