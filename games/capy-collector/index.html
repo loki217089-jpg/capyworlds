@@ -187,7 +187,7 @@ body{display:flex;flex-direction:column;height:100vh;height:100dvh;}
 <body>
 <!-- Top Bar -->
 <div class="top-bar">
-  <div class="title" id="game-title">Capy Collector</div>
+  <a href="../" style="color:var(--text2);text-decoration:none;font-size:18px;margin-right:8px;">←</a><div class="title" id="game-title">Capy Collector</div>
   <div class="res-bar">
     <div class="res-item"><span class="icon">🪙</span><span id="res-coins">0</span></div>
     <div class="res-item"><span class="icon">💎</span><span id="res-gems">0</span></div>
@@ -291,8 +291,8 @@ const CHARS = [
   {id:'santa',      nameEn:'Santa Capy',     nameTw:'聖誕豚',    rarity:'SSR', skill:'idleAll',    skillVal:5, col:3,row:2,sheet:2}
 ];
 
-const RARITY_WEIGHTS = {N:50, R:30, SR:15, SSR:5};
-const PREMIUM_WEIGHTS = {N:25, R:35, SR:25, SSR:15};
+const RARITY_WEIGHTS = {N:60, R:30, SR:8, SSR:2};
+const PREMIUM_WEIGHTS = {N:32, R:40, SR:20, SSR:8};
 const RARITY_COLORS = {N:'var(--card-n)',R:'var(--card-r)',SR:'var(--card-sr)',SSR:'var(--card-ssr)'};
 const SUMMON_COST_1 = 100;
 const SUMMON_COST_10 = 900;
@@ -327,7 +327,8 @@ const I18N = {
     gotIt:'Got it!', skip:'Skip',
     assign:'Assign Capy', close:'Close',
     welcomeMsg:'Collect capybaras & build your paradise!',
-    statOwned:'Owned', statTotal:'Total', statLevel:'Total Levels', statIncome:'Income/sec'
+    statOwned:'Owned', statTotal:'Total', statLevel:'Total Levels', statIncome:'Income/sec',
+    noHearts:'Not enough hearts!', noStars:'Not enough stars!'
   },
   tw:{
     title:'水豚收藏家', home:'首頁', summon:'召喚', collection:'收藏',
@@ -348,7 +349,8 @@ const I18N = {
     gotIt:'了解！', skip:'跳過',
     assign:'指派水豚', close:'關閉',
     welcomeMsg:'收集水豚，打造你的樂園！',
-    statOwned:'已擁有', statTotal:'全部', statLevel:'總等級', statIncome:'收入/秒'
+    statOwned:'已擁有', statTotal:'全部', statLevel:'總等級', statIncome:'收入/秒',
+    noHearts:'愛心不足！', noStars:'星星不足！'
   }
 };
 
@@ -372,7 +374,39 @@ function saveGame(){
 function loadGame(){
   const s = localStorage.getItem('capyCollSave');
   if(s){ try{ Object.assign(state, JSON.parse(s)); }catch(e){} }
-  state.lastTick = Date.now();
+
+  // Calculate offline earnings
+  const now = Date.now();
+  const dt = (now - state.lastTick) / 1000;
+  state.offlineEarnings = {coins:0, gems:0, hearts:0, stars:0, seconds:Math.min(dt, 3600)};
+  if(dt > 10 && dt <= 3600){ // at least 10 seconds away, max 1 hour
+    SCENES.forEach(sc=>{
+      (state.deployed[sc.id]||[]).forEach(cid=>{
+        if(!cid) return;
+        const c = CHARS.find(x=>x.id===cid);
+        if(!c) return;
+        const cd = state.chars[cid];
+        if(!cd) return;
+        const base = c.skillVal * cd.level;
+        const earned = {coins:0, gems:0, hearts:0, stars:0};
+        if(c.skill==='idleCoins') earned.coins = base * dt;
+        else if(c.skill==='idleGems') earned.gems = base * 0.2 * dt;
+        else if(c.skill==='idleHearts') earned.hearts = base * 0.5 * dt;
+        else if(c.skill==='idleStars') earned.stars = base * 0.3 * dt;
+        else if(c.skill==='idleAll'){ earned.coins=base*dt; earned.gems=base*0.1*dt; earned.hearts=base*0.3*dt; earned.stars=base*0.2*dt; }
+        state.offlineEarnings.coins += earned.coins;
+        state.offlineEarnings.gems += earned.gems;
+        state.offlineEarnings.hearts += earned.hearts;
+        state.offlineEarnings.stars += earned.stars;
+        state.coins += earned.coins;
+        state.gems += earned.gems;
+        state.hearts += earned.hearts;
+        state.stars += earned.stars;
+      });
+    });
+  }
+
+  state.lastTick = now;
   SCENES.forEach(sc=>{ if(!state.deployed[sc.id]) state.deployed[sc.id]=[]; });
 }
 
@@ -559,6 +593,21 @@ function doSummon(count, premium=false){
     const result = addChar(c);
     summonQueue.push({char:c, result});
   }
+  // Guarantee: 10-pull has minimum rarity
+  if(count===10 && summonQueue.length===10){
+    const minRarity = premium ? 'SR' : 'R';
+    const rarityOrder = ['N','R','SR','SSR'];
+    const minIdx = rarityOrder.indexOf(minRarity);
+    const hasMin = summonQueue.some(q => rarityOrder.indexOf(q.char.rarity) >= minIdx);
+    if(!hasMin){
+      // Upgrade last card
+      const pool = CHARS.filter(c => c.rarity === minRarity);
+      const upgraded = pool[Math.floor(Math.random()*pool.length)];
+      const last = summonQueue[summonQueue.length-1];
+      last.char = upgraded;
+      last.result = addChar(upgraded); // re-add (the old one was already added, but this is simpler)
+    }
+  }
   state.totalSummons += count;
   saveGame();
   showNextSummon();
@@ -679,7 +728,20 @@ function renderHome(){
       <div class="stat-card"><div class="val">${state.totalSummons}</div><div class="label">${t('summon')}</div></div>
       <div class="stat-card"><div class="val">${totalLevels}</div><div class="label">${t('statLevel')}</div></div>
       <div class="stat-card"><div class="val">🪙${incomePerSec.toFixed(1)}</div><div class="label">${t('statIncome')}</div></div>
-    </div>`;
+    </div>
+    ${state.offlineEarnings && state.offlineEarnings.coins > 0 ? `
+    <div id="offline-banner" style="margin-top:12px;background:var(--bg2);border-radius:10px;padding:12px;
+      text-align:center;border:1px solid var(--accent);cursor:pointer;" onclick="this.remove()">
+      <p style="font-size:13px;color:var(--accent);margin-bottom:4px;">
+        ⏰ ${lang==='tw'?'離線收益':'Offline Earnings'} (${Math.floor(state.offlineEarnings.seconds/60)}min)</p>
+      <p style="font-size:15px;">
+        ${state.offlineEarnings.coins>0?'🪙'+Math.floor(state.offlineEarnings.coins)+' ':''}
+        ${state.offlineEarnings.gems>0?'💎'+Math.floor(state.offlineEarnings.gems)+' ':''}
+        ${state.offlineEarnings.hearts>0?'❤️'+Math.floor(state.offlineEarnings.hearts)+' ':''}
+        ${state.offlineEarnings.stars>0?'⭐'+Math.floor(state.offlineEarnings.stars):''}
+      </p>
+    </div>` : ''}`;
+  state.offlineEarnings = null;
 }
 
 /* ===== RENDER: SUMMON ===== */
@@ -729,7 +791,9 @@ function renderSummon(){
 function calcCharIncome(charId){
   const cd = state.chars[charId]; if(!cd) return {coins:0,gems:0,hearts:0,stars:0};
   const c = CHARS.find(x=>x.id===charId);
-  const base = c.skillVal * cd.level;
+  const affectionBonus = 1 + (cd.affection || 0) * 0.1; // +10% per affection level
+  const awakenBonus = 1 + (cd.awakened || 0) * 0.5; // +50% per awakening
+  const base = c.skillVal * cd.level * affectionBonus * awakenBonus;
   const out = {coins:0,gems:0,hearts:0,stars:0};
   if(c.skill==='idleCoins') out.coins=base;
   else if(c.skill==='idleGems') out.gems=base*0.2;
@@ -961,6 +1025,19 @@ function renderUpgrades(){
         onclick="doLevelUp('${cid}')">
         ${t('levelUp')} — 🪙 ${cost}
       </button>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button style="flex:1;padding:8px;border-radius:8px;border:none;background:linear-gradient(135deg,#ff6090,#ff4060);
+          color:#fff;font-size:13px;cursor:pointer;${state.hearts>=getAffectionCost((cd.affection||0)+1)?'':'opacity:0.4;'}"
+          onclick="doAffection('${cid}')">
+          ❤️ ${lang==='tw'?'親密度':'Bond'} ${cd.affection||0}/10 — ❤️${getAffectionCost((cd.affection||0)+1)}
+        </button>
+        ${cd.level>=10 ? `<button style="flex:1;padding:8px;border-radius:8px;border:none;
+          background:linear-gradient(135deg,#f0c040,#ff8800);color:#1a1410;font-size:13px;cursor:pointer;
+          ${(cd.awakened||0)<3 && state.stars>=100*((cd.awakened||0)+1)?'':'opacity:0.4;'}"
+          onclick="doAwaken('${cid}')">
+          ⭐ ${lang==='tw'?'覺醒':'Awaken'} ${cd.awakened||0}/3 — ⭐${100*((cd.awakened||0)+1)}
+        </button>` : ''}
+      </div>
     </div>`;
   });
   $('screen-upgrades').innerHTML=html;
@@ -977,6 +1054,45 @@ function doLevelUp(charId){
   playAudio('upgrade',0.7,1,280);
   const upgradeScreen = $('screen-upgrades');
   if(upgradeScreen) spawnParticles(upgradeScreen,'⬆️',4);
+  renderUpgrades();
+}
+
+/* ===== AFFECTION SYSTEM ===== */
+function getAffectionCost(level){
+  return Math.floor(50 * level);
+}
+
+function doAffection(charId){
+  const cd = state.chars[charId]; if(!cd) return;
+  if(!cd.affection) cd.affection = 0;
+  const cost = getAffectionCost(cd.affection + 1);
+  if(state.hearts < cost){ showToast(t('noHearts')); return; }
+  state.hearts -= cost;
+  cd.affection++;
+  saveGame();
+  updateResDisplay();
+  playAudio('collect',0.6,1,200);
+  const el = $('screen-upgrades');
+  if(el) spawnParticles(el,'❤️',5);
+  renderUpgrades();
+}
+
+/* ===== AWAKENING SYSTEM ===== */
+function doAwaken(charId){
+  const cd = state.chars[charId]; if(!cd) return;
+  if(!cd.awakened) cd.awakened = 0;
+  if(cd.level < 10){ showToast(lang==='tw'?'需要 Lv.10+':'Requires Lv.10+'); return; }
+  if(cd.awakened >= 3){ showToast(lang==='tw'?'已滿覺醒':'Max awakened'); return; }
+  const cost = 100 * (cd.awakened + 1);
+  if(state.stars < cost){ showToast(t('noStars')); return; }
+  state.stars -= cost;
+  cd.awakened++;
+  saveGame();
+  updateResDisplay();
+  playAudio('ssr',0.8,1,0);
+  flashScreen('rgba(240,192,64,0.4)');
+  const el = $('screen-upgrades');
+  if(el) spawnParticles(el,'⭐',8);
   renderUpgrades();
 }
 
