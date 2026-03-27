@@ -250,24 +250,28 @@ body{display:flex;flex-direction:column;height:100vh;height:100dvh;}
 
 <script>
 /* ===== CONSTANTS & SPRITE MAP ===== */
-const SHEET1 = '../../assets/capy-collector/sheet1.png';
-const SHEET2 = '../../assets/capy-collector/sheet2.png';
+const CHAR_SHEET = '../../assets/capy-collector/char-sheet.png';
+const SCENE_SHEET = '../../assets/capy-collector/scene-sheet.png';
 const CARD_BACK = '../../assets/capy-collector/card-back.png';
-const EXTRAS = '../../assets/capy-collector/extras.png';
+
+// char-sheet.png: 2400×1792, 4col×3row, each cell 600×597
+const CS_CW = 600, CS_CH = 597;
+// scene-sheet.png: 2048×2048, 2col×4row, each cell 1024×512
+const SS_CW = 1024, SS_CH = 512;
 
 const CHARS = [
-  {id:'plain',    nameEn:'Capy',       nameTw:'水豚',     rarity:'N',   skill:'idleCoins',  skillVal:1,  cx:131, cy:155},
-  {id:'chef',     nameEn:'Chef Capy',  nameTw:'廚師豚',   rarity:'N',   skill:'idleCoins',  skillVal:2,  cx:327, cy:150},
-  {id:'police',   nameEn:'Officer Capy',nameTw:'警察豚',  rarity:'R',   skill:'idleStars',  skillVal:1,  cx:512, cy:149},
-  {id:'mage',     nameEn:'Mage Capy',  nameTw:'魔法豚',   rarity:'SR',  skill:'idleGems',   skillVal:1,  cx:691, cy:147},
-  {id:'business', nameEn:'Boss Capy',  nameTw:'商務豚',   rarity:'R',   skill:'idleCoins',  skillVal:3,  cx:124, cy:391},
-  {id:'doctor',   nameEn:'Dr. Capy',   nameTw:'醫生豚',   rarity:'R',   skill:'idleHearts', skillVal:2,  cx:320, cy:390},
-  {id:'dj',       nameEn:'DJ Capy',    nameTw:'DJ豚',     rarity:'SR',  skill:'idleStars',  skillVal:2,  cx:515, cy:386},
-  {id:'pirate',   nameEn:'Pirate Capy',nameTw:'海盜豚',   rarity:'SR',  skill:'idleGems',   skillVal:2,  cx:689, cy:389},
-  {id:'melon',    nameEn:'Melon Capy', nameTw:'西瓜豚',   rarity:'N',   skill:'idleHearts', skillVal:1,  cx:123, cy:633},
-  {id:'bee',      nameEn:'Bee Capy',   nameTw:'蜜蜂豚',   rarity:'R',   skill:'idleCoins',  skillVal:4,  cx:313, cy:632},
-  {id:'angel',    nameEn:'Angel Capy', nameTw:'天使豚',   rarity:'SSR', skill:'idleAll',    skillVal:3,  cx:495, cy:616},
-  {id:'captain',  nameEn:'Captain Capy',nameTw:'船長豚',  rarity:'SSR', skill:'idleAll',    skillVal:5,  cx:696, cy:628}
+  {id:'plain',    nameEn:'Capy',       nameTw:'水豚',     rarity:'N',   skill:'idleCoins',  skillVal:1,  col:0,row:0},
+  {id:'chef',     nameEn:'Chef Capy',  nameTw:'廚師豚',   rarity:'N',   skill:'idleCoins',  skillVal:2,  col:1,row:0},
+  {id:'police',   nameEn:'Officer Capy',nameTw:'警察豚',  rarity:'R',   skill:'idleStars',  skillVal:1,  col:2,row:0},
+  {id:'mage',     nameEn:'Mage Capy',  nameTw:'魔法豚',   rarity:'SR',  skill:'idleGems',   skillVal:1,  col:3,row:0},
+  {id:'business', nameEn:'Boss Capy',  nameTw:'商務豚',   rarity:'R',   skill:'idleCoins',  skillVal:3,  col:0,row:1},
+  {id:'doctor',   nameEn:'Dr. Capy',   nameTw:'醫生豚',   rarity:'R',   skill:'idleHearts', skillVal:2,  col:1,row:1},
+  {id:'dj',       nameEn:'DJ Capy',    nameTw:'DJ豚',     rarity:'SR',  skill:'idleStars',  skillVal:2,  col:2,row:1},
+  {id:'pirate',   nameEn:'Pirate Capy',nameTw:'海盜豚',   rarity:'SR',  skill:'idleGems',   skillVal:2,  col:3,row:1},
+  {id:'melon',    nameEn:'Melon Capy', nameTw:'西瓜豚',   rarity:'N',   skill:'idleHearts', skillVal:1,  col:0,row:2},
+  {id:'bee',      nameEn:'Bee Capy',   nameTw:'蜜蜂豚',   rarity:'R',   skill:'idleCoins',  skillVal:4,  col:1,row:2},
+  {id:'angel',    nameEn:'Angel Capy', nameTw:'天使豚',   rarity:'SSR', skill:'idleAll',    skillVal:3,  col:2,row:2},
+  {id:'captain',  nameEn:'Captain Capy',nameTw:'船長豚',  rarity:'SSR', skill:'idleAll',    skillVal:5,  col:3,row:2}
 ];
 
 const RARITY_WEIGHTS = {N:50, R:30, SR:15, SSR:5};
@@ -277,12 +281,12 @@ const SUMMON_COST_10 = 900;
 const LEVEL_UP_BASE = 50;
 
 const SCENES = [
-  {id:'beach',   nameEn:'Beach',       nameTw:'海灘',     slots:3, res:'shell',  resIcon:'🐚', sx:0,   sy:658, sw:350, sh:180, sheet:1},
-  {id:'bedroom', nameEn:'Bedroom',     nameTw:'臥室',     slots:2, res:'heart',  resIcon:'❤️', sx:355, sy:658, sw:350, sh:180, sheet:1},
-  {id:'dock',    nameEn:'Pirate Dock', nameTw:'海盜碼頭', slots:3, res:'chest',  resIcon:'📦', sx:710, sy:658, sw:350, sh:180, sheet:1},
-  {id:'garden',  nameEn:'Garden',      nameTw:'花園',     slots:3, res:'flower', resIcon:'🌸', sx:1065,sy:658, sw:350, sh:180, sheet:1},
-  {id:'hotspring',nameEn:'Hot Spring', nameTw:'溫泉',     slots:2, res:'heart',  resIcon:'♨️', bgPos:'75% 20%', sheet:'extras'},
-  {id:'castle',  nameEn:'Castle',      nameTw:'城堡',     slots:4, res:'star',   resIcon:'⭐', bgPos:'25% 75%', sheet:'extras'}
+  {id:'beach',     nameEn:'Beach',       nameTw:'海灘',     slots:3, res:'shell',  resIcon:'🐚'},
+  {id:'bedroom',   nameEn:'Bedroom',     nameTw:'臥室',     slots:2, res:'heart',  resIcon:'❤️'},
+  {id:'dock',      nameEn:'Pirate Dock', nameTw:'海盜碼頭', slots:3, res:'chest',  resIcon:'📦'},
+  {id:'garden',    nameEn:'Garden',      nameTw:'花園',     slots:3, res:'flower', resIcon:'🌸'},
+  {id:'hotspring', nameEn:'Hot Spring',  nameTw:'溫泉',     slots:2, res:'heart',  resIcon:'♨️'},
+  {id:'castle',    nameEn:'Castle',      nameTw:'城堡',     slots:4, res:'star',   resIcon:'⭐'}
 ];
 
 const I18N = {
@@ -386,11 +390,13 @@ function toggleMute(){
   if(!audioMuted&&!bgmLoaded)startBGM(BGM_URL);
 }
 
-/* ===== SPRITE SYSTEM (Canvas Pre-crop) ===== */
-// Pre-crop all sprites from sheets on load → data URLs
-// Then use background-size:cover everywhere. No more CSS math.
-const charDataUrls = {};   // {charId: dataUrl}
-const sceneDataUrls = {};  // {sceneId: dataUrl}
+/* ===== SPRITE SYSTEM (Grid-based, clean sheets) ===== */
+// char-sheet.png: 2400×1792, 4col×3row, cell=600×597
+// scene-sheet.png: 2048×2048, 2col×4row, cell=1024×512
+// Scenes: (0,0)beach (1,0)bedroom (0,1)dock (1,1)garden
+//         (0,2)hotspring (1,2)castle (0,3)home-bg (1,3)empty
+const charDataUrls = {};
+const sceneDataUrls = {};
 const homeBgUrl = {val:''};
 let spritesReady = false;
 
@@ -403,55 +409,43 @@ function cropFromImage(img, sx, sy, sw, sh){
 
 function loadAllSprites(callback){
   let loaded = 0;
-  const total = 3;
-  const s1 = new Image(), s2 = new Image(), ex = new Image();
+  const total = 2; // only 2 sheets now
+  const charImg = new Image(), sceneImg = new Image();
 
   function onLoad(){
     loaded++;
     if(loaded < total) return;
-    // ---- Crop characters from sheet2 (1536×1024) ----
-    const cropR = 120; // radius in source px
+
+    // Crop characters: col*600, row*597, 600×597
     CHARS.forEach(c => {
-      const sx = Math.max(0, c.cx - cropR);
-      const sy = Math.max(0, c.cy - cropR);
-      const sw = Math.min(cropR*2, 1536 - sx);
-      const sh = Math.min(cropR*2, 1024 - sy);
-      charDataUrls[c.id] = cropFromImage(s2, sx, sy, sw, sh);
+      charDataUrls[c.id] = cropFromImage(charImg, c.col*CS_CW, c.row*CS_CH, CS_CW, CS_CH);
     });
 
-    // ---- Crop scenes from sheet1 (Pillow measured) ----
-    // Scene 0: bbox=(26,600,382,982)  Scene 1: (384,600,766,982)
-    // Scene 2: (768,600,1150,982)     Scene 3: (1152,621,1520,982)
-    const sceneRects = [
-      {id:'beach',   x:26,   y:600, w:356, h:382},
-      {id:'bedroom', x:384,  y:600, w:382, h:382},
-      {id:'dock',    x:768,  y:600, w:382, h:382},
-      {id:'garden',  x:1152, y:621, w:368, h:361}
+    // Crop scenes: col*1024, row*512, 1024×512
+    const sceneGrid = [
+      {id:'beach',     col:0, row:0},
+      {id:'bedroom',   col:1, row:0},
+      {id:'dock',      col:0, row:1},
+      {id:'garden',    col:1, row:1},
+      {id:'hotspring', col:0, row:2},
+      {id:'castle',    col:1, row:2}
     ];
-    sceneRects.forEach(r => {
-      sceneDataUrls[r.id] = cropFromImage(s1, r.x, r.y, r.w, r.h);
+    sceneGrid.forEach(s => {
+      sceneDataUrls[s.id] = cropFromImage(sceneImg, s.col*SS_CW, s.row*SS_CH, SS_CW, SS_CH);
     });
 
-    // ---- Crop scenes from extras (Pillow measured) ----
-    // Hot spring: bbox=(780,116,1478,495) → 698x379
-    sceneDataUrls['hotspring'] = cropFromImage(ex, 780, 116, 698, 379);
-    // Castle: bbox=(60,515,750,898) → 690x383
-    sceneDataUrls['castle'] = cropFromImage(ex, 60, 515, 690, 383);
-
-    // ---- Home background (picnic scene from sheet2 top-right) ----
-    // Picnic scene: bbox=(768,41,1506,499) → 738x458
-    homeBgUrl.val = cropFromImage(s2, 768, 41, 738, 458);
+    // Home bg = (0,3) in scene sheet
+    homeBgUrl.val = cropFromImage(sceneImg, 0, 3*SS_CH, SS_CW, SS_CH);
 
     spritesReady = true;
     callback();
   }
 
-  s1.onload = onLoad; s2.onload = onLoad; ex.onload = onLoad;
-  s1.onerror = onLoad; s2.onerror = onLoad; ex.onerror = onLoad;
-  s1.src = SHEET1; s2.src = SHEET2; ex.src = EXTRAS;
+  charImg.onload = onLoad; sceneImg.onload = onLoad;
+  charImg.onerror = onLoad; sceneImg.onerror = onLoad;
+  charImg.src = CHAR_SHEET; sceneImg.src = SCENE_SHEET;
 }
 
-// Simple style: just use the pre-cropped data URL with cover
 function getCharPortraitStyle(c){
   const url = charDataUrls[c.id];
   if(!url) return 'background:var(--bg3);';
