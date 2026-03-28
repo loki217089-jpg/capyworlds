@@ -1,4 +1,12 @@
-# CapyWorlds — Claude 開發指引（2026/3/25 更新）
+# CapyWorlds — Claude 開發指引（2026/3/28 更新）
+
+## 自動部署規則（最優先執行）
+
+**push 到 main 後 GitHub Actions 會自動執行 `wrangler deploy`，不需要叫用戶跑任何部署指令。**
+- 部署狀態可在 GitHub → Actions → "Deploy to Cloudflare Workers" 查看
+- 綠勾 = 部署成功，不需要額外確認
+
+---
 
 ## 分支策略規則（最優先執行）
 
