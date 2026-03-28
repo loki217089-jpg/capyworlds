@@ -596,14 +596,14 @@ export default {
 
     // ── 社群趨勢代理 (/trends/:source) ────────────────────────────
     // 用 CF Cache API 快取 4 小時，避免重複打外部 API
-    // 只用「確定不會擋」的公開 API
+    // Reddit 改用 RSS（.rss）避免 .json 被 CF Worker IP 擋
     const TREND_SOURCES = {
-      // Reddit — 公開 .json 端點，玩家抱怨金礦
-      '/trends/reddit-steam':    { url:'https://www.reddit.com/r/Steam/hot.json?limit=30', type:'application/json;charset=utf-8', extraHeaders:{'User-Agent':'CapyWorlds/1.0'} },
-      '/trends/reddit-pcgaming': { url:'https://www.reddit.com/r/pcgaming/hot.json?limit=30', type:'application/json;charset=utf-8', extraHeaders:{'User-Agent':'CapyWorlds/1.0'} },
-      '/trends/reddit-games':    { url:'https://www.reddit.com/r/Games/hot.json?limit=30', type:'application/json;charset=utf-8', extraHeaders:{'User-Agent':'CapyWorlds/1.0'} },
-      '/trends/reddit-nintendo': { url:'https://www.reddit.com/r/NintendoSwitch/hot.json?limit=30', type:'application/json;charset=utf-8', extraHeaders:{'User-Agent':'CapyWorlds/1.0'} },
-      '/trends/reddit-gachagaming':{ url:'https://www.reddit.com/r/gachagaming/hot.json?limit=30', type:'application/json;charset=utf-8', extraHeaders:{'User-Agent':'CapyWorlds/1.0'} },
+      // Reddit RSS — 比 .json 更穩定，不需 OAuth
+      '/trends/reddit-steam':      { url:'https://www.reddit.com/r/Steam/hot/.rss?limit=30', type:'application/xml;charset=utf-8', extraHeaders:{'User-Agent':'Mozilla/5.0 (compatible; CapyWorlds/1.0)'} },
+      '/trends/reddit-pcgaming':   { url:'https://www.reddit.com/r/pcgaming/hot/.rss?limit=30', type:'application/xml;charset=utf-8', extraHeaders:{'User-Agent':'Mozilla/5.0 (compatible; CapyWorlds/1.0)'} },
+      '/trends/reddit-games':      { url:'https://www.reddit.com/r/Games/hot/.rss?limit=30', type:'application/xml;charset=utf-8', extraHeaders:{'User-Agent':'Mozilla/5.0 (compatible; CapyWorlds/1.0)'} },
+      '/trends/reddit-nintendo':   { url:'https://www.reddit.com/r/NintendoSwitch/hot/.rss?limit=30', type:'application/xml;charset=utf-8', extraHeaders:{'User-Agent':'Mozilla/5.0 (compatible; CapyWorlds/1.0)'} },
+      '/trends/reddit-gachagaming':{ url:'https://www.reddit.com/r/gachagaming/hot/.rss?limit=30', type:'application/xml;charset=utf-8', extraHeaders:{'User-Agent':'Mozilla/5.0 (compatible; CapyWorlds/1.0)'} },
       // Steam — 官方公開 API，不需 key
       '/trends/steam-featured':  { url:'https://store.steampowered.com/api/featured/', type:'application/json;charset=utf-8' },
       '/trends/steam-top':       { url:'https://store.steampowered.com/api/featuredcategories/', type:'application/json;charset=utf-8' },

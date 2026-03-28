@@ -240,23 +240,21 @@ function detectPain(text){
 }
 
 /* ── Parse Reddit .json ── */
-function parseReddit(json, srcId){
-  if(!json?.data?.children) return [];
-  return json.data.children.filter(c=>c.kind==='t3').map(c=>{
-    const d=c.data;
-    const pain=detectPain((d.title||'')+(d.selftext||'').slice(0,200));
-    return {
-      title:d.title||'', src:srcId,
-      heat:(d.ups||0)+(d.num_comments||0)*3,
-      comments:d.num_comments||0,
-      views:d.ups||0,
-      pain,
-      excerpt:(d.selftext||'').slice(0,150),
-      url:'https://reddit.com'+d.permalink,
-      time:new Date((d.created_utc||0)*1000).toISOString(),
-      flair:d.link_flair_text||''
-    };
-  }).slice(0,25);
+function parseRedditRSS(xmlText, srcId){
+  const parser=new DOMParser();
+  const doc=parser.parseFromString(xmlText,'application/xml');
+  const items=Array.from(doc.querySelectorAll('entry'));
+  return items.map(el=>{
+    const title=(el.querySelector('title')?.textContent||'').trim();
+    const link=el.querySelector('link')?.getAttribute('href')||'';
+    const content=el.querySelector('content')?.textContent||'';
+    // 從 HTML content 提取文字
+    const tmp=document.createElement('div'); tmp.innerHTML=content;
+    const excerpt=tmp.textContent.slice(0,150).trim();
+    const pain=detectPain(title+' '+excerpt);
+    // 從 link 推估 upvotes（RSS 沒有直接暴露，用出現順序當 heat）
+    return { title, src:srcId, heat:0, comments:0, views:0, pain, excerpt, url:link, time:'' };
+  }).map((it,i)=>({...it, heat:Math.max(100-i*3,5)})).slice(0,25);
 }
 
 /* ── Parse Steam Featured ── */
@@ -309,21 +307,21 @@ function parseDeals(json){
 /* ── Fetch all sources ── */
 async function fetchAll(){
   const sources=[
-    {key:'r-steam',    url:API+'/trends/reddit-steam',    handler:d=>parseReddit(d,'r-steam')},
-    {key:'r-pcgaming', url:API+'/trends/reddit-pcgaming', handler:d=>parseReddit(d,'r-pcgaming')},
-    {key:'r-games',    url:API+'/trends/reddit-games',    handler:d=>parseReddit(d,'r-games')},
-    {key:'r-nintendo', url:API+'/trends/reddit-nintendo', handler:d=>parseReddit(d,'r-nintendo')},
-    {key:'r-gacha',    url:API+'/trends/reddit-gachagaming',handler:d=>parseReddit(d,'r-gacha')},
+    {key:'r-steam',    url:API+'/trends/reddit-steam',    xml:true, handler:t=>parseRedditRSS(t,'r-steam')},
+    {key:'r-pcgaming', url:API+'/trends/reddit-pcgaming', xml:true, handler:t=>parseRedditRSS(t,'r-pcgaming')},
+    {key:'r-games',    url:API+'/trends/reddit-games',    xml:true, handler:t=>parseRedditRSS(t,'r-games')},
+    {key:'r-nintendo', url:API+'/trends/reddit-nintendo', xml:true, handler:t=>parseRedditRSS(t,'r-nintendo')},
+    {key:'r-gacha',    url:API+'/trends/reddit-gachagaming',xml:true,handler:t=>parseRedditRSS(t,'r-gacha')},
     {key:'steam-feat', url:API+'/trends/steam-featured',  handler:parseSteamFeatured},
     {key:'steamspy',   url:API+'/trends/steamspy-top',    handler:parseSteamSpy},
     {key:'deals',      url:API+'/trends/deals',           handler:parseDeals},
   ];
   const result={};
-  await Promise.all(sources.map(async ({key,url,handler})=>{
+  await Promise.all(sources.map(async ({key,url,xml,handler})=>{
     try{
       const r=await fetch(url);
       if(!r.ok) throw new Error(r.status);
-      result[key]=handler(await r.json());
+      result[key]=handler(xml ? await r.text() : await r.json());
     }catch(e){console.warn('fetch fail:',key,e); result[key]=[];}
   }));
   return result;
