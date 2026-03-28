@@ -467,8 +467,9 @@ function cropFromImage(img, sx, sy, sw, sh){
 
 function loadAllSprites(callback){
   let loaded = 0;
-  const total = 3;
+  const total = 5; // char×2 + scene + food×2
   const charImg = new Image(), charImg2 = new Image(), sceneImg = new Image();
+  const foodImg1 = new Image(), foodImg2 = new Image();
 
   function onLoad(){
     loaded++;
@@ -480,29 +481,35 @@ function loadAllSprites(callback){
       charDataUrls[c.id] = cropFromImage(img, c.col*CS_CW, c.row*CS_CH, CS_CW, CS_CH);
     });
 
-    // Crop scenes: col*1024, row*512, 1024×512
+    // Crop scenes
     const sceneGrid = [
-      {id:'beach',     col:0, row:0},
-      {id:'bedroom',   col:1, row:0},
-      {id:'dock',      col:0, row:1},
-      {id:'garden',    col:1, row:1},
-      {id:'hotspring', col:0, row:2},
-      {id:'castle',    col:1, row:2}
+      {id:'beach',col:0,row:0},{id:'bedroom',col:1,row:0},
+      {id:'dock',col:0,row:1},{id:'garden',col:1,row:1},
+      {id:'hotspring',col:0,row:2},{id:'castle',col:1,row:2}
     ];
     sceneGrid.forEach(s => {
       sceneDataUrls[s.id] = cropFromImage(sceneImg, s.col*SS_CW, s.row*SS_CH, SS_CW, SS_CH);
     });
-
-    // Home bg = (0,3) in scene sheet
     homeBgUrl.val = cropFromImage(sceneImg, 0, 3*SS_CH, SS_CW, SS_CH);
+
+    // Crop food items (ingredients + recipes) from both food sheets
+    const foodSheets = {1: foodImg1, 2: foodImg2};
+    INGREDIENTS.forEach(ing => {
+      const img = foodSheets[ing.sheet];
+      foodDataUrls['ing_'+ing.id] = cropFromImage(img, ing.col*FS_CW, ing.row*FS_CH, FS_CW, FS_CH);
+    });
+    RECIPE_ITEMS.forEach(ri => {
+      const img = foodSheets[ri.sheet];
+      foodDataUrls['recipe_'+ri.id] = cropFromImage(img, ri.col*FS_CW, ri.row*FS_CH, FS_CW, FS_CH);
+    });
 
     spritesReady = true;
     callback();
   }
 
-  charImg.onload = onLoad; charImg2.onload = onLoad; sceneImg.onload = onLoad;
-  charImg.onerror = onLoad; charImg2.onerror = onLoad; sceneImg.onerror = onLoad;
+  [charImg,charImg2,sceneImg,foodImg1,foodImg2].forEach(i=>{i.onload=onLoad;i.onerror=onLoad;});
   charImg.src = CHAR_SHEET; charImg2.src = CHAR_SHEET2; sceneImg.src = SCENE_SHEET;
+  foodImg1.src = FOOD_SHEET1; foodImg2.src = FOOD_SHEET2;
 }
 
 function getCharPortraitStyle(c){
@@ -1316,21 +1323,52 @@ const ACHIEVEMENTS = [
 ];
 
 /* ===== CAPY KITCHEN ===== */
+const FOOD_SHEET1 = '../../assets/capy-collector/food-sheet.png';
+const FOOD_SHEET2 = '../../assets/capy-collector/food-sheet2.png';
+// Both sheets: 2912×1440, 4col×2row, cell=728×720
+const FS_CW = 728, FS_CH = 720;
+
 const INGREDIENTS = [
-  {id:'apple',  emoji:'🍎', nameEn:'Apple',     nameTw:'蘋果'},
-  {id:'fish',   emoji:'🐟', nameEn:'Fish',      nameTw:'烤魚'},
-  {id:'cake',   emoji:'🍰', nameEn:'Cake',      nameTw:'蛋糕'},
-  {id:'carrot', emoji:'🥕', nameEn:'Carrot',    nameTw:'胡蘿蔔'}
+  {id:'apple',  emoji:'🍎', nameEn:'Apple',     nameTw:'蘋果',   sheet:1, col:0, row:0},
+  {id:'fish',   emoji:'🐟', nameEn:'Fish',      nameTw:'烤魚',   sheet:1, col:1, row:0},
+  {id:'cake',   emoji:'🍰', nameEn:'Cake',      nameTw:'蛋糕',   sheet:1, col:2, row:0},
+  {id:'carrot', emoji:'🥕', nameEn:'Carrot',    nameTw:'胡蘿蔔', sheet:1, col:3, row:0},
+  {id:'honey',  emoji:'🍯', nameEn:'Honey',     nameTw:'蜂蜜',   sheet:2, col:0, row:0},
+  {id:'cheese', emoji:'🧀', nameEn:'Cheese',    nameTw:'起司',   sheet:2, col:1, row:0},
+  {id:'berry',  emoji:'🍓', nameEn:'Strawberry', nameTw:'草莓',  sheet:2, col:2, row:0},
+  {id:'corn',   emoji:'🌽', nameEn:'Corn',      nameTw:'玉米',   sheet:2, col:3, row:0}
+];
+
+const RECIPE_ITEMS = [
+  {id:'hotpot',  sheet:1, col:0, row:1},  // 火鍋
+  {id:'sushi',   sheet:1, col:1, row:1},  // 壽司
+  {id:'capycake',sheet:1, col:2, row:1},  // 水豚蛋糕
+  {id:'salad',   sheet:1, col:3, row:1},  // 沙拉
+  {id:'bento',   sheet:2, col:0, row:1},  // 便當
+  {id:'pie',     sheet:2, col:1, row:1},  // 胡蘿蔔派
+  {id:'pancake', sheet:2, col:2, row:1},  // 蜂蜜蛋糕（鬆餅）
+  {id:'pizza',   sheet:2, col:3, row:1},  // 披薩
 ];
 
 const RECIPES = [
-  {ing:['apple','carrot'],  emoji:'🥗', nameEn:'Fresh Salad',    nameTw:'繽紛沙拉',   reward:{hearts:50},  buff:{type:'production',mult:2,duration:300}},
-  {ing:['fish','carrot'],   emoji:'🍲', nameEn:'Capy Hot Pot',   nameTw:'水豚火鍋',   reward:{hearts:100,coins:500}, buff:null},
-  {ing:['apple','cake'],    emoji:'🎂', nameEn:'Capy Cake',      nameTw:'水豚蛋糕',   reward:{stars:30},   buff:{type:'affection',charRandom:true}},
-  {ing:['fish','cake'],     emoji:'🍣', nameEn:'Luxury Sushi',   nameTw:'豪華壽司',   reward:{gems:20},    buff:{type:'luck',duration:600}},
-  {ing:['apple','fish'],    emoji:'🍱', nameEn:'Bento Box',      nameTw:'便當盒',     reward:{coins:1000,hearts:30}, buff:null},
-  {ing:['cake','carrot'],   emoji:'🥧', nameEn:'Carrot Pie',     nameTw:'胡蘿蔔派',   reward:{stars:20,hearts:40},   buff:{type:'production',mult:1.5,duration:600}}
+  {ing:['apple','carrot'],  item:'salad',   nameEn:'Fresh Salad',    nameTw:'繽紛沙拉',   reward:{hearts:50},  buff:{type:'production',mult:2,duration:300}},
+  {ing:['fish','carrot'],   item:'hotpot',  nameEn:'Capy Hot Pot',   nameTw:'水豚火鍋',   reward:{hearts:100,coins:500}, buff:null},
+  {ing:['apple','cake'],    item:'capycake',nameEn:'Capy Cake',      nameTw:'水豚蛋糕',   reward:{stars:30},   buff:{type:'affection',charRandom:true}},
+  {ing:['fish','cake'],     item:'sushi',   nameEn:'Luxury Sushi',   nameTw:'豪華壽司',   reward:{gems:20},    buff:{type:'luck',duration:600}},
+  {ing:['apple','fish'],    item:'bento',   nameEn:'Bento Box',      nameTw:'便當盒',     reward:{coins:1000,hearts:30}, buff:null},
+  {ing:['cake','carrot'],   item:'pie',     nameEn:'Carrot Pie',     nameTw:'胡蘿蔔派',   reward:{stars:20,hearts:40},   buff:{type:'production',mult:1.5,duration:600}},
+  {ing:['honey','cake'],    item:'pancake', nameEn:'Honey Pancake',  nameTw:'蜂蜜鬆餅',   reward:{hearts:80,coins:300},  buff:{type:'production',mult:1.8,duration:400}},
+  {ing:['cheese','corn'],   item:'pizza',   nameEn:'Cheese Pizza',   nameTw:'起司披薩',   reward:{coins:800,gems:5},     buff:null},
+  {ing:['berry','cake'],    item:'capycake',nameEn:'Berry Cake',     nameTw:'莓果蛋糕',   reward:{hearts:60,stars:15},   buff:{type:'affection',charRandom:true}},
+  {ing:['honey','berry'],   item:'salad',   nameEn:'Fruit Bowl',     nameTw:'水果盆',     reward:{hearts:70},  buff:{type:'production',mult:2.5,duration:180}},
+  {ing:['cheese','fish'],   item:'sushi',   nameEn:'Cheese Sushi',   nameTw:'起司壽司',   reward:{gems:15,coins:500},    buff:{type:'luck',duration:300}},
+  {ing:['corn','carrot'],   item:'hotpot',  nameEn:'Veggie Stew',    nameTw:'蔬菜燉鍋',   reward:{hearts:120},  buff:null},
+  {ing:['honey','corn'],    item:'pie',     nameEn:'Corn Pie',       nameTw:'玉米派',     reward:{coins:600,stars:10},   buff:null},
+  {ing:['berry','cheese'],  item:'pizza',   nameEn:'Berry Pizza',    nameTw:'莓果披薩',   reward:{gems:10,hearts:40},    buff:null}
 ];
+
+// Food sprite data URLs (populated on load)
+const foodDataUrls = {};
 
 function getKitchenState(){
   if(!state.kitchen) state.kitchen = {cooldownEnd:0, currentIngredients:null, buff:null, buffEnd:0};
@@ -1422,7 +1460,8 @@ function renderKitchen(){
     html += `<button class="kitchen-ing" data-id="${ing.id}" onclick="toggleKitchenIng(this,'${ing.id}')"
       style="flex:1;padding:12px 4px;border-radius:10px;border:2px solid var(--bg3);background:var(--bg3);
       cursor:pointer;text-align:center;transition:border-color 0.2s;${cooldownActive?'opacity:0.4;pointer-events:none;':''}">
-      <div style="font-size:28px;">${ing.emoji}</div>
+      <div style="width:56px;height:56px;margin:0 auto;border-radius:8px;background-color:var(--cream);
+        background-image:url('${foodDataUrls['ing_'+ing.id]||''}');background-size:cover;background-position:center;"></div>
       <div style="font-size:11px;color:var(--text);margin-top:4px;">${name}</div>
     </button>`;
   });
