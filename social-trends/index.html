@@ -195,11 +195,11 @@ applyTheme();
 /* ── Sources ── */
 const SRCS=[
   {id:'all',name:{zh:'全部',en:'All'},icon:'🌐',color:'var(--accent)'},
-  {id:'r-steam',name:{zh:'r/Steam',en:'r/Steam'},icon:'🟠',color:'#ff4500'},
-  {id:'r-pcgaming',name:{zh:'r/pcgaming',en:'r/pcgaming'},icon:'🟠',color:'#ff4500'},
-  {id:'r-games',name:{zh:'r/Games',en:'r/Games'},icon:'🟠',color:'#ff4500'},
-  {id:'r-nintendo',name:{zh:'r/Switch',en:'r/Switch'},icon:'🔴',color:'#e60012'},
-  {id:'r-gacha',name:{zh:'r/gacha',en:'r/gacha'},icon:'🎰',color:'#9060ff'},
+  {id:'news-rps',name:{zh:'Rock Paper Shotgun',en:'Rock Paper Shotgun'},icon:'📰',color:'#e63946'},
+  {id:'news-pcgamer',name:{zh:'PC Gamer',en:'PC Gamer'},icon:'🖥️',color:'#2196f3'},
+  {id:'news-ign',name:{zh:'IGN',en:'IGN'},icon:'🎮',color:'#e53935'},
+  {id:'news-gamespot',name:{zh:'GameSpot',en:'GameSpot'},icon:'🕹️',color:'#f57c00'},
+  {id:'news-kotaku',name:{zh:'Kotaku',en:'Kotaku'},icon:'📝',color:'#43a047'},
   {id:'steam-feat',name:{zh:'Steam 精選',en:'Steam Featured'},icon:'🎯',color:'#1b2838'},
   {id:'steamspy',name:{zh:'SteamSpy 熱玩',en:'SteamSpy Top'},icon:'📊',color:'#4a90d9'},
   {id:'deals',name:{zh:'特價情報',en:'Deals'},icon:'💰',color:'#f59e0b'},
@@ -240,22 +240,22 @@ function detectPain(text){
   return null;
 }
 
-/* ── Parse Reddit .json ── */
-function parseRedditRSS(xmlText, srcId){
+/* ── Parse standard RSS (gaming news sites) ── */
+function parseNewsRSS(xmlText, srcId){
   const parser=new DOMParser();
   const doc=parser.parseFromString(xmlText,'application/xml');
-  const items=Array.from(doc.querySelectorAll('entry'));
-  return items.map(el=>{
-    const title=(el.querySelector('title')?.textContent||'').trim();
-    const link=el.querySelector('link')?.getAttribute('href')||'';
-    const content=el.querySelector('content')?.textContent||'';
-    // 從 HTML content 提取文字
-    const tmp=document.createElement('div'); tmp.innerHTML=content;
-    const excerpt=tmp.textContent.slice(0,150).trim();
+  // Support both <item> (RSS 2.0) and <entry> (Atom)
+  const items=Array.from(doc.querySelectorAll('item, entry'));
+  return items.map((el,i)=>{
+    const title=(el.querySelector('title')?.textContent||'').replace(/<!\[CDATA\[|\]\]>/g,'').trim();
+    // RSS 2.0: <link> text node; Atom: <link href="">
+    const link=(el.querySelector('link')?.textContent||el.querySelector('link')?.getAttribute('href')||'').trim();
+    const raw=el.querySelector('description, summary, content')?.textContent||'';
+    const tmp=document.createElement('div'); tmp.innerHTML=raw;
+    const excerpt=tmp.textContent.replace(/\s+/g,' ').slice(0,150).trim();
     const pain=detectPain(title+' '+excerpt);
-    // 從 link 推估 upvotes（RSS 沒有直接暴露，用出現順序當 heat）
-    return { title, src:srcId, heat:0, comments:0, views:0, pain, excerpt, url:link, time:'' };
-  }).map((it,i)=>({...it, heat:Math.max(100-i*3,5)})).slice(0,25);
+    return { title, src:srcId, heat:Math.max(100-i*4,5), comments:0, views:0, pain, excerpt, url:link, time:'' };
+  }).filter(it=>it.title).slice(0,20);
 }
 
 /* ── Parse Steam Featured ── */
@@ -308,11 +308,11 @@ function parseDeals(json){
 /* ── Fetch all sources ── */
 async function fetchAll(){
   const sources=[
-    {key:'r-steam',    url:API+'/trends/reddit-steam',    xml:true, handler:t=>parseRedditRSS(t,'r-steam')},
-    {key:'r-pcgaming', url:API+'/trends/reddit-pcgaming', xml:true, handler:t=>parseRedditRSS(t,'r-pcgaming')},
-    {key:'r-games',    url:API+'/trends/reddit-games',    xml:true, handler:t=>parseRedditRSS(t,'r-games')},
-    {key:'r-nintendo', url:API+'/trends/reddit-nintendo', xml:true, handler:t=>parseRedditRSS(t,'r-nintendo')},
-    {key:'r-gacha',    url:API+'/trends/reddit-gachagaming',xml:true,handler:t=>parseRedditRSS(t,'r-gacha')},
+    {key:'news-rps',      url:API+'/trends/news-rps',      xml:true, handler:t=>parseNewsRSS(t,'news-rps')},
+    {key:'news-pcgamer',  url:API+'/trends/news-pcgamer',  xml:true, handler:t=>parseNewsRSS(t,'news-pcgamer')},
+    {key:'news-ign',      url:API+'/trends/news-ign',      xml:true, handler:t=>parseNewsRSS(t,'news-ign')},
+    {key:'news-gamespot', url:API+'/trends/news-gamespot', xml:true, handler:t=>parseNewsRSS(t,'news-gamespot')},
+    {key:'news-kotaku',   url:API+'/trends/news-kotaku',   xml:true, handler:t=>parseNewsRSS(t,'news-kotaku')},
     {key:'steam-feat', url:API+'/trends/steam-featured',  handler:parseSteamFeatured},
     {key:'steamspy',   url:API+'/trends/steamspy-top',    handler:parseSteamSpy},
     {key:'deals',      url:API+'/trends/deals',           handler:parseDeals},

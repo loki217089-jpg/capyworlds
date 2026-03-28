@@ -596,14 +596,14 @@ export default {
 
     // ── 社群趨勢代理 (/trends/:source) ────────────────────────────
     // 用 CF Cache API 快取 4 小時，避免重複打外部 API
-    // Reddit 改用 RSS（.rss）避免 .json 被 CF Worker IP 擋
+    // Reddit 被 CF Worker IP 封鎖（.json 和 .rss 都擋），改用遊戲媒體 RSS
     const TREND_SOURCES = {
-      // Reddit RSS — 比 .json 更穩定，不需 OAuth
-      '/trends/reddit-steam':      { url:'https://www.reddit.com/r/Steam/hot/.rss?limit=30', type:'application/xml;charset=utf-8', extraHeaders:{'User-Agent':'Mozilla/5.0 (compatible; CapyWorlds/1.0)'} },
-      '/trends/reddit-pcgaming':   { url:'https://www.reddit.com/r/pcgaming/hot/.rss?limit=30', type:'application/xml;charset=utf-8', extraHeaders:{'User-Agent':'Mozilla/5.0 (compatible; CapyWorlds/1.0)'} },
-      '/trends/reddit-games':      { url:'https://www.reddit.com/r/Games/hot/.rss?limit=30', type:'application/xml;charset=utf-8', extraHeaders:{'User-Agent':'Mozilla/5.0 (compatible; CapyWorlds/1.0)'} },
-      '/trends/reddit-nintendo':   { url:'https://www.reddit.com/r/NintendoSwitch/hot/.rss?limit=30', type:'application/xml;charset=utf-8', extraHeaders:{'User-Agent':'Mozilla/5.0 (compatible; CapyWorlds/1.0)'} },
-      '/trends/reddit-gachagaming':{ url:'https://www.reddit.com/r/gachagaming/hot/.rss?limit=30', type:'application/xml;charset=utf-8', extraHeaders:{'User-Agent':'Mozilla/5.0 (compatible; CapyWorlds/1.0)'} },
+      // 遊戲媒體 RSS — 公開不擋 Server IP
+      '/trends/news-rps':      { url:'https://www.rockpapershotgun.com/feed', type:'application/xml;charset=utf-8' },
+      '/trends/news-pcgamer':  { url:'https://www.pcgamer.com/rss/', type:'application/xml;charset=utf-8' },
+      '/trends/news-ign':      { url:'https://feeds.feedburner.com/ign/games-articles', type:'application/xml;charset=utf-8' },
+      '/trends/news-gamespot': { url:'https://www.gamespot.com/feeds/mashup/', type:'application/xml;charset=utf-8' },
+      '/trends/news-kotaku':   { url:'https://kotaku.com/rss', type:'application/xml;charset=utf-8' },
       // Steam — 官方公開 API，不需 key
       '/trends/steam-featured':  { url:'https://store.steampowered.com/api/featured/', type:'application/json;charset=utf-8' },
       '/trends/steam-top':       { url:'https://store.steampowered.com/api/featuredcategories/', type:'application/json;charset=utf-8' },
