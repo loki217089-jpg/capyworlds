@@ -598,12 +598,13 @@ export default {
     // 用 CF Cache API 快取 4 小時，避免重複打外部 API
     // Reddit 被 CF Worker IP 封鎖（.json 和 .rss 都擋），改用遊戲媒體 RSS
     const TREND_SOURCES = {
-      // 遊戲媒體 RSS — 公開不擋 Server IP
+      // HackerNews Algolia API — 完全公開，不擋 Server IP
+      '/trends/hn-gaming':  { url:'https://hn.algolia.com/api/v1/search?tags=story&query=game+gaming&hitsPerPage=30', type:'application/json;charset=utf-8' },
+      '/trends/hn-steam':   { url:'https://hn.algolia.com/api/v1/search?tags=story&query=steam+game&hitsPerPage=20', type:'application/json;charset=utf-8' },
+      '/trends/hn-indie':   { url:'https://hn.algolia.com/api/v1/search?tags=story&query=indie+game&hitsPerPage=20', type:'application/json;charset=utf-8' },
+      // 遊戲媒體 RSS（備用，可能被擋）
       '/trends/news-rps':      { url:'https://www.rockpapershotgun.com/feed', type:'application/xml;charset=utf-8' },
       '/trends/news-pcgamer':  { url:'https://www.pcgamer.com/rss/', type:'application/xml;charset=utf-8' },
-      '/trends/news-ign':      { url:'https://feeds.feedburner.com/ign/games-articles', type:'application/xml;charset=utf-8' },
-      '/trends/news-gamespot': { url:'https://www.gamespot.com/feeds/mashup/', type:'application/xml;charset=utf-8' },
-      '/trends/news-kotaku':   { url:'https://kotaku.com/rss', type:'application/xml;charset=utf-8' },
       // Steam — 官方公開 API，不需 key
       '/trends/steam-featured':  { url:'https://store.steampowered.com/api/featured/', type:'application/json;charset=utf-8' },
       '/trends/steam-top':       { url:'https://store.steampowered.com/api/featuredcategories/', type:'application/json;charset=utf-8' },

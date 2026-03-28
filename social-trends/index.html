@@ -195,11 +195,9 @@ applyTheme();
 /* ── Sources ── */
 const SRCS=[
   {id:'all',name:{zh:'全部',en:'All'},icon:'🌐',color:'var(--accent)'},
-  {id:'news-rps',name:{zh:'Rock Paper Shotgun',en:'Rock Paper Shotgun'},icon:'📰',color:'#e63946'},
-  {id:'news-pcgamer',name:{zh:'PC Gamer',en:'PC Gamer'},icon:'🖥️',color:'#2196f3'},
-  {id:'news-ign',name:{zh:'IGN',en:'IGN'},icon:'🎮',color:'#e53935'},
-  {id:'news-gamespot',name:{zh:'GameSpot',en:'GameSpot'},icon:'🕹️',color:'#f57c00'},
-  {id:'news-kotaku',name:{zh:'Kotaku',en:'Kotaku'},icon:'📝',color:'#43a047'},
+  {id:'hn-gaming',name:{zh:'HN Gaming',en:'HN Gaming'},icon:'🟠',color:'#ff6600'},
+  {id:'hn-steam',name:{zh:'HN Steam',en:'HN Steam'},icon:'🎮',color:'#1b2838'},
+  {id:'hn-indie',name:{zh:'HN Indie',en:'HN Indie'},icon:'🕹️',color:'#9060ff'},
   {id:'steam-feat',name:{zh:'Steam 精選',en:'Steam Featured'},icon:'🎯',color:'#1b2838'},
   {id:'steamspy',name:{zh:'SteamSpy 熱玩',en:'SteamSpy Top'},icon:'📊',color:'#4a90d9'},
   {id:'deals',name:{zh:'特價情報',en:'Deals'},icon:'💰',color:'#f59e0b'},
@@ -240,22 +238,20 @@ function detectPain(text){
   return null;
 }
 
-/* ── Parse standard RSS (gaming news sites) ── */
-function parseNewsRSS(xmlText, srcId){
-  const parser=new DOMParser();
-  const doc=parser.parseFromString(xmlText,'application/xml');
-  // Support both <item> (RSS 2.0) and <entry> (Atom)
-  const items=Array.from(doc.querySelectorAll('item, entry'));
-  return items.map((el,i)=>{
-    const title=(el.querySelector('title')?.textContent||'').replace(/<!\[CDATA\[|\]\]>/g,'').trim();
-    // RSS 2.0: <link> text node; Atom: <link href="">
-    const link=(el.querySelector('link')?.textContent||el.querySelector('link')?.getAttribute('href')||'').trim();
-    const raw=el.querySelector('description, summary, content')?.textContent||'';
-    const tmp=document.createElement('div'); tmp.innerHTML=raw;
-    const excerpt=tmp.textContent.replace(/\s+/g,' ').slice(0,150).trim();
-    const pain=detectPain(title+' '+excerpt);
-    return { title, src:srcId, heat:Math.max(100-i*4,5), comments:0, views:0, pain, excerpt, url:link, time:'' };
-  }).filter(it=>it.title).slice(0,20);
+/* ── Parse HackerNews Algolia JSON ── */
+function parseHN(json, srcId){
+  if(!json?.hits) return [];
+  return json.hits.filter(h=>h.title).map((h,i)=>({
+    title: h.title||'',
+    src: srcId,
+    heat: Math.max((h.points||0)*10 + (h.num_comments||0)*5, Math.max(100-i*3,5)),
+    comments: h.num_comments||0,
+    views: h.points||0,
+    pain: detectPain(h.title+' '+(h.story_text||'')),
+    excerpt: h.story_text ? h.story_text.slice(0,150) : (h.url||''),
+    url: h.url||`https://news.ycombinator.com/item?id=${h.objectID}`,
+    time: h.created_at||''
+  })).slice(0,20);
 }
 
 /* ── Parse Steam Featured ── */
@@ -308,11 +304,9 @@ function parseDeals(json){
 /* ── Fetch all sources ── */
 async function fetchAll(){
   const sources=[
-    {key:'news-rps',      url:API+'/trends/news-rps',      xml:true, handler:t=>parseNewsRSS(t,'news-rps')},
-    {key:'news-pcgamer',  url:API+'/trends/news-pcgamer',  xml:true, handler:t=>parseNewsRSS(t,'news-pcgamer')},
-    {key:'news-ign',      url:API+'/trends/news-ign',      xml:true, handler:t=>parseNewsRSS(t,'news-ign')},
-    {key:'news-gamespot', url:API+'/trends/news-gamespot', xml:true, handler:t=>parseNewsRSS(t,'news-gamespot')},
-    {key:'news-kotaku',   url:API+'/trends/news-kotaku',   xml:true, handler:t=>parseNewsRSS(t,'news-kotaku')},
+    {key:'hn-gaming',  url:API+'/trends/hn-gaming',  handler:j=>parseHN(j,'hn-gaming')},
+    {key:'hn-steam',   url:API+'/trends/hn-steam',   handler:j=>parseHN(j,'hn-steam')},
+    {key:'hn-indie',   url:API+'/trends/hn-indie',   handler:j=>parseHN(j,'hn-indie')},
     {key:'steam-feat', url:API+'/trends/steam-featured',  handler:parseSteamFeatured},
     {key:'steamspy',   url:API+'/trends/steamspy-top',    handler:parseSteamSpy},
     {key:'deals',      url:API+'/trends/deals',           handler:parseDeals},
@@ -568,15 +562,16 @@ async function refreshAll(){
   document.getElementById('hot-grid').innerHTML=`<div class="loading"><div class="spinner"></div><div>${t('loading')}</div></div>`;
   try{ allData=await fetchAll(); }catch(e){ allData={}; }
   lastRefresh=new Date();
-  localStorage.setItem('trendData2',JSON.stringify(allData));
-  localStorage.setItem('trendRefresh2',lastRefresh.toISOString());
+  localStorage.setItem(CACHE_KEY,JSON.stringify(allData));
+  localStorage.setItem(CACHE_TIME_KEY,lastRefresh.toISOString());
   renderAll(); startCountdown();
 }
 
 /* ── Init ── */
+const CACHE_KEY='trendData4'; const CACHE_TIME_KEY='trendRefresh4';
 async function init(){
-  const cached=localStorage.getItem('trendData2');
-  const cachedTime=localStorage.getItem('trendRefresh2');
+  const cached=localStorage.getItem(CACHE_KEY);
+  const cachedTime=localStorage.getItem(CACHE_TIME_KEY);
   let needFetch=true;
   if(cached&&cachedTime){
     const elapsed=Date.now()-new Date(cachedTime).getTime();
