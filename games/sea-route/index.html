@@ -83,6 +83,23 @@ canvas{display:block;position:fixed;top:0;left:0}
 .ul-sub{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:20px}
 .ul-btn{padding:12px 40px;background:linear-gradient(135deg,#4af8ff,#00c8a0);border:none;border-radius:12px;font-size:14px;font-weight:700;color:#0a1628;cursor:pointer;transition:transform .1s}
 .ul-btn:active{transform:scale(.96)}
+/* Speed & Fuel HUD */
+#speed-fuel{position:fixed;bottom:80px;left:14px;z-index:11;pointer-events:none}
+#speed-num{font-size:14px;font-weight:900;color:#4af8ff;text-shadow:0 0 8px rgba(74,248,255,.5);letter-spacing:.5px;margin-bottom:3px}
+#speed-num .spd-v{font-size:22px;margin:0 2px}
+#fuel-row{display:flex;align-items:center;gap:5px;font-size:12px;color:rgba(255,255,255,.55)}
+#fuel-bg{width:100px;height:7px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,.12)}
+#fuel-fill{height:100%;background:linear-gradient(90deg,#44dd66,#88ff44);border-radius:4px;transition:width .3s;box-shadow:0 0 6px rgba(68,221,102,.4)}
+#fuel-fill.low{background:linear-gradient(90deg,#ff4444,#ff8844)}
+#fuel-pct{font-size:10px;color:rgba(255,255,255,.45);min-width:26px}
+#sprint-btn{pointer-events:all;background:rgba(74,248,255,.12);border:1px solid rgba(74,248,255,.28);border-radius:8px;padding:7px 12px;color:#4af8ff;font-size:12px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px);transition:all .15s;white-space:nowrap}
+#sprint-btn:hover{background:rgba(74,248,255,.22)}
+#sprint-btn:disabled{opacity:.28;cursor:not-allowed}
+#sprint-btn.active{background:rgba(74,248,255,.32);box-shadow:0 0 14px rgba(74,248,255,.45);animation:ps .5s infinite alternate}
+@keyframes ps{from{box-shadow:0 0 8px rgba(74,248,255,.3)}to{box-shadow:0 0 18px rgba(74,248,255,.6)}}
+/* Sprint speed lines overlay */
+.sprint-lines{position:fixed;inset:0;pointer-events:none;z-index:1;background:repeating-linear-gradient(90deg,transparent,transparent 98%,rgba(74,248,255,.04) 100%);animation:sl .15s linear infinite}
+@keyframes sl{from{background-position:0 0}to{background-position:40px 0}}
 /* Misc */
 #lang-btn{position:fixed;top:10px;right:10px;z-index:50;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.13);border-radius:13px;padding:4px 9px;color:rgba(255,255,255,.6);font-size:11px;cursor:pointer;backdrop-filter:blur(6px)}
 #lang-btn:hover{color:#fff}
@@ -108,9 +125,16 @@ canvas{display:block;position:fixed;top:0;left:0}
 </div>
 <div id="hud-bot">
   <div id="cargo-display"></div>
-  <button id="upg-btn" onclick="toggleUpg()">⚓ <span id="upg-lbl">升級</span><span id="upg-dot"></span></button>
+  <div style="display:flex;gap:6px;align-items:flex-end;pointer-events:all">
+    <button id="sprint-btn" onclick="activateSprint()" disabled>💨 <span id="sprint-lbl">Sprint</span></button>
+    <button id="upg-btn" onclick="toggleUpg()">⚓ <span id="upg-lbl">升級</span><span id="upg-dot"></span></button>
+  </div>
 </div>
-<div id="click-hint" id="click-hint">點擊畫面手動蒐集 ×2 倍率</div>
+<div id="speed-fuel">
+  <div id="speed-num">⚡ <span id="speed-lbl-s">Speed</span> <span class="spd-v" id="spd-v">100</span></div>
+  <div id="fuel-row">⛽ <div id="fuel-bg"><div id="fuel-fill" style="width:100%"></div></div><span id="fuel-pct">100%</span></div>
+</div>
+<div id="click-hint">點擊畫面手動蒐集 ×2 倍率</div>
 <div id="upg-overlay" onclick="toggleUpg()"></div>
 <div id="upg-panel">
   <div class="up-hd"><span class="up-ttl" id="up-ttl">⚓ 船艦強化</span><button class="up-x" onclick="toggleUpg()">✕</button></div>
@@ -157,6 +181,7 @@ const I18N = {
     cargoFull:'貨艙已滿！升級貨艙容量',
     bossUnlock:'打敗 Boss 後解鎖下一國',
     needItems:'還需要 N 種素材',
+    speed:'速度', fuel:'燃料', sprint:'衝刺', sprintCD:'冷卻中',
     trees:[
       [{n:'引擎升級',d:'增加航速，蒐集更多素材'},{n:'燃油效率',d:'維持高速消耗更少資源'},{n:'急速衝刺',d:'手動觸發短暫爆速'}],
       [{n:'蒐集範圍',d:'自動吸取更大範圍的素材'},{n:'自動頻率',d:'自動蒐集觸發更快'},{n:'手動倍率',d:'點擊手動蒐集倍率提升'}],
@@ -176,6 +201,7 @@ const I18N = {
     cargoFull:'Cargo full! Upgrade cargo hold.',
     bossUnlock:'Defeat Boss to unlock next country',
     needItems:'Need N more item types',
+    speed:'Speed', fuel:'Fuel', sprint:'Sprint', sprintCD:'Cooldown',
     trees:[
       [{n:'Engine',d:'Increase sailing speed'},{n:'Fuel Efficiency',d:'Maintain speed with less fuel'},{n:'Sprint',d:'Manual burst speed boost'}],
       [{n:'Collect Range',d:'Auto-collect wider radius'},{n:'Auto Rate',d:'Faster auto-collection'},{n:'Manual Bonus',d:'Increased manual click rate'}],
@@ -308,8 +334,8 @@ const ITEMS={
 // ─── UPGRADE TREES (4 branches × 3 tiers each) ──────────
 // tree[0]=Speed, [1]=Collect, [2]=Hull, [3]=Special
 const UPG_ICONS=[['⚡','🔋','💨'],['🔭','⏩','✋'],['🛡','🩹','🔰'],['🌟','💫','👑']];
-const UPG_COSTS=[[80,200,450],[100,250,550],[120,280,600],[300,700,1500]];
-// Max level 3 per skill, 3 skills per tree = 9 levels per tree
+const MAX_LV=5;
+const UPG_COSTS=[[80,200,450,850,1600],[100,250,550,1050,1900],[120,280,600,1150,2100],[300,700,1500,2600,4200]];
 // State stores upgLevels[4 trees][3 skills] = 0-3
 
 const STATE={
@@ -323,7 +349,9 @@ const STATE={
   particles:[], floatItems:[], spawnTimer:0,
   boss:null, waveTime:0, cloudOff:0,
   lastSave:0, clickCooldown:0,
-  shipY:0           // dynamic ship Y offset (follows mouse)
+  shipY:0,          // dynamic ship Y offset (follows mouse)
+  fuel:100, maxFuel:100,
+  sprintActive:false, sprintTimer:0, sprintCooldown:0
 };
 
 // ─── Mouse tracking ───────────────────────────────────────
@@ -332,7 +360,14 @@ window.addEventListener('mousemove',e=>{_mousePrevY=_mouseRawY;_mouseRawY=e.clie
 window.addEventListener('touchmove',e=>{const t=e.touches[0];_mousePrevY=_mouseRawY;_mouseRawY=t.clientY;mouseMoveSpeed=Math.abs(_mouseRawY-_mousePrevY);},{passive:true});
 
 // Derived stats
-function getSpeed(){  return 0.00035*(1+STATE.upgLevels[0][0]*0.25+STATE.upgLevels[0][1]*0.1); }
+function getSpeed(){
+  let spd=0.0006*(1+STATE.upgLevels[0][0]*0.20+STATE.upgLevels[0][1]*0.10);
+  if(STATE.sprintActive) spd*=2.2;
+  if(STATE.fuel<=0) spd*=0.25;
+  else if(STATE.fuel<20) spd*=0.55;
+  return spd;
+}
+function getSpeedDisplay(){ return Math.round(getSpeed()*160000); }
 function getRange(){
   let base=65+STATE.upgLevels[1][0]*30;
   // 組合技：漂移撈取 — Speed S2 + Haul H2 → 移動時蒐集範圍擴張 1.5×
@@ -352,12 +387,12 @@ function coins(){
 }
 function canAfford(treeIdx, skillIdx){
   const lv=STATE.upgLevels[treeIdx][skillIdx];
-  if(lv>=3) return false;
+  if(lv>=MAX_LV) return false;
   return coins()>=UPG_COSTS[treeIdx][lv];
 }
 function buyUpg(treeIdx, skillIdx){
   const lv=STATE.upgLevels[treeIdx][skillIdx];
-  if(lv>=3) return;
+  if(lv>=MAX_LV) return;
   const cost=UPG_COSTS[treeIdx][lv];
   if(coins()<cost) return;
   spendCoins(cost);
@@ -388,6 +423,8 @@ function collectItem(id, manual=false){
   const cnt=Math.round(mult*(STATE.upgLevels[3][0]>0?1.2:1));
   STATE.cargo[id]=(STATE.cargo[id]||0)+cnt;
   STATE.totalCoins+=it.v*cnt;
+  // Fuel gain from collecting
+  STATE.fuel=Math.min(STATE.maxFuel, STATE.fuel+1.2+(it.r===1?4:0));
   // Track distinct types this country
   STATE.cargoTypes=Object.keys(STATE.cargo).length;
 }
@@ -402,7 +439,8 @@ function save(){
     country:STATE.country, progress:STATE.progress,
     upgLevels:STATE.upgLevels, cargo:STATE.cargo,
     totalCoins:STATE.totalCoins, spent:STATE.spent,
-    countriesCleared:STATE.countriesCleared
+    countriesCleared:STATE.countriesCleared,
+    fuel:STATE.fuel
   }));}catch(e){}
 }
 function load(){
@@ -416,6 +454,7 @@ function load(){
     STATE.totalCoins=d.totalCoins||0;
     STATE.spent=d.spent||0;
     STATE.countriesCleared=d.countriesCleared||0;
+    STATE.fuel=d.fuel!=null?d.fuel:100;
   }catch(e){}
 }
 
@@ -1040,6 +1079,15 @@ function updateProgress(dt){
   STATE.scroll+=spd*dt*60*W*.8;
   STATE.waveTime+=dt;
   STATE.cloudOff+=dt*30*(1+STATE.upgLevels[0][0]*.2);
+  // Fuel consumption
+  const fuelRate=1.8/(1+STATE.upgLevels[0][1]*0.25);
+  STATE.fuel=Math.max(0,STATE.fuel-fuelRate*dt);
+  // Sprint timer
+  if(STATE.sprintActive){
+    STATE.sprintTimer-=dt;
+    if(STATE.sprintTimer<=0){STATE.sprintActive=false;STATE.sprintCooldown=10;updateSprintBtn();}
+  }
+  if(STATE.sprintCooldown>0) STATE.sprintCooldown=Math.max(0,STATE.sprintCooldown-dt);
 
   const c=COUNTRIES[STATE.country];
   if(STATE.progress>=1){
@@ -1141,7 +1189,7 @@ function drawShipPreview(){
   px.fillStyle=c.wave+'cc';px.fill();
   // Build effective upgrade levels (with hover preview)
   const lv=STATE.upgLevels.map(t=>[...t]);
-  if(_prevHL){const{ti,si}=_prevHL;if(lv[ti][si]<3)lv[ti][si]++;}
+  if(_prevHL){const{ti,si}=_prevHL;if(lv[ti][si]<MAX_LV)lv[ti][si]++;}
   _drawShipOnCtx(px,PW,PH,lv,_prevT);
   // Bottom label
   if(_prevHL){
@@ -1194,7 +1242,7 @@ function renderUpgPanel(){
   const tree=t('trees')[STATE.activeTab];
   tree.forEach((skill,si)=>{
     const lv=STATE.upgLevels[STATE.activeTab][si];
-    const maxed=lv>=3;
+    const maxed=lv>=MAX_LV;
     const cost=maxed?0:UPG_COSTS[STATE.activeTab][lv];
     const affordable=!maxed&&coins()>=cost;
     const row=document.createElement('div'); row.className='up-row';
@@ -1203,7 +1251,7 @@ function renderUpgPanel(){
       <div class="up-inf">
         <div class="up-nm">${skill.n}</div>
         <div class="up-ds">${skill.d}</div>
-        <div class="up-lv">${'★'.repeat(lv)}${'☆'.repeat(3-lv)} Lv${lv}/3</div>
+        <div class="up-lv">${'★'.repeat(lv)}${'☆'.repeat(MAX_LV-lv)} Lv${lv}/${MAX_LV}</div>
       </div>
       <button class="up-buy" ${maxed||!affordable?'disabled':''}
         onclick="buyUpg(${STATE.activeTab},${si})">
@@ -1217,6 +1265,38 @@ function renderUpgPanel(){
     list.appendChild(row);
   });
   document.getElementById('upg-lbl').textContent=t('upg').replace('⚓ ','');
+}
+
+// ─── Sprint System ───────────────────────────────────
+function activateSprint(){
+  if(STATE.sprintActive||STATE.sprintCooldown>0||STATE.fuel<20||STATE.paused||STATE.bossActive) return;
+  STATE.sprintActive=true;
+  STATE.sprintTimer=4+STATE.upgLevels[0][2]*0.8;
+  STATE.fuel=Math.max(0,STATE.fuel-20);
+  playAudio('collect',0.8,1.5,200);
+  updateSprintBtn();
+  // Add speed lines overlay
+  let sl=document.getElementById('sprint-lines');
+  if(!sl){sl=document.createElement('div');sl.id='sprint-lines';sl.className='sprint-lines';document.body.appendChild(sl);}
+  sl.style.display='block';
+}
+function updateSprintBtn(){
+  const sb=document.getElementById('sprint-btn');
+  const canSprint=!STATE.sprintActive&&STATE.sprintCooldown<=0&&STATE.fuel>=20&&!STATE.paused&&!STATE.bossActive;
+  sb.disabled=!canSprint;
+  if(STATE.sprintActive){
+    sb.classList.add('active');
+    document.getElementById('sprint-lbl').textContent='⚡'+Math.ceil(STATE.sprintTimer)+'s';
+  } else if(STATE.sprintCooldown>0){
+    sb.classList.remove('active');
+    document.getElementById('sprint-lbl').textContent=t('sprintCD')+' '+Math.ceil(STATE.sprintCooldown)+'s';
+  } else {
+    sb.classList.remove('active');
+    document.getElementById('sprint-lbl').textContent=t('sprint');
+  }
+  // Remove speed lines when sprint ends
+  const sl=document.getElementById('sprint-lines');
+  if(sl&&!STATE.sprintActive) sl.style.display='none';
 }
 
 // ─── Boss System ──────────────────────────────────────────
@@ -1364,6 +1444,18 @@ function updateHUD(){
     cd.title=t('cargoFull');
   }
 
+  // Speed display
+  document.getElementById('spd-v').textContent=getSpeedDisplay();
+  document.getElementById('speed-lbl-s').textContent=t('speed');
+  // Fuel display
+  const fp=Math.round(STATE.fuel);
+  const ff=document.getElementById('fuel-fill');
+  ff.style.width=fp+'%';
+  if(STATE.fuel<20) ff.classList.add('low'); else ff.classList.remove('low');
+  document.getElementById('fuel-pct').textContent=fp+'%';
+  // Sprint button
+  updateSprintBtn();
+
   // Upgrade badge (can afford something)
   let canBuyAny=false;
   for(let ti=0;ti<4;ti++) for(let si=0;si<3;si++) if(canAfford(ti,si)){canBuyAny=true;break;}
@@ -1409,6 +1501,7 @@ function resumeGame(){
   document.getElementById('esc-menu').classList.remove('show');
 }
 window.addEventListener('keydown',e=>{
+  if(e.key===' '||e.key==='Spacebar'){e.preventDefault();activateSprint();return;}
   if(e.key!=='Escape') return;
   if(STATE.upgPanelOpen){ toggleUpg(); return; }
   if(document.getElementById('esc-menu').classList.contains('show')) resumeGame();
@@ -1416,7 +1509,7 @@ window.addEventListener('keydown',e=>{
 });
 
 // ─── Main Loop ────────────────────────────────────────────
-let lastT=0;
+let lastT=0, _hudTick=0;
 function loop(ts){
   const dt=Math.min((ts-lastT)/1000,.05); lastT=ts;
   if(!STATE.paused){
@@ -1434,6 +1527,16 @@ function loop(ts){
     mouseMoveSpeed=Math.max(0,mouseMoveSpeed-1.5);
   }
   draw();
+  // Lightweight HUD refresh for speed/fuel (every ~6 frames)
+  if(++_hudTick%6===0){
+    document.getElementById('spd-v').textContent=getSpeedDisplay();
+    const _fp=Math.round(STATE.fuel);
+    const _ff=document.getElementById('fuel-fill');
+    _ff.style.width=_fp+'%';
+    if(STATE.fuel<20)_ff.classList.add('low'); else _ff.classList.remove('low');
+    document.getElementById('fuel-pct').textContent=_fp+'%';
+    updateSprintBtn();
+  }
   save();
   requestAnimationFrame(loop);
 }
@@ -1465,7 +1568,7 @@ function playAudio(name, vol=0.7, rate=1, maxMs=0){
 function startBGM(){
   if(bgmLoaded||audioMuted) return;
   bgmLoaded=true;
-  fetch('../../assets/music/JDSherbert - Minigame Music Pack [FREE]/JDSherbert - Minigame Music Pack - Beach Vibes.ogg')
+  fetch('../../assets/music/10 Ambient RPG Tracks/ogg/Ambient 2.ogg')
     .then(r=>r.arrayBuffer()).then(ab=>AUDIO_CTX.decodeAudioData(ab)).then(buf=>{
       if(AUDIO_CTX.state==='suspended') AUDIO_CTX.resume();
       bgmSource=AUDIO_CTX.createBufferSource();
