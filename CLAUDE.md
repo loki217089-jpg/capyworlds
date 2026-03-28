@@ -349,6 +349,47 @@ if saturation < 15 and 15 < brightness < 140:
 
 ---
 
+## 美術風格一致性規則（最優先執行）
+
+**問題根因**：同一款遊戲的不同素材批次由不同 AI（或不同 session）生成，風格不統一會讓遊戲看起來像拼裝車。
+
+### 核心原則：每款遊戲鎖定一種美術風格，所有素材遵守
+
+1. **第一張素材定義風格基準** — 後續所有素材的畫風、描邊、色彩飽和度都以第一張為參考
+2. **風格定義寫進該遊戲的 `DESIGN.md`** — 包含：風格名稱、描邊粗細、色彩規範、視角、背景色
+3. **每個 GE prompt 開頭必須附帶風格描述** — 不可省略，即使「跟上次一樣」也要明確寫出
+4. **收到新素材後先目視比對** — 與已有素材放在一起看，風格不一致就重做，不硬用
+
+### 風格定義模板（寫進各遊戲 DESIGN.md）
+
+```
+【遊戲名稱 統一美術風格】
+
+風格：（例：Flat cartoon vector / 16-bit pixel art / Hand-drawn watercolor）
+描邊：（例：2-3px black stroke / 1px dark outline / No outline）
+色彩：（例：Vibrant saturated, 3-4 color shading per object）
+視角：（例：Side view for characters, front panorama for scenes）
+背景：（例：Pure white #FFFFFF for chroma key）
+格式：（例：JFIF / PNG）
+參考圖：（例：ships.jfif 為風格基準）
+```
+
+### 各遊戲已定義的美術風格
+
+| 遊戲 | 風格 | 基準素材 | 定義位置 |
+|------|------|---------|---------|
+| 世界航道 Sea Route | Flat cartoon vector, bold outlines, cel-shaded | `ships.jfif` | `games/sea-route/DESIGN.md` |
+| （新遊戲依此格式新增） | | | |
+
+### 禁止事項
+
+- **不可**同一遊戲混用 pixel art + cartoon + realistic 風格
+- **不可**省略風格描述只說「same style」而不貼完整定義
+- **不可**收到風格不一致的素材後硬改程式去配合（應重新生成素材）
+- **不可**不同批次使用不同 AI 工具而不統一 prompt 風格描述
+
+---
+
 ## 響應式設計規則
 
 ### 核心原則：一份 HTML 同時支援手機和桌機
