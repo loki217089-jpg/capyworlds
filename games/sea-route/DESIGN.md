@@ -286,8 +286,65 @@ Boss 關 ── 考驗你這國投資方向是否正確，打完看劇情
 
 ## 參考遊戲
 
-- **Trainatic**（手機）：Boss 關設計靈感，UFO/挑戰機制
+- **Trainatic**（手機）：Boss 關設計靈感，UFO/挑戰機制、速度顯示、燃料條
 - 差異：以真實國家為地圖單位，每國有獨特視覺/素材/音樂
+
+---
+
+## 美術素材清單 & 上傳路徑
+
+> **所有素材放在 `assets/sea-route/` 目錄下**
+> 格式統一用 JFIF（GE 生成，Canvas drawImage 原生支援）
+> 白色背景，遊戲內用 `globalCompositeOperation='multiply'` 自動消白
+
+### 已有素材
+
+| 檔名 | 路徑 | 規格 | 內容 | 狀態 |
+|------|------|------|------|------|
+| `ships.jfif` | `assets/sea-route/ships.jfif` | 4欄×2列，白背景 | 8 艘船（小木舟→鐵甲蒸汽艦） | ⬜ 待上傳 |
+
+### 待生成素材
+
+| 檔名 | 路徑 | 規格 | 內容 | Prompt |
+|------|------|------|------|--------|
+| `landmarks-1.jfif` | `assets/sea-route/landmarks-1.jfif` | 4欄×1列，白背景 | 台灣101、富士山+鳥居、韓國宮殿、中國塔+長城 | 見下方 Batch 1 |
+| `landmarks-2.jfif` | `assets/sea-route/landmarks-2.jfif` | 4欄×1列，白背景 | 越南喀斯特、泰姬瑪哈陵、希臘柱+穹頂、比薩斜塔 | 見下方 Batch 2 |
+| `landmarks-3.jfif` | `assets/sea-route/landmarks-3.jfif` | 2欄×1列，白背景 | 挪威峽灣+極光、加拿大雪山+松林 | 見下方 Batch 3 |
+| `bosses.jfif` | `assets/sea-route/bosses.jfif` | 4欄×1列，白背景 | Boss 半身像 batch 1（颱風女神/海賊船長/幽靈鯊魚/龍王） | 待補 |
+| `items.jfif` | `assets/sea-route/items.jfif` | 10欄×5列，白背景 | 50 格物品圖（替代 emoji） | 優先級低，emoji 夠用 |
+
+### 地標生圖 Prompt
+
+**Batch 1（landmarks-1.jfif）：**
+> Pixel art landmark sprite sheet. 4 columns, 1 row, white background.
+> Cell 1: Taiwan — Taipei 101 + city skyline, warm orange-brown (#f09040, #d87030)
+> Cell 2: Japan — Mt. Fuji (white snow cap) + red torii gate, pink-red (#e05880, #b8b8cc)
+> Cell 3: Korea — Traditional palace with blue curved roof (#4870c8, #2a4898)
+> Cell 4: China — Red pagoda + golden Great Wall segment (#cc2020, #ffd700)
+> Vibrant saturated colors, NOT grey. No text, no borders.
+
+**Batch 2（landmarks-2.jfif）：**
+> Same style. 4 columns, 1 row, white background.
+> Cell 1: Vietnam — Karst limestone mountains + river, green (#80c060, #508030)
+> Cell 2: India — Taj Mahal with minarets, sunset orange (#ff9028, #e8e0d0)
+> Cell 3: Greece — White marble columns + blue dome church (#4898e8, #d0d8e8)
+> Cell 4: Italy — Leaning Tower of Pisa + cypress trees, terracotta (#e06040, #2a5010)
+
+**Batch 3（landmarks-3.jfif）：**
+> Same style. 2 columns, 1 row, white background.
+> Cell 1: Norway — Dark fjord cliffs + aurora borealis, dark blue-cyan (#1a3a5a, #60d8ff)
+> Cell 2: Canada — Snow-capped mountains + pine trees, cool blue (#6888a8, #1a4020)
+
+### 上傳指令模板
+
+```cmd
+cd capyworlds
+copy "來源路徑\ships.jfif" "assets\sea-route\ships.jfif"
+copy "來源路徑\landmarks-1.jfif" "assets\sea-route\landmarks-1.jfif"
+git add assets/sea-route/
+git commit -m "Add sea-route art assets"
+git push origin main
+```
 
 ---
 
